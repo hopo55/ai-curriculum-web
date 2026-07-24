@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>페이지를 찾을 수 없습니다 — AI 이론 학습</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<!--
+  주의: 이 파일은 존재하지 않는 '임의의' 주소에서 렌더된다.
+  예) /ai-curriculum-web/chapters/ch99/없는파일.html
+  이때 상대경로는 요청 주소 기준으로 풀리므로 ../../assets/... 같은 경로가 전부 깨진다.
+  그래서 404 페이지만은 예외적으로 CSS를 인라인하고, 링크는 스크립트로 계산한다.
+-->
+<style>
+  :root{
+    --paper:#fbf8f3; --ink:#1a1714; --ink-2:#4b433e; --seal:#b23a2b; --rule:#ddd3c4;
+    color-scheme:light dark;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --paper:#14161a; --ink:#ece6dc; --ink-2:#b6aea3; --seal:#e2705c; --rule:#2e343d; }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; display:grid; place-content:center; gap:1.4rem;
+    padding:2rem; text-align:center; background:var(--paper); color:var(--ink);
+    font-family:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo",
+                "Noto Sans KR","Malgun Gothic",sans-serif;
+    line-height:1.75; word-break:keep-all;
+  }
+  .code{ font-family:Georgia,"Times New Roman",serif; font-size:5rem; line-height:1; color:var(--seal); margin:0; }
+  h1{ font-size:1.5rem; margin:0; letter-spacing:-.02em; }
+  p{ margin:0; color:var(--ink-2); max-width:44ch; margin-inline:auto; }
+  a{
+    display:inline-block; margin-top:.6rem; padding:.55rem 1.2rem;
+    background:var(--seal); color:var(--paper); text-decoration:none;
+    border-radius:3px; font-weight:600;
+  }
+  a:hover{ opacity:.88 }
+</style>
+</head>
+<body>
+
+<p class="code">404</p>
+<h1>이 주소에는 아직 페이지가 없습니다</h1>
+<p>
+  아직 작성하지 않은 절이거나, 주소가 잘못되었을 수 있습니다.
+  목차에서 <strong>학습 가능</strong> 표시가 붙은 절을 확인해 보세요.
+</p>
+<a id="home" href="/">목차로 돌아가기</a>
+
+<script>
+// 사이트 루트를 계산한다.
+//   프로젝트 사이트  https://<id>.github.io/<repo>/...  →  /<repo>/
+//   사용자 사이트 · 커스텀 도메인 · 로컬                →  /
+(function () {
+  var seg = location.pathname.split('/').filter(Boolean);
+  var isProjectSite = /\.github\.io$/i.test(location.hostname) && seg.length > 0;
+  document.getElementById('home').setAttribute('href', isProjectSite ? '/' + seg[0] + '/' : '/');
+})();
+</script>
+
+</body>
+</html>

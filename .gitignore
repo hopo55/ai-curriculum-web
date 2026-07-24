@@ -1,0 +1,15 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 에디터
+.vscode/
+.idea/
+*.swp
+*~
+
+# 임시
+node_modules/
+*.log
+.cache/

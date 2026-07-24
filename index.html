@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 이론 학습 — 인터랙티브 커리큘럼</title>
+<meta name="description" content="수학 기초부터 Foundation Model·World Model까지, AI 이론을 수식과 인터랙티브 시각화로 공부하는 학습 사이트.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="assets/css/base.css">
+</head>
+<body data-root="">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도">
+    <div class="ruler__fill"></div>
+  </div>
+</header>
+
+<div class="shell">
+  <main id="main" class="wrap">
+
+    <section class="hero">
+      <h1>AI 이론을<br>수식과 그림으로 붙잡기</h1>
+      <p class="hero__lead">
+        선형대수·확률에서 시작해 Transformer, Foundation Model, World Model까지.
+        각 절은 <strong>직관 → 정의 → 수식과 기호표 → 손으로 푸는 예제 → 인터랙티브 실험 → 자가 점검</strong>의
+        같은 순서로 구성됩니다.
+      </p>
+
+      <div class="stats">
+        <div class="stat">
+          <span class="stat__v num" id="stat-ch">—</span>
+          <span class="stat__k">장</span>
+        </div>
+        <div class="stat">
+          <span class="stat__v num" id="stat-sec">—</span>
+          <span class="stat__k">절</span>
+        </div>
+        <div class="stat">
+          <span class="stat__v num" id="stat-item">—</span>
+          <span class="stat__k">개념 항목</span>
+        </div>
+        <div class="stat">
+          <span class="stat__v num" id="stat-ready">—</span>
+          <span class="stat__k">학습 가능</span>
+        </div>
+        <div class="stat stat--done">
+          <span class="stat__v num" id="stat-done">—</span>
+          <span class="stat__k">내가 완료</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="chapters" id="chapters">
+      <p class="note"><span class="note__label">불러오는 중</span>목차를 준비하고 있습니다. JavaScript가 꺼져 있으면 목차가 표시되지 않습니다.</p>
+    </div>
+
+  </main>
+
+  <footer class="foot">
+    <div class="wrap">
+      <p>
+        진도는 브라우저에만 저장됩니다(localStorage). 다른 기기와 동기화되지 않습니다.<br>
+        목차 원본: <code>curriculum/ai_curriculum_v2.md</code> · 작성 규약: <code>SPEC.md</code>
+      </p>
+    </div>
+  </footer>
+</div>
+
+<script src="assets/js/curriculum-data.js"></script>
+<script src="assets/js/pages.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/contrib/auto-render.min.js"></script>
+<script src="assets/js/viz.js"></script>
+<script src="assets/js/widgets.js"></script>
+<script src="assets/js/core.js"></script>
+</body>
+</html>

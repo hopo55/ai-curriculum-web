@@ -995,6 +995,100 @@ pre code { background: none; border: 0; padding: 0; }
   to   { transform: rotate(-6deg) scale(1);   opacity: 1; }
 }
 
+/* ---------- 16b. 출처 ----------
+   유형별로 색을 달리해, 논문만 잔뜩 걸었는지 교재·강의까지 섞였는지
+   목록을 훑기만 해도 보이게 한다. */
+.refs {
+  list-style: none;
+  counter-reset: ref;
+  padding: 0;
+  margin-block: var(--sp-4);
+  display: grid;
+  gap: var(--sp-2);
+}
+.ref {
+  counter-increment: ref;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: .35rem var(--sp-3);
+  align-items: baseline;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--paper-2);
+  border: 1px solid var(--rule-soft);
+  border-left: 3px solid var(--rule);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  scroll-margin-top: 5.5rem;
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+}
+.ref:target {
+  border-left-color: var(--seal);
+  background: var(--seal-soft);
+}
+.ref__type {
+  grid-row: 1;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: .04em;
+  padding: .08rem .45rem;
+  border-radius: 100px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+  align-self: center;
+}
+.ref__cite { grid-row: 1; color: var(--ink); }
+.ref__cite em { font-style: italic; }
+.ref__where {
+  grid-column: 2;
+  color: var(--ink-2);
+  font-size: var(--fs-xs);
+  padding-left: .7rem;
+  border-left: 2px solid var(--jade);
+}
+.ref__link {
+  grid-column: 2;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  text-decoration-color: var(--rule);
+  justify-self: start;
+}
+.ref__link:hover { color: var(--jade-ink); }
+
+/* 유형별 색 — SOURCES.md 의 data-type 값과 대응 */
+.ref__type[data-type="paper"]  { color: var(--seal); }
+.ref__type[data-type="book"]   { color: var(--amber); }
+.ref__type[data-type="course"] { color: var(--jade); }
+.ref__type[data-type="video"]  { color: #7a5ea8; }
+.ref__type[data-type="web"],
+.ref__type[data-type="doc"],
+.ref__type[data-type="code"]   { color: var(--ink-3); }
+:root[data-theme="dark"] .ref__type[data-type="video"] { color: #b49ade; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ref__type[data-type="video"] { color: #b49ade; }
+}
+
+/* 본문 인라인 인용 */
+.cite {
+  font-family: var(--font-display);
+  font-size: .72em;
+  vertical-align: super;
+  line-height: 0;
+  padding: 0 .18em;
+  color: var(--seal);
+  text-decoration: none;
+  border-bottom: 0;
+}
+.cite::before { content: "["; }
+.cite::after { content: "]"; }
+.cite:hover { color: var(--seal-ink); background: var(--seal-soft); border-radius: 2px; }
+
+@media (max-width: 40rem) {
+  .ref { grid-template-columns: minmax(0, 1fr); }
+  .ref__type { justify-self: start; }
+  .ref__where, .ref__link { grid-column: 1; }
+}
+
 /* ---------- 17. 이전/다음 ---------- */
 .pager {
   display: grid;
@@ -1297,4 +1391,8 @@ html { scroll-behavior: smooth; }
   .widget { border: 1px solid #999; }
   .widget__bar::after { content: " (인터랙티브 — 화면에서 확인)"; font-weight: 400; text-transform: none; }
   a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .8em; color: #666; }
+  /* 출처는 인쇄본에서도 온전히 보여야 한다 */
+  .refs { display: block; }
+  .ref { page-break-inside: avoid; border-left: 2px solid #999; }
+  .ref__link::after { content: none; }
 }

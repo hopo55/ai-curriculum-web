@@ -29,6 +29,7 @@ AI 이론을 "읽고 끝나는 글"이 아니라 **직접 조작해 보며 익�
 | **인터랙티브 실험** | 슬라이더·드래그·단계 재생으로 직접 조작 (절마다 3개 이상) |
 | **함정** | "이렇게 착각하기 쉽다 → 실제로는" |
 | **자가 점검** | 정답과 풀이가 붙은 문제 |
+| **출처** | 원논문·교재·강의·영상을 4개 이상, **어느 부분을 참고했는지까지** 명시 |
 
 ## 특징
 
@@ -38,6 +39,8 @@ AI 이론을 "읽고 끝나는 글"이 아니라 **직접 조작해 보며 익�
 - **진도 기록** — 완료한 절이 빨간 도장으로 표시됩니다 (브라우저에만 저장, 서버 전송 없음).
 - **다크모드 · 모바일 · 인쇄(PDF)** 대응.
 - **빠지는 항목이 없음을 기계가 검증** — 목차의 개념 항목과 페이지 내용이 1:1로 대응하는지 자동 검사합니다.
+- **출처를 끝까지 추적** — 모든 인용은 `references/registry.json` 에 등록되고, 받을 수 있는 원문은
+  해시와 함께 로컬에 보관됩니다. 링크가 죽어도 무엇을 봤는지 남습니다.
 
 ## 로컬에서 보기
 
@@ -72,7 +75,9 @@ claude
 자주 쓰는 요청 문구는 [`PROMPTS.md`](PROMPTS.md) 에 정리해 두었습니다.
 
 ```bash
-node tools/check.mjs      # 규약 검사 (누락된 개념 항목이 있으면 실패)
+node tools/check.mjs        # 규약 검사 (누락된 개념 항목·출처 부족이면 실패)
+node tools/refs.mjs fetch   # 인용한 원문 내려받기 (교재·논문 PDF)
+node tools/refs.mjs verify  # 보관본 해시 · 링크 생존 확인
 ```
 
 ## 구조
@@ -82,10 +87,14 @@ index.html                       전체 목차 · 진도 · 검색
 chapters/chNN/N.M-slug.html      절 페이지
 curriculum/ai_curriculum_v2.md   목차 원본
 templates/section.html           절 템플릿
+references/registry.json         출처 레지스트리 (무료 교재·강의 30여 종 등록됨)
+references/library/              내려받은 원문 — gitignore 대상
 assets/                          디자인 시스템 · 공용 스크립트
 vendor/katex/                    KaTeX 0.18.1 (608K)
-tools/                           목차 빌드 · 규약 검사
+tools/                           목차 빌드 · 규약 검사 · 출처 관리
 ```
+
+작성 규약은 [`SPEC.md`](SPEC.md), 출처 수집·인용·보관 지침은 [`SOURCES.md`](SOURCES.md) 에 있습니다.
 
 ## 라이선스
 

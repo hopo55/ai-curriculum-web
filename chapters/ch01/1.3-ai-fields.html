@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.3 AI 주요 분야 — AI 이론 학습</title>
+<meta name="description" content="AI의 각 분야는 (입력공간, 출력공간, 손실)의 삼중항으로 특정된다. NLP·비전·음성부터 Foundation Model·World Model·Embodied AI까지 하나의 틀로 정리한다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="1.3">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">1.3</span>
+        <span>1장 · AI 개론</span>
+      </div>
+      <h1>AI 주요 분야</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 40분</span>
+        <span><b>난이도</b>★☆☆☆☆</span>
+        <span><b>선수지식</b>
+          <a href="1.1-ai-fundamentals.html">1.1 인공지능의 기본 개념</a> ·
+          <a href="1.2-ml-paradigms.html">1.2 머신러닝 패러다임</a>
+        </span>
+      </div>
+    </header>
+
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-nlp">자연어처리</a>
+      <a class="chip" href="#c-cv">컴퓨터 비전</a>
+      <a class="chip" href="#c-asr">음성 인식</a>
+      <a class="chip" href="#c-tts">음성 합성</a>
+      <a class="chip" href="#c-recsys">추천 시스템</a>
+      <a class="chip" href="#c-ts">시계열 예측</a>
+      <a class="chip" href="#c-robotics">로보틱스</a>
+      <a class="chip" href="#c-driving">자율주행</a>
+      <a class="chip" href="#c-multimodal">멀티모달 AI</a>
+      <a class="chip" href="#c-generative">생성 모델</a>
+      <a class="chip" href="#c-foundation">Foundation Model</a>
+      <a class="chip" href="#c-vlm">Vision-Language Model</a>
+      <a class="chip" href="#c-worldmodel">World Model</a>
+      <a class="chip" href="#c-embodied">Embodied AI</a>
+    </nav>
+
+    <!-- 2 -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        분야의 이름을 외우는 것은 쓸모가 적다. 각 분야는
+        <strong>입력이 무엇이고, 출력이 무엇이며, 무엇을 손실로 재는가</strong>라는
+        세 가지로 특정된다. 이 삼중항 $(\mathcal{X}, \mathcal{Y}, L)$ 만 보면 처음 보는 분야도 읽힌다.
+      </p>
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>임의의 AI 과제를 $(\mathcal{X}, \mathcal{Y}, L)$ 삼중항으로 적을 수 있다.</li>
+        <li>열네 분야를 입력·출력 모달리티로 배치하고, 뒤쪽 네 분야(Foundation·VLM·World Model·Embodied)가 앞의 분야들과 <em>다른 층위</em>임을 설명할 수 있다.</li>
+        <li>추천 시스템의 코사인 유사도를 손으로 계산해 이웃을 찾을 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- 3 -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+      <p>
+        "자연어처리를 한다"는 말은 사실 아무것도 특정하지 않는다.
+        번역인지 요약인지 감성분류인지에 따라 완전히 다른 문제다.
+        반면 <strong>"입력은 토큰열, 출력은 토큰열, 손실은 교차엔트로피"</strong>라고 하면
+        어떤 문제인지, 어떤 모델을 쓸지, 무엇을 재야 하는지가 한꺼번에 정해진다.
+      </p>
+      <p>
+        그래서 분야를 이름이 아니라 <strong>서명(signature)</strong>으로 읽는 습관이 중요하다.
+        아래 지도에서 열네 분야를 입력·출력 모달리티 격자에 놓아 보면,
+        멀리 떨어져 보이던 분야들이 같은 칸에 들어가기도 한다 —
+        음성 인식과 이미지 캡셔닝은 둘 다 <em>비텍스트 → 텍스트</em>다.
+      </p>
+
+      <figure class="widget" data-widget="field-map">
+        <figcaption class="widget__bar">입력 · 출력 모달리티로 본 열네 분야</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <p class="watch">각 칸을 눌러 $(\mathcal{X}, \mathcal{Y}, L)$ 을 확인하세요. 대각선 위아래로 대칭인 쌍(인식↔합성)을 찾아보세요.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- 4 -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <p>
+        모든 지도학습 과제는 다음 삼중항으로 특정된다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \bigl(\mathcal{X},\; \mathcal{Y},\; L\bigr) \quad\text{그리고 찾을 대상}\quad f_\theta : \mathcal{X} \to \mathcal{Y} $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+
+      <h3>모달리티가 다르면 공간이 다르다</h3>
+      <span class="anchor" id="c-nlp"></span>
+      <p>
+        <strong>자연어처리</strong>는 입력과 출력이 모두 이산 토큰열이다.
+        $\mathcal{X} = \mathcal{V}^{*}$ (어휘 $\mathcal{V}$ 위의 유한 열), 출력도 같다.
+        손실은 토큰 단위 교차엔트로피다.
+      </p>
+      <span class="anchor" id="c-cv"></span>
+      <p>
+        <strong>컴퓨터 비전</strong>은 입력이 연속값 텐서다.
+        $\mathcal{X} = \mathbb{R}^{H \times W \times C}$ — 높이·너비·채널.
+        출력은 과제마다 다르다: 분류면 $\{1,\dots,K\}$, 탐지면 상자 집합, 분할이면 픽셀별 라벨.
+      </p>
+      <span class="anchor" id="c-asr"></span>
+      <p>
+        <strong>음성 인식</strong>은 파형 $\mathbb{R}^{T}$ 에서 토큰열로 간다.
+        입력 길이와 출력 길이가 다르고 정렬도 모르므로, 정렬을 주변화하는 CTC 같은 손실을 쓴다.
+      </p>
+      <span class="anchor" id="c-tts"></span>
+      <p>
+        <strong>음성 합성</strong>은 그 반대 방향이다. 토큰열 → 파형.
+        같은 두 공간을 잇지만 방향이 반대라 어려움의 성질이 다르다 —
+        인식은 <em>정보를 버리는</em> 문제, 합성은 <em>없는 정보를 만들어내는</em> 문제다.
+      </p>
+      <span class="anchor" id="c-recsys"></span>
+      <p>
+        <strong>추천 시스템</strong>의 입력은 (사용자, 아이템) 쌍이고 출력은 선호도 점수다.
+        $\mathcal{X} = \mathcal{U} \times \mathcal{I}$, $\mathcal{Y} = \mathbb{R}$.
+        관측된 값이 극히 일부라 <strong>결측이 기본</strong>인 것이 특징이다.
+      </p>
+      <span class="anchor" id="c-ts"></span>
+      <p>
+        <strong>시계열 예측</strong>은 과거 창에서 미래 값으로 간다.
+        $\mathcal{X} = \mathbb{R}^{w}$ (최근 $w$ 개), $\mathcal{Y} = \mathbb{R}^{h}$ (앞으로 $h$ 개).
+        <a href="1.2-ml-paradigms.html#s-example">1.2절의 자기지도 예제</a>가 바로 $w = h = 1$ 인 경우였다.
+      </p>
+      <span class="anchor" id="c-robotics"></span>
+      <p>
+        <strong>로보틱스</strong>는 관측에서 행동으로 간다. $\mathcal{Y}$ 가 <em>토크·관절각 같은 연속 제어값</em>이고,
+        무엇보다 <strong>출력이 다음 입력을 바꾼다</strong>. 앞의 분야들과 결정적으로 다른 점이다.
+      </p>
+      <span class="anchor" id="c-driving"></span>
+      <p>
+        <strong>자율주행</strong>은 로보틱스의 특수한 경우이면서, 여러 센서(카메라·라이다·레이더)를 융합하고
+        안전 제약이 절대적이라는 점에서 따로 다뤄진다. 실패 비용이 비대칭적으로 크다.
+      </p>
+      <span class="anchor" id="c-multimodal"></span>
+      <p>
+        <strong>멀티모달 AI</strong>는 서로 다른 모달리티를 <em>같은 표현 공간</em>으로 보낸다.
+        $\phi_{\text{img}} : \mathcal{X}_{\text{img}} \to \mathbb{R}^{d}$,
+        $\phi_{\text{txt}} : \mathcal{X}_{\text{txt}} \to \mathbb{R}^{d}$ — 목표 차원 $d$ 가 같다.
+        그래야 이미지와 문장을 내적으로 비교할 수 있다<a class="cite" href="#ref-radford2021-learning-transferable-visual" data-ref="radford2021-learning-transferable-visual">1</a>.
+      </p>
+      <span class="anchor" id="c-generative"></span>
+      <p>
+        <strong>생성 모델</strong>은 <a href="1.2-ml-paradigms.html#c-unsupervised">1.2절</a>에서 본 대로
+        $p(x)$ 또는 $p(x \mid c)$ 를 모델링한다. 위 분야들과 <em>층위가 다르다</em> —
+        비전에도 생성 모델이 있고 음성에도 있다. 분야가 아니라 <strong>목적의 종류</strong>다.
+      </p>
+
+      <h3>층위가 다른 네 가지</h3>
+      <div class="note note--key">
+        <span class="note__label">주의</span>
+        <p>
+          뒤의 네 항목은 앞의 분야들과 <strong>같은 줄에 놓이지 않는다.</strong>
+          앞의 것들이 "무엇을 푸는가"라면, 이들은 "어떻게 만들고 무엇을 갖추는가"에 가깝다.
+        </p>
+      </div>
+      <span class="anchor" id="c-foundation"></span>
+      <p>
+        <strong>Foundation Model</strong>은 특정 과제가 아니라 <em>대규모 자기지도 사전학습으로 만든 범용 백본</em>이다.
+        하나를 만들어 여러 과제에 적응시킨다. 분야가 아니라 <strong>모델을 만드는 방식</strong>이다.
+      </p>
+      <span class="anchor" id="c-vlm"></span>
+      <p>
+        <strong>Vision-Language Model</strong>은 시각과 언어를 함께 다루는 Foundation Model이다.
+        멀티모달 AI의 부분집합이면서, 오늘날 대부분 <em>시각 인코더 + LLM</em> 구조를 취한다.
+      </p>
+      <span class="anchor" id="c-worldmodel"></span>
+      <p>
+        <strong>World Model</strong>은 환경의 <em>동역학</em>을 학습한다.
+        $\hat{s}_{t+1} = g_\theta(s_t, a_t)$ — 지금 상태에서 이 행동을 하면 다음에 무엇이 오는가.
+        예측이 가능하면 <strong>머릿속에서 미리 시뮬레이션</strong>해 계획할 수 있다.
+      </p>
+      <span class="anchor" id="c-embodied"></span>
+      <p>
+        <strong>Embodied AI</strong>는 몸을 가진 에이전트가 환경과 <em>닫힌 고리</em>로 상호작용하는 것을 다룬다.
+        인식·계획·제어가 하나로 묶이고, <a href="1.1-ai-fundamentals.html#c-system">1.1절의 되먹임 화살표</a>가 실제 물리 세계를 통과한다.
+      </p>
+    </section>
+
+    <!-- 5 -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>
+        멀티모달의 핵심 장치인 <strong>코사인 유사도</strong>를 여기서 정리한다.
+        서로 다른 모달리티를 같은 공간에 보낸 뒤, 비교는 이 하나로 한다.
+        추천 시스템에서도 같은 식을 쓴다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \operatorname{sim}(\mathbf{u}, \mathbf{v}) = \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\|\, \|\mathbf{v}\|} = \frac{\sum_{i=1}^{d} u_i v_i}{\sqrt{\sum_i u_i^2}\; \sqrt{\sum_i v_i^2}} $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead><tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr></thead>
+          <tbody>
+            <tr><td>$\mathcal{V}^{*}$</td><td>브이 스타</td><td>어휘 $\mathcal{V}$ 로 만든 모든 유한 토큰열</td><td>집합</td><td>—</td></tr>
+            <tr><td>$\mathbb{R}^{H\times W\times C}$</td><td>알 에이치 더블유 씨</td><td>이미지 텐서 (높이·너비·채널)</td><td>텐서</td><td>보통 $[0,1]$ 정규화</td></tr>
+            <tr><td>$\mathcal{U},\ \mathcal{I}$</td><td>유, 아이</td><td>사용자 집합, 아이템 집합</td><td>집합</td><td>—</td></tr>
+            <tr><td>$w,\ h$</td><td>더블유, 에이치</td><td>과거 창 길이, 예측 지평</td><td>정수</td><td>$\geq 1$</td></tr>
+            <tr><td>$\phi$</td><td>파이</td><td>인코더 — 원자료를 표현 벡터로</td><td>함수 $\mathcal{X}\to\mathbb{R}^{d}$</td><td>—</td></tr>
+            <tr><td>$d$</td><td>디</td><td>공유 임베딩 차원</td><td>정수</td><td>$\geq 1$</td></tr>
+            <tr><td>$\mathbf{u}\cdot\mathbf{v}$</td><td>유 도트 브이</td><td>내적 — 원소별 곱의 합</td><td>스칼라</td><td>실수</td></tr>
+            <tr><td>$\|\mathbf{u}\|$</td><td>노름 · 유의 크기</td><td>벡터의 길이 $\sqrt{\sum u_i^2}$</td><td>스칼라</td><td>$\geq 0$</td></tr>
+            <tr><td>$\operatorname{sim}$</td><td>심 · 코사인 유사도</td><td>두 벡터가 이루는 각의 코사인</td><td>스칼라</td><td>$[-1,\, 1]$</td></tr>
+            <tr><td>$s_t,\ a_t$</td><td>에스 티, 에이 티</td><td>시각 $t$ 의 상태와 행동</td><td>벡터</td><td>—</td></tr>
+            <tr><td>$g_\theta$</td><td>지 세타</td><td>동역학 모델 — 다음 상태를 예측</td><td>함수</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--tip">
+        <span class="note__label">왜 내적이 아니라 코사인인가</span>
+        <p>
+          내적만 쓰면 <strong>크기가 큰 벡터가 무조건 유리</strong>해진다.
+          평점을 많이 남긴 사용자, 자주 등장한 단어가 그렇다.
+          노름으로 나누면 크기를 지우고 <em>방향만</em> 비교하게 된다.
+          자세한 것은 <span class="tex">2.3</span>절에서 다룬다.
+        </p>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도 — 코사인 유사도가 각도인 이유</h2></div>
+
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{u}\cdot\mathbf{v} = \|\mathbf{u}\|\,\|\mathbf{v}\|\cos\vartheta $$</div>
+          <div class="derive__why">내적의 기하학적 정의. $\vartheta$ 는 두 벡터가 이루는 각 (2.3절에서 증명한다)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \cos\vartheta = \frac{\mathbf{u}\cdot\mathbf{v}}{\|\mathbf{u}\|\,\|\mathbf{v}\|} $$</div>
+          <div class="derive__why">$\|\mathbf{u}\|\|\mathbf{v}\| \neq 0$ 이면 양변을 나눌 수 있다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \operatorname{sim}(\mathbf{u},\mathbf{v}) = \cos\vartheta \in [-1,\, 1] $$</div>
+          <div class="derive__why">코사인의 치역. <strong>크기와 무관하게 방향만 재는 값</strong>이 됐다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \operatorname{sim}(\mathbf{u},\, c\,\mathbf{u}) = 1 \quad (c > 0) $$</div>
+          <div class="derive__why">벡터를 몇 배 늘려도 값이 같다 — <strong>척도 불변</strong>. 평점을 후하게 주는 사람과 짜게 주는 사람을 같게 볼 수 있다</div>
+        </div>
+      </div>
+
+      <details>
+        <summary>척도 불변성 확인</summary>
+        <p>
+          $\operatorname{sim}(c\mathbf{u}, \mathbf{v}) = \dfrac{c\,\mathbf{u}\cdot\mathbf{v}}{|c|\,\|\mathbf{u}\|\|\mathbf{v}\|}$
+          이므로 $c > 0$ 이면 $c/|c| = 1$ 이 되어 원래 값과 같다.
+          $c < 0$ 이면 부호가 뒤집힌다 — 방향이 반대가 되니 당연하다.
+        </p>
+      </details>
+    </section>
+
+    <!-- 7 -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제 — 추천 시스템</h2></div>
+
+      <p>
+        사용자 셋이 아이템 셋에 매긴 평점이다. 0은 평가하지 않았다는 뜻이다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>$i_1$</th><th>$i_2$</th><th>$i_3$</th></tr></thead>
+          <tbody>
+            <tr><td><b>$u_1$</b></td><td>4</td><td>3</td><td>0</td></tr>
+            <tr><td><b>$u_2$</b></td><td>4</td><td>0</td><td>3</td></tr>
+            <tr><td><b>$u_3$</b></td><td>0</td><td>3</td><td>4</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>$u_1$ 과 가장 비슷한 사용자를 찾아 $u_1$ 에게 $i_3$ 을 추천할지 결정한다.</p>
+
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \|\mathbf{u}_1\| = \sqrt{4^2 + 3^2 + 0^2} = \sqrt{16+9} = \sqrt{25} = 5 $$</div>
+          <div class="derive__why">노름부터. 세 사용자 모두 $\sqrt{25}=5$ 로 같아 비교가 쉽다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{u}_1\cdot\mathbf{u}_2 = 4\cdot4 + 3\cdot0 + 0\cdot3 = 16 $$</div>
+          <div class="derive__why">겹치는 항목은 $i_1$ 뿐이다. 나머지는 한쪽이 0이라 사라진다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \operatorname{sim}(\mathbf{u}_1, \mathbf{u}_2) = \frac{16}{5 \times 5} = \frac{16}{25} = 0.64 $$</div>
+          <div class="derive__why">식 (2)에 대입</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{u}_1\cdot\mathbf{u}_3 = 4\cdot0 + 3\cdot3 + 0\cdot4 = 9 $$</div>
+          <div class="derive__why">이번엔 $i_2$ 만 겹친다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \operatorname{sim}(\mathbf{u}_1, \mathbf{u}_3) = \frac{9}{25} = 0.36 $$</div>
+          <div class="derive__why">$u_2$ 가 $u_3$ 보다 $u_1$ 에 가깝다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat{r}_{1,3} = \frac{0.64 \times 3 + 0.36 \times 4}{0.64 + 0.36} = \frac{1.92 + 1.44}{1.00} = 3.36 $$</div>
+          <div class="derive__why"><strong>추론.</strong> 이웃들의 $i_3$ 평점을 유사도로 가중평균했다</div>
+        </div>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">이 계산이 감추고 있는 것</span>
+        <p>
+          "평가하지 않음"을 <strong>0으로 채운 것</strong>이 사실은 큰 가정이다.
+          0은 "평점 0점"과 구분되지 않으므로, 안 본 영화를 <em>싫어한다</em>고 말한 셈이 된다.
+          실제 시스템은 결측을 0으로 채우지 않고 <em>관측된 항목만</em>으로 유사도를 계산하거나,
+          행렬 분해로 결측을 추정한다. 이 구분은 <span class="tex">2.8</span>절 행렬 완성에서 다시 다룬다.
+        </p>
+      </div>
+    </section>
+
+    <!-- 8 -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <h3>평점을 바꾸면 추천이 어떻게 흔들리는가</h3>
+      <figure class="widget" data-widget="cosine-lab">
+        <figcaption class="widget__bar">코사인 유사도 실험실</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$u_1$ 의 값을 전부 2배로 올려 보세요. 유사도가 <strong>변하지 않습니다</strong> — 척도 불변성입니다.</p>
+        </div>
+      </figure>
+
+      <h3>같은 두 공간, 반대 방향</h3>
+      <p>
+        인식과 합성은 같은 두 공간을 잇지만 방향이 반대다.
+        어느 쪽이 정보를 버리고 어느 쪽이 만들어내는지 확인해 보라.
+      </p>
+      <figure class="widget" data-widget="direction-pairs">
+        <figcaption class="widget__bar">인식 ↔ 합성 — 방향이 바뀌면 문제가 바뀐다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <p class="watch">화살표 방향을 뒤집어 보세요. 정보량이 줄어드는 쪽과 늘어나는 쪽의 난이도가 다릅니다.</p>
+        </div>
+      </figure>
+
+      <h3>서명만 보고 분야 맞히기</h3>
+      <figure class="widget" data-widget="signature-quiz">
+        <figcaption class="widget__bar">$(\mathcal{X}, \mathcal{Y})$ 만 보고 분야 맞히기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">이름을 몰라도 입력·출력만으로 문제의 성격이 정해진다는 것을 확인하세요.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- 9 -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"열네 항목은 같은 층위의 분야 목록이다."</p>
+        <p>
+          <strong>실제로는</strong> 섞여 있다.
+          자연어처리·비전·음성은 <em>다루는 자료의 종류</em>로 나눈 것이고,
+          생성 모델은 <em>목적의 종류</em>, Foundation Model은 <em>만드는 방식</em>,
+          Embodied AI는 <em>환경과의 관계</em>로 나눈 것이다.
+          커리큘럼의 목록을 그대로 외우면 이 차이를 놓친다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"멀티모달은 여러 모델을 이어 붙이는 것이다."</p>
+        <p>
+          <strong>실제로는</strong> 핵심이 <em>공유 표현 공간</em>이다.
+          이미지 인코더와 텍스트 인코더의 출력 차원 $d$ 를 같게 맞추고,
+          <strong>짝이 맞는 쌍의 코사인 유사도가 커지도록</strong> 학습시킨다.
+          단순히 모델 두 개를 순서대로 실행하는 것은 파이프라인이지 멀티모달 학습이 아니다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"로보틱스는 비전에 모터를 붙인 것이다."</p>
+        <p>
+          <strong>실제로는</strong> 결정적 차이가 있다 — <em>출력이 다음 입력을 바꾼다.</em>
+          이미지 분류는 내가 무엇을 예측하든 다음 이미지가 달라지지 않지만,
+          로봇은 팔을 움직이면 다음에 보는 장면이 바뀐다.
+          그래서 데이터가 독립·동일분포(i.i.d.)가 아니고,
+          <a href="1.2-ml-paradigms.html#c-rl">1.2절에서 본 강화학습의 분포 이동 문제</a>가 그대로 등장한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"코사인 유사도가 높으면 비슷하다."</p>
+        <p>
+          <strong>실제로는</strong> "겹치는 축에서 비슷하다"는 뜻일 뿐이다.
+          위 예제에서 $u_1$ 과 $u_2$ 의 유사도 0.64는 <em>$i_1$ 하나만 보고</em> 나온 값이다.
+          겹치는 항목이 하나뿐인데 유사도가 높게 나오는 상황을 실무에서 늘 조심해야 한다.
+          그래서 <strong>공통 평가 개수에 따른 신뢰도 보정</strong>을 함께 쓴다.
+        </p>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <details>
+        <summary>NumPy — 코사인 유사도와 가중평균 추천 (15줄)</summary>
+<pre><code>import numpy as np
+
+R = np.array([[4., 3., 0.],    # u1
+              [4., 0., 3.],    # u2
+              [0., 3., 4.]])   # u3
+
+def cos(a, b):
+    return a @ b / (np.linalg.norm(a) * np.linalg.norm(b))
+
+s12, s13 = cos(R[0], R[1]), cos(R[0], R[2])
+print(s12, s13)              # 0.64  0.36
+
+# u1 에게 i3 을 추천할까? 이웃 평점을 유사도로 가중평균
+pred = (s12 * R[1, 2] + s13 * R[2, 2]) / (s12 + s13)
+print(pred)                  # 3.36
+
+# 척도 불변: u1 을 2배로 늘려도 유사도는 그대로
+print(cos(2 * R[0], R[1]))   # 0.64
+</code></pre>
+      </details>
+    </section>
+
+    <!-- 11 -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\mathbf{a} = (3, 4)$, $\mathbf{b} = (4, 3)$ 일 때 $\operatorname{sim}(\mathbf{a}, \mathbf{b})$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$24/25 = 0.96$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$24/49$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$1$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\mathbf{a}\cdot\mathbf{b} = 12 + 12 = 24$, $\|\mathbf{a}\| = \|\mathbf{b}\| = 5$.
+            따라서 $24/(5\cdot5) = 24/25 = 0.96$.
+            다를 고르기 쉬운데, 두 벡터는 성분이 뒤바뀌었을 뿐 방향이 완전히 같지는 않다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            예제에서 $u_1$ 의 평점을 모두 10배로 하면 $\operatorname{sim}(\mathbf{u}_1,\mathbf{u}_2)$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>0.64 — 변하지 않는다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>6.4 — 10배가 된다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0.064</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            분자가 10배가 되지만 분모의 $\|\mathbf{u}_1\|$ 도 10배가 되어 상쇄된다.
+            코사인 유사도의 <strong>척도 불변성</strong>이다. 평점을 후하게 주는 사람과 짜게 주는 사람을 같은 잣대로 볼 수 있는 이유다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            "파형 → 토큰열"이라는 서명을 가진 분야는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>음성 인식</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>음성 합성</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>시계열 예측</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            음성 합성은 반대 방향(토큰열 → 파형)이고, 시계열 예측은 실수열 → 실수열이다.
+            <strong>이름이 아니라 서명으로 구분하는 습관</strong>이 이 절의 요점이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            World Model이 학습하는 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>이미지에서 라벨로 가는 사상</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>$(s_t, a_t)$ 에서 $s_{t+1}$ 로 가는 동역학</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>텍스트와 이미지의 공유 표현</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            World Model은 환경이 <em>어떻게 변하는가</em>를 배운다.
+            이를 알면 실제로 행동해 보기 전에 머릿속에서 결과를 예측해 계획할 수 있다.
+            다는 멀티모달·VLM의 설명이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            다음 중 <strong>틀린</strong> 진술은?</p>
+          <div class="opts">
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>생성 모델은 비전에도 언어에도 존재한다</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>Foundation Model은 자연어처리의 하위 분야다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>로보틱스는 출력이 다음 입력에 영향을 준다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            나가 틀렸다. Foundation Model은 <em>분야</em>가 아니라 <strong>모델을 만드는 방식</strong>이며,
+            언어·비전·음성·로보틱스 어디에나 존재한다(16장).
+            열네 항목이 같은 층위가 아니라는 '오해 1'의 요점이다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+      <ul>
+        <li><strong>2.3 내적과 유사도</strong> — 식 (2)의 기하학적 근거와 임베딩 공간.</li>
+        <li><strong>7장 컴퓨터 비전 · 10장 오디오·음성 · 12~13장 언어 모델</strong> — 각 모달리티의 상세.</li>
+        <li><strong>16장 Foundation Model · 17장 VLM</strong> — 층위가 다른 두 항목의 본격 논의.</li>
+        <li><strong>26장 World Model · 27장 Embodied AI</strong> — 동역학 학습과 닫힌 고리 제어.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-radford2021-learning-transferable-visual" data-ref="radford2021-learning-transferable-visual">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Radford, A. et al. (2021). <em>Learning Transferable Visual Models From Natural Language Supervision</em> (CLIP). ICML.</span>
+          <span class="ref__where">§2.3 — 이미지·텍스트 인코더를 같은 차원 $d$ 로 보내고 짝이 맞는 쌍의 코사인 유사도를 키우는 학습. 멀티모달 정의와 식 (2)의 근거</span>
+          <a class="ref__link" href="https://arxiv.org/abs/2103.00020">arXiv:2103.00020</a>
+        </li>
+        <li class="ref" id="ref-jurafsky2025-slp3" data-ref="jurafsky2025-slp3">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Jurafsky, D. &amp; Martin, J. H. (2025). <em>Speech and Language Processing</em> (3rd ed. draft).</span>
+          <span class="ref__where">1장 및 16장 — 자연어처리 과제의 입출력 형식 분류, 음성 인식(ASR)과 합성(TTS)이 서로 역방향이라는 정리</span>
+          <a class="ref__link" href="https://web.stanford.edu/~jurafsky/slp3/">stanford.edu/~jurafsky/slp3</a>
+        </li>
+        <li class="ref" id="ref-szeliski2022-cv" data-ref="szeliski2022-cv">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Szeliski, R. (2022). <em>Computer Vision: Algorithms and Applications</em> (2nd ed.). Springer.</span>
+          <span class="ref__where">1장 — 비전 과제를 분류·탐지·분할로 나누는 기준과 각각의 출력 공간 정의</span>
+          <a class="ref__link" href="https://szeliski.org/Book/">szeliski.org/Book</a>
+        </li>
+        <li class="ref" id="ref-stanford-cs231n" data-ref="stanford-cs231n">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Stanford CS231n: <em>Deep Learning for Computer Vision</em>.</span>
+          <span class="ref__where">Lecture 1 — 비전 과제의 입출력 형식 분류와 분야 개관 구성 참고</span>
+          <a class="ref__link" href="https://cs231n.stanford.edu/">cs231n.stanford.edu</a>
+        </li>
+        <li class="ref" id="ref-lilianweng-log" data-ref="lilianweng-log">
+          <span class="ref__type" data-type="web">웹문서</span>
+          <span class="ref__cite">Weng, L. <em>Generalized Visual Language Models</em> · <em>World Models</em>. Lil'Log.</span>
+          <span class="ref__where">VLM 구조 분류(시각 인코더 + LLM)와 World Model의 동역학 학습 정의 정리. 층위가 다른 네 항목 서술 참고</span>
+          <a class="ref__link" href="https://lilianweng.github.io/">lilianweng.github.io</a>
+        </li>
+        <li class="ref" id="ref-mit-6s191" data-ref="mit-6s191">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">MIT 6.S191: <em>Introduction to Deep Learning</em>.</span>
+          <span class="ref__where">Lecture 1 · 6 — AI 응용 분야 개관과 모달리티별 구분 방식 참고</span>
+          <a class="ref__link" href="https://introtodeeplearning.com/">introtodeeplearning.com</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+/* 위젯 1 — 입력·출력 모달리티 격자 */
+WIDGETS.register('field-map', function (root, ctx) {
+  var el = VIZ.el;
+  var MOD = ['텍스트', '이미지', '음성', '상태·행동'];
+  /* [입력 index, 출력 index, 이름, X, Y, 손실] */
+  var F = [
+    [0, 0, '자연어처리', '토큰열 V*', '토큰열 V*', '토큰 교차엔트로피'],
+    [1, 0, '이미지 캡셔닝 · VLM', 'R^(H×W×C)', '토큰열', '토큰 교차엔트로피'],
+    [2, 0, '음성 인식', '파형 R^T', '토큰열', 'CTC · seq2seq'],
+    [0, 2, '음성 합성', '토큰열', '파형 R^T', '스펙트로그램 L1 · 적대손실'],
+    [1, 1, '컴퓨터 비전', 'R^(H×W×C)', '라벨 · 상자 · 마스크', '교차엔트로피 · IoU'],
+    [0, 1, '텍스트→이미지 생성', '토큰열', 'R^(H×W×C)', '확산 잡음예측'],
+    [3, 3, '로보틱스 · 자율주행', '관측 s_t', '행동 a_t', '보상 최대화 · 모방'],
+    [3, 3, 'World Model', '(s_t, a_t)', 's_(t+1)', '예측 오차'],
+    [1, 3, 'Embodied AI', '시각·촉각 관측', '물리 행동', '과제 성공률']
+  ];
+
+  var svg = el('svg', { viewBox: '0 0 480 250', role: 'img', 'aria-label': '입력과 출력 모달리티로 배치한 AI 분야 격자' });
+  var W = 96, H = 44, X0 = 78, Y0 = 40;
+
+  MOD.forEach(function (m, i) {
+    svg.appendChild(el('text', { x: X0 + i * W + W / 2, y: 28, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 11, 'font-weight': '700', text: m }));
+    svg.appendChild(el('text', { x: 70, y: Y0 + i * H + H / 2 + 4, 'text-anchor': 'end', class: 'viz-label', 'font-size': 11, 'font-weight': '700', text: m }));
+  });
+  svg.appendChild(el('text', { x: 240, y: 12, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 10.5, text: '출력 →' }));
+  svg.appendChild(el('text', { x: 14, y: 130, class: 'viz-label', 'font-size': 10.5, text: '입력 ↓' }));
+
+  for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) {
+    svg.appendChild(el('rect', { x: X0 + c * W, y: Y0 + r * H, width: W - 3, height: H - 3, rx: 3, fill: 'var(--rule-soft)', 'fill-opacity': .35 }));
+  }
+
+  var shapes = [];
+  F.forEach(function (f, idx) {
+    var seen = F.slice(0, idx).filter(function (g) { return g[0] === f[0] && g[1] === f[1]; }).length;
+    var x = X0 + f[1] * W, y = Y0 + f[0] * H + seen * 15;
+    var g = el('g', { tabindex: '0', role: 'button', 'aria-label': f[2], style: 'cursor:pointer' });
+    var rect = el('rect', { x: x + 2, y: y + 2, width: W - 7, height: seen ? 13 : 24, rx: 3, fill: 'var(--jade)', 'fill-opacity': .2, stroke: 'var(--jade)', 'stroke-width': 1.2 });
+    g.appendChild(rect);
+    g.appendChild(el('text', { x: x + (W - 3) / 2, y: y + (seen ? 12 : 17), 'text-anchor': 'middle', class: 'viz-label', 'font-size': 9.5, 'font-weight': '600', text: f[2].length > 13 ? f[2].slice(0, 12) + '…' : f[2] }));
+    g.addEventListener('click', function () { show(f, rect); });
+    g.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(f, rect); } });
+    svg.appendChild(g);
+    shapes.push(rect);
+  });
+
+  ctx.stage.appendChild(svg);
+  var panel = document.createElement('div');
+  panel.className = 'note note--tip';
+  panel.style.marginTop = '0';
+  ctx.controls.appendChild(panel);
+
+  function show(f, rect) {
+    panel.innerHTML = '<span class="note__label"></span><p></p>';
+    panel.querySelector('.note__label').textContent = f[2];
+    panel.querySelector('p').innerHTML =
+      '<code>X = ' + f[3] + '</code> &nbsp;→&nbsp; <code>Y = ' + f[4] + '</code><br>손실 · ' + f[5];
+    shapes.forEach(function (s) { s.setAttribute('stroke-width', s === rect ? 3 : 1.2); });
+  }
+  show(F[0], shapes[0]);
+});
+
+/* 위젯 2 — 코사인 유사도 실험실 */
+WIDGETS.register('cosine-lab', function (root, ctx) {
+  var R = [[4, 3, 0], [4, 0, 3], [0, 3, 4]];
+
+  var box = document.createElement('div');
+  box.style.width = '100%';
+  ctx.stage.appendChild(box);
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 's12', label: 'sim(u₁, u₂)', digits: 4 },
+    { key: 's13', label: 'sim(u₁, u₃)', digits: 4 },
+    { key: 'pred', label: 'u₁ 의 i₃ 예측 평점', digits: 3 }
+  ]);
+
+  function dot(a, b) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i] * b[i]; return s; }
+  function norm(a) { return Math.sqrt(dot(a, a)); }
+  function cos(a, b) { var d = norm(a) * norm(b); return d ? dot(a, b) / d : 0; }
+
+  function draw() {
+    var s12 = cos(R[0], R[1]), s13 = cos(R[0], R[2]);
+    var den = s12 + s13;
+    var pred = den ? (s12 * R[1][2] + s13 * R[2][2]) / den : 0;
+
+    var rows = R.map(function (u, i) {
+      return '<tr><td><b>u' + (i + 1) + '</b></td>' + u.map(function (v) {
+        return '<td style="text-align:center">' + (+v.toFixed(1)) + '</td>';
+      }).join('') + '<td style="text-align:center;color:var(--ink-3)">‖u‖=' + norm(u).toFixed(2) + '</td></tr>';
+    }).join('');
+    box.innerHTML = '<div class="tablewrap" style="margin:0"><table><thead><tr><th></th><th>i₁</th><th>i₂</th><th>i₃</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+
+    out.set('s12', s12); out.set('s13', s13); out.set('pred', pred);
+  }
+
+  [0, 1, 2].forEach(function (i) {
+    WIDGETS.slider({
+      host: ctx.controls, label: 'u₁ 의 i' + (i + 1) + ' 평점', min: 0, max: 10, step: .5, value: R[0][i], digits: 1,
+      onInput: function (v) { R[0][i] = v; draw(); }
+    });
+  });
+  draw();
+});
+
+/* 위젯 3 — 인식 ↔ 합성 방향 비교 */
+WIDGETS.register('direction-pairs', function (root, ctx) {
+  var el = VIZ.el;
+  var PAIRS = {
+    speech: { a: '파형', b: '텍스트', fwd: '음성 인식 (ASR)', bwd: '음성 합성 (TTS)',
+      fwdNote: '연속 파형에서 이산 토큰으로 — 화자·억양·잡음 같은 정보를 버린다. 여러 파형이 같은 텍스트가 된다(다대일).',
+      bwdNote: '텍스트에는 억양·속도·음색 정보가 없다. 없는 것을 만들어내야 하므로 정답이 하나가 아니다(일대다).' },
+    vision: { a: '이미지', b: '텍스트', fwd: '이미지 캡셔닝', bwd: '텍스트→이미지 생성',
+      fwdNote: '수백만 픽셀을 한 문장으로 압축한다. 무엇을 남기고 무엇을 버릴지가 문제다.',
+      bwdNote: '한 문장에서 수백만 픽셀을 만들어낸다. 문장이 정하지 않은 세부는 모델이 지어내야 한다.' }
+  };
+  var cur = 'speech', fwd = true;
+
+  var stage = document.createElement('div'); stage.style.width = '100%';
+  ctx.stage.appendChild(stage);
+  var panel = document.createElement('div');
+  panel.className = 'note note--tip'; panel.style.marginTop = '.7rem';
+  ctx.controls.appendChild(panel);
+
+  function draw() {
+    var p = PAIRS[cur];
+    var from = fwd ? p.a : p.b, to = fwd ? p.b : p.a;
+    var svg = el('svg', { viewBox: '0 0 460 110', role: 'img', 'aria-label': (fwd ? p.fwd : p.bwd) + ' 방향' });
+    [[60, from], [340, to]].forEach(function (q) {
+      svg.appendChild(el('rect', { x: q[0], y: 32, width: 110, height: 44, rx: 6, fill: 'var(--jade)', 'fill-opacity': .15, stroke: 'var(--jade)', 'stroke-width': 1.6 }));
+      svg.appendChild(el('text', { x: q[0] + 55, y: 59, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 14, 'font-weight': '700', text: q[1] }));
+    });
+    svg.appendChild(el('path', { d: 'M175 54 L330 54', stroke: 'var(--seal)', 'stroke-width': 2.5 }));
+    svg.appendChild(el('path', { d: 'M338 54 L328 49 L328 59 Z', fill: 'var(--seal)' }));
+    svg.appendChild(el('text', { x: 252, y: 44, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 12, 'font-weight': '700', fill: 'var(--seal)', text: fwd ? p.fwd : p.bwd }));
+    svg.appendChild(el('text', { x: 252, y: 88, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 11, text: fwd ? '정보를 버린다 (다대일)' : '정보를 만든다 (일대다)' }));
+    stage.innerHTML = ''; stage.appendChild(svg);
+
+    panel.innerHTML = '<span class="note__label"></span><p></p>';
+    panel.querySelector('.note__label').textContent = fwd ? p.fwd : p.bwd;
+    panel.querySelector('p').textContent = fwd ? p.fwdNote : p.bwdNote;
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '어떤 쌍을 볼까요',
+    options: [{ value: 'speech', label: '파형 ↔ 텍스트' }, { value: 'vision', label: '이미지 ↔ 텍스트' }],
+    value: 'speech', onChange: function (v) { cur = v; draw(); }
+  });
+  WIDGETS.toggle({
+    host: ctx.controls, label: '방향',
+    options: [{ value: 'f', label: '→ 인식·이해' }, { value: 'b', label: '← 생성·합성' }],
+    value: 'f', onChange: function (v) { fwd = (v === 'f'); draw(); }
+  });
+  draw();
+});
+
+/* 위젯 4 — 서명 맞히기 */
+WIDGETS.register('signature-quiz', function (root, ctx) {
+  var Q = [
+    { x: '토큰열 (문장)', y: '토큰열 (문장)', a: '자연어처리', o: ['자연어처리', '음성 인식', '추천 시스템'] },
+    { x: 'R^(H×W×C) 텐서', y: '픽셀별 라벨 맵', a: '컴퓨터 비전 (분할)', o: ['컴퓨터 비전 (분할)', '이미지 캡셔닝', '생성 모델'] },
+    { x: '(사용자, 아이템)', y: '실수 선호도', a: '추천 시스템', o: ['시계열 예측', '추천 시스템', '자연어처리'] },
+    { x: '최근 w 개 실수', y: '앞으로 h 개 실수', a: '시계열 예측', o: ['시계열 예측', '음성 합성', 'World Model'] },
+    { x: '(상태 s_t, 행동 a_t)', y: '다음 상태 s_(t+1)', a: 'World Model', o: ['로보틱스', 'World Model', '멀티모달 AI'] }
+  ];
+  var at = 0, score = 0, answered = false;
+
+  var stage = document.createElement('div'); stage.style.width = '100%';
+  ctx.stage.appendChild(stage);
+  var opts = document.createElement('div'); opts.className = 'opts'; opts.style.marginTop = '.6rem';
+  ctx.controls.appendChild(opts);
+  var out = WIDGETS.readout(ctx.readout, [{ key: 'p', label: '진행' }, { key: 's', label: '맞힌 개수' }]);
+
+  function draw() {
+    var q = Q[at];
+    stage.innerHTML =
+      '<div style="text-align:center;padding:.5rem 0">' +
+        '<div style="font-size:var(--fs-xs);color:var(--ink-3);letter-spacing:.06em">입력 X</div>' +
+        '<div class="tex" style="font-size:1.05rem;margin-bottom:.5rem">' + q.x + '</div>' +
+        '<div style="color:var(--seal);font-size:1.2rem">↓</div>' +
+        '<div style="font-size:var(--fs-xs);color:var(--ink-3);letter-spacing:.06em;margin-top:.5rem">출력 Y</div>' +
+        '<div class="tex" style="font-size:1.05rem">' + q.y + '</div>' +
+      '</div>';
+    opts.innerHTML = '';
+    answered = false;
+    q.o.forEach(function (o, i) {
+      var b = document.createElement('button');
+      b.className = 'opt'; b.type = 'button';
+      b.innerHTML = '<span class="opt__mark">' + '가나다'[i] + '</span><span></span>';
+      b.querySelector('span:last-child').textContent = o;
+      b.addEventListener('click', function () {
+        if (answered) return;
+        answered = true;
+        var ok = o === q.a;
+        b.classList.add(ok ? 'is-correct' : 'is-wrong');
+        if (!ok) {
+          Array.prototype.forEach.call(opts.children, function (c) {
+            if (c.textContent.indexOf(q.a) >= 0) c.classList.add('is-correct');
+          });
+        } else score++;
+        out.setRaw('s', score + ' / ' + Q.length);
+        setTimeout(function () { at = (at + 1) % Q.length; if (at === 0) score = 0; draw(); }, 1400);
+      });
+      opts.appendChild(b);
+    });
+    out.setRaw('p', (at + 1) + ' / ' + Q.length);
+    out.setRaw('s', score + ' / ' + Q.length);
+  }
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

@@ -35,6 +35,47 @@ window.PAGES = {
       "pretext task", "구실 과제", "catastrophic forgetting", "파국적 망각",
       "MAML", "EWC", "SimCLR", "negative transfer", "부정적 전이", "사전학습"
     ]
+  },
+  "1.3": {
+    href: "chapters/ch01/1.3-ai-fields.html",
+    updated: "2026-07-25",
+    summary: "분야는 이름이 아니라 (입력공간, 출력공간, 손실) 삼중항으로 특정된다.",
+    tags: [
+      "NLP", "computer vision", "ASR", "TTS", "recommender", "time series",
+      "robotics", "autonomous driving", "multimodal", "generative",
+      "foundation model", "VLM", "world model", "embodied AI",
+      "cosine similarity", "코사인 유사도", "모달리티", "서명"
+    ]
+  },
+  "1.4": {
+    href: "chapters/ch01/1.4-ml-system-structure.html",
+    updated: "2026-07-25",
+    summary: "학습은 11단계 중 하나일 뿐이고, 파이프라인은 직선이 아니라 재학습으로 돌아오는 고리다.",
+    tags: [
+      "pipeline", "MLOps", "preprocessing", "feature", "deployment",
+      "monitoring", "retraining", "training-serving skew", "학습 서빙 왜곡",
+      "technical debt", "재학습 주기", "함수 합성"
+    ]
+  },
+  "1.5": {
+    href: "chapters/ch01/1.5-data-split-evaluation.html",
+    updated: "2026-07-25",
+    summary: "본 적 없는 데이터의 성능을 알기 위해 나눈다. 과적합·데이터 누출·벤치마크 과적합까지.",
+    tags: [
+      "train validation test", "cross validation", "k-fold", "data leakage",
+      "distribution shift", "overfitting", "underfitting", "generalization",
+      "benchmark", "baseline", "reproducibility", "표준오차", "경험적 위험"
+    ]
+  },
+  "1.6": {
+    href: "chapters/ch01/1.6-research-structure.html",
+    updated: "2026-07-25",
+    summary: "논문 구조는 형식이 아니라 예상 반론을 하나씩 막는 장치다. 차이가 노이즈보다 큰지 계산한다.",
+    tags: [
+      "research question", "related work", "ablation", "reproducibility",
+      "significance", "seed variance", "시드 분산", "표준오차", "신뢰구간",
+      "hyperparameter budget", "ethics", "윤리적 고려", "후속 연구"
+    ]
   }
 
   // 새 절을 만들면 이 형태로 추가한다 (등록해야 목차·검색에 나타난다):

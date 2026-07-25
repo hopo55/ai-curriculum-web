@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.2 머신러닝 패러다임 — AI 이론 학습</title>
+<meta name="description" content="지도·비지도·반지도·자기지도·강화학습은 '감독 신호가 어디서 오는가'로, 전이·멀티태스크·메타·연속학습은 '지식을 어떻게 옮기는가'로 갈린다. 두 축은 서로 직교한다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="1.2">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">1.2</span>
+        <span>1장 · AI 개론</span>
+      </div>
+      <h1>머신러닝 패러다임</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 40분</span>
+        <span><b>난이도</b>★★☆☆☆</span>
+        <span><b>선수지식</b>
+          <a href="1.1-ai-fundamentals.html">1.1 인공지능의 기본 개념</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-supervised">지도학습</a>
+      <a class="chip" href="#c-unsupervised">비지도학습</a>
+      <a class="chip" href="#c-semi">반지도학습</a>
+      <a class="chip" href="#c-selfsup">자기지도학습</a>
+      <a class="chip" href="#c-rl">강화학습</a>
+      <a class="chip" href="#c-transfer">전이학습</a>
+      <a class="chip" href="#c-meta">메타러닝</a>
+      <a class="chip" href="#c-multitask">멀티태스크 학습</a>
+      <a class="chip" href="#c-continual">연속학습</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        이 아홉 가지는 한 줄로 늘어선 목록이 아니라 <strong>서로 다른 두 질문에 대한 답</strong>이다.
+        앞의 다섯은 <em>감독 신호가 어디서 오는가</em>, 뒤의 넷은 <em>과제 사이에서 지식을 어떻게 옮기는가</em>.
+        두 축은 직교하므로 <strong>겹쳐 쓸 수 있다.</strong>
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>아홉 패러다임을 두 축으로 분류하고, 왜 그 둘이 서로 다른 질문인지 설명할 수 있다.</li>
+        <li>각 패러다임의 목적함수를 $\arg\min$ 형태로 구분해 쓸 수 있다.</li>
+        <li>라벨이 하나도 없는 데이터에서 자기지도 방식으로 학습 쌍을 만들어 파라미터를 손으로 구할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        <a href="1.1-ai-fundamentals.html#c-ml">1.1절</a>에서 학습을
+        "경험 $E$ 로부터 과제 $T$ 의 성능 $P$ 를 높이는 것"으로 정의했다.
+        패러다임의 구분은 대부분 <strong>$E$ 가 어떤 모습이냐</strong>에서 나온다.
+      </p>
+      <p>
+        아이에게 동물을 가르친다고 하자.
+      </p>
+      <ul>
+        <li>사진마다 "이건 고양이야"라고 <strong>일일이 알려주면</strong> — 지도학습</li>
+        <li>사진만 잔뜩 보여주고 <strong>알아서 비슷한 것끼리 묶게 하면</strong> — 비지도학습</li>
+        <li>몇 장만 알려주고 <strong>나머지는 스스로 채우게 하면</strong> — 반지도학습</li>
+        <li>사진 일부를 <strong>가리고 맞히게 하면</strong> — 자기지도학습 (정답을 사진 자신이 갖고 있다)</li>
+        <li>맞히면 사탕, 틀리면 없음 — <strong>정답 대신 점수만 주면</strong> — 강화학습</li>
+      </ul>
+      <p>
+        여기까지가 첫 번째 축이다. 그런데 이런 질문도 있다.
+        <strong>"고양이를 배운 아이는 호랑이를 더 빨리 배우는가?"</strong>
+        이건 감독 신호의 종류와는 무관한, 완전히 다른 질문이다 — 두 번째 축이다.
+      </p>
+
+      <div class="note note--key">
+        <span class="note__label">이 절의 핵심</span>
+        <p>
+          두 축은 <strong>직교</strong>한다. 예를 들어 오늘날의 LLM은
+          <em>자기지도학습</em>(축 1)으로 사전학습한 뒤 <em>전이학습</em>(축 2)으로 downstream 과제에 적응한다.
+          둘 중 하나를 고르는 것이 아니라 <strong>둘 다</strong>이다.
+        </p>
+      </div>
+
+      <figure class="widget" data-widget="paradigm-map">
+        <figcaption class="widget__bar">두 축으로 본 아홉 패러다임</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <p class="watch">각 항목을 눌러 정의와 목적함수를 확인하세요. 아래쪽 예시가 두 축을 어떻게 겹쳐 쓰는지 보여줍니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의 — 축 1: 감독 신호</h2></div>
+
+      <p>
+        다섯 가지의 차이는 <strong>데이터셋 $\mathcal{D}$ 의 생김새</strong> 하나로 갈린다.
+      </p>
+
+      <span class="anchor" id="c-supervised"></span>
+      <h3>지도학습</h3>
+      <p>입력마다 사람이 만든 정답이 붙어 있다.</p>
+      <div class="eq">
+        <div class="eq__body">$$ \mathcal{D} = \{(x_i,\, y_i)\}_{i=1}^{n}, \qquad \theta^{*} = \arg\min_{\theta} \frac{1}{n}\sum_{i=1}^{n} L\bigl(f_\theta(x_i),\, y_i\bigr) $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        1.1절에서 다룬 형태 그대로다. 강력하지만 <strong>라벨을 만드는 비용</strong>이 병목이 된다.
+        의료 영상에 전문의가 표시를 다는 일을 생각하면 된다.
+      </p>
+
+      <span class="anchor" id="c-unsupervised"></span>
+      <h3>비지도학습</h3>
+      <p>정답이 없다. 데이터 안의 구조 자체를 찾는다.</p>
+      <div class="eq">
+        <div class="eq__body">$$ \mathcal{D} = \{x_i\}_{i=1}^{n}, \qquad \theta^{*} = \arg\max_{\theta} \sum_{i=1}^{n} \log p_\theta(x_i) $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        밀도추정 말고도 군집화(비슷한 것끼리 묶기), 차원축소(핵심 축 찾기)가 여기 속한다.
+        <strong>정답이 없으니 "잘했다"를 재기가 어렵다</strong> — 평가가 늘 논쟁거리다.
+      </p>
+
+      <span class="anchor" id="c-semi"></span>
+      <h3>반지도학습</h3>
+      <p>라벨된 것 조금, 라벨 없는 것 많이. 현실에서 가장 흔한 상황이다.</p>
+      <div class="eq">
+        <div class="eq__body">$$ \mathcal{D} = \underbrace{\{(x_i, y_i)\}_{i=1}^{l}}_{\text{라벨 있음}} \cup \underbrace{\{x_j\}_{j=l+1}^{l+u}}_{\text{라벨 없음},\; u \gg l}, \qquad \mathcal{L} = \mathcal{L}_{\text{sup}} + \lambda\, \mathcal{L}_{\text{unsup}} $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        $\lambda$ 가 두 항의 균형을 잡는다. $\lambda = 0$ 이면 지도학습으로,
+        라벨을 다 버리면 비지도학습으로 되돌아간다 —
+        <strong>세 가지는 칸막이가 아니라 연속체다.</strong> 아래 위젯에서 직접 밀어 볼 수 있다.
+      </p>
+
+      <span class="anchor" id="c-selfsup"></span>
+      <h3>자기지도학습</h3>
+      <p>
+        라벨이 없는데 지도학습처럼 푼다. <strong>정답을 데이터 자신에게서 만들어내기</strong> 때문이다.
+        데이터의 일부를 가리고, 가린 것을 맞히게 한다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ y_i \;=\; g(x_i) \quad\text{(자동 생성)}, \qquad \theta^{*} = \arg\min_{\theta} \sum_{i} L\bigl(f_\theta(\tilde{x}_i),\, g(x_i)\bigr) $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        $g$ 는 사람이 정한 <em>구실 과제</em>(pretext task)이고, $\tilde{x}_i$ 는 가려진 입력이다.
+        다음 단어 맞히기(GPT), 가린 단어 맞히기(BERT), 같은 이미지의 두 변형을 붙이기(SimCLR)가
+        모두 이 틀에 들어간다<a class="cite" href="#ref-chen2020-a-simple-framework" data-ref="chen2020-a-simple-framework">1</a>.
+      </p>
+      <div class="note note--key">
+        <span class="note__label">왜 판이 바뀌었는가</span>
+        <p>
+          라벨 비용이 사라진다. 인터넷의 텍스트·이미지 전부가 그대로 학습 데이터가 된다.
+          오늘날 대형 모델이 가능해진 결정적 이유다. 실제로 어떻게 쌍이 만들어지는지는
+          <a href="#s-example">아래에서 손으로 세어 본다</a>.
+        </p>
+      </div>
+
+      <span class="anchor" id="c-rl"></span>
+      <h3>강화학습</h3>
+      <p>
+        정답이 없고 <strong>점수만</strong> 있다. 그것도 행동한 뒤 한참 뒤에 온다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \max_{\theta}\; J(\theta) = \mathbb{E}_{\tau \sim \pi_\theta}\Bigl[\textstyle\sum_{t=0}^{T} \gamma^{t} r_t\Bigr] $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        앞의 넷과 결정적으로 다른 점이 둘 있다.
+        첫째, <strong>데이터를 스스로 만든다</strong> — 정책 $\pi_\theta$ 가 바뀌면 마주치는 상황도 바뀐다.
+        둘째, <strong>피드백이 지연된다</strong> — 바둑에서 어느 수가 좋았는지는 끝나야 안다.
+        그래서 최소화가 아니라 최대화로 쓰고, 24장에서 따로 다룬다.
+      </p>
+
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>패러다임</th><th>데이터 $\mathcal{D}$</th><th>감독 신호</th><th>대표 과제</th></tr></thead>
+          <tbody>
+            <tr><td>지도</td><td>$(x, y)$</td><td>사람이 만든 정답</td><td>분류, 회귀</td></tr>
+            <tr><td>비지도</td><td>$x$</td><td>없음</td><td>군집화, 차원축소</td></tr>
+            <tr><td>반지도</td><td>$(x,y)$ 조금 + $x$ 많이</td><td>일부만 정답</td><td>라벨이 비싼 분류</td></tr>
+            <tr><td>자기지도</td><td>$x$</td><td>$x$ 에서 자동 생성</td><td>사전학습</td></tr>
+            <tr><td>강화</td><td>$(s, a, r, s')$</td><td>지연된 보상 스칼라</td><td>제어, 게임</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>
+        위 다섯 식을 나란히 놓으면, 바뀌는 것은 <strong>무엇을 정답 자리에 넣느냐</strong>뿐임이 보인다.
+        모델 $f_\theta$ 도, 최적화 방식도 그대로다.
+      </p>
+
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$\mathcal{D}$</td><td>스크립트 디</td><td>데이터셋</td><td>집합</td><td>—</td></tr>
+            <tr><td>$l,\; u$</td><td>엘, 유</td><td>라벨된 개수, 라벨 없는 개수</td><td>정수</td><td>$u \gg l$</td></tr>
+            <tr><td>$\lambda$</td><td>람다</td><td>두 손실의 균형을 잡는 가중치</td><td>스칼라</td><td>$\lambda \geq 0$</td></tr>
+            <tr><td>$g$</td><td>지</td><td>구실 과제 — $x$ 에서 정답을 만들어내는 규칙</td><td>함수</td><td>—</td></tr>
+            <tr><td>$\tilde{x}$</td><td>엑스 틸데</td><td>일부를 가린 입력</td><td>$\in \mathcal{X}$</td><td>—</td></tr>
+            <tr><td>$\pi_\theta$</td><td>파이 세타</td><td>정책 — 상태에서 행동을 고르는 규칙</td><td>함수 / 분포</td><td>—</td></tr>
+            <tr><td>$\tau$</td><td>타우</td><td>궤적 — 한 판 동안의 상태·행동·보상 열</td><td>수열</td><td>—</td></tr>
+            <tr><td>$r_t$</td><td>알 티</td><td>시각 $t$ 에 받은 보상</td><td>스칼라</td><td>실수</td></tr>
+            <tr><td>$\gamma$</td><td>감마</td><td>할인율 — 먼 미래 보상을 깎는 정도</td><td>스칼라</td><td>$0 \leq \gamma \leq 1$</td></tr>
+            <tr><td>$\mathbb{E}$</td><td>기댓값</td><td>확률적으로 평균낸 값</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$\mathcal{T}$</td><td>스크립트 티</td><td>과제(task) 하나</td><td>—</td><td>—</td></tr>
+            <tr><td>$p(\mathcal{T})$</td><td>피 오브 티</td><td>과제 분포 — 메타러닝이 상정하는 과제들의 모집단</td><td>확률분포</td><td>—</td></tr>
+            <tr><td>$w_k$</td><td>더블유 케이</td><td>$k$ 번째 과제 손실의 가중치</td><td>스칼라</td><td>$w_k \geq 0$</td></tr>
+            <tr><td>$\alpha$</td><td>알파</td><td>내부 루프 학습률</td><td>스칼라</td><td>$\alpha > 0$</td></tr>
+            <tr><td>$F_j$</td><td>에프 제이</td><td>피셔 정보 — 파라미터 $j$ 가 옛 과제에 얼마나 중요한지</td><td>스칼라</td><td>$F_j \geq 0$</td></tr>
+            <tr><td>$\gg$</td><td>훨씬 크다</td><td>수십~수천 배 규모 차이</td><td>관계</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--tip">
+        <span class="note__label">읽는 요령</span>
+        <p>
+          식 (1)~(4)는 전부 $\arg\min$ 이고 식 (5)만 $\max$ 다.
+          이는 강화학습이 <em>손실</em>이 아니라 <em>이득</em>을 다루기 때문이다.
+          부호만 뒤집으면 같은 틀이라, 개념적으로 겁먹을 필요는 없다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도 — 라벨 없는 데이터에서 학습 쌍 만들기</h2></div>
+
+      <p>
+        자기지도학습이 어떻게 "없는 정답"을 만들어내는지를 끝까지 따라가 보자.
+        수열 데이터 $\mathbf{s} = (s_1, \dots, s_m)$ 가 있고 라벨은 <strong>하나도 없다.</strong>
+      </p>
+
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{s} = (s_1,\, s_2,\, \ldots,\, s_m), \qquad \text{라벨 } 0 \text{ 개} $$</div>
+          <div class="derive__why">출발점. 지도학습은 여기서 아무것도 못 한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ g:\; s_t \;\longmapsto\; s_{t+1} $$</div>
+          <div class="derive__why">구실 과제를 "다음 값 맞히기"로 정한다. 사람이 정하는 것은 이 규칙 하나뿐이다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathcal{D}' = \bigl\{(s_t,\; s_{t+1})\bigr\}_{t=1}^{m-1} $$</div>
+          <div class="derive__why">규칙을 적용하니 <strong>(입력, 정답) 쌍이 $m-1$ 개</strong> 생겼다. 라벨을 만든 사람은 없다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \theta^{*} = \arg\min_{\theta} \sum_{t=1}^{m-1} \bigl(f_\theta(s_t) - s_{t+1}\bigr)^2 $$</div>
+          <div class="derive__why">이제 형태가 식 (1)의 지도학습과 <strong>완전히 같다.</strong> 그래서 같은 방법으로 푼다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ w^{*} = \frac{\sum_t s_t\, s_{t+1}}{\sum_t s_t^{2}} $$</div>
+          <div class="derive__why">$f_w(s)=ws$ 로 두면 <a href="1.1-ai-fundamentals.html#s-derivation">1.1절에서 유도한 닫힌 해</a>를 그대로 쓸 수 있다</div>
+        </div>
+      </div>
+
+      <div class="note note--key">
+        <span class="note__label">이 유도의 요점</span>
+        <p>
+          새로운 수학은 하나도 없었다. <strong>바뀐 것은 $y$ 를 어디서 가져오느냐뿐이다.</strong>
+          자기지도학습이 "지도학습의 형태를 빌려 라벨 문제를 우회하는 방법"이라 불리는 이유가 이것이다.
+        </p>
+      </div>
+
+      <details>
+        <summary>구실 과제를 잘못 고르면 — 사소한 해(trivial solution)</summary>
+        <p>
+          만약 $g$ 를 "자기 자신 맞히기" $s_t \mapsto s_t$ 로 정하면 어떻게 될까?
+          모델은 입력을 그대로 뱉는 항등함수를 배우면 손실 0을 얻는다.
+          <strong>완벽한 점수를 받았지만 아무것도 배우지 못했다.</strong>
+        </p>
+        <p>
+          그래서 자기지도학습의 실제 난점은 최적화가 아니라 <em>구실 과제 설계</em>다.
+          "쉽게 풀리면서도 풀려면 의미를 알아야만 하는" 과제를 찾는 일이다.
+          대조학습(contrastive learning)에서 이 문제를 어떻게 다루는지는 14장에서 자세히 본다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <p>
+        라벨이 <strong>하나도 없는</strong> 수열이 있다. 여기서 학습이 되는지 직접 확인한다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbf{s} = (1,\; 2,\; 3,\; 4,\; 5), \qquad m = 5,\quad \text{라벨 } 0\text{ 개} $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathcal{D}' = \{(1,2),\; (2,3),\; (3,4),\; (4,5)\} $$</div>
+          <div class="derive__why">"다음 값 맞히기" 규칙 적용. <strong>라벨 0개에서 학습 쌍 4개</strong>가 나왔다 ($m-1=4$)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sum_t s_t s_{t+1} = 1\cdot 2 + 2\cdot 3 + 3\cdot 4 + 4\cdot 5 $$</div>
+          <div class="derive__why">분자. 각 쌍을 곱해서 더한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ = 2 + 6 + 12 + 20 = 40 $$</div>
+          <div class="derive__why">차례로 더했다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sum_t s_t^2 = 1^2 + 2^2 + 3^2 + 4^2 = 1 + 4 + 9 + 16 = 30 $$</div>
+          <div class="derive__why">분모. 입력으로 쓰인 것만 제곱한다 — $s_5$ 는 정답으로만 쓰였으므로 빠진다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ w^{*} = \frac{40}{30} = \frac{4}{3} \approx 1.3333 $$</div>
+          <div class="derive__why"><strong>학습 끝.</strong> 사람이 라벨을 단 적이 없다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ L(w^{*}) = \tfrac{16}{9}\cdot 30 - 2\cdot\tfrac{4}{3}\cdot 40 + 54 = \tfrac{2}{3} \approx 0.667 $$</div>
+          <div class="derive__why">$L(w)=w^2\sum s_t^2 - 2w\sum s_t s_{t+1} + \sum s_{t+1}^2$ 에 대입 ($\sum s_{t+1}^2 = 4{+}9{+}16{+}25 = 54$)</div>
+        </div>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">여기서 배울 것 — 그리고 한계</span>
+        <p>
+          참값은 $s_{t+1} = s_t + 1$ 인데, 우리 모델은 $f_w(s) = ws$ 라 <strong>덧셈을 표현할 수 없다.</strong>
+          그래서 손실이 $2/3$ 로 남는다. 데이터가 부족해서가 아니라 <em>모델이 그 모양을 담지 못해서</em>다.
+        </p>
+        <p>
+          이것은 <strong>자기지도학습의 한계가 아니라 모델 선택의 문제</strong>다.
+          편향 항을 붙여 $f_{w,b}(s) = ws + b$ 로 하면 $w=1, b=1$ 로 손실 0에 도달한다.
+          "무엇을 표현할 수 있는가"(모델)와 "무엇을 감독 신호로 삼는가"(패러다임)는 별개라는 점이
+          <a href="1.1-ai-fundamentals.html#c-model-algo">1.1절 모델과 알고리즘</a>의 구분과 이어진다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <h3>지도 · 반지도 · 비지도는 연속체다</h3>
+      <p>
+        라벨 비율을 0%에서 100%까지 밀어 보라. 이름이 바뀌지만 <strong>목적함수는 식 (3)의 $\lambda$ 하나만 움직인다.</strong>
+      </p>
+
+      <figure class="widget" data-widget="supervision-slider">
+        <figcaption class="widget__bar">라벨 비율에 따라 이름이 바뀐다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">라벨된 점(테두리 있는 점)이 줄어들수록 경계가 어떻게 흔들리는지 보세요.</p>
+        </div>
+      </figure>
+
+      <h3>자기지도 — 라벨을 스스로 만드는 과정</h3>
+      <p>같은 수열에서 구실 과제만 바꾸면 전혀 다른 학습 쌍이 나온다.</p>
+
+      <figure class="widget" data-widget="pretext-builder">
+        <figcaption class="widget__bar">구실 과제가 학습 쌍을 만들어내는 과정</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">'자기 자신 맞히기'를 골라 보세요. 쌍은 많지만 아무것도 배우지 못하는 사소한 해가 됩니다.</p>
+        </div>
+      </figure>
+
+      <h3>축 2 — 과제 사이에서 지식을 옮기는 네 가지 방식</h3>
+      <p>
+        여기서부터는 감독 신호와 무관하다. <strong>과제가 여럿일 때 무엇을 어떻게 재사용하는가</strong>의 문제다.
+      </p>
+
+      <figure class="widget" data-widget="reuse-compare">
+        <figcaption class="widget__bar">전이 · 멀티태스크 · 메타 · 연속 학습 비교</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <p class="watch">과제가 도착하는 순서(동시냐 차례냐)와 목표(성능이냐 적응속도냐)가 넷을 가릅니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-transfer"></span>
+      <h4>전이학습</h4>
+      <p>
+        원천 과제 $\mathcal{T}_S$ 에서 배운 $\theta$ 를 목표 과제 $\mathcal{T}_T$ 의 출발점으로 삼는다.
+        보통 앞쪽 층은 그대로 두고 뒤쪽만 다시 학습한다.
+        <strong>데이터가 적은 목표 과제</strong>에서 특히 효과가 크다.
+      </p>
+
+      <span class="anchor" id="c-multitask"></span>
+      <h4>멀티태스크 학습</h4>
+      <p>여러 과제를 <strong>동시에</strong> 배운다. 표현을 공유하되 과제별 머리를 따로 둔다.</p>
+      <div class="eq">
+        <div class="eq__body">$$ \mathcal{L} = \sum_{k=1}^{K} w_k \,\mathcal{L}_k(\theta_{\text{shared}},\, \theta_k) $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        과제들이 서로 정규화 역할을 해 일반화가 좋아질 수 있다. 다만 과제가 서로 방해하면
+        오히려 나빠지는데, 이를 <strong>부정적 전이</strong>(negative transfer)라 한다<a class="cite" href="#ref-ruder2017-an-overview-of" data-ref="ruder2017-an-overview-of">2</a>.
+      </p>
+
+      <span class="anchor" id="c-meta"></span>
+      <h4>메타러닝</h4>
+      <p>
+        과제 하나를 잘 푸는 것이 목표가 아니라, <strong>새 과제를 빨리 배우는 능력</strong>을 배운다.
+        과제 분포 $p(\mathcal{T})$ 를 상정하고, 몇 걸음만에 적응할 수 있는 초기값을 찾는다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \min_{\theta} \; \mathbb{E}_{\mathcal{T} \sim p(\mathcal{T})} \Bigl[\, \mathcal{L}_{\mathcal{T}}\bigl(\underbrace{\theta - \alpha \nabla_\theta \mathcal{L}_{\mathcal{T}}(\theta)}_{\text{안쪽 루프: 몇 걸음 적응}}\bigr) \Bigr] $$</div>
+        <span class="eq__tag num">(8)</span>
+      </div>
+      <p>
+        바깥 루프가 $\theta$ 를, 안쪽 루프가 과제별 적응을 담당하는 <strong>이중 구조</strong>가 핵심이다.
+        MAML은 이 발상을 경사하강으로 학습하는 어떤 모델에도 적용할 수 있게 정리했다<a class="cite" href="#ref-finn2017-model-agnostic-meta" data-ref="finn2017-model-agnostic-meta">3</a>.
+      </p>
+
+      <span class="anchor" id="c-continual"></span>
+      <h4>연속학습</h4>
+      <p>
+        과제가 <strong>차례로</strong> 도착하고, 지난 과제의 데이터는 다시 볼 수 없다.
+        그대로 학습하면 새것을 배우면서 옛것을 잊는 <strong>파국적 망각</strong>(catastrophic forgetting)이 일어난다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \mathcal{L}(\theta) = \mathcal{L}_{\text{new}}(\theta) \;+\; \frac{\lambda}{2}\sum_{j} F_j \bigl(\theta_j - \theta^{*}_{\text{old},\,j}\bigr)^{2} $$</div>
+        <span class="eq__tag num">(9)</span>
+      </div>
+      <p>
+        옛 과제에 중요했던 파라미터($F_j$ 가 큰 것)일수록 움직이지 못하게 붙잡는다.
+        Kirkpatrick 등은 이 방식으로 망각이 신경망의 불가피한 성질이 아님을 보였다<a class="cite" href="#ref-kirkpatrick2016-overcoming-catastrophic-forgetting" data-ref="kirkpatrick2016-overcoming-catastrophic-forgetting">4</a>.
+        자세한 것은 15장에서 다룬다.
+      </p>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"아홉 가지 중 하나를 골라야 한다."</p>
+        <p>
+          <strong>실제로는</strong> 두 축이 직교하므로 겹쳐 쓴다.
+          GPT 계열은 <em>자기지도</em>로 사전학습하고(축 1), <em>전이</em>로 downstream에 붙이고(축 2),
+          <em>강화학습</em>으로 사람 선호에 맞춘다(축 1). 하나의 시스템에 셋이 다 들어간다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"자기지도학습은 비지도학습의 다른 이름이다."</p>
+        <p>
+          <strong>실제로는</strong> 라벨이 없다는 <em>입력 조건</em>은 같지만 <em>푸는 방식</em>이 다르다.
+          비지도학습은 정답 없이 구조를 찾고(식 2), 자기지도학습은 정답을 만들어낸 뒤 지도학습처럼 푼다(식 4).
+          "자기지도는 비지도의 부분집합"이라는 서술도 흔한데, 문헌마다 분류가 달라
+          <strong>용어보다 목적함수를 보는 편이 안전하다.</strong>
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"강화학습은 라벨 대신 보상을 쓰는 지도학습이다."</p>
+        <p>
+          <strong>실제로는</strong> 두 가지가 더 다르다.
+          첫째 <em>데이터가 고정돼 있지 않다</em> — 정책이 바뀌면 수집되는 데이터도 바뀐다(분포가 움직인다).
+          둘째 <em>보상이 지연된다</em> — 어느 행동 덕분인지 몫을 나눠야 한다(신용 할당 문제).
+          이 둘 때문에 강화학습은 별도의 이론 체계를 갖는다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"전이학습과 메타러닝은 같은 것이다."</p>
+        <p>
+          <strong>실제로는</strong> 목표가 다르다.
+          전이학습은 <em>목표 과제의 최종 성능</em>을 높이려 하고,
+          메타러닝은 <em>새 과제에 적응하는 속도</em> 자체를 최적화 대상으로 삼는다(식 8의 안쪽 루프).
+          전이학습은 "좋은 출발점을 물려받는 것", 메타러닝은 "좋은 출발점이 되도록 훈련하는 것"이다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>라벨 없는 수열에서 학습 쌍이 만들어지고 $w^{*} = 4/3$ 이 나오는지 확인한다.</p>
+      <details>
+        <summary>NumPy — 자기지도 학습 쌍 생성과 학습 (13줄)</summary>
+<pre><code>import numpy as np
+
+s = np.array([1.0, 2.0, 3.0, 4.0, 5.0])   # 라벨 0개
+
+# 구실 과제: 다음 값 맞히기 → (입력, 정답) 쌍이 자동 생성된다
+x, y = s[:-1], s[1:]
+print(list(zip(x, y)))       # [(1,2), (2,3), (3,4), (4,5)]  ← 4쌍
+
+# 이제부터는 지도학습과 완전히 같다
+w = (x * y).sum() / (x ** 2).sum()
+print(w)                     # 1.3333333333333333  = 4/3
+print(((w * x - y) ** 2).sum())   # 0.6666666666666667  = 2/3
+
+# 편향을 더하면 참값 s_{t+1} = s_t + 1 을 정확히 담을 수 있다
+print(np.polyfit(x, y, 1))   # [1. 1.]  → w=1, b=1, 손실 0
+</code></pre>
+        <p>
+          <small>
+            마지막 줄이 <a href="#s-example">예제의 함정</a>을 확인해 준다 —
+            손실 $2/3$ 은 감독 신호가 부족해서가 아니라 모델이 덧셈을 표현하지 못해서였다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            수열 $(2, 4, 6)$ 에 "다음 값 맞히기"를 적용하면 학습 쌍은 몇 개이고 $w^{*}$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>2쌍, $w^{*} = 8/5$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>3쌍, $w^{*} = 8/5$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>2쌍, $w^{*} = 2$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            쌍은 $(2,4), (4,6)$ 으로 $m-1 = 2$ 개 — 마지막 값 $6$ 은 정답으로만 쓰인다.
+            $\sum s_t s_{t+1} = 2\cdot4 + 4\cdot6 = 8 + 24 = 32$,
+            $\sum s_t^2 = 2^2 + 4^2 = 4 + 16 = 20$. 따라서 $w^{*} = 32/20 = 8/5 = 1.6$.<br>
+            다를 고르기 쉽다 — $4/2 = 2$ 이니 배율이 2라고 생각하기 때문이다.
+            하지만 $6/4 = 1.5$ 라 배율이 일정하지 않고, 최소제곱은 그 사이의 <strong>타협값</strong>을 고른다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            식 (3)에서 $\lambda = 0$ 으로 두면 무엇이 되는가?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>지도학습 — 라벨 없는 데이터를 무시한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>비지도학습 — 라벨을 무시한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>자기지도학습</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\mathcal{L} = \mathcal{L}_{\text{sup}} + 0 \cdot \mathcal{L}_{\text{unsup}} = \mathcal{L}_{\text{sup}}$
+            이므로 라벨된 데이터만 쓰는 지도학습이 된다.
+            반지도학습이 두 극단 사이의 연속체라는 점을 보여준다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            "가린 단어 맞히기"로 학습하는 BERT는 어느 패러다임인가?</p>
+          <div class="opts">
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>지도학습 — 정답이 있으므로</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>자기지도학습 — 정답을 원문에서 만들어내므로</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>비지도학습 — 사람이 라벨을 안 달았으므로</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            정답(가려진 단어)이 존재하지만 <em>사람이 만든 것이 아니라 원문에서 자동 생성</em>됐다.
+            형태는 지도학습이고 라벨 출처는 데이터 자신 — 자기지도학습의 정의 그대로다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            식 (9)에서 $F_j$ 가 큰 파라미터는 어떻게 되는가?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>옛 값에서 멀어지면 벌점이 커져 잘 안 움직인다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>학습률이 커져 빨리 움직인다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>새 과제에서 제외된다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            벌점 항이 $F_j(\theta_j - \theta^{*}_{\text{old},j})^2$ 이므로
+            $F_j$ 가 클수록 옛 값에서 벗어날 때의 대가가 크다. 즉 <em>중요한 파라미터를 붙잡아</em> 망각을 막는다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            다음 중 <strong>틀린</strong> 진술은?</p>
+          <div class="opts">
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>한 시스템이 자기지도와 전이학습을 함께 쓸 수 있다</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>메타러닝과 전이학습은 최적화 목표가 같다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>강화학습은 학습 중에 데이터 분포가 바뀐다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            나가 틀렸다. 전이학습은 <em>목표 과제의 최종 성능</em>을,
+            메타러닝은 <em>새 과제에 적응하는 속도</em>를 최적화한다(식 8).
+            가는 LLM의 실제 구성이고, 다는 강화학습이 별도 이론을 갖는 이유다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong>5장 전통적 머신러닝</strong> — 지도·비지도 알고리즘의 구체적 방법들.</li>
+        <li><strong>11장 생성 모델</strong> — 식 (2)의 $p_\theta(x)$ 를 실제로 모델링하는 방법.</li>
+        <li><strong>14장 자기지도학습과 표현학습</strong> — 식 (4)의 구실 과제 $g$ 를 어떻게 설계하는가. 사소한 해를 피하는 대조학습.</li>
+        <li><strong>15장 메타러닝과 지속학습</strong> — 식 (8)과 식 (9)의 상세. MAML, EWC의 유도.</li>
+        <li><strong>16.7~16.9 전이학습과 적응 · Instruction Tuning</strong> — 축 2를 대형 모델에 적용한 형태.</li>
+        <li><strong>24장 강화학습</strong> — 식 (5)의 $J(\theta)$ 를 실제로 최대화하는 방법.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-chen2020-a-simple-framework" data-ref="chen2020-a-simple-framework">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Chen, T., Kornblith, S., Norouzi, M. &amp; Hinton, G. (2020). <em>A Simple Framework for Contrastive Learning of Visual Representations</em> (SimCLR). ICML.</span>
+          <span class="ref__where">초록 — 특수한 구조나 메모리 뱅크 없이 대조적 구실 과제만으로 표현이 학습된다는 결과. 자기지도학습 정의(식 4)의 대표 사례</span>
+          <a class="ref__link" href="https://arxiv.org/abs/2002.05709">arXiv:2002.05709</a>
+        </li>
+        <li class="ref" id="ref-finn2017-model-agnostic-meta" data-ref="finn2017-model-agnostic-meta">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Finn, C., Abbeel, P. &amp; Levine, S. (2017). <em>Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks</em> (MAML). ICML.</span>
+          <span class="ref__where">초록 — "여러 과제로 학습해 적은 표본만으로 새 과제를 풀게 한다"는 메타러닝의 목표 정의와, 몇 번의 경사 스텝으로 적응하도록 파라미터를 훈련한다는 발상. 식 (8)의 근거</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1703.03400">arXiv:1703.03400</a>
+        </li>
+        <li class="ref" id="ref-kirkpatrick2016-overcoming-catastrophic-forgetting" data-ref="kirkpatrick2016-overcoming-catastrophic-forgetting">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Kirkpatrick, J. et al. (2017). <em>Overcoming catastrophic forgetting in neural networks</em> (EWC). PNAS 114(13).</span>
+          <span class="ref__where">초록 — "파국적 망각이 연결주의 모델의 불가피한 성질"이라는 통념을 반박하고, 오래 접하지 않은 과제의 능력을 유지할 수 있음을 보인 대목. 식 (9)의 근거</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1612.00796">arXiv:1612.00796</a>
+        </li>
+        <li class="ref" id="ref-ruder2017-an-overview-of" data-ref="ruder2017-an-overview-of">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Ruder, S. (2017). <em>An Overview of Multi-Task Learning in Deep Neural Networks</em>.</span>
+          <span class="ref__where">하드/소프트 파라미터 공유 구분과 부정적 전이 논의. 식 (7)과 멀티태스크 학습 서술의 근거</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1706.05098">arXiv:1706.05098</a>
+        </li>
+        <li class="ref" id="ref-goodfellow2016-dl" data-ref="goodfellow2016-dl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>. MIT Press.</span>
+          <span class="ref__where">5.1.3절 — 지도·비지도의 구분이 엄밀하지 않으며 확률의 연쇄법칙으로 서로 환원될 수 있다는 논의. '오해 2'의 근거</span>
+          <a class="ref__link" href="https://www.deeplearningbook.org/">deeplearningbook.org</a>
+        </li>
+        <li class="ref" id="ref-sutton2018-rl" data-ref="sutton2018-rl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Sutton, R. S. &amp; Barto, A. G. (2018). <em>Reinforcement Learning: An Introduction</em> (2nd ed.). MIT Press.</span>
+          <span class="ref__where">1.1절 — 강화학습이 지도·비지도 어느 쪽과도 다른 제3의 패러다임인 이유(시행착오 탐색과 지연된 보상). 식 (5)와 '오해 3'의 근거</span>
+          <a class="ref__link" href="http://incompleteideas.net/book/the-book-2nd.html">incompleteideas.net</a>
+        </li>
+        <li class="ref" id="ref-lilianweng-log" data-ref="lilianweng-log">
+          <span class="ref__type" data-type="web">웹문서</span>
+          <span class="ref__cite">Weng, L. <em>Self-Supervised Representation Learning</em>. Lil'Log.</span>
+          <span class="ref__where">구실 과제(pretext task)의 분류와 사소한 해를 피하는 설계 요령. '유도' 절의 접이식 설명 참고</span>
+          <a class="ref__link" href="https://lilianweng.github.io/">lilianweng.github.io</a>
+        </li>
+        <li class="ref" id="ref-mit-6s191" data-ref="mit-6s191">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">MIT 6.S191: <em>Introduction to Deep Learning</em>.</span>
+          <span class="ref__where">Lecture 1 · 5 — 지도/비지도/강화의 도입부 분류와 예시 구성 참고</span>
+          <a class="ref__link" href="https://introtodeeplearning.com/">introtodeeplearning.com</a>
+        </li>
+        <li class="ref" id="ref-hf-courses" data-ref="hf-courses">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Hugging Face. <em>NLP Course</em> · <em>Deep RL Course</em>.</span>
+          <span class="ref__where">사전학습–미세조정 흐름(자기지도 → 전이)이 실제 파이프라인에서 어떻게 이어지는지. '오해 1'의 LLM 예시 참고</span>
+          <a class="ref__link" href="https://huggingface.co/learn">huggingface.co/learn</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+/* ============================================================
+   위젯 1 — 두 축 지도
+   아홉 패러다임이 '감독 신호'와 '지식 재사용'이라는 서로 다른
+   두 질문에 속한다는 것을 배치로 보여준다.
+   ============================================================ */
+WIDGETS.register('paradigm-map', function (root, ctx) {
+  var el = VIZ.el;
+  var AX1 = [
+    { k: 'sup',    t: '지도',     d: '입력마다 사람이 만든 정답이 붙어 있다.', f: 'argmin Σ L(f(x), y)' },
+    { k: 'semi',   t: '반지도',   d: '라벨 조금 + 무라벨 많이. 두 손실을 λ 로 섞는다.', f: 'L_sup + λ·L_unsup' },
+    { k: 'self',   t: '자기지도', d: '정답을 데이터 자신에게서 만들어낸다. 형태는 지도학습.', f: 'argmin Σ L(f(x̃), g(x))' },
+    { k: 'unsup',  t: '비지도',   d: '정답이 없다. 데이터 안의 구조 자체를 찾는다.', f: 'argmax Σ log p(x)' },
+    { k: 'rl',     t: '강화',     d: '정답 대신 지연된 보상만. 데이터를 스스로 만든다.', f: 'max E[Σ γᵗ r_t]' }
+  ];
+  var AX2 = [
+    { k: 'trans', t: '전이',      d: '원천 과제에서 배운 것을 목표 과제의 출발점으로 삼는다.', f: 'θ_S → θ_T 초기화' },
+    { k: 'multi', t: '멀티태스크', d: '여러 과제를 동시에. 표현을 공유한다.', f: 'Σ w_k L_k' },
+    { k: 'meta',  t: '메타',      d: '새 과제에 빨리 적응하는 능력 자체를 학습한다.', f: 'min E_T[L_T(θ - α∇L_T)]' },
+    { k: 'cont',  t: '연속',      d: '과제가 차례로 도착. 옛것을 잊지 않아야 한다.', f: 'L_new + (λ/2)Σ F_j Δθ_j²' }
+  ];
+
+  var svg = el('svg', { viewBox: '0 0 480 250', role: 'img', 'aria-label': '감독 신호 축과 지식 재사용 축으로 분류한 아홉 패러다임' });
+  var shapes = {};
+
+  function axisRow(items, y, title, color, sub) {
+    svg.appendChild(el('text', { x: 10, y: y - 26, class: 'viz-label', 'font-size': 12, 'font-weight': '700', fill: color, text: title }));
+    svg.appendChild(el('text', { x: 10, y: y - 12, class: 'viz-label', 'font-size': 10.5, text: sub }));
+    var w = (460 - (items.length - 1) * 8) / items.length;
+    items.forEach(function (it, i) {
+      var x = 10 + i * (w + 8);
+      var g = el('g', { tabindex: '0', role: 'button', 'aria-label': it.t + '학습', style: 'cursor:pointer' });
+      var r = el('rect', { x: x, y: y, width: w, height: 44, rx: 5, fill: color, 'fill-opacity': .13, stroke: color, 'stroke-width': 1.5 });
+      g.appendChild(r);
+      g.appendChild(el('text', { x: x + w / 2, y: y + 27, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 13, 'font-weight': '700', text: it.t }));
+      g.addEventListener('click', function () { show(it); });
+      g.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(it); } });
+      svg.appendChild(g);
+      shapes[it.k] = r;
+    });
+  }
+
+  axisRow(AX1, 42, '축 1 — 감독 신호가 어디서 오는가', 'var(--jade)', '데이터셋 D 의 생김새로 갈린다');
+  axisRow(AX2, 148, '축 2 — 과제 사이에서 지식을 어떻게 옮기는가', 'var(--seal)', '감독 신호의 종류와는 무관한 질문이다');
+
+  /* 두 축이 겹쳐 쓰인다는 것을 실제 예로 */
+  svg.appendChild(el('text', { x: 10, y: 218, class: 'viz-label', 'font-size': 10.5, text: '겹쳐 쓰는 예 — LLM: 자기지도(사전학습) + 전이(적응) + 강화(선호 정렬)' }));
+  svg.appendChild(el('text', { x: 10, y: 234, class: 'viz-label', 'font-size': 10.5, text: '두 축은 직교한다. 하나를 고르는 것이 아니라 조합한다.' }));
+
+  ctx.stage.appendChild(svg);
+
+  var panel = document.createElement('div');
+  panel.className = 'note note--tip';
+  panel.style.marginTop = '0';
+  ctx.controls.appendChild(panel);
+
+  function show(it) {
+    panel.innerHTML = '<span class="note__label"></span><p></p><p><code></code></p>';
+    panel.querySelector('.note__label').textContent = it.t + '학습';
+    panel.querySelector('p').textContent = it.d;
+    panel.querySelector('code').textContent = it.f;
+    Object.keys(shapes).forEach(function (k) { shapes[k].setAttribute('stroke-width', k === it.k ? 3.4 : 1.5); });
+  }
+  show(AX1[0]);
+});
+
+/* ============================================================
+   위젯 2 — 라벨 비율 슬라이더
+   지도 ↔ 반지도 ↔ 비지도가 칸막이가 아니라 연속체임을 보인다.
+   라벨된 점만으로 경계를 추정하므로, 비율이 낮아지면 경계가 흔들린다.
+   ============================================================ */
+WIDGETS.register('supervision-slider', function (root, ctx) {
+  /* 고정 배치 — 다시 그릴 때 점이 튀지 않게 */
+  var J = [
+    [.22,-.38],[-.31,.24],[.41,.15],[-.15,-.29],[.08,.44],[-.43,-.12],[.26,.33],[-.19,-.41],[.35,-.21],[-.08,.19],
+    [.15,.38],[-.38,-.27],[.44,-.32],[-.25,.12],[.05,-.45],[-.21,.36],[.30,.08],[-.41,.28],[.24,-.15],[-.12,-.34],
+    [.37,.21],[-.28,-.18],[.11,.30],[-.35,.05],[.19,-.27]
+  ];
+  var PTS = J.map(function (j, i) {
+    var lab = i % 2;
+    return { x: (lab ? 1.1 : -1.1) + j[0], y: j[1] * 1.6, lab: lab };
+  });
+
+  var p = VIZ.plot({ w: 460, h: 270, xmin: -2.6, xmax: 2.6, ymin: -2, ymax: 2 });
+  ctx.stage.appendChild(p.svg);
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'name', label: '이 상황의 이름' },
+    { key: 'cnt', label: '라벨된 점' },
+    { key: 'lam', label: '식 (3)의 λ' }
+  ]);
+
+  function draw(pct) {
+    /* 앞에서부터 pct% 만 라벨된 것으로 취급 */
+    var nLab = Math.round(PTS.length * pct / 100);
+    var labeled = PTS.slice(0, nLab);
+
+    p.clear().grid(1, 1).axes('x', 'y').ticks(1, 1);
+
+    /* 라벨된 점만으로 두 무리 평균을 구해 경계를 만든다 */
+    var m = [[0, 0], [0, 0]], n = [0, 0];
+    labeled.forEach(function (q) { m[q.lab][0] += q.x; m[q.lab][1] += q.y; n[q.lab]++; });
+    var haveBoth = n[0] > 0 && n[1] > 0;
+    if (haveBoth) {
+      for (var k = 0; k < 2; k++) { m[k][0] /= n[k]; m[k][1] /= n[k]; }
+      var wx = m[1][0] - m[0][0], wy = m[1][1] - m[0][1];
+      var mx = (m[0][0] + m[1][0]) / 2, my = (m[0][1] + m[1][1]) / 2;
+      var b = -(wx * mx + wy * my);
+      if (Math.abs(wy) > 1e-6) p.line([[p.xmin, -(wx * p.xmin + b) / wy], [p.xmax, -(wx * p.xmax + b) / wy]]);
+      else p.line([[-b / wx, p.ymin], [-b / wx, p.ymax]]);
+    }
+
+    PTS.forEach(function (q, i) {
+      var isLab = i < nLab;
+      p.add(VIZ.el('circle', {
+        cx: p.X(q.x), cy: p.Y(q.y), r: isLab ? 5.5 : 3.5,
+        fill: isLab ? (q.lab ? 'var(--jade)' : 'var(--amber)') : 'var(--ink-3)',
+        'fill-opacity': isLab ? .9 : .28,
+        stroke: isLab ? 'var(--ink)' : 'none', 'stroke-width': isLab ? 1.2 : 0
+      }));
+    });
+
+    var name = pct === 0 ? '비지도학습' : (pct === 100 ? '지도학습' : '반지도학습');
+    out.setRaw('name', name);
+    out.setRaw('cnt', nLab + ' / ' + PTS.length + ' 개');
+    out.setRaw('lam', pct === 100 ? 'λ = 0 (무라벨 항 없음)' : (pct === 0 ? '라벨 항 없음' : 'λ > 0 (두 항 결합)'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '라벨된 데이터 비율', min: 0, max: 100, step: 4, value: 100, unit: ' %', digits: 0,
+    onInput: draw
+  });
+  draw(100);
+});
+
+/* ============================================================
+   위젯 3 — 구실 과제가 학습 쌍을 만들어내는 과정
+   같은 수열에 규칙만 바꾸면 전혀 다른 쌍이 나온다.
+   '자기 자신 맞히기'를 고르면 사소한 해가 됨을 보여준다.
+   ============================================================ */
+WIDGETS.register('pretext-builder', function (root, ctx) {
+  var S = [1, 2, 3, 4, 5];
+  var TASKS = {
+    next:   { t: '다음 값 맞히기', mk: function () { var r = []; for (var i = 0; i < S.length - 1; i++) r.push([S[i], S[i + 1]]); return r; } },
+    prev:   { t: '이전 값 맞히기', mk: function () { var r = []; for (var i = 1; i < S.length; i++) r.push([S[i], S[i - 1]]); return r; } },
+    skip:   { t: '두 칸 뒤 맞히기', mk: function () { var r = []; for (var i = 0; i < S.length - 2; i++) r.push([S[i], S[i + 2]]); return r; } },
+    identity: { t: '자기 자신 맞히기', mk: function () { return S.map(function (v) { return [v, v]; }); } }
+  };
+  var cur = 'next';
+
+  var box = document.createElement('div');
+  box.style.cssText = 'width:100%';
+  ctx.stage.appendChild(box);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'n', label: '생성된 학습 쌍' },
+    { key: 'w', label: 'w* = Σxy / Σx²', digits: 4 },
+    { key: 'L', label: '최소 손실', digits: 4 }
+  ]);
+
+  function draw() {
+    var pairs = TASKS[cur].mk();
+    var sxy = 0, sxx = 0, syy = 0;
+    pairs.forEach(function (q) { sxy += q[0] * q[1]; sxx += q[0] * q[0]; syy += q[1] * q[1]; });
+    var w = sxx ? sxy / sxx : 0;
+    var L = w * w * sxx - 2 * w * sxy + syy;
+
+    var rows = pairs.map(function (q) {
+      return '<td style="padding:.2rem .5rem;text-align:center">(' + q[0] + ', ' + q[1] + ')</td>';
+    }).join('');
+
+    box.innerHTML =
+      '<div style="text-align:center;margin-bottom:.6rem">' +
+        '<div style="font-size:var(--fs-xs);color:var(--ink-3);letter-spacing:.06em">원본 — 라벨 0개</div>' +
+        '<div class="tex" style="font-size:1.3rem;letter-spacing:.35em">' + S.join(' ') + '</div>' +
+      '</div>' +
+      '<div style="text-align:center;color:var(--seal);font-size:1.1rem">↓ ' + TASKS[cur].t + '</div>' +
+      '<div class="tablewrap" style="margin:.5rem 0 0"><table><tbody><tr>' + rows + '</tr></tbody></table></div>';
+
+    out.setRaw('n', pairs.length + ' 쌍');
+    out.set('w', w);
+    out.set('L', L);
+
+    var warn = box.parentNode.querySelector('.trivial-warn');
+    if (warn) warn.remove();
+    if (cur === 'identity') {
+      var d = document.createElement('div');
+      d.className = 'note note--trap trivial-warn';
+      d.style.marginTop = '.7rem';
+      d.innerHTML = '<span class="note__label">사소한 해</span><p>손실 0, 완벽한 점수. 그런데 모델이 배운 것은 "입력을 그대로 뱉어라"뿐이다. 쌍의 개수가 많다고 좋은 구실 과제가 아니다.</p>';
+      box.parentNode.appendChild(d);
+    }
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '구실 과제 g 를 고르세요',
+    options: Object.keys(TASKS).map(function (k) { return { value: k, label: TASKS[k].t }; }),
+    value: 'next',
+    onChange: function (v) { cur = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — 축 2의 네 가지 비교
+   과제가 도착하는 방식(동시/순차)과 최적화 목표가 넷을 가른다.
+   ============================================================ */
+WIDGETS.register('reuse-compare', function (root, ctx) {
+  var el = VIZ.el;
+  var MODE = {
+    trans: { t: '전이학습', arrive: '원천 → 목표 (순차, 2단계)', goal: '목표 과제의 최종 성능',
+             note: '원천 과제에서 배운 θ 를 목표 과제의 출발점으로 쓴다. 목표 과제 데이터가 적을 때 효과가 크다.',
+             tasks: [{ n: 'T_S', c: 'var(--ink-3)' }, { n: 'T_T', c: 'var(--seal)' }], seq: true },
+    multi: { t: '멀티태스크', arrive: '전부 동시에', goal: '모든 과제의 평균 성능',
+             note: '표현을 공유하고 과제별 머리를 따로 둔다. 과제끼리 정규화 역할을 하지만, 서로 방해하면 부정적 전이가 생긴다.',
+             tasks: [{ n: 'T₁', c: 'var(--jade)' }, { n: 'T₂', c: 'var(--jade)' }, { n: 'T₃', c: 'var(--jade)' }], seq: false },
+    meta:  { t: '메타러닝', arrive: '과제 분포 p(T) 에서 반복 표집', goal: '새 과제 적응 속도',
+             note: '개별 과제를 잘 푸는 것이 목표가 아니다. 몇 걸음만에 적응 가능한 초기값을 찾는 것이 목표다.',
+             tasks: [{ n: 'T₁', c: 'var(--amber)' }, { n: 'T₂', c: 'var(--amber)' }, { n: 'T_new', c: 'var(--seal)' }], seq: false },
+    cont:  { t: '연속학습', arrive: '차례로 도착, 옛 데이터 접근 불가', goal: '새 과제 성능 + 옛 과제 유지',
+             note: '그대로 학습하면 파국적 망각이 일어난다. 중요한 파라미터를 붙잡거나(EWC), 옛 표본을 되살려(replay) 막는다.',
+             tasks: [{ n: 'T₁', c: 'var(--ink-3)' }, { n: 'T₂', c: 'var(--ink-3)' }, { n: 'T₃', c: 'var(--seal)' }], seq: true }
+  };
+
+  var stage = document.createElement('div');
+  stage.style.width = '100%';
+  ctx.stage.appendChild(stage);
+
+  var panel = document.createElement('div');
+  panel.className = 'note note--tip';
+  panel.style.marginTop = '.7rem';
+  ctx.controls.appendChild(panel);
+
+  function draw(k) {
+    var m = MODE[k];
+    var svg = el('svg', { viewBox: '0 0 460 130', role: 'img', 'aria-label': m.t + ' 의 과제 흐름' });
+    var n = m.tasks.length;
+    var w = 74, gap = m.seq ? 34 : 14;
+    var totalW = n * w + (n - 1) * gap;
+    var x0 = (460 - totalW) / 2;
+
+    m.tasks.forEach(function (t, i) {
+      var x = x0 + i * (w + gap);
+      svg.appendChild(el('rect', { x: x, y: 28, width: w, height: 40, rx: 5, fill: t.c, 'fill-opacity': .16, stroke: t.c, 'stroke-width': 1.6 }));
+      svg.appendChild(el('text', { x: x + w / 2, y: 53, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 13, 'font-weight': '700', text: t.n }));
+      if (m.seq && i < n - 1) {
+        var ax = x + w;
+        svg.appendChild(el('path', { d: 'M' + ax + ' 48 L' + (ax + gap - 7) + ' 48', stroke: 'var(--ink-3)', 'stroke-width': 1.5 }));
+        svg.appendChild(el('path', { d: 'M' + (ax + gap - 2) + ' 48 L' + (ax + gap - 9) + ' 44 L' + (ax + gap - 9) + ' 52 Z', fill: 'var(--ink-3)' }));
+      }
+    });
+
+    /* 공유 표현 상자 */
+    if (!m.seq) {
+      svg.appendChild(el('rect', { x: x0, y: 84, width: totalW, height: 26, rx: 4, fill: 'var(--jade)', 'fill-opacity': .1, stroke: 'var(--jade)', 'stroke-width': 1.4, 'stroke-dasharray': '5 3' }));
+      svg.appendChild(el('text', { x: 230, y: 101, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 11.5, text: '공유 표현 θ_shared' }));
+      m.tasks.forEach(function (t, i) {
+        var x = x0 + i * (w + gap) + w / 2;
+        svg.appendChild(el('path', { d: 'M' + x + ' 68 L' + x + ' 84', stroke: 'var(--jade)', 'stroke-width': 1.3, 'stroke-dasharray': '3 2' }));
+      });
+    } else {
+      svg.appendChild(el('text', { x: 230, y: 100, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 11.5,
+        text: k === 'cont' ? '옛 과제 데이터는 다시 볼 수 없다' : '앞 과제의 θ 를 물려받는다' }));
+    }
+    svg.appendChild(el('text', { x: 230, y: 18, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 11, text: '도착 방식 · ' + m.arrive }));
+
+    stage.innerHTML = '';
+    stage.appendChild(svg);
+
+    panel.innerHTML = '<span class="note__label"></span><p></p><p><small></small></p>';
+    panel.querySelector('.note__label').textContent = m.t;
+    panel.querySelector('p').textContent = m.note;
+    panel.querySelector('small').textContent = '최적화 목표 — ' + m.goal;
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '방식을 골라 비교하세요',
+    options: [
+      { value: 'trans', label: '전이' }, { value: 'multi', label: '멀티태스크' },
+      { value: 'meta', label: '메타' }, { value: 'cont', label: '연속' }
+    ],
+    value: 'trans',
+    onChange: draw
+  });
+  draw('trans');
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

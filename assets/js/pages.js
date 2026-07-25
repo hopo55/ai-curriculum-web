@@ -24,6 +24,17 @@ window.PAGES = {
       "discriminative", "generative", "inference", "training", "least squares",
       "rule-based", "bitter lesson", "표현학습"
     ]
+  },
+  "1.2": {
+    href: "chapters/ch01/1.2-ml-paradigms.html",
+    updated: "2026-07-25",
+    summary: "아홉 패러다임은 '감독 신호가 어디서 오는가'와 '지식을 어떻게 옮기는가'라는 서로 직교하는 두 축이다.",
+    tags: [
+      "supervised", "unsupervised", "semi-supervised", "self-supervised", "reinforcement",
+      "transfer learning", "meta-learning", "multi-task", "continual learning",
+      "pretext task", "구실 과제", "catastrophic forgetting", "파국적 망각",
+      "MAML", "EWC", "SimCLR", "negative transfer", "부정적 전이", "사전학습"
+    ]
   }
 
   // 새 절을 만들면 이 형태로 추가한다 (등록해야 목차·검색에 나타난다):

@@ -39,7 +39,8 @@
       ],
       "checked": "2026-07-25",
       "cited_by": [
-        "1.1"
+        "1.1",
+        "1.2"
       ]
     },
     "zhang2023-d2l": {
@@ -204,7 +205,10 @@
         "pages": 548,
         "fetched": "2026-07-25",
         "source_url": "http://incompleteideas.net/book/RLbook2020.pdf"
-      }
+      },
+      "cited_by": [
+        "1.2"
+      ]
     },
     "jurafsky2025-slp3": {
       "type": "book",
@@ -458,7 +462,8 @@
       ],
       "checked": "2026-07-25",
       "cited_by": [
-        "1.1"
+        "1.1",
+        "1.2"
       ]
     },
     "mit-1806": {
@@ -510,7 +515,10 @@
         "13",
         "24"
       ],
-      "checked": "2026-07-25"
+      "checked": "2026-07-25",
+      "cited_by": [
+        "1.2"
+      ]
     },
     "3blue1brown-nn": {
       "type": "video",
@@ -583,7 +591,10 @@
         "14",
         "21"
       ],
-      "checked": "2026-07-25"
+      "checked": "2026-07-25",
+      "cited_by": [
+        "1.2"
+      ]
     },
     "vaswani2017-attention-is-all": {
       "type": "paper",
@@ -815,6 +826,140 @@
       "checked": "2026-07-25",
       "cited_by": [
         "1.1"
+      ]
+    },
+    "finn2017-model-agnostic-meta": {
+      "type": "paper",
+      "title": "Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks",
+      "authors": [
+        "Chelsea Finn",
+        "Pieter Abbeel",
+        "Sergey Levine"
+      ],
+      "year": 2017,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1703.03400",
+      "file_url": "https://arxiv.org/pdf/1703.03400",
+      "arxiv": "1703.03400",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-25",
+      "archived": {
+        "path": "references/library/paper/finn2017-model-agnostic-meta.pdf",
+        "sha256": "36e2130943089066456dc94b4af177f224a64506710a11dd35dd68b47a3acf5a",
+        "bytes": 4064212,
+        "content_type": "application/pdf",
+        "pages": 13,
+        "fetched": "2026-07-25",
+        "source_url": "https://arxiv.org/pdf/1703.03400"
+      },
+      "cited_by": [
+        "1.2"
+      ]
+    },
+    "kirkpatrick2016-overcoming-catastrophic-forgetting": {
+      "type": "paper",
+      "title": "Overcoming catastrophic forgetting in neural networks",
+      "authors": [
+        "James Kirkpatrick",
+        "Razvan Pascanu",
+        "Neil Rabinowitz",
+        "Joel Veness",
+        "Guillaume Desjardins",
+        "Andrei A. Rusu",
+        "Kieran Milan",
+        "John Quan",
+        "Tiago Ramalho",
+        "Agnieszka Grabska-Barwinska",
+        "Demis Hassabis",
+        "Claudia Clopath",
+        "Dharshan Kumaran",
+        "Raia Hadsell"
+      ],
+      "year": 2016,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1612.00796",
+      "file_url": "https://arxiv.org/pdf/1612.00796",
+      "arxiv": "1612.00796",
+      "doi": "10.1073/pnas.1611835114",
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-25",
+      "archived": {
+        "path": "references/library/paper/kirkpatrick2016-overcoming-catastrophic-forgetting.pdf",
+        "sha256": "5e181839191ab4582da2b5ff9666f5222e40b8b8d2f1cdf4fa7100b3a58d7a29",
+        "bytes": 1250137,
+        "content_type": "application/pdf",
+        "pages": 13,
+        "fetched": "2026-07-25",
+        "source_url": "https://arxiv.org/pdf/1612.00796"
+      },
+      "cited_by": [
+        "1.2"
+      ]
+    },
+    "chen2020-a-simple-framework": {
+      "type": "paper",
+      "title": "A Simple Framework for Contrastive Learning of Visual Representations",
+      "authors": [
+        "Ting Chen",
+        "Simon Kornblith",
+        "Mohammad Norouzi",
+        "Geoffrey Hinton"
+      ],
+      "year": 2020,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/2002.05709",
+      "file_url": "https://arxiv.org/pdf/2002.05709",
+      "arxiv": "2002.05709",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-25",
+      "archived": {
+        "path": "references/library/paper/chen2020-a-simple-framework.pdf",
+        "sha256": "e1b10db76adeb0d21a014b9abcf42f6a6af928540c223f010fa1d8c293d9d105",
+        "bytes": 6564895,
+        "content_type": "application/pdf",
+        "pages": 20,
+        "fetched": "2026-07-25",
+        "source_url": "https://arxiv.org/pdf/2002.05709"
+      },
+      "cited_by": [
+        "1.2"
+      ]
+    },
+    "ruder2017-an-overview-of": {
+      "type": "paper",
+      "title": "An Overview of Multi-Task Learning in Deep Neural Networks",
+      "authors": [
+        "Sebastian Ruder"
+      ],
+      "year": 2017,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1706.05098",
+      "file_url": "https://arxiv.org/pdf/1706.05098",
+      "arxiv": "1706.05098",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-25",
+      "archived": {
+        "path": "references/library/paper/ruder2017-an-overview-of.pdf",
+        "sha256": "2e794ab057a1b0c11984312ba8b1f3acd39934032a9e29c68b02cdebce6c72d4",
+        "bytes": 869440,
+        "content_type": "application/pdf",
+        "pages": 14,
+        "fetched": "2026-07-25",
+        "source_url": "https://arxiv.org/pdf/1706.05098"
+      },
+      "cited_by": [
+        "1.2"
       ]
     }
   }

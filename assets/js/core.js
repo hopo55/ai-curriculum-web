@@ -139,6 +139,16 @@
       art.className = 'ch';
       art.style.animationDelay = Math.min(i * 22, 420) + 'ms';
 
+      /* 헤더 오른쪽 숫자.
+         예전에는 "완료 / 전체" 만 보여줬는데, 절을 새로 만들어도 완료 표시를 하기 전까지
+         계속 "0 / 6" 이라 아무것도 안 들어간 것처럼 읽혔다. 작성된 절 수를 함께 보여준다. */
+      var meta = made > 0
+        ? '작성 ' + made + ' · 완료 ' + finished + ' / ' + total
+        : total + '개 절 · 준비 중';
+      var metaLabel = made > 0
+        ? ch.title + ': 전체 ' + total + '개 절 중 ' + made + '개 작성됨, ' + finished + '개 학습 완료'
+        : ch.title + ': 전체 ' + total + '개 절, 아직 작성된 절 없음';
+
       var head = document.createElement('button');
       head.className = 'ch__head';
       head.type = 'button';
@@ -146,15 +156,25 @@
       head.innerHTML =
         '<span class="ch__n">' + ch.n + '</span>' +
         '<span class="ch__t"></span>' +
-        '<span class="ch__meta">' + finished + ' / ' + total + '</span>' +
+        '<span class="ch__meta"></span>' +
         '<span class="ch__caret" aria-hidden="true">▸</span>';
       head.querySelector('.ch__t').textContent = ch.title;
+      var metaEl = head.querySelector('.ch__meta');
+      metaEl.textContent = meta;
+      if (made > 0) metaEl.classList.add('ch__meta--has');
+      head.setAttribute('aria-label', metaLabel);
 
+      /* 막대도 두 겹으로 — 옅은 층이 '작성됨', 진한 층이 '완료'.
+         숫자를 읽지 않아도 어느 장에 내용이 있는지 한눈에 보이게 한다. */
       var bar = document.createElement('div');
       bar.className = 'ch__bar';
+      var barmade = document.createElement('div');
+      barmade.className = 'ch__barmade';
+      barmade.style.width = (made / total * 100) + '%';
       var barfill = document.createElement('div');
       barfill.className = 'ch__barfill';
       barfill.style.width = (finished / total * 100) + '%';
+      bar.appendChild(barmade);
       bar.appendChild(barfill);
 
       var bodyEl = document.createElement('div');

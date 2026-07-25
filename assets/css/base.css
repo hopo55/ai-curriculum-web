@@ -1275,8 +1275,21 @@ body.slides .slidenav { display: flex; }
 .ch__caret { color: var(--ink-3); transition: transform .2s ease; flex: none; }
 .ch[open] .ch__caret, .ch.is-open .ch__caret { transform: rotate(90deg); }
 
-.ch__bar { height: 2px; background: var(--rule-soft); }
-.ch__barfill { height: 100%; width: 0; background: var(--seal); transition: width .5s cubic-bezier(.22,1,.36,1); }
+/* 내용이 있는 장은 숫자가 흐리게 묻히지 않도록 */
+.ch__meta--has { color: var(--seal); font-weight: 600; }
+
+/* 두 겹 막대 — 옅은 층은 '작성됨', 진한 층은 '내가 완료함' */
+.ch__bar { position: relative; height: 3px; background: var(--rule-soft); }
+.ch__barmade,
+.ch__barfill {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 0;
+  transition: width .5s cubic-bezier(.22, 1, .36, 1);
+}
+.ch__barmade { background: var(--seal); opacity: .3; }
+.ch__barfill { background: var(--seal); }
 
 .ch__body { display: none; padding: var(--sp-2) var(--sp-3) var(--sp-4); }
 .ch.is-open .ch__body { display: block; }

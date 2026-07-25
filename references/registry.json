@@ -37,7 +37,10 @@
         "8",
         "11"
       ],
-      "checked": "2026-07-25"
+      "checked": "2026-07-25",
+      "cited_by": [
+        "1.1"
+      ]
     },
     "zhang2023-d2l": {
       "type": "book",
@@ -453,7 +456,10 @@
         "1",
         "6"
       ],
-      "checked": "2026-07-25"
+      "checked": "2026-07-25",
+      "cited_by": [
+        "1.1"
+      ]
     },
     "mit-1806": {
       "type": "course",
@@ -522,7 +528,10 @@
         "6",
         "12"
       ],
-      "checked": "2026-07-25"
+      "checked": "2026-07-25",
+      "cited_by": [
+        "1.1"
+      ]
     },
     "distill": {
       "type": "web",
@@ -680,6 +689,133 @@
         "2"
       ],
       "checked": "2026-07-25"
+    },
+    "russell2021-aima": {
+      "type": "book",
+      "title": "Artificial Intelligence: A Modern Approach (4th ed.)",
+      "authors": [
+        "Stuart Russell",
+        "Peter Norvig"
+      ],
+      "year": 2021,
+      "publisher": "Pearson",
+      "url": "https://aima.cs.berkeley.edu/",
+      "access": "paywalled",
+      "archivable": false,
+      "license": "유료 교재. 공식 사이트의 목차·의사코드·연습문제는 공개.",
+      "topics": [
+        "1"
+      ],
+      "checked": "2026-07-25",
+      "cited_by": [
+        "1.1"
+      ]
+    },
+    "mitchell1997-ml": {
+      "type": "book",
+      "title": "Machine Learning",
+      "authors": [
+        "Tom M. Mitchell"
+      ],
+      "year": 1997,
+      "publisher": "McGraw-Hill",
+      "url": "http://www.cs.cmu.edu/~tom/mlbook.html",
+      "access": "paywalled",
+      "archivable": false,
+      "license": "유료 교재. 저자 페이지에 일부 장 초안 공개.",
+      "note": "학습의 E/T/P 정의(1장)의 출처.",
+      "topics": [
+        "1",
+        "5"
+      ],
+      "checked": "2026-07-25",
+      "cited_by": [
+        "1.1"
+      ]
+    },
+    "turing1950-machinery": {
+      "type": "paper",
+      "title": "Computing Machinery and Intelligence",
+      "authors": [
+        "Alan M. Turing"
+      ],
+      "year": 1950,
+      "venue": "Mind, LIX(236), 433-460",
+      "url": "https://www.csee.umbc.edu/courses/471/papers/turing.pdf",
+      "file_url": "https://www.csee.umbc.edu/courses/471/papers/turing.pdf",
+      "doi": "10.1093/mind/LIX.236.433",
+      "access": "free-online",
+      "archivable": true,
+      "license": "교육용 공개본. 원문은 Oxford Mind 게재.",
+      "topics": [
+        "1"
+      ],
+      "checked": "2026-07-25",
+      "archived": {
+        "path": "references/library/paper/turing1950-machinery.pdf",
+        "sha256": "3cd7c57944b7b53f18fb2a7c014fe2367f3576696a1d024c840151459da2f24e",
+        "bytes": 91972,
+        "content_type": "application/pdf",
+        "pages": 22,
+        "fetched": "2026-07-25",
+        "source_url": "https://courses.cs.umbc.edu/471/papers/turing.pdf"
+      },
+      "cited_by": [
+        "1.1"
+      ]
+    },
+    "sutton2019-bitter": {
+      "type": "web",
+      "title": "The Bitter Lesson",
+      "authors": [
+        "Richard S. Sutton"
+      ],
+      "year": 2019,
+      "url": "http://www.incompleteideas.net/IncIdeas/BitterLesson.html",
+      "file_url": "http://www.incompleteideas.net/IncIdeas/BitterLesson.html",
+      "access": "free-online",
+      "archivable": true,
+      "note": "규칙 기반(지식 주입)과 학습 기반(탐색·학습 확장)의 대비.",
+      "topics": [
+        "1"
+      ],
+      "checked": "2026-07-25",
+      "archived": {
+        "path": "references/library/web/sutton2019-bitter.html",
+        "sha256": "f1baabbabfde3e2a368104fe91cb7efcf3566e8a9dd2c5fe50ccd1d96ec1acb6",
+        "bytes": 7297,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-25",
+        "source_url": "http://www.incompleteideas.net/IncIdeas/BitterLesson.html"
+      },
+      "cited_by": [
+        "1.1"
+      ]
+    },
+    "lecun2015-deeplearning": {
+      "type": "paper",
+      "title": "Deep learning",
+      "authors": [
+        "Yann LeCun",
+        "Yoshua Bengio",
+        "Geoffrey Hinton"
+      ],
+      "year": 2015,
+      "venue": "Nature 521, 436-444",
+      "url": "https://www.nature.com/articles/nature14539",
+      "doi": "10.1038/nature14539",
+      "access": "paywalled",
+      "archivable": false,
+      "license": "Nature 게재. 서지정보만 등록하고 링크로 인용한다.",
+      "topics": [
+        "1",
+        "6"
+      ],
+      "checked": "2026-07-25",
+      "cited_by": [
+        "1.1"
+      ]
     }
   }
 }

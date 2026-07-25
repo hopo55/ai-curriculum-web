@@ -14,11 +14,23 @@
  * 절 번호 순서는 상관없다. 정렬은 curriculum-data.js 기준으로 자동 처리된다.
  */
 window.PAGES = {
-  // 예시 (실제 페이지 생성 시 이 형태로 추가):
+  "1.1": {
+    href: "chapters/ch01/1.1-ai-fundamentals.html",
+    updated: "2026-07-25",
+    summary: "규칙을 사람이 쓰는 대신 데이터에서 찾아내는 것 — AI·ML·DL·생성형 AI의 구분과 학습·추론의 형식화.",
+    tags: [
+      "artificial intelligence", "machine learning", "deep learning", "generative AI",
+      "Mitchell", "E T P", "Turing test", "imitation game", "argmin", "loss",
+      "discriminative", "generative", "inference", "training", "least squares",
+      "rule-based", "bitter lesson", "표현학습"
+    ]
+  }
+
+  // 새 절을 만들면 이 형태로 추가한다 (등록해야 목차·검색에 나타난다):
   // "2.3": {
   //   href: "chapters/ch02/2.3-inner-product.html",
-  //   updated: "2026-07-24",
-  //   summary: "두 벡터가 얼마나 같은 방향인지를 하나의 수로 요약하는 연산.",
-  //   tags: ["dot product", "cosine similarity", "projection"]
+  //   updated: "YYYY-MM-DD",
+  //   summary: "한 줄 요약 — 검색 결과에 표시된다.",
+  //   tags: ["dot product", "cosine similarity"]
   // }
 };

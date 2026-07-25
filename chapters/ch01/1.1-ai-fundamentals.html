@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.1 인공지능의 기본 개념 — AI 이론 학습</title>
+<meta name="description" content="인공지능·머신러닝·딥러닝·생성형 AI의 정의를 형식적으로 구분하고, 학습과 추론을 수식으로 정리한다. 3개 데이터로 손계산하는 예제 포함.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="1.1">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">1.1</span>
+        <span>1장 · AI 개론</span>
+      </div>
+      <h1>인공지능의 기본 개념</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 35분</span>
+        <span><b>난이도</b>★☆☆☆☆</span>
+        <span><b>선수지식</b>없음 — 이 커리큘럼의 첫 절입니다</span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-ai">인공지능의 정의</a>
+      <a class="chip" href="#c-ml">머신러닝의 정의</a>
+      <a class="chip" href="#c-dl">딥러닝의 정의</a>
+      <a class="chip" href="#c-genai">생성형 AI의 정의</a>
+      <a class="chip" href="#c-system">지능형 시스템의 구성</a>
+      <a class="chip" href="#c-train-infer">학습과 추론</a>
+      <a class="chip" href="#c-model-algo">모델과 알고리즘</a>
+      <a class="chip" href="#c-data-knowledge">데이터와 지식</a>
+      <a class="chip" href="#c-rule-vs-learn">규칙 기반 시스템과 학습 기반 시스템</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        머신러닝은 <strong>규칙을 사람이 쓰는 대신, 데이터로부터 찾아내는 것</strong>이다.
+        찾는 과정이 <em>학습</em>이고, 찾아낸 것을 새 입력에 적용하는 것이 <em>추론</em>이다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>인공지능 · 머신러닝 · 딥러닝 · 생성형 AI의 포함 관계를 정확히 구분하고, 흔한 오해를 지적할 수 있다.</li>
+        <li>학습과 추론을 $\theta^{*} = \arg\min_{\theta} \frac{1}{n}\sum L$ 와 $\hat{y} = f_{\theta^{*}}(x)$ 로 각각 쓸 수 있다.</li>
+        <li>데이터 3개로 파라미터를 손으로 구하고, 그것이 왜 "데이터에서 뽑아낸 지식"인지 설명할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        우편번호를 손글씨로 쓴 숫자를 컴퓨터가 읽게 만든다고 하자. 두 가지 길이 있다.
+      </p>
+      <p>
+        <strong>첫째, 규칙을 직접 쓴다.</strong>
+        "위쪽에 닫힌 고리가 있고 아래로 획이 내려가면 9다." 그런데 고리를 작게 쓰는 사람,
+        획을 비스듬히 내리는 사람이 나타날 때마다 예외 규칙을 덧붙여야 한다. 규칙은 끝없이 늘어난다.
+      </p>
+      <p>
+        <strong>둘째, 예시를 모아 컴퓨터가 규칙을 찾게 한다.</strong>
+        손글씨 6만 장과 정답을 주고 "이 안의 규칙을 네가 찾아라"라고 시킨다.
+        사람은 규칙 대신 <em>규칙을 찾는 절차</em>를 설계한다. 이것이 머신러닝이다.
+      </p>
+
+      <div class="note note--key">
+        <span class="note__label">핵심 전환</span>
+        <p>
+          프로그래밍은 <strong>입력 + 규칙 → 출력</strong> 이지만,
+          머신러닝은 <strong>입력 + 출력 → 규칙</strong> 이다. 화살표의 방향이 뒤집힌다.
+        </p>
+      </div>
+
+      <figure class="widget" data-widget="inclusion-map">
+        <figcaption class="widget__bar">AI · ML · DL · 생성형 AI 의 포함 관계</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <p class="watch">생성형 AI 영역이 딥러닝 밖으로도 걸쳐 있습니다. 왜 그런지 각 영역을 눌러 확인하세요.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-ai"></span>
+      <h3>인공지능</h3>
+      <p>
+        인공지능(artificial intelligence)에는 하나의 합의된 정의가 없다.
+        Russell과 Norvig는 역사적으로 쓰인 정의들을 두 축으로 나눈다 —
+        <strong>사고(thinking)인가 행동(acting)인가</strong>, 그리고
+        <strong>사람처럼(humanly)인가 합리적으로(rationally)인가</strong>.
+      </p>
+
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>사람처럼</th><th>합리적으로</th></tr></thead>
+          <tbody>
+            <tr><td><b>사고</b></td><td>사람처럼 생각하는 시스템<br><small>인지 모델링</small></td>
+                <td>합리적으로 생각하는 시스템<br><small>논리·추론 법칙</small></td></tr>
+            <tr><td><b>행동</b></td><td>사람처럼 행동하는 시스템<br><small>튜링 테스트</small></td>
+                <td>합리적으로 행동하는 시스템<br><small>합리적 에이전트</small></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        현대 AI 연구는 대체로 <strong>합리적으로 행동하는 에이전트</strong>를 목표로 삼는다.
+        "생각한다"는 검증하기 어렵지만, "주어진 목표를 얼마나 잘 달성했는가"는 측정할 수 있기 때문이다.
+      </p>
+      <p>
+        이 태도의 뿌리는 튜링에게 있다. 그는 "기계가 생각할 수 있는가?"라는 질문이
+        용어 정의에 발목이 잡힌다고 보고, 이 질문을 <strong>모방 게임</strong>이라는
+        관찰 가능한 게임으로 <em>대체</em>했다<a class="cite" href="#ref-turing1950-machinery" data-ref="turing1950-machinery">1</a>.
+        정의하기 어려운 것을 <em>측정 가능한 것으로 바꾸는</em> 이 수법은 지금도 AI 전반에서 되풀이된다.
+      </p>
+
+      <span class="anchor" id="c-ml"></span>
+      <h3>머신러닝</h3>
+      <p>
+        Mitchell의 정의가 가장 널리 쓰인다<a class="cite" href="#ref-mitchell1997-ml" data-ref="mitchell1997-ml">2</a>.
+      </p>
+      <div class="note note--key">
+        <span class="note__label">정의</span>
+        <p>
+          어떤 프로그램이 과제 $T$ 를, 성능 척도 $P$ 로 재었을 때,
+          경험 $E$ 가 쌓일수록 더 잘 수행한다면 — 그 프로그램은 $E$ 로부터 <strong>학습한다</strong>고 말한다.
+        </p>
+      </div>
+      <p>
+        이 정의의 쓸모는 <strong>세 가지를 반드시 특정하게 만든다</strong>는 데 있다.
+        "AI로 뭔가 해보자"는 말은 $T$, $P$, $E$ 를 채우는 순간 실행 가능한 문제가 된다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>예</th><th>과제 $T$</th><th>성능 척도 $P$</th><th>경험 $E$</th></tr></thead>
+          <tbody>
+            <tr><td>손글씨 인식</td><td>이미지 → 숫자</td><td>정확도</td><td>라벨된 손글씨 6만 장</td></tr>
+            <tr><td>번역</td><td>한국어 → 영어</td><td>BLEU 점수</td><td>병렬 말뭉치</td></tr>
+            <tr><td>바둑</td><td>다음 수 선택</td><td>승률</td><td>자기 대국 기록</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <span class="anchor" id="c-dl"></span>
+      <h3>딥러닝</h3>
+      <p>
+        딥러닝(deep learning)은 머신러닝의 한 갈래로,
+        <strong>단순한 함수를 여러 층으로 겹쳐 표현(representation)을 단계적으로 학습</strong>하는 방법이다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ f_{\theta} \;=\; f_L \circ f_{L-1} \circ \cdots \circ f_2 \circ f_1 $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        핵심은 층의 개수가 아니라, <strong>특징을 사람이 설계하지 않는다</strong>는 점이다.
+        전통적 방법은 사람이 "모서리 개수", "곡률" 같은 특징을 정의해 주었다.
+        딥러닝은 앞쪽 층이 모서리를, 중간 층이 부분 모양을, 뒤쪽 층이 숫자 전체를
+        스스로 잡아낸다<a class="cite" href="#ref-goodfellow2016-dl" data-ref="goodfellow2016-dl">3</a><a class="cite" href="#ref-lecun2015-deeplearning" data-ref="lecun2015-deeplearning">4</a>.
+      </p>
+
+      <span class="anchor" id="c-genai"></span>
+      <h3>생성형 AI</h3>
+      <p>
+        구분의 기준은 <strong>어떤 확률분포를 모델링하는가</strong>이다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \underbrace{p(y \mid x)}_{\text{판별 모델}} \qquad\text{vs}\qquad \underbrace{p(x) \;\text{ 또는 }\; p(x \mid c)}_{\text{생성 모델}} $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        판별 모델(discriminative model)은 입력 $x$ 가 주어졌을 때 정답 $y$ 의 확률을 배운다 — "이 사진은 고양이인가".
+        생성 모델(generative model)은 데이터 자체의 분포를 배운다 — "고양이 사진은 대체로 어떻게 생겼는가".
+        분포를 알면 <strong>표본을 뽑을 수 있고</strong>, 그것이 곧 생성이다.
+      </p>
+      <p>
+        여기서 주의할 점: <strong>생성 모델은 딥러닝보다 오래됐다.</strong>
+        나이브 베이즈, 가우시안 혼합 모델, 은닉 마르코프 모델은 모두 생성 모델이지만 딥러닝이 아니다.
+        오늘날 "생성형 AI"라 불리는 것들이 대부분 딥러닝 기반일 뿐이다.
+      </p>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <span class="anchor" id="c-model-algo"></span>
+      <h3>모델과 알고리즘</h3>
+      <p>
+        둘은 자주 섞여 쓰이지만 다른 것이다.
+      </p>
+      <ul>
+        <li><strong>모델</strong>은 <em>가설의 모양</em>이다. 파라미터 $\theta$ 로 정해지는 함수 $f_\theta$ 자체.</li>
+        <li><strong>학습 알고리즘</strong>은 <em>좋은 $\theta$ 를 찾는 절차</em>다. 최소제곱, 경사하강법 같은 것.</li>
+      </ul>
+      <p>
+        같은 모델을 여러 알고리즘으로 학습시킬 수 있고, 같은 알고리즘을 여러 모델에 쓸 수 있다.
+        모델은 <em>무엇을 표현할 수 있는가</em>를, 알고리즘은 <em>그중 무엇을 실제로 찾아내는가</em>를 결정한다.
+      </p>
+
+      <span class="anchor" id="c-train-infer"></span>
+      <h3>학습과 추론</h3>
+      <p>모델을 $f_\theta : \mathcal{X} \to \mathcal{Y}$ 라 하자. 두 단계는 이렇게 갈린다.</p>
+
+      <div class="eq">
+        <div class="eq__body">$$ \theta^{*} \;=\; \arg\min_{\theta \in \Theta} \; \frac{1}{n}\sum_{i=1}^{n} L\bigl(f_{\theta}(x_i),\, y_i\bigr) $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <div class="eq">
+        <div class="eq__body">$$ \hat{y} \;=\; f_{\theta^{*}}(x_{\text{new}}) $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+
+      <p>
+        식 (3)이 <strong>학습</strong>이다. 데이터 전체를 훑어 손실의 평균을 가장 작게 만드는 $\theta$ 를 찾는다.
+        느리고, 데이터가 필요하고, 한 번 하면 된다.<br>
+        식 (4)가 <strong>추론</strong>이다. 찾아둔 $\theta^{*}$ 를 새 입력에 한 번 적용한다.
+        빠르고, 데이터가 필요 없고, 매번 한다.
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$\mathcal{X}$</td><td>스크립트 엑스</td><td>입력 공간 (가능한 모든 입력의 집합)</td><td>집합</td><td>—</td></tr>
+            <tr><td>$\mathcal{Y}$</td><td>스크립트 와이</td><td>출력 공간</td><td>집합</td><td>—</td></tr>
+            <tr><td>$x_i,\; y_i$</td><td>엑스 아이, 와이 아이</td><td>$i$ 번째 입력과 정답</td><td>$x_i \in \mathcal{X}$, $y_i \in \mathcal{Y}$</td><td>—</td></tr>
+            <tr><td>$n$</td><td>엔</td><td>학습 데이터 개수</td><td>정수</td><td>$n \geq 1$</td></tr>
+            <tr><td>$\theta$</td><td>세타</td><td>모델 파라미터 (학습으로 정해지는 값)</td><td>벡터 $(d,)$</td><td>실수</td></tr>
+            <tr><td>$\Theta$</td><td>대문자 세타</td><td>파라미터가 놓일 수 있는 공간</td><td>집합</td><td>—</td></tr>
+            <tr><td>$\theta^{*}$</td><td>세타 스타</td><td>학습이 찾아낸 최적 파라미터</td><td>벡터 $(d,)$</td><td>실수</td></tr>
+            <tr><td>$f_\theta$</td><td>에프 세타</td><td>파라미터 $\theta$ 로 정해지는 모델</td><td>함수 $\mathcal{X}\to\mathcal{Y}$</td><td>—</td></tr>
+            <tr><td>$L$</td><td>엘 · 손실함수</td><td>예측과 정답의 어긋난 정도</td><td>함수 → 스칼라</td><td>$L \geq 0$ (보통)</td></tr>
+            <tr><td>$\arg\min$</td><td>아그민</td><td>값을 최소로 만드는 <em>입력</em>을 고름</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$\hat{y}$</td><td>와이 햇</td><td>모델이 내놓은 예측값 (정답 $y$ 와 구분)</td><td>$\in \mathcal{Y}$</td><td>—</td></tr>
+            <tr><td>$\circ$</td><td>서클 · 합성</td><td>함수 합성. $(f \circ g)(x) = f(g(x))$</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$L$ (식 1)</td><td>엘</td><td>층의 개수 <small>— 손실 $L$ 과 다른 뜻이다</small></td><td>정수</td><td>$L \geq 1$</td></tr>
+            <tr><td>$p(y \mid x)$</td><td>피 오브 와이 기븐 엑스</td><td>$x$ 가 주어졌을 때 $y$ 의 조건부 확률</td><td>확률분포</td><td>$[0, 1]$</td></tr>
+            <tr><td>$\sum_{i=1}^{n}$</td><td>시그마</td><td>$i=1$ 부터 $n$ 까지 더함</td><td>연산자</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">표기 충돌 주의</span>
+        <p>
+          $L$ 이 이 절에서 두 번 다른 뜻으로 쓰였다 — 식 (1)의 층 개수, 식 (3)의 손실함수.
+          문헌마다 흔히 벌어지는 일이라 그대로 두었다. <strong>기호는 문맥으로 읽는다.</strong>
+          앞으로 이 사이트에서 손실은 $L$ 또는 $\mathcal{L}$, 층 개수는 $L$ 로 쓴다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <p>
+        식 (3)의 $\arg\min$ 이 실제로 어떻게 풀리는지, 가장 단순한 모델로 끝까지 따라가 보자.
+        모델은 원점을 지나는 직선 $f_w(x) = wx$ 이고, 손실은 제곱오차다.
+      </p>
+
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ L(w) = \sum_{i=1}^{n} \bigl(w x_i - y_i\bigr)^2 $$</div>
+          <div class="derive__why">제곱오차 손실. 부호를 없애려 제곱하고, 미분이 쉬워 널리 쓴다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{dL}{dw} = \sum_{i=1}^{n} 2\bigl(w x_i - y_i\bigr)\cdot x_i $$</div>
+          <div class="derive__why">각 항에 연쇄법칙. 바깥 제곱의 미분 $2(\cdot)$ 에 안쪽 $wx_i-y_i$ 의 $w$ 미분인 $x_i$ 를 곱한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sum_{i=1}^{n} \bigl(w x_i - y_i\bigr) x_i = 0 $$</div>
+          <div class="derive__why">최솟값에서 도함수는 0. 양변을 2로 나눴다. $L$ 은 $w$ 에 대해 아래로 볼록이라 이 점이 유일한 최소다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ w\sum_{i=1}^{n} x_i^2 \;=\; \sum_{i=1}^{n} x_i y_i $$</div>
+          <div class="derive__why">전개해 $w$ 가 붙은 항을 좌변으로 모았다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \boxed{\;w^{*} = \frac{\sum_{i} x_i y_i}{\sum_{i} x_i^{2}}\;} $$</div>
+          <div class="derive__why">$\sum x_i^2 \neq 0$ 이면 나눌 수 있다. <strong>데이터만으로 계산되는 닫힌 해</strong></div>
+        </div>
+      </div>
+
+      <div class="note note--tip">
+        <span class="note__label">여기서 눈여겨볼 것</span>
+        <p>
+          $w^{*}$ 를 구하는 데 <strong>반복도 시행착오도 없었다.</strong> 데이터를 한 번 훑어 두 개의 합만 구하면 끝난다.
+          이렇게 닫힌 해가 있는 경우는 드물고, 대부분의 모델에서는 경사하강법으로 조금씩 다가간다.
+          그 과정은 <a href="#s-lab">아래 위젯</a>에서 직접 볼 수 있다.
+        </p>
+      </div>
+
+      <details>
+        <summary>왜 최솟값인가 — 2계 도함수 확인</summary>
+        <p>
+          $\dfrac{d^2 L}{dw^2} = 2\sum_i x_i^2 \geq 0$ 이고, 데이터에 0이 아닌 $x_i$ 가 하나라도 있으면 $> 0$ 이다.
+          2계 도함수가 양수이므로 $L$ 은 아래로 볼록(convex)이고, 도함수가 0인 점은 유일한 전역 최솟값이다.
+          볼록성과 최적화의 관계는 3장에서 자세히 다룬다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <span class="anchor" id="c-data-knowledge"></span>
+      <p>
+        데이터 세 개가 있다. $x$ 는 공부 시간, $y$ 는 점수라고 하자.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ (x_1, y_1) = (1,\,2), \quad (x_2, y_2) = (2,\,4), \quad (x_3, y_3) = (3,\,5) $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \sum_i x_i y_i = 1\cdot 2 + 2\cdot 4 + 3\cdot 5 $$</div>
+          <div class="derive__why">분자를 먼저. 각 쌍을 곱해서 더한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ = 2 + 8 + 15 = 25 $$</div>
+          <div class="derive__why">곱셈 결과를 차례로 더했다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sum_i x_i^2 = 1^2 + 2^2 + 3^2 = 1 + 4 + 9 = 14 $$</div>
+          <div class="derive__why">분모. $x$ 만 제곱해서 더한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ w^{*} = \frac{25}{14} \approx 1.7857 $$</div>
+          <div class="derive__why">유도한 닫힌 해에 대입. <strong>학습 끝</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat{y} = f_{w^{*}}(4) = \frac{25}{14}\cdot 4 = \frac{100}{14} = \frac{50}{7} \approx 7.143 $$</div>
+          <div class="derive__why"><strong>추론.</strong> 학습에 쓰지 않은 $x=4$ 에 $w^{*}$ 를 적용했다</div>
+        </div>
+      </div>
+
+      <h3>데이터와 지식</h3>
+      <p>
+        방금 벌어진 일을 다시 보자. <strong>숫자 여섯 개(데이터)가 숫자 하나(지식)로 압축됐다.</strong>
+        $w^{*} = 25/14$ 만 들고 있으면 원래 데이터를 버려도 새 입력에 답할 수 있다.
+      </p>
+      <p>
+        이것이 머신러닝에서 "지식"이라 부르는 것의 정체다 —
+        <strong>데이터에서 뽑아낸, 새 상황에 쓸 수 있는 압축된 규칙성.</strong>
+        딥러닝 모델의 수십억 개 파라미터도 종류는 같다. 개수만 다를 뿐이다.
+      </p>
+
+      <div class="note note--tip">
+        <span class="note__label">압축은 손실을 남긴다</span>
+        <p>
+          최소 손실을 계산해 보면 $L(w^{*}) = 5/14 \approx 0.357$ 로 <strong>0이 아니다.</strong>
+          세 점이 한 직선 위에 있지 않기 때문이다.
+          모델이 데이터를 완벽히 재현하지 못하는 것은 실패가 아니라 <em>압축의 대가</em>이며,
+          오히려 그 덕분에 새 입력에 일반화된다. 이 맞바꿈은 <span class="tex">5.2</span>절 편향–분산 트레이드오프에서 다시 만난다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <span class="anchor" id="c-rule-vs-learn"></span>
+      <h3>규칙 기반 시스템과 학습 기반 시스템</h3>
+      <p>
+        두 방식의 차이는 <strong>상황이 바뀔 때</strong> 드러난다.
+        아래에서 데이터의 배치를 회전시켜 보라. 사람이 정한 규칙은 곧 무너지지만,
+        데이터에서 뽑은 경계는 따라온다.
+      </p>
+
+      <figure class="widget" data-widget="rule-vs-learn">
+        <figcaption class="widget__bar">규칙 기반 vs 학습 기반 — 데이터를 돌려보기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">회전각을 90°로 올려 보세요. 규칙 기반 정확도만 50%(찍기 수준)로 떨어집니다.</p>
+        </div>
+      </figure>
+
+      <p>
+        규칙 기반이 늘 나쁜 것은 아니다. 세무 계산이나 신호등 제어처럼
+        <strong>규칙이 명확하고 바뀌지 않는 곳</strong>에서는 규칙 기반이 더 정확하고, 검증하기 쉽고, 설명 가능하다.
+        문제는 규칙을 다 적을 수 없는 영역 — 언어, 시각, 소리 — 에서 생긴다.
+        Sutton은 AI 70년사를 돌아보며, 사람의 지식을 정교하게 넣는 접근보다
+        <strong>계산량과 학습으로 밀어붙이는 일반적 방법이 결국 이겼다</strong>고 정리한다<a class="cite" href="#ref-sutton2019-bitter" data-ref="sutton2019-bitter">5</a>.
+      </p>
+
+      <h3>학습에서 추론까지</h3>
+      <p>
+        앞의 예제를 닫힌 해가 아니라 <strong>경사하강법</strong>으로 풀면 어떤 모습인지 단계별로 보자.
+        대부분의 실제 모델이 이 방식으로 학습한다.
+      </p>
+
+      <figure class="widget" data-widget="train-infer">
+        <figcaption class="widget__bar">학습 → 추론 단계별 재생</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">손실 곡선의 공이 바닥으로 굴러가 $w=25/14$ 에 멈춥니다. 손으로 구한 값과 같습니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-system"></span>
+      <h3>지능형 시스템의 구성</h3>
+      <p>
+        모델 하나만으로는 시스템이 되지 않는다. 실제로 동작하는 지능형 시스템은
+        입력을 받아 표현으로 바꾸고, 판단하고, 행동한 뒤, 그 결과를 다시 되먹인다.
+      </p>
+
+      <figure class="widget" data-widget="agent-loop">
+        <figcaption class="widget__bar">지능형 시스템의 구성 요소</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <p class="watch">아래쪽 되먹임 화살표를 눌러 보세요. 이 화살표가 없으면 '학습하는' 시스템이 아닙니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"AI라고 하면 딥러닝을 말하는 것이다."</p>
+        <p>
+          <strong>실제로는</strong> AI ⊃ 머신러닝 ⊃ 딥러닝이다.
+          체스 프로그램의 탐색 알고리즘, 전문가 시스템, 제약 만족 문제 풀이는
+          학습을 전혀 하지 않지만 모두 AI다. 지금도 실무의 상당 부분은 규칙과 탐색으로 돌아간다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"머신러닝은 사람이 프로그래밍하지 않는다."</p>
+        <p>
+          <strong>실제로는</strong> 사람이 정하는 것이 여전히 많다 —
+          모델의 형태($f_\theta$ 를 직선으로 할지 신경망으로 할지), 손실함수 $L$, 최적화 알고리즘, 데이터.
+          사람은 <em>답</em>을 쓰지 않을 뿐, <em>답을 찾는 판</em>은 전부 설계한다.
+          위 예제에서 "원점을 지나는 직선"이라는 선택은 사람이 한 것이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"생성형 AI는 딥러닝의 하위 분야다."</p>
+        <p>
+          <strong>실제로는</strong> 생성 모델은 딥러닝보다 수십 년 앞선다.
+          나이브 베이즈(1960년대), 가우시안 혼합 모델, 은닉 마르코프 모델은 모두 $p(x)$ 를 모델링하는 생성 모델이다.
+          "생성형이냐"는 <strong>무엇을 모델링하는가</strong>의 문제이고,
+          "딥이냐"는 <strong>어떻게 모델링하는가</strong>의 문제다. 축이 다르다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"추론(inference)은 하나의 뜻이다."</p>
+        <p>
+          <strong>실제로는</strong> 두 갈래로 쓰인다.
+          딥러닝 실무에서 "inference"는 <em>학습된 모델을 실행해 예측을 얻는 것</em>(식 4)이지만,
+          통계학에서 "statistical inference"는 <em>데이터로부터 모수를 추정하는 것</em> — 즉 학습 쪽에 가깝다.
+          논문을 읽을 때 어느 뜻인지 문맥으로 판단해야 한다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>손으로 구한 $w^{*} = 25/14$ 와 $\hat{y} = 50/7$ 이 맞는지 확인한다.</p>
+      <details>
+        <summary>NumPy — 학습과 추론 (14줄)</summary>
+<pre><code>import numpy as np
+
+x = np.array([1.0, 2.0, 3.0])      # 입력
+y = np.array([2.0, 4.0, 5.0])      # 정답
+
+# 학습: 닫힌 해로 w* 를 구한다
+w = (x * y).sum() / (x ** 2).sum()
+print(w)                            # 1.7857142857142858  = 25/14
+
+# 손실 확인
+print(((w * x - y) ** 2).sum())     # 0.35714285714285715 = 5/14
+
+# 추론: 학습에 쓰지 않은 입력에 적용
+print(w * 4.0)                      # 7.142857142857143   = 50/7
+</code></pre>
+        <p>
+          <small>
+            데이터가 여섯 개의 숫자에서 <code>w</code> 하나로 줄어든 것이 이 코드의 요점이다.
+            <code>x</code> 와 <code>y</code> 를 지워도 <code>w</code> 만 있으면 예측할 수 있다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            데이터가 $(1,3), (2,4)$ 일 때 $f_w(x)=wx$ 의 최적 $w^{*}$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$11/5$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$7/3$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$7/2$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\sum x_i y_i = 1\cdot3 + 2\cdot4 = 3 + 8 = 11$, $\sum x_i^2 = 1 + 4 = 5$.
+            따라서 $w^{*} = 11/5 = 2.2$.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            본문 예제의 $w^{*} = 25/14$ 로 $x = 7$ 을 예측하면?</p>
+          <div class="opts">
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>$25/2$</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>$25/2$ 가 아니라 $175/14 = 12.5$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$14/25 \cdot 7$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\frac{25}{14}\times 7 = \frac{175}{14} = \frac{25}{2} = 12.5$.
+            가와 나는 사실 같은 값이다 — 약분하면 둘 다 12.5다.
+            선택지를 끝까지 계산해 보지 않으면 놓치는 함정이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            Mitchell의 정의에서, 바둑 AI의 성능 척도 $P$ 로 가장 알맞은 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>자기 대국 기록</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>다음 수를 고르는 일</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">다</span><span>대국 승률</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            가는 경험 $E$, 나는 과제 $T$ 다. $P$ 는 <em>얼마나 잘하는지 재는 자</em>이므로 승률이 맞다.
+            세 가지를 헷갈리지 않는 것이 이 정의를 쓰는 핵심이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            "이 메일이 스팸일 확률"을 출력하는 모델이 모델링하는 분포는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$p(y \mid x)$ — 판별 모델</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$p(x)$ — 생성 모델</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$p(x \mid y)$ — 생성 모델</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            메일 내용 $x$ 가 주어졌을 때 라벨 $y$ 의 확률이므로 $p(y \mid x)$, 판별 모델이다.
+            반면 나이브 베이즈는 $p(x \mid y)$ 를 모델링한 뒤 베이즈 정리로 뒤집는다 — 그래서 생성 모델이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            다음 중 <strong>틀린</strong> 진술은?</p>
+          <div class="opts">
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>규칙 기반 시스템도 인공지능에 속한다</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>모든 생성 모델은 딥러닝 모델이다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>학습이 끝난 모델은 원본 데이터 없이 추론할 수 있다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            나가 틀렸다. 나이브 베이즈·GMM·HMM은 딥러닝이 아닌 생성 모델이다.
+            "생성형이냐"와 "딥이냐"는 서로 다른 축이다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong>1.2 머신러닝 패러다임</strong> — 여기서 정의한 "경험 $E$"가 어떤 형태냐에 따라 지도·비지도·강화학습으로 갈린다.</li>
+        <li><strong>1.4 머신러닝 시스템의 기본 구조</strong> — 위 지능형 시스템 구성도를 실제 파이프라인으로 펼친다.</li>
+        <li><strong>3장 미적분과 최적화</strong> — 식 (3)의 $\arg\min$ 을 실제로 푸는 방법. 여기서는 닫힌 해였지만 대개는 경사하강법을 쓴다.</li>
+        <li><strong>5.2 통계적 학습이론</strong> — 손실이 0이 아닌 것이 왜 오히려 좋은지(편향–분산 트레이드오프).</li>
+        <li><strong>11.1 생성 모델 개론</strong> — $p(x)$ 를 모델링하는 방법들.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-turing1950-machinery" data-ref="turing1950-machinery">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Turing, A. M. (1950). <em>Computing Machinery and Intelligence</em>. Mind, LIX(236), 433–460.</span>
+          <span class="ref__where">§1 The Imitation Game — "기계가 생각할 수 있는가"를 정의 논쟁 대신 관찰 가능한 게임으로 대체한 대목. 본문 '인공지능의 정의'의 근거</span>
+          <a class="ref__link" href="https://www.csee.umbc.edu/courses/471/papers/turing.pdf">csee.umbc.edu · PDF</a>
+        </li>
+        <li class="ref" id="ref-russell2021-aima" data-ref="russell2021-aima">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Russell, S. &amp; Norvig, P. (2021). <em>Artificial Intelligence: A Modern Approach</em> (4th ed.). Pearson.</span>
+          <span class="ref__where">1.1절 — AI 정의를 '사고/행동 × 사람처럼/합리적으로' 4분면으로 나눈 표의 출처</span>
+          <a class="ref__link" href="https://aima.cs.berkeley.edu/">aima.cs.berkeley.edu</a>
+        </li>
+        <li class="ref" id="ref-mitchell1997-ml" data-ref="mitchell1997-ml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Mitchell, T. M. (1997). <em>Machine Learning</em>. McGraw-Hill.</span>
+          <span class="ref__where">1장 — 학습의 E/T/P 정의. 본문 '머신러닝의 정의'와 과제·척도·경험 표의 근거</span>
+          <a class="ref__link" href="http://www.cs.cmu.edu/~tom/mlbook.html">cs.cmu.edu/~tom/mlbook</a>
+        </li>
+        <li class="ref" id="ref-goodfellow2016-dl" data-ref="goodfellow2016-dl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>. MIT Press.</span>
+          <span class="ref__where">1장 Introduction — 딥러닝을 '표현의 계층적 학습'으로 규정하고 AI·ML·표현학습·딥러닝의 포함 관계를 그린 부분(Fig. 1.4). 포함 관계 위젯의 근거</span>
+          <a class="ref__link" href="https://www.deeplearningbook.org/">deeplearningbook.org</a>
+        </li>
+        <li class="ref" id="ref-lecun2015-deeplearning" data-ref="lecun2015-deeplearning">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">LeCun, Y., Bengio, Y. &amp; Hinton, G. (2015). <em>Deep learning</em>. Nature, 521, 436–444.</span>
+          <span class="ref__where">특징을 사람이 설계하지 않고 층이 스스로 학습한다는 서술의 근거. 본문 '딥러닝의 정의'</span>
+          <a class="ref__link" href="https://www.nature.com/articles/nature14539">nature.com · doi:10.1038/nature14539</a>
+        </li>
+        <li class="ref" id="ref-sutton2019-bitter" data-ref="sutton2019-bitter">
+          <span class="ref__type" data-type="web">웹문서</span>
+          <span class="ref__cite">Sutton, R. S. (2019). <em>The Bitter Lesson</em>.</span>
+          <span class="ref__where">첫 문단 — "계산을 활용하는 일반적 방법이 결국 가장 효과적"이라는 주장. '규칙 기반 vs 학습 기반' 절의 근거</span>
+          <a class="ref__link" href="http://www.incompleteideas.net/IncIdeas/BitterLesson.html">incompleteideas.net</a>
+        </li>
+        <li class="ref" id="ref-mit-6s191" data-ref="mit-6s191">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">MIT 6.S191: <em>Introduction to Deep Learning</em>.</span>
+          <span class="ref__where">Lecture 1 — 규칙 기반 프로그래밍과 학습 기반 접근의 대비, 손글씨 인식 예시의 구성 참고</span>
+          <a class="ref__link" href="https://introtodeeplearning.com/">introtodeeplearning.com</a>
+        </li>
+        <li class="ref" id="ref-3blue1brown-nn" data-ref="3blue1brown-nn">
+          <span class="ref__type" data-type="video">영상</span>
+          <span class="ref__cite">3Blue1Brown. <em>But what is a neural network?</em> (Neural Networks, Ch.1).</span>
+          <span class="ref__where">03:20–08:00 — 층이 깊어지며 획·부분모양·숫자로 표현이 단계화되는 시각적 설명. '딥러닝의 정의'의 직관</span>
+          <a class="ref__link" href="https://www.3blue1brown.com/topics/neural-networks">3blue1brown.com</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+/* ============================================================
+   위젯 1 — AI · ML · DL · 생성형 AI 포함 관계
+   클릭(또는 Tab+Enter)으로 각 영역의 정의를 확인한다.
+   생성형 AI 를 DL 안에 가두지 않고 걸치게 그린 것이 요점이다.
+   ============================================================ */
+WIDGETS.register('inclusion-map', function (root, ctx) {
+  var el = VIZ.el;
+  var INFO = {
+    ai:    { t: '인공지능 (AI)', d: '사람이 하던 지적 작업을 기계가 하게 만드는 분야 전체. 학습하지 않는 탐색·논리·규칙 기반 시스템도 포함한다.', ex: '예: 체스 탐색, 전문가 시스템, 경로 탐색' },
+    ml:    { t: '머신러닝 (ML)', d: '규칙을 사람이 쓰는 대신 데이터로부터 찾아내는 방법들. 경험 E 가 쌓일수록 과제 T 의 성능 P 가 좋아진다.', ex: '예: 선형회귀, 결정트리, SVM' },
+    dl:    { t: '딥러닝 (DL)', d: '단순한 함수를 여러 층으로 겹쳐, 표현 자체를 단계적으로 학습하는 머신러닝. 특징을 사람이 설계하지 않는다.', ex: '예: CNN, Transformer' },
+    gen:   { t: '생성 모델 / 생성형 AI', d: 'p(x) 또는 p(x|c) 를 모델링해 새 표본을 만들어내는 모델. 딥러닝보다 먼저 존재했고, 딥러닝 밖에도 걸쳐 있다.', ex: '딥러닝 밖: 나이브 베이즈, GMM, HMM  ·  딥러닝 안: GAN, 확산모델, LLM' }
+  };
+
+  var svg = el('svg', { viewBox: '0 0 480 300', role: 'img', 'aria-label': 'AI, 머신러닝, 딥러닝, 생성형 AI의 포함 관계 다이어그램' });
+
+  function region(tag, attrs, label, lx, ly, key) {
+    var g = el('g', { tabindex: '0', role: 'button', 'aria-label': INFO[key].t, style: 'cursor:pointer' });
+    var shape = el(tag, attrs);
+    g.appendChild(shape);
+    g.appendChild(el('text', { x: lx, y: ly, class: 'viz-label', 'font-size': 13, 'font-weight': '700', text: label }));
+    function pick(e) { if (e) e.stopPropagation(); show(key); }
+    g.addEventListener('click', pick);
+    g.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(e); } });
+    svg.appendChild(g);
+    return shape;
+  }
+
+  var shapes = {};
+  shapes.ai  = region('rect', { x: 8, y: 8, width: 464, height: 284, rx: 8, fill: 'var(--jade)', 'fill-opacity': .07, stroke: 'var(--jade)', 'stroke-width': 1.5 }, 'AI 인공지능', 20, 28, 'ai');
+  shapes.ml  = region('rect', { x: 34, y: 44, width: 412, height: 226, rx: 8, fill: 'var(--jade)', 'fill-opacity': .1, stroke: 'var(--jade)', 'stroke-width': 1.5 }, 'ML 머신러닝', 46, 64, 'ml');
+  shapes.dl  = region('rect', { x: 60, y: 80, width: 230, height: 172, rx: 8, fill: 'var(--jade)', 'fill-opacity': .16, stroke: 'var(--jade)', 'stroke-width': 1.5 }, 'DL 딥러닝', 72, 100, 'dl');
+  shapes.gen = region('ellipse', { cx: 300, cy: 190, rx: 132, ry: 74, fill: 'var(--seal)', 'fill-opacity': .16, stroke: 'var(--seal)', 'stroke-width': 1.8, 'stroke-dasharray': '6 3' }, '생성 모델', 322, 150, 'gen');
+
+  ctx.stage.appendChild(svg);
+
+  var panel = document.createElement('div');
+  panel.className = 'note note--tip';
+  panel.style.marginTop = '0';
+  ctx.controls.appendChild(panel);
+
+  function show(key) {
+    var i = INFO[key];
+    panel.innerHTML = '<span class="note__label"></span><p></p><p><small></small></p>';
+    panel.querySelector('.note__label').textContent = i.t;
+    panel.querySelector('p').textContent = i.d;
+    panel.querySelector('small').textContent = i.ex;
+    for (var k in shapes) {
+      shapes[k].setAttribute('stroke-width', k === key ? 3.5 : (k === 'gen' ? 1.8 : 1.5));
+    }
+  }
+  show('ai');
+});
+
+/* ============================================================
+   위젯 2 — 규칙 기반 vs 학습 기반
+   두 무리를 회전시키면, 축에 고정된 사람 규칙은 무너지고
+   데이터에서 뽑은 경계는 따라온다.
+   ============================================================ */
+WIDGETS.register('rule-vs-learn', function (root, ctx) {
+  /* 고정된 흩어짐 — 다시 그릴 때마다 점이 튀지 않도록 미리 정해 둔다 */
+  var JITTER = [
+    [.18,-.42],[-.35,.28],[.44,.12],[-.12,-.31],[.05,.47],[-.46,-.09],[.29,.36],[-.22,-.45],[.38,-.18],[-.05,.22],
+    [.12,.41],[-.41,-.24],[.47,-.35],[-.28,.15],[.02,-.48],[-.18,.39],[.33,.05],[-.44,.31],[.21,-.12],[-.09,-.37]
+  ];
+  var BASE = JITTER.map(function (j, i) {
+    var lab = i % 2;                       // 0 또는 1 두 무리
+    return { x: (lab ? 1.25 : -1.25) + j[0] * .9, y: j[1] * 1.15, lab: lab };
+  });
+
+  var p = VIZ.plot({ w: 460, h: 300, xmin: -3, xmax: 3, ymin: -2.2, ymax: 2.2 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'rule', label: '규칙 기반 정확도' },
+    { key: 'learn', label: '학습 기반 정확도' }
+  ]);
+
+  var angle = 0, thr = 0;
+
+  function rotated() {
+    var a = angle * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+    return BASE.map(function (q) {
+      return { x: q.x * c - q.y * s, y: q.x * s + q.y * c, lab: q.lab };
+    });
+  }
+
+  function draw() {
+    var pts = rotated();
+
+    /* 학습 기반 — 두 무리의 평균을 잇는 방향이 곧 경계의 법선 */
+    var m = [[0, 0], [0, 0]], n = [0, 0];
+    pts.forEach(function (q) { m[q.lab][0] += q.x; m[q.lab][1] += q.y; n[q.lab]++; });
+    for (var k = 0; k < 2; k++) { m[k][0] /= n[k]; m[k][1] /= n[k]; }
+    var wx = m[1][0] - m[0][0], wy = m[1][1] - m[0][1];
+    var mx = (m[0][0] + m[1][0]) / 2, my = (m[0][1] + m[1][1]) / 2;
+    var b = -(wx * mx + wy * my);
+
+    var ruleHit = 0, learnHit = 0;
+    pts.forEach(function (q) {
+      if (((q.x > thr) ? 1 : 0) === q.lab) ruleHit++;
+      if (((wx * q.x + wy * q.y + b > 0) ? 1 : 0) === q.lab) learnHit++;
+    });
+
+    p.clear().grid(1, 1).axes('x', 'y').ticks(1, 1);
+
+    /* 사람이 정한 규칙: x > 임계값 — 항상 세로선이다 */
+    p.line([[thr, p.ymin], [thr, p.ymax]], { alt: true, dash: '6 4' });
+    p.text(thr, p.ymax - .18, '규칙: x > ' + thr.toFixed(1), { dx: 6, fill: 'var(--seal)', size: 11 });
+
+    /* 학습된 경계: w·x + b = 0 */
+    if (Math.abs(wy) > 1e-6) {
+      p.line([[p.xmin, -(wx * p.xmin + b) / wy], [p.xmax, -(wx * p.xmax + b) / wy]]);
+    } else {
+      p.line([[-b / wx, p.ymin], [-b / wx, p.ymax]]);
+    }
+
+    pts.forEach(function (q) {
+      p.add(VIZ.el('circle', {
+        cx: p.X(q.x), cy: p.Y(q.y), r: 4.5,
+        fill: q.lab ? 'var(--jade)' : 'var(--amber)', 'fill-opacity': .85
+      }));
+    });
+
+    out.setRaw('rule', Math.round(ruleHit / pts.length * 100) + ' %');
+    out.setRaw('learn', Math.round(learnHit / pts.length * 100) + ' %');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '데이터 회전각', min: 0, max: 90, step: 1, value: 0, unit: '°', digits: 0,
+    onInput: function (v) { angle = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '사람이 정한 임계값 (x >)', min: -2, max: 2, step: .1, value: 0, digits: 1,
+    onInput: function (v) { thr = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — 학습에서 추론까지 (경사하강법)
+   L(w) = 14w² - 50w + 45,  최소는 w = 25/14
+   갱신식:  w ← w - η·2(14w - 25),  η = 0.02  →  w ← 0.44w + 1
+   ============================================================ */
+WIDGETS.register('train-infer', function (root, ctx) {
+  var X = [1, 2, 3], Y = [2, 4, 5];
+  var WSTAR = 25 / 14, ETA = 0.02;
+
+  /* 학습 궤적을 미리 계산해 둔다 */
+  var TRACE = [0];
+  for (var i = 0; i < 7; i++) {
+    var w = TRACE[TRACE.length - 1];
+    TRACE.push(w - ETA * 2 * (14 * w - 25));
+  }
+  var LABELS = TRACE.map(function (_, i) { return '학습 ' + i + '단계'; });
+  LABELS.push('수렴 · w* = 25/14');
+  LABELS.push('추론 · x = 4');
+
+  var loss = function (w) { return 14 * w * w - 50 * w + 45; };
+
+  var p = VIZ.plot({ w: 232, h: 240, xmin: 0, xmax: 4.6, ymin: 0, ymax: 8.5, pad: { t: 22, r: 12, b: 28, l: 34 } });
+  var q = VIZ.plot({ w: 232, h: 240, xmin: 0, xmax: 3.4, ymin: 0, ymax: 46, pad: { t: 22, r: 12, b: 28, l: 38 } });
+
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;width:100%';
+  wrap.appendChild(p.svg); wrap.appendChild(q.svg);
+  ctx.stage.appendChild(wrap);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'w', label: '현재 w', digits: 4 },
+    { key: 'L', label: '손실 L(w)', digits: 4 },
+    { key: 'note', label: '단계' }
+  ]);
+
+  function draw(step) {
+    var infer = step === TRACE.length + 1;
+    var w = step >= TRACE.length ? WSTAR : TRACE[step];
+
+    /* 왼쪽 — 데이터와 현재 직선 */
+    p.clear().grid(1, 2).axes('x', 'y').ticks(1, 2);
+    p.line([[0, 0], [4.6, w * 4.6]]);
+    for (var i = 0; i < 3; i++) {
+      p.add(VIZ.el('line', {
+        x1: p.X(X[i]), y1: p.Y(Y[i]), x2: p.X(X[i]), y2: p.Y(w * X[i]),
+        stroke: 'var(--seal)', 'stroke-width': 1.5, 'stroke-dasharray': '3 2'
+      }));
+      p.dot(X[i], Y[i], 4.5);
+    }
+    p.text(0.1, 8.1, '데이터와 직선 f(x)=wx', { size: 11 });
+    if (infer) {
+      p.add(VIZ.el('circle', { cx: p.X(4), cy: p.Y(w * 4), r: 7, fill: 'none', stroke: 'var(--jade)', 'stroke-width': 2.5 }));
+      p.dot(4, w * 4, 4.5, 'viz-handle');
+      p.text(4, w * 4, '  ŷ≈7.14', { dy: -10, fill: 'var(--jade)', size: 11, anchor: 'end' });
+    }
+
+    /* 오른쪽 — 손실 곡선 위의 현재 위치 */
+    q.clear().grid(1, 10).axes('w', 'L').ticks(1, 10);
+    q.curve(loss, { alt: true });
+    q.dot(w, loss(w), 6);
+    q.add(VIZ.el('line', { x1: q.X(WSTAR), y1: q.Y(0), x2: q.X(WSTAR), y2: q.Y(46), stroke: 'var(--jade)', 'stroke-width': 1, 'stroke-dasharray': '4 3' }));
+    q.text(WSTAR, 43, ' w*', { fill: 'var(--jade)', size: 11 });
+    q.text(0.1, 43, '손실 곡선 L(w)', { size: 11 });
+
+    out.set('w', w);
+    out.set('L', loss(w));
+    out.setRaw('note', infer ? '학습 끝 · 새 입력에 적용' : (step >= TRACE.length ? '최솟값 도달' : '기울기 따라 내려가는 중'));
+  }
+
+  WIDGETS.player({
+    host: ctx.controls, steps: TRACE.length + 2, labels: LABELS, fps: 1.3,
+    label: '학습 → 추론', onStep: draw
+  });
+});
+
+/* ============================================================
+   위젯 4 — 지능형 시스템의 구성
+   되먹임 화살표가 있어야 '학습하는' 시스템이 된다는 점이 요점.
+   ============================================================ */
+WIDGETS.register('agent-loop', function (root, ctx) {
+  var el = VIZ.el;
+  var BLOCKS = [
+    { k: 'in',    t: '입력',   d: '센서·파일·사용자 입력으로 원자료를 받는다. 카메라 픽셀, 텍스트, 로그.' },
+    { k: 'repr',  t: '표현',   d: '원자료를 모델이 다룰 수 있는 수치 형태로 바꾼다. 전통적으로는 사람이 특징을 설계했고, 딥러닝은 이 단계를 학습으로 대체한다.' },
+    { k: 'model', t: '모델',   d: '파라미터 θ 로 정해지는 함수 f_θ. 학습 단계에서 정해지고, 추론 단계에서 실행된다.' },
+    { k: 'dec',   t: '판단',   d: '모델 출력을 실제 결정으로 바꾼다. 확률 0.83 을 "스팸으로 분류"로 옮기는 임계값 같은 것.' },
+    { k: 'act',   t: '행동',   d: '결정을 바깥 세계에 내보낸다. 화면 표시, 로봇 구동, API 호출.' }
+  ];
+  var FB = { k: 'fb', t: '되먹임', d: '행동의 결과(정답·보상·사용자 반응)를 다시 받아 모델을 고친다. 이 화살표가 없으면 한 번 만든 규칙을 그대로 쓰는 정적 시스템이고, 있으면 경험 E 가 쌓이는 학습 시스템이 된다.' };
+
+  var svg = el('svg', { viewBox: '0 0 480 190', role: 'img', 'aria-label': '지능형 시스템의 구성 요소와 되먹임 순환' });
+  var W = 82, H = 46, GAP = 17, Y = 34;
+  var shapes = {};
+
+  BLOCKS.forEach(function (b, i) {
+    var x = 8 + i * (W + GAP);
+    var g = el('g', { tabindex: '0', role: 'button', 'aria-label': b.t, style: 'cursor:pointer' });
+    var r = el('rect', { x: x, y: Y, width: W, height: H, rx: 5, fill: 'var(--jade)', 'fill-opacity': .12, stroke: 'var(--jade)', 'stroke-width': 1.5 });
+    g.appendChild(r);
+    g.appendChild(el('text', { x: x + W / 2, y: Y + H / 2 + 4.5, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 13, 'font-weight': '700', text: b.t }));
+    g.addEventListener('click', function () { show(b.k); });
+    g.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(b.k); } });
+    svg.appendChild(g);
+    shapes[b.k] = r;
+
+    if (i < BLOCKS.length - 1) {
+      var ax = x + W, ay = Y + H / 2;
+      svg.appendChild(el('path', {
+        d: 'M' + ax + ' ' + ay + ' L' + (ax + GAP - 5) + ' ' + ay,
+        stroke: 'var(--ink-3)', 'stroke-width': 1.5
+      }));
+      svg.appendChild(el('path', {
+        d: 'M' + (ax + GAP) + ' ' + ay + ' L' + (ax + GAP - 6) + ' ' + (ay - 4) + ' L' + (ax + GAP - 6) + ' ' + (ay + 4) + ' Z',
+        fill: 'var(--ink-3)'
+      }));
+    }
+  });
+
+  /* 되먹임 — 행동에서 표현·모델로 되돌아온다 */
+  var fbG = el('g', { tabindex: '0', role: 'button', 'aria-label': '되먹임', style: 'cursor:pointer' });
+  var x0 = 8 + 4 * (W + GAP) + W / 2, x1 = 8 + (W + GAP) + W / 2;
+  var fbPath = el('path', {
+    d: 'M' + x0 + ' ' + (Y + H) + ' L' + x0 + ' 148 L' + x1 + ' 148 L' + x1 + ' ' + (Y + H + 6),
+    fill: 'none', stroke: 'var(--seal)', 'stroke-width': 2, 'stroke-dasharray': '6 3'
+  });
+  fbG.appendChild(fbPath);
+  fbG.appendChild(el('path', { d: 'M' + x1 + ' ' + (Y + H) + ' L' + (x1 - 4.5) + ' ' + (Y + H + 8) + ' L' + (x1 + 4.5) + ' ' + (Y + H + 8) + ' Z', fill: 'var(--seal)' }));
+  fbG.appendChild(el('text', { x: (x0 + x1) / 2, y: 164, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 12, 'font-weight': '700', fill: 'var(--seal)', text: '되먹임 — 학습' }));
+  fbG.addEventListener('click', function () { show('fb'); });
+  fbG.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show('fb'); } });
+  svg.appendChild(fbG);
+  shapes.fb = fbPath;
+
+  ctx.stage.appendChild(svg);
+
+  var panel = document.createElement('div');
+  panel.className = 'note note--tip';
+  panel.style.marginTop = '0';
+  ctx.controls.appendChild(panel);
+
+  var ALL = BLOCKS.concat([FB]);
+  function show(k) {
+    var b = ALL.filter(function (z) { return z.k === k; })[0];
+    panel.innerHTML = '<span class="note__label"></span><p></p>';
+    panel.querySelector('.note__label').textContent = b.t;
+    panel.querySelector('p').textContent = b.d;
+    Object.keys(shapes).forEach(function (z) {
+      shapes[z].setAttribute('stroke-width', z === k ? 3.2 : (z === 'fb' ? 2 : 1.5));
+    });
+  }
+  show('in');
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

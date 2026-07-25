@@ -10,8 +10,9 @@ AI 이론 커리큘럼(28장 / 347절 / 2,884개 개념)을 인터랙티브 학�
 ## 작업 전에 반드시
 
 1. **`SPEC.md` 를 읽는다.** 페이지 구조·서술 규칙·위젯 카탈로그가 전부 거기 있다.
-2. **`templates/section.html` 을 복사해서 시작한다.** 백지에서 쓰지 않는다.
-3. 커리큘럼 원본은 `curriculum/ai_curriculum_v2.md`. 항목을 임의로 더하거나 빼지 않는다.
+2. **`SOURCES.md` 를 읽는다.** 출처를 어디서 모으고 어떻게 인용·보관하는지.
+3. **`templates/section.html` 을 복사해서 시작한다.** 백지에서 쓰지 않는다.
+4. 커리큘럼 원본은 `curriculum/ai_curriculum_v2.md`. 항목을 임의로 더하거나 빼지 않는다.
 
 ---
 
@@ -21,7 +22,8 @@ AI 이론 커리큘럼(28장 / 347절 / 2,884개 개념)을 인터랙티브 학�
 |---|---|
 | **절대경로 금지** — `/assets/…` ✗, `../../assets/…` ✓ | Pages 는 `/ai-curriculum-web/` 하위에서 서빙된다. 절대경로는 100% 깨진다 |
 | **파일·폴더명은 소문자만** | Pages 는 Linux. 로컬(macOS/Windows)에선 되는데 배포 후 404 난다 |
-| **외부 CDN·외부 이미지 금지** | 오프라인 동작 원칙. 그림은 전부 인라인 SVG/Canvas 로 직접 그린다 |
+| **외부 CDN·외부 이미지 금지** | 오프라인 동작 원칙. 그림은 전부 인라인 SVG/Canvas 로 직접 그린다<br>단 **출처 링크(`<a href="https://…">`)는 허용** — 인용에 필요하다 |
+| **원문 파일을 커밋하지 않는다** | public 저장소다. 저작권 있는 PDF 를 올리면 재배포가 된다.<br>`references/library/` 는 gitignore 대상이고, 메타데이터만 `registry.json` 에 남는다 |
 | **`fetch()` · `<script type="module">` 금지** | zip 으로 받아 `file://` 로 열어도 동작해야 한다. classic `<script src>` 만 |
 | **`.nojekyll` 삭제 금지** | 지우면 Jekyll 이 `_` 로 시작하는 파일을 먹는다 |
 | **`assets/js/curriculum-data.js` 손으로 편집 금지** | 자동 생성 파일. `node tools/build-curriculum.mjs` 로만 갱신 |
@@ -31,21 +33,28 @@ AI 이론 커리큘럼(28장 / 347절 / 2,884개 개념)을 인터랙티브 학�
 ## 절 하나를 추가하는 순서
 
 ```bash
-# 1. 템플릿 복사  (chapters/ch{2자리}/{절번호}-{영문슬러그}.html)
+# 1. 출처부터 모은다 — 원논문 1~2 · 교재 1~2 · 강의 1 · 영상/웹 1 (유형 3종 이상)
+#    /survey-search 스킬로 논문 검색, registry.json 의 topics 로 해당 교재 확인
+node tools/refs.mjs arxiv 1706.03762     # arXiv 논문 등록
+node tools/refs.mjs fetch                # 원문 내려받아 보관 후 실제로 읽는다
+
+# 2. 템플릿 복사  (chapters/ch{2자리}/{절번호}-{영문슬러그}.html)
 cp templates/section.html chapters/ch02/2.3-inner-product.html
 
-# 2. 내용 작성 — SPEC.md 의 13개 파트(0~12)를 순서대로, 하나도 빼지 않고
+# 3. 내용 작성 — SPEC.md 의 13개 파트(0~12)를 순서대로, 하나도 빼지 않고
 #    ※ data-root 를 "../" → "../../" 로 바꾸는 것을 잊지 말 것
+#    ※ 파트 12 에 출처 4개 이상, ref__where 에 "어느 부분을 썼는지" 명시
 
-# 3. assets/js/pages.js 에 등록  (등록 안 하면 목차·검색에 안 나온다)
+# 4. assets/js/pages.js 에 등록  (등록 안 하면 목차·검색에 안 나온다)
 
-# 4. 검사 — 반드시 통과시킬 것 (오류 0)
+# 5. 출처 반영 + 검사 — 반드시 통과시킬 것 (오류 0)
+node tools/refs.mjs scan
 node tools/check.mjs 2.3
 
-# 5. 진행 현황 갱신 (자동 생성 — 손으로 표를 고치지 않는다)
+# 6. 진행 현황 갱신 (자동 생성 — 손으로 표를 고치지 않는다)
 node tools/build-progress.mjs
 
-# 6. 커밋 & 푸시 → 1분 뒤 자동 배포
+# 7. 커밋 & 푸시 → 1분 뒤 자동 배포
 git add -A && git commit -m "2.3 내적과 유사도 추가" && git push
 ```
 
@@ -79,8 +88,11 @@ index.html                    전체 목차 · 진도 대시보드 · 검색
 404.html                      자체 완결형 (임의 주소에서 렌더되므로 CSS 인라인)
 CLAUDE.md                     이 파일
 SPEC.md                       작성 규약 — 작업 전 필독
+SOURCES.md                    출처 수집·인용·보관 지침 — 작업 전 필독
 PROMPTS.md                    사용자가 복사해 쓰는 요청 문구
 PROGRESS.md                   절별 진행 현황
+references/registry.json      출처 레지스트리 (인용 키의 단일 원천)
+references/library/           ⚠ 내려받은 원문 — gitignore 대상
 curriculum/ai_curriculum_v2.md   목차 원본 (유일한 진실 공급원)
 templates/section.html        절 페이지 템플릿
 chapters/chNN/N.M-slug.html   절 페이지
@@ -94,6 +106,7 @@ vendor/katex/                 KaTeX 0.18.1 (woff2 만, 608K)
 tools/build-curriculum.mjs    목차 md → curriculum-data.js
 tools/build-progress.mjs      PROGRESS.md 재생성
 tools/check.mjs               규약 검사기
+tools/refs.mjs                출처 등록·다운로드·무결성 검증
 ```
 
 `PROGRESS.md` 와 `assets/js/curriculum-data.js` 는 둘 다 자동 생성 파일이다. 손으로 고치지 않는다.

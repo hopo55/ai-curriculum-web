@@ -72,7 +72,7 @@ chapters/ch{장번호 2자리}/{절번호}-{영문슬러그}.html
 | 9 | 흔한 오해와 함정 (3개 이상) | `#s-traps` | ✔ |
 | 10 | 코드 (선택, 20줄 이내, 접이식) | `#s-code` | ✔ |
 | 11 | 자가 점검 (4~6문제) | `#s-quiz` | ✔ |
-| 12 | 연결 + 참고문헌 | `#s-links` | ✔ |
+| 12 | 연결 + **출처** | `#s-links` | ✔ |
 
 ### 파트 1 — 칩 (커버리지 보증 장치)
 
@@ -150,6 +150,47 @@ chapters/ch{장번호 2자리}/{절번호}-{영문슬러그}.html
 ```
 
 `data-correct="true"` 가 정답. 클릭하면 core.js 가 정오 표시와 풀이를 펼친다.
+
+### 파트 12 — 출처
+
+**모든 절은 출처를 남긴다.** 자세한 규칙과 수집 경로는 [`SOURCES.md`](SOURCES.md) 에 있다.
+여기서는 지켜야 할 최소선만 적는다.
+
+| 기준 | 값 |
+|---|---|
+| 출처 개수 | 4개 이상 |
+| 유형 다양성 | 3종 이상 (논문 · 교재 · 강의 · 영상 · 웹문서) |
+| 1차 출처 | 개념을 제안한 원논문을 반드시 포함 (있는 경우) |
+| 등록 | 모든 출처는 `references/registry.json` 에 등록 |
+
+```html
+<h3>출처</h3>
+<ol class="refs">
+  <li class="ref" id="ref-vaswani2017-attention-is-all" data-ref="vaswani2017-attention-is-all">
+    <span class="ref__type" data-type="paper">논문</span>
+    <span class="ref__cite">Vaswani et al. (2017). <em>Attention Is All You Need</em>. NeurIPS.</span>
+    <span class="ref__where">스케일드 닷프로덕트 어텐션의 정의와 $1/\sqrt{d_k}$ 의 근거 (§3.2.1)</span>
+    <a class="ref__link" href="https://arxiv.org/abs/1706.03762">arXiv:1706.03762</a>
+  </li>
+</ol>
+```
+
+- `data-ref` 는 레지스트리의 id 와 **정확히 일치**해야 한다 (`check.mjs` 가 검사).
+- `ref__where` 가 핵심이다. "이 책을 봤다"가 아니라 **"이 책의 어디가 이 절의 무엇을 뒷받침하는지"** 를 쓴다.
+- `data-type` 은 `paper | book | course | video | web | doc | code` 중 하나. 라벨과 색이 자동으로 붙는다.
+- 본문 안에서 특정 주장의 근거를 짚을 때는 인라인 인용을 쓴다:
+  `<a class="cite" href="#ref-…" data-ref="…">1</a>`
+
+**출처 링크는 외부 URL 을 써도 된다** — 이 프로젝트에서 외부 주소가 허용되는 유일한 곳이다
+(외부 *리소스 로드*는 여전히 금지: `src=`, `<link href=>`).
+
+받을 수 있는 원문은 받아서 보관한다.
+
+```bash
+node tools/refs.mjs arxiv 1706.03762   # 등록
+node tools/refs.mjs fetch              # 내려받기 (references/library/, gitignore 대상)
+node tools/refs.mjs scan               # 페이지의 data-ref → cited_by 갱신
+```
 
 ---
 
@@ -319,11 +360,12 @@ node tools/check.mjs 2.3      # 특정 절
 3. 기호표(`.symtab`) 존재
 4. 위젯 3개 이상 / 등록 이름 일치 / `.watch` 안내
 5. 함정 3개 이상, 자가 점검 4문제 이상, 각 문제에 정답 지정
-6. 절대경로 0, 외부 URL 0, 외부 `<img>` 0
-7. 내부 링크가 실제 파일을 가리키는지
-8. `pages.js` 등록 여부와 경로 일치
-9. `data-root` 깊이, `data-section` 값, 파일명 규칙, 소문자
-10. viewport 메타, `lang="ko"`
+6. **출처 4개 이상, 유형 3종 이상, 모든 `data-ref` 가 레지스트리에 등록됨, `ref__where` 존재**
+7. 절대경로 0, 외부 리소스 로드 0(`src`/`<link>`), 외부 `<img>` 0
+8. 내부 링크가 실제 파일을 가리키는지
+9. `pages.js` 등록 여부와 경로 일치
+10. `data-root` 깊이, `data-section` 값, 파일명 규칙, 소문자
+11. viewport 메타, `lang="ko"`
 
 ### 사람이 확인할 것 (자동화 불가)
 
@@ -348,9 +390,10 @@ node tools/check.mjs 2.3      # 특정 절
 }
 ```
 
-2. `PROGRESS.md` 갱신
-3. `node tools/check.mjs` 통과 확인
-4. 커밋 & 푸시 → 약 1분 뒤 배포 반영
+2. 출처 반영 — `node tools/refs.mjs scan` (cited_by 갱신 + 미등록 인용 탐지)
+3. `PROGRESS.md` 갱신 — `node tools/build-progress.mjs`
+4. `node tools/check.mjs` 통과 확인
+5. 커밋 & 푸시 → 약 1분 뒤 배포 반영
 
 ---
 

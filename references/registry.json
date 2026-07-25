@@ -1,0 +1,821 @@
+{
+  "$comment": [
+    "출처 레지스트리 — 모든 인용의 단일 원천.",
+    "절 페이지의 data-ref 값은 반드시 이 파일의 id 와 일치해야 한다 (tools/check.mjs 가 검사).",
+    "",
+    "필드:",
+    "  id         인용 키. 소문자+숫자+하이픈. 예) vaswani2017-attention",
+    "  type       paper | book | course | video | web | doc | code",
+    "  access     open(자유 재배포 가능) | free-online(무료 열람, 재배포 불가) | paywalled | purchased",
+    "  archivable true 면 tools/refs.mjs fetch 로 내려받아 references/library/ 에 보관한다.",
+    "             references/library/ 는 .gitignore 대상이라 공개 저장소에 올라가지 않는다.",
+    "  archived   내려받은 뒤 도구가 자동으로 채운다 (경로/해시/크기/일시). 손으로 쓰지 않는다.",
+    "  cited_by   어느 절이 인용했는지. `node tools/refs.mjs scan` 이 자동으로 갱신한다.",
+    "",
+    "URL 은 2026-07-25 기준으로 응답을 확인했다. 죽은 링크를 발견하면 고치고 checked 를 갱신한다."
+  ],
+  "refs": {
+    "goodfellow2016-dl": {
+      "type": "book",
+      "title": "Deep Learning",
+      "authors": [
+        "Ian Goodfellow",
+        "Yoshua Bengio",
+        "Aaron Courville"
+      ],
+      "year": 2016,
+      "publisher": "MIT Press",
+      "url": "https://www.deeplearningbook.org/",
+      "access": "free-online",
+      "archivable": false,
+      "license": "저자 무료 열람 제공(HTML). 재배포 불가 — 링크만 인용한다.",
+      "topics": [
+        "3",
+        "4",
+        "6",
+        "7",
+        "8",
+        "11"
+      ],
+      "checked": "2026-07-25",
+      "cited_by": [
+        "1.1"
+      ]
+    },
+    "zhang2023-d2l": {
+      "type": "book",
+      "title": "Dive into Deep Learning",
+      "authors": [
+        "Aston Zhang",
+        "Zachary C. Lipton",
+        "Mu Li",
+        "Alexander J. Smola"
+      ],
+      "year": 2023,
+      "publisher": "Cambridge University Press",
+      "url": "https://d2l.ai/",
+      "access": "open",
+      "archivable": true,
+      "license": "코드 MIT / 본문 CC BY-SA 4.0 — 출처 표기 시 보관·인용 가능",
+      "topics": [
+        "6",
+        "7",
+        "8",
+        "12"
+      ],
+      "checked": "2026-07-25",
+      "file_url": "https://d2l.ai/d2l-en.pdf"
+    },
+    "deisenroth2020-mml": {
+      "type": "book",
+      "title": "Mathematics for Machine Learning",
+      "authors": [
+        "Marc Peter Deisenroth",
+        "A. Aldo Faisal",
+        "Cheng Soon Ong"
+      ],
+      "year": 2020,
+      "publisher": "Cambridge University Press",
+      "url": "https://mml-book.github.io/",
+      "access": "free-online",
+      "archivable": true,
+      "license": "저자 무료 PDF 제공(개인 학습용). 재배포 금지 — 로컬 보관만.",
+      "topics": [
+        "2",
+        "3",
+        "4"
+      ],
+      "checked": "2026-07-25",
+      "file_url": "https://mml-book.github.io/book/mml-book.pdf",
+      "archived": {
+        "path": "references/library/book/deisenroth2020-mml.pdf",
+        "sha256": "3f87b70c64a35d30ec4e565b4d5cfd18fe913002d3b3bed44691c7d0838911bc",
+        "bytes": 17565898,
+        "content_type": "application/pdf",
+        "pages": 417,
+        "fetched": "2026-07-25",
+        "source_url": "https://mml-book.github.io/book/mml-book.pdf"
+      }
+    },
+    "bishop2006-prml": {
+      "type": "book",
+      "title": "Pattern Recognition and Machine Learning",
+      "authors": [
+        "Christopher M. Bishop"
+      ],
+      "year": 2006,
+      "publisher": "Springer",
+      "url": "https://www.microsoft.com/en-us/research/publication/pattern-recognition-machine-learning/",
+      "access": "free-online",
+      "archivable": true,
+      "license": "Microsoft Research 가 저자 동의 하에 PDF 공개. 개인 학습용.",
+      "topics": [
+        "4",
+        "5",
+        "11"
+      ],
+      "checked": "2026-07-25",
+      "file_url": "https://www.microsoft.com/en-us/research/uploads/prod/2006/01/Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf"
+    },
+    "hastie2009-esl": {
+      "type": "book",
+      "title": "The Elements of Statistical Learning",
+      "authors": [
+        "Trevor Hastie",
+        "Robert Tibshirani",
+        "Jerome Friedman"
+      ],
+      "year": 2009,
+      "publisher": "Springer",
+      "url": "https://hastie.su.domains/ElemStatLearn/",
+      "access": "free-online",
+      "archivable": true,
+      "license": "저자 무료 PDF 제공.",
+      "topics": [
+        "5"
+      ],
+      "checked": "2026-07-25",
+      "note": "직접 PDF 주소가 공개돼 있지 않다. 페이지에서 링크를 찾아 file_url 에 넣으면 보관할 수 있다."
+    },
+    "murphy2022-pml": {
+      "type": "book",
+      "title": "Probabilistic Machine Learning: An Introduction / Advanced Topics",
+      "authors": [
+        "Kevin P. Murphy"
+      ],
+      "year": 2022,
+      "publisher": "MIT Press",
+      "url": "https://probml.github.io/pml-book/",
+      "access": "free-online",
+      "archivable": true,
+      "license": "저자 무료 초안 PDF 제공.",
+      "topics": [
+        "4",
+        "5",
+        "11",
+        "20"
+      ],
+      "checked": "2026-07-25"
+    },
+    "prince2023-udl": {
+      "type": "book",
+      "title": "Understanding Deep Learning",
+      "authors": [
+        "Simon J.D. Prince"
+      ],
+      "year": 2023,
+      "publisher": "MIT Press",
+      "url": "https://udlbook.github.io/udlbook/",
+      "access": "free-online",
+      "archivable": true,
+      "license": "저자 무료 PDF 제공. 그림 재사용은 비영리 교육 목적 허용.",
+      "topics": [
+        "6",
+        "11",
+        "12"
+      ],
+      "checked": "2026-07-25",
+      "file_url": "https://github.com/udlbook/udlbook/releases/download/v5.00/UnderstandingDeepLearning_11_21_24_C.pdf"
+    },
+    "sutton2018-rl": {
+      "type": "book",
+      "title": "Reinforcement Learning: An Introduction (2nd ed.)",
+      "authors": [
+        "Richard S. Sutton",
+        "Andrew G. Barto"
+      ],
+      "year": 2018,
+      "publisher": "MIT Press",
+      "url": "http://incompleteideas.net/book/the-book-2nd.html",
+      "access": "free-online",
+      "archivable": true,
+      "license": "저자 무료 PDF 제공.",
+      "topics": [
+        "24",
+        "25"
+      ],
+      "checked": "2026-07-25",
+      "file_url": "http://incompleteideas.net/book/RLbook2020.pdf",
+      "archived": {
+        "path": "references/library/book/sutton2018-rl.pdf",
+        "sha256": "2dd0d71d9ee883fbeb99f9b888c65ac3255fae2512203d11b18e838befffe9a6",
+        "bytes": 73129769,
+        "content_type": "application/pdf",
+        "pages": 548,
+        "fetched": "2026-07-25",
+        "source_url": "http://incompleteideas.net/book/RLbook2020.pdf"
+      }
+    },
+    "jurafsky2025-slp3": {
+      "type": "book",
+      "title": "Speech and Language Processing (3rd ed. draft)",
+      "authors": [
+        "Daniel Jurafsky",
+        "James H. Martin"
+      ],
+      "year": 2025,
+      "url": "https://web.stanford.edu/~jurafsky/slp3/",
+      "access": "free-online",
+      "archivable": true,
+      "license": "저자 무료 초안 공개.",
+      "topics": [
+        "10",
+        "12",
+        "13"
+      ],
+      "checked": "2026-07-25",
+      "file_url": "https://web.stanford.edu/~jurafsky/slp3/ed3book.pdf"
+    },
+    "boyd2004-convex": {
+      "type": "book",
+      "title": "Convex Optimization",
+      "authors": [
+        "Stephen Boyd",
+        "Lieven Vandenberghe"
+      ],
+      "year": 2004,
+      "publisher": "Cambridge University Press",
+      "url": "https://web.stanford.edu/~boyd/cvxbook/",
+      "access": "free-online",
+      "archivable": true,
+      "license": "저자 무료 PDF 제공.",
+      "topics": [
+        "3"
+      ],
+      "checked": "2026-07-25",
+      "file_url": "https://web.stanford.edu/~boyd/cvxbook/bv_cvxbook.pdf"
+    },
+    "mackay2003-itila": {
+      "type": "book",
+      "title": "Information Theory, Inference, and Learning Algorithms",
+      "authors": [
+        "David J.C. MacKay"
+      ],
+      "year": 2003,
+      "publisher": "Cambridge University Press",
+      "url": "https://www.inference.org.uk/mackay/itila/",
+      "access": "free-online",
+      "archivable": true,
+      "license": "저자 무료 열람용 PDF 제공.",
+      "topics": [
+        "4"
+      ],
+      "checked": "2026-07-25",
+      "file_url": "https://www.inference.org.uk/itprnn/book.pdf"
+    },
+    "szeliski2022-cv": {
+      "type": "book",
+      "title": "Computer Vision: Algorithms and Applications (2nd ed.)",
+      "authors": [
+        "Richard Szeliski"
+      ],
+      "year": 2022,
+      "publisher": "Springer",
+      "url": "https://szeliski.org/Book/",
+      "access": "free-online",
+      "archivable": true,
+      "license": "저자 무료 PDF 제공.",
+      "topics": [
+        "7"
+      ],
+      "checked": "2026-07-25",
+      "note": "직접 PDF 주소가 공개돼 있지 않다. 페이지에서 링크를 찾아 file_url 에 넣으면 보관할 수 있다."
+    },
+    "hamilton2020-grl": {
+      "type": "book",
+      "title": "Graph Representation Learning Book",
+      "authors": [
+        "William L. Hamilton"
+      ],
+      "year": 2020,
+      "publisher": "Morgan & Claypool",
+      "url": "https://www.cs.mcgill.ca/~wlh/grl_book/",
+      "access": "free-online",
+      "archivable": true,
+      "license": "저자 무료 초안 PDF 제공.",
+      "topics": [
+        "9"
+      ],
+      "checked": "2026-07-25",
+      "file_url": "https://www.cs.mcgill.ca/~wlh/grl_book/files/GRL_Book.pdf"
+    },
+    "molnar2025-iml": {
+      "type": "book",
+      "title": "Interpretable Machine Learning",
+      "authors": [
+        "Christoph Molnar"
+      ],
+      "year": 2025,
+      "url": "https://christophm.github.io/interpretable-ml-book/",
+      "access": "open",
+      "archivable": true,
+      "license": "CC BY-NC-SA 4.0",
+      "topics": [
+        "18"
+      ],
+      "checked": "2026-07-25",
+      "archived": {
+        "path": "references/library/book/molnar2025-iml.html",
+        "sha256": "c5d02c0304446da78d2afd8c51dbba527b4a7676cfa39ded1fa4394b9a6c8c22",
+        "bytes": 54270,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-25",
+        "source_url": "https://christophm.github.io/interpretable-ml-book/",
+        "warning": "HTML 랜딩 페이지를 받았습니다. PDF 직접 주소를 file_url 에 지정하세요."
+      }
+    },
+    "hernan2025-whatif": {
+      "type": "book",
+      "title": "Causal Inference: What If",
+      "authors": [
+        "Miguel A. Hernán",
+        "James M. Robins"
+      ],
+      "year": 2025,
+      "publisher": "Chapman & Hall/CRC",
+      "url": "https://miguelhernan.org/whatifbook",
+      "access": "free-online",
+      "archivable": true,
+      "license": "저자 무료 PDF 제공.",
+      "topics": [
+        "20"
+      ],
+      "checked": "2026-07-25"
+    },
+    "peters2017-eci": {
+      "type": "book",
+      "title": "Elements of Causal Inference: Foundations and Learning Algorithms",
+      "authors": [
+        "Jonas Peters",
+        "Dominik Janzing",
+        "Bernhard Schölkopf"
+      ],
+      "year": 2017,
+      "publisher": "MIT Press",
+      "url": "https://web.math.ku.dk/~peters/",
+      "access": "free-online",
+      "archivable": true,
+      "license": "MIT Press 오픈액세스. 저자 페이지에서 PDF 링크 확인.",
+      "topics": [
+        "20"
+      ],
+      "checked": "2026-07-25"
+    },
+    "nielsen2015-nndl": {
+      "type": "book",
+      "title": "Neural Networks and Deep Learning",
+      "authors": [
+        "Michael Nielsen"
+      ],
+      "year": 2015,
+      "url": "http://neuralnetworksanddeeplearning.com/",
+      "access": "open",
+      "archivable": true,
+      "license": "CC BY-NC 3.0",
+      "topics": [
+        "6"
+      ],
+      "checked": "2026-07-25"
+    },
+    "stanford-cs231n": {
+      "type": "course",
+      "title": "CS231n: Deep Learning for Computer Vision",
+      "authors": [
+        "Stanford University"
+      ],
+      "url": "https://cs231n.stanford.edu/",
+      "access": "free-online",
+      "archivable": true,
+      "license": "강의 노트·슬라이드 공개. 개인 학습용 보관.",
+      "topics": [
+        "6",
+        "7"
+      ],
+      "checked": "2026-07-25"
+    },
+    "stanford-cs224n": {
+      "type": "course",
+      "title": "CS224n: Natural Language Processing with Deep Learning",
+      "authors": [
+        "Stanford University"
+      ],
+      "url": "https://web.stanford.edu/class/cs224n/",
+      "access": "free-online",
+      "archivable": true,
+      "topics": [
+        "8",
+        "12",
+        "13"
+      ],
+      "checked": "2026-07-25"
+    },
+    "stanford-cs336": {
+      "type": "course",
+      "title": "CS336: Language Modeling from Scratch",
+      "authors": [
+        "Stanford University"
+      ],
+      "url": "https://stanford-cs336.github.io/spring2025/",
+      "access": "free-online",
+      "archivable": true,
+      "topics": [
+        "12",
+        "13",
+        "16"
+      ],
+      "checked": "2026-07-25"
+    },
+    "berkeley-cs285": {
+      "type": "course",
+      "title": "CS285: Deep Reinforcement Learning",
+      "authors": [
+        "Sergey Levine",
+        "UC Berkeley"
+      ],
+      "url": "https://rail.eecs.berkeley.edu/deeprlcourse/",
+      "access": "free-online",
+      "archivable": true,
+      "topics": [
+        "24",
+        "25",
+        "27"
+      ],
+      "checked": "2026-07-25"
+    },
+    "mit-6s191": {
+      "type": "course",
+      "title": "MIT 6.S191: Introduction to Deep Learning",
+      "authors": [
+        "MIT"
+      ],
+      "url": "https://introtodeeplearning.com/",
+      "access": "free-online",
+      "archivable": true,
+      "topics": [
+        "1",
+        "6"
+      ],
+      "checked": "2026-07-25",
+      "cited_by": [
+        "1.1"
+      ]
+    },
+    "mit-1806": {
+      "type": "course",
+      "title": "MIT 18.06: Linear Algebra",
+      "authors": [
+        "Gilbert Strang",
+        "MIT OpenCourseWare"
+      ],
+      "url": "https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/",
+      "access": "open",
+      "archivable": true,
+      "license": "CC BY-NC-SA (MIT OCW)",
+      "topics": [
+        "2"
+      ],
+      "checked": "2026-07-25"
+    },
+    "karpathy-zero2hero": {
+      "type": "course",
+      "title": "Neural Networks: Zero to Hero",
+      "authors": [
+        "Andrej Karpathy"
+      ],
+      "url": "https://karpathy.ai/zero-to-hero.html",
+      "access": "free-online",
+      "archivable": false,
+      "license": "YouTube 강의. 자막(transcript)만 로컬 보관.",
+      "topics": [
+        "6",
+        "12",
+        "13"
+      ],
+      "checked": "2026-07-25"
+    },
+    "hf-courses": {
+      "type": "course",
+      "title": "Hugging Face Courses (NLP · Audio · Diffusion · Deep RL)",
+      "authors": [
+        "Hugging Face"
+      ],
+      "url": "https://huggingface.co/learn",
+      "access": "open",
+      "archivable": true,
+      "license": "Apache-2.0 / CC BY-SA (코스별 상이)",
+      "topics": [
+        "10",
+        "11",
+        "13",
+        "24"
+      ],
+      "checked": "2026-07-25"
+    },
+    "3blue1brown-nn": {
+      "type": "video",
+      "title": "Neural Networks (시각적 직관 시리즈)",
+      "authors": [
+        "Grant Sanderson (3Blue1Brown)"
+      ],
+      "url": "https://www.3blue1brown.com/topics/neural-networks",
+      "access": "free-online",
+      "archivable": false,
+      "license": "영상 재배포 불가. 자막·스크린샷 없이 링크로만 인용.",
+      "topics": [
+        "2",
+        "3",
+        "6",
+        "12"
+      ],
+      "checked": "2026-07-25",
+      "cited_by": [
+        "1.1"
+      ]
+    },
+    "distill": {
+      "type": "web",
+      "title": "Distill — 인터랙티브 머신러닝 해설",
+      "authors": [
+        "Distill.pub"
+      ],
+      "url": "https://distill.pub/",
+      "access": "open",
+      "archivable": true,
+      "license": "CC BY 4.0 — 출처 표기 시 그림 재사용 가능",
+      "topics": [
+        "6",
+        "7",
+        "9",
+        "12",
+        "18"
+      ],
+      "checked": "2026-07-25"
+    },
+    "transformer-circuits": {
+      "type": "web",
+      "title": "Transformer Circuits Thread",
+      "authors": [
+        "Anthropic"
+      ],
+      "url": "https://transformer-circuits.pub/",
+      "access": "free-online",
+      "archivable": true,
+      "topics": [
+        "12",
+        "18"
+      ],
+      "checked": "2026-07-25"
+    },
+    "lilianweng-log": {
+      "type": "web",
+      "title": "Lil'Log",
+      "authors": [
+        "Lilian Weng"
+      ],
+      "url": "https://lilianweng.github.io/",
+      "access": "free-online",
+      "archivable": true,
+      "license": "출처 표기 요구. 개인 학습용 보관.",
+      "topics": [
+        "11",
+        "13",
+        "14",
+        "21"
+      ],
+      "checked": "2026-07-25"
+    },
+    "vaswani2017-attention-is-all": {
+      "type": "paper",
+      "title": "Attention Is All You Need",
+      "authors": [
+        "Ashish Vaswani",
+        "Noam Shazeer",
+        "Niki Parmar",
+        "Jakob Uszkoreit",
+        "Llion Jones",
+        "Aidan N. Gomez",
+        "Lukasz Kaiser",
+        "Illia Polosukhin"
+      ],
+      "year": 2017,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1706.03762",
+      "file_url": "https://arxiv.org/pdf/1706.03762",
+      "arxiv": "1706.03762",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-25",
+      "archived": {
+        "path": "references/library/paper/vaswani2017-attention-is-all.pdf",
+        "sha256": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697",
+        "bytes": 2215244,
+        "content_type": "application/pdf",
+        "pages": 15,
+        "fetched": "2026-07-25",
+        "source_url": "https://arxiv.org/pdf/1706.03762"
+      }
+    },
+    "mikolov2013-efficient-estimation-of": {
+      "type": "paper",
+      "title": "Efficient Estimation of Word Representations in Vector Space",
+      "authors": [
+        "Tomas Mikolov",
+        "Kai Chen",
+        "Greg Corrado",
+        "Jeffrey Dean"
+      ],
+      "year": 2013,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1301.3781",
+      "file_url": "https://arxiv.org/pdf/1301.3781",
+      "arxiv": "1301.3781",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-25"
+    },
+    "radford2021-learning-transferable-visual": {
+      "type": "paper",
+      "title": "Learning Transferable Visual Models From Natural Language Supervision",
+      "authors": [
+        "Alec Radford",
+        "Jong Wook Kim",
+        "Chris Hallacy",
+        "Aditya Ramesh",
+        "Gabriel Goh",
+        "Sandhini Agarwal",
+        "Girish Sastry",
+        "Amanda Askell",
+        "Pamela Mishkin",
+        "Jack Clark",
+        "Gretchen Krueger",
+        "Ilya Sutskever"
+      ],
+      "year": 2021,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/2103.00020",
+      "file_url": "https://arxiv.org/pdf/2103.00020",
+      "arxiv": "2103.00020",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-25",
+      "archived": {
+        "path": "references/library/paper/radford2021-learning-transferable-visual.pdf",
+        "sha256": "6478b6e571a7d6fcd846d8ef77bfd60c285f1986abb8f475eedc43de403074f5",
+        "bytes": 6813639,
+        "content_type": "application/pdf",
+        "pages": 48,
+        "fetched": "2026-07-25",
+        "source_url": "https://arxiv.org/pdf/2103.00020"
+      }
+    },
+    "3blue1brown-linalg": {
+      "type": "video",
+      "title": "Essence of Linear Algebra",
+      "authors": [
+        "Grant Sanderson (3Blue1Brown)"
+      ],
+      "url": "https://www.3blue1brown.com/topics/linear-algebra",
+      "access": "free-online",
+      "archivable": false,
+      "license": "영상 재배포 불가. 링크와 타임스탬프로만 인용한다.",
+      "topics": [
+        "2"
+      ],
+      "checked": "2026-07-25"
+    },
+    "russell2021-aima": {
+      "type": "book",
+      "title": "Artificial Intelligence: A Modern Approach (4th ed.)",
+      "authors": [
+        "Stuart Russell",
+        "Peter Norvig"
+      ],
+      "year": 2021,
+      "publisher": "Pearson",
+      "url": "https://aima.cs.berkeley.edu/",
+      "access": "paywalled",
+      "archivable": false,
+      "license": "유료 교재. 공식 사이트의 목차·의사코드·연습문제는 공개.",
+      "topics": [
+        "1"
+      ],
+      "checked": "2026-07-25",
+      "cited_by": [
+        "1.1"
+      ]
+    },
+    "mitchell1997-ml": {
+      "type": "book",
+      "title": "Machine Learning",
+      "authors": [
+        "Tom M. Mitchell"
+      ],
+      "year": 1997,
+      "publisher": "McGraw-Hill",
+      "url": "http://www.cs.cmu.edu/~tom/mlbook.html",
+      "access": "paywalled",
+      "archivable": false,
+      "license": "유료 교재. 저자 페이지에 일부 장 초안 공개.",
+      "note": "학습의 E/T/P 정의(1장)의 출처.",
+      "topics": [
+        "1",
+        "5"
+      ],
+      "checked": "2026-07-25",
+      "cited_by": [
+        "1.1"
+      ]
+    },
+    "turing1950-machinery": {
+      "type": "paper",
+      "title": "Computing Machinery and Intelligence",
+      "authors": [
+        "Alan M. Turing"
+      ],
+      "year": 1950,
+      "venue": "Mind, LIX(236), 433-460",
+      "url": "https://www.csee.umbc.edu/courses/471/papers/turing.pdf",
+      "file_url": "https://www.csee.umbc.edu/courses/471/papers/turing.pdf",
+      "doi": "10.1093/mind/LIX.236.433",
+      "access": "free-online",
+      "archivable": true,
+      "license": "교육용 공개본. 원문은 Oxford Mind 게재.",
+      "topics": [
+        "1"
+      ],
+      "checked": "2026-07-25",
+      "archived": {
+        "path": "references/library/paper/turing1950-machinery.pdf",
+        "sha256": "3cd7c57944b7b53f18fb2a7c014fe2367f3576696a1d024c840151459da2f24e",
+        "bytes": 91972,
+        "content_type": "application/pdf",
+        "pages": 22,
+        "fetched": "2026-07-25",
+        "source_url": "https://courses.cs.umbc.edu/471/papers/turing.pdf"
+      },
+      "cited_by": [
+        "1.1"
+      ]
+    },
+    "sutton2019-bitter": {
+      "type": "web",
+      "title": "The Bitter Lesson",
+      "authors": [
+        "Richard S. Sutton"
+      ],
+      "year": 2019,
+      "url": "http://www.incompleteideas.net/IncIdeas/BitterLesson.html",
+      "file_url": "http://www.incompleteideas.net/IncIdeas/BitterLesson.html",
+      "access": "free-online",
+      "archivable": true,
+      "note": "규칙 기반(지식 주입)과 학습 기반(탐색·학습 확장)의 대비.",
+      "topics": [
+        "1"
+      ],
+      "checked": "2026-07-25",
+      "archived": {
+        "path": "references/library/web/sutton2019-bitter.html",
+        "sha256": "f1baabbabfde3e2a368104fe91cb7efcf3566e8a9dd2c5fe50ccd1d96ec1acb6",
+        "bytes": 7297,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-25",
+        "source_url": "http://www.incompleteideas.net/IncIdeas/BitterLesson.html"
+      },
+      "cited_by": [
+        "1.1"
+      ]
+    },
+    "lecun2015-deeplearning": {
+      "type": "paper",
+      "title": "Deep learning",
+      "authors": [
+        "Yann LeCun",
+        "Yoshua Bengio",
+        "Geoffrey Hinton"
+      ],
+      "year": 2015,
+      "venue": "Nature 521, 436-444",
+      "url": "https://www.nature.com/articles/nature14539",
+      "doi": "10.1038/nature14539",
+      "access": "paywalled",
+      "archivable": false,
+      "license": "Nature 게재. 서지정보만 등록하고 링크로 인용한다.",
+      "topics": [
+        "1",
+        "6"
+      ],
+      "checked": "2026-07-25",
+      "cited_by": [
+        "1.1"
+      ]
+    }
+  }
+}

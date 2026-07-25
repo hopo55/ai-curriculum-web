@@ -28,6 +28,14 @@ function loadGlobals(relPath) {
 const { CURRICULUM } = loadGlobals('assets/js/curriculum-data.js');
 const { PAGES } = loadGlobals('assets/js/pages.js');
 
+/* 출처 레지스트리 — 인용 키가 실재하는지 검사하는 데 쓴다 */
+let REFS = {};
+try {
+  REFS = JSON.parse(readFileSync(join(ROOT, 'references/registry.json'), 'utf8')).refs || {};
+} catch {
+  console.warn('! references/registry.json 을 읽지 못했습니다. 출처 검사를 건너뜁니다.');
+}
+
 const SECTION = {};
 for (const ch of CURRICULUM) for (const s of ch.sections) SECTION[s.id] = s;
 
@@ -48,6 +56,8 @@ const REQUIRED_SECS = [
 const MIN_WIDGETS = 3;
 const MIN_TRAPS = 3;
 const MIN_QUIZ = 4;
+const MIN_REFS = 4;        // 절당 최소 출처 개수
+const MIN_REF_TYPES = 3;   // 최소 유형 종류 (논문·교재·강의·영상·웹문서)
 
 /* ---------- 결과 수집 ---------- */
 let errors = 0, warns = 0;
@@ -187,20 +197,65 @@ for (const file of files) {
     if (!/data-correct="true"/.test(q)) warn(rel, `${i + 1}번 문제에 data-correct="true" 선택지가 없습니다.`);
   });
 
-  /* (6) 절대경로 금지 — GitHub Pages 는 /<repo>/ 하위에서 서빙된다 */
+  /* (6) 출처 — SOURCES.md 규약 */
+  const refsBlock = /<ol class="refs"[\s\S]*?<\/ol>/.exec(html);
+  if (!refsBlock) {
+    err(rel, '출처 목록(<ol class="refs">)이 없습니다. 파트 12 에 출처를 4개 이상 남겨야 합니다.');
+  } else {
+    const items = [...refsBlock[0].matchAll(/<li[^>]*\bdata-ref="([^"]+)"/g)].map((m) => m[1]);
+    if (items.length < MIN_REFS) {
+      err(rel, `출처가 ${items.length}개입니다. 최소 ${MIN_REFS}개가 필요합니다 (SOURCES.md §1).`);
+    }
+    /* 유형 다양성 — 논문만 잔뜩 거는 것을 막는다 */
+    const types = new Set([...refsBlock[0].matchAll(/data-type="([^"]+)"/g)].map((m) => m[1]));
+    if (types.size < MIN_REF_TYPES) {
+      err(rel, `출처 유형이 ${types.size}종입니다(${[...types].join(', ') || '없음'}). ` +
+        `최소 ${MIN_REF_TYPES}종을 섞으세요 — 논문·교재·강의·영상·웹문서.`);
+    }
+    /* 레지스트리 등록 확인 */
+    if (Object.keys(REFS).length) {
+      for (const id of items) {
+        if (!REFS[id]) err(rel, `출처 "${id}" 가 references/registry.json 에 없습니다. 먼저 등록하세요.`);
+      }
+    }
+    /* 어느 부분을 인용했는지 */
+    const wheres = (refsBlock[0].match(/class="ref__where"/g) || []).length;
+    if (wheres < items.length) {
+      err(rel, `출처 ${items.length}개 중 ${wheres}개만 ref__where 가 있습니다. ` +
+        `"이 출처의 어느 부분이 이 절의 무엇을 뒷받침하는지"를 모두 적으세요.`);
+    }
+    /* 앵커 id 규칙 */
+    for (const id of items) {
+      if (!new RegExp(`id="ref-${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`).test(refsBlock[0])) {
+        warn(rel, `출처 "${id}" 의 id 가 "ref-${id}" 형식이 아닙니다. 인라인 인용 링크가 깨집니다.`);
+      }
+    }
+  }
+  /* 본문 인라인 인용도 레지스트리에 있어야 한다 */
+  if (Object.keys(REFS).length) {
+    for (const m of html.matchAll(/class="cite"[^>]*\bdata-ref="([^"]+)"/g)) {
+      if (!REFS[m[1]]) err(rel, `인라인 인용 "${m[1]}" 가 registry.json 에 없습니다.`);
+    }
+  }
+
+  /* (7) 절대경로 금지 — GitHub Pages 는 /<repo>/ 하위에서 서빙된다 */
   for (const m of html.matchAll(/\b(?:src|href)="(\/[^/][^"]*)"/g)) {
     err(rel, `절대경로는 GitHub Pages 에서 깨집니다: ${m[1]} → 상대경로로 바꾸세요.`);
   }
 
-  /* (7) 외부 URL 금지 (오프라인 동작 원칙) */
-  for (const m of html.matchAll(/\b(?:src|href)="(https?:\/\/[^"]+)"/g)) {
-    err(rel, `외부 리소스를 참조하고 있습니다: ${m[1]} → 저장소 안에 포함시키세요.`);
+  /* (8) 외부 '리소스 로드' 금지 (오프라인 동작 원칙).
+         단순 하이퍼링크(<a href>)는 출처 인용에 필요하므로 허용한다. */
+  for (const m of html.matchAll(/\bsrc="(https?:\/\/[^"]+)"/g)) {
+    err(rel, `외부 리소스를 불러오고 있습니다: ${m[1]} → 저장소 안에 포함시키세요.`);
+  }
+  for (const m of html.matchAll(/<link\b[^>]*\bhref="(https?:\/\/[^"]+)"/g)) {
+    err(rel, `외부 스타일시트/리소스를 참조합니다: ${m[1]} → vendor/ 에 넣으세요.`);
   }
   if (/<img[^>]+src="(?!data:)/.test(html)) {
     err(rel, '<img> 로 외부 이미지 파일을 참조했습니다. 그림은 인라인 SVG/Canvas 로 그려야 합니다.');
   }
 
-  /* (8) 내부 링크가 실제로 존재하는지 */
+  /* (9) 내부 링크가 실제로 존재하는지 */
   for (const m of html.matchAll(/\bhref="((?!#|https?:|data:|mailto:)[^"]+)"/g)) {
     const target = m[1].split('#')[0];
     if (!target) continue;
@@ -208,7 +263,7 @@ for (const file of files) {
     if (!existsSync(abs)) err(rel, `링크가 가리키는 파일이 없습니다: ${m[1]}`);
   }
 
-  /* (9) pages.js 등록 여부 */
+  /* (10) pages.js 등록 여부 */
   if (!PAGES[id]) {
     err(rel, `assets/js/pages.js 에 "${id}" 가 등록되지 않았습니다. 등록해야 목차와 검색에 나타납니다.`);
   } else {
@@ -218,7 +273,7 @@ for (const file of files) {
     }
   }
 
-  /* (10) 접근성·품질 소소한 것들 */
+  /* (11) 접근성·품질 소소한 것들 */
   if (!/<html lang="ko"/.test(html)) warn(rel, '<html lang="ko"> 가 아닙니다.');
   if (!/name="viewport"/.test(html)) err(rel, 'viewport 메타 태그가 없습니다. 모바일에서 깨집니다.');
   if (!/data-act="done"/.test(html)) warn(rel, '학습 완료 버튼이 없습니다.');

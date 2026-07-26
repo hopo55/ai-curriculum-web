@@ -666,7 +666,9 @@ WIDGETS.register('ablation-lab', function (root, ctx) {
                11: 2.23, 12: 2.20, 13: 2.18, 14: 2.16, 15: 2.14, 16: 2.13, 17: 2.12, 18: 2.11, 19: 2.10, 20: 2.09 };
   var m = 5, comp = [['A', 3.0], ['B', 0.5], ['C', 6.0]];
 
-  var p = VIZ.plot({ w: 460, h: 230, xmin: -0.5, xmax: 2.5, ymin: 0, ymax: 7.2, pad: { t: 18, r: 14, b: 30, l: 40 } });
+  /* xmin 을 0 으로 두어 y축이 왼쪽 끝에 서게 하고, 막대는 0.5 씩 밀어
+     눈금 숫자(축 왼쪽 6px)와 막대 위 값 라벨이 겹치지 않게 한다. */
+  var p = VIZ.plot({ w: 460, h: 230, xmin: 0, xmax: 3, ymin: 0, ymax: 7.2, pad: { t: 18, r: 14, b: 30, l: 40 } });
   ctx.stage.appendChild(p.svg);
   var out = WIDGETS.readout(ctx.readout, [
     { key: 's', label: '표본표준편차 s', digits: 3 },
@@ -686,23 +688,23 @@ WIDGETS.register('ablation-lab', function (root, ctx) {
     p.clear().grid(0, 1).axes('', 'Δ 기여도 (%p)').ticks(0, 1);
     /* 오차 막대 영역 */
     p.add(VIZ.el('rect', {
-      x: p.X(-0.5), y: p.Y(ci), width: p.X(2.5) - p.X(-0.5), height: p.Y(0) - p.Y(ci),
+      x: p.X(0), y: p.Y(ci), width: p.X(3) - p.X(0), height: p.Y(0) - p.Y(ci),
       fill: 'var(--seal)', 'fill-opacity': .12
     }));
-    p.add(VIZ.el('line', { x1: p.X(-0.5), y1: p.Y(ci), x2: p.X(2.5), y2: p.Y(ci), stroke: 'var(--seal)', 'stroke-width': 1.6, 'stroke-dasharray': '5 3' }));
-    p.text(-0.42, ci, ' 노이즈 범위 (±' + ci.toFixed(2) + ')', { dy: -5, fill: 'var(--seal)', size: 10.5 });
+    p.add(VIZ.el('line', { x1: p.X(0), y1: p.Y(ci), x2: p.X(3), y2: p.Y(ci), stroke: 'var(--seal)', 'stroke-width': 1.6, 'stroke-dasharray': '5 3' }));
+    p.text(2.95, ci, '노이즈 범위 (±' + ci.toFixed(2) + ')', { dy: -5, anchor: 'end', fill: 'var(--seal)', size: 10.5 });
 
     var sig = [];
     comp.forEach(function (c, i) {
       var ok = c[1] > ci;
       if (ok) sig.push(c[0]);
       p.add(VIZ.el('rect', {
-        x: p.X(i - 0.22), y: p.Y(c[1]), width: p.X(i + 0.22) - p.X(i - 0.22), height: p.Y(0) - p.Y(c[1]),
+        x: p.X(i + 0.28), y: p.Y(c[1]), width: p.X(i + 0.72) - p.X(i + 0.28), height: p.Y(0) - p.Y(c[1]),
         rx: 3, fill: ok ? 'var(--jade)' : 'var(--ink-3)', 'fill-opacity': ok ? .55 : .3,
         stroke: ok ? 'var(--jade)' : 'var(--ink-3)', 'stroke-width': 1.4
       }));
-      p.text(i, c[1], c[1].toFixed(1), { dy: -6, anchor: 'middle', size: 11 });
-      p.text(i, 0, '성분 ' + c[0], { dy: 16, anchor: 'middle', size: 11 });
+      p.text(i + 0.5, c[1], c[1].toFixed(1), { dy: -6, anchor: 'middle', size: 11 });
+      p.text(i + 0.5, 0, '성분 ' + c[0], { dy: 16, anchor: 'middle', size: 11 });
     });
 
     out.set('s', s); out.set('ci', ci);
@@ -734,7 +736,7 @@ WIDGETS.register('sample-size', function (root, ctx) {
     var m = need(d);
     p.add(VIZ.el('line', { x1: p.X(d), y1: p.Y(0), x2: p.X(d), y2: p.Y(Math.min(m, 80)), stroke: 'var(--seal)', 'stroke-width': 1.4, 'stroke-dasharray': '4 3' }));
     p.dot(d, Math.min(m, 80), 6);
-    p.text(0.1, 76, 'm ≳ (2s/d)²', { size: 12 });
+    p.text(1.95, 76, 'm ≳ (2s/d)²', { size: 12, anchor: 'end' });
 
     out.setRaw('m', m > 200 ? '200회 초과' : Math.ceil(m) + ' 회');
     out.setRaw('note', m <= 5 ? '몇 번이면 충분' : (m <= 20 ? '현실적 범위' : '이 정도 차이는 주장하기 어렵다'));

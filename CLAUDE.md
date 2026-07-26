@@ -71,6 +71,7 @@ cp templates/section.html chapters/ch02/2.3-inner-product.html
 # 5. 출처 반영 + 검사 — 반드시 통과시킬 것 (오류 0)
 node tools/refs.mjs scan
 node tools/check.mjs 2.3
+node tools/check-visual.mjs      # 글자 겹침·그림 이탈 (jsdom 필요)
 
 # 6. 진행 현황 갱신 (자동 생성 — 손으로 표를 고치지 않는다)
 node tools/build-progress.mjs
@@ -127,6 +128,7 @@ vendor/katex/                 KaTeX 0.18.1 (woff2 만, 608K)
 tools/build-curriculum.mjs    목차 md → curriculum-data.js
 tools/build-progress.mjs      PROGRESS.md 재생성
 tools/check.mjs               규약 검사기
+tools/check-visual.mjs        그림 레이아웃 검사 (겹침·이탈)
 tools/refs.mjs                출처 등록·다운로드·무결성 검증
 ```
 

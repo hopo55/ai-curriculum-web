@@ -633,15 +633,15 @@ print(cos(2 * R[0], R[1]))   # 0.64
 WIDGETS.register('field-map', function (root, ctx) {
   var el = VIZ.el;
   var MOD = ['텍스트', '이미지', '음성', '상태·행동'];
-  /* [입력 index, 출력 index, 이름, X, Y, 손실] */
+  /* [입력 index, 출력 index, 이름, X, Y, 손실, 칸에 넣을 짧은 이름] */
   var F = [
     [0, 0, '자연어처리', '토큰열 V*', '토큰열 V*', '토큰 교차엔트로피'],
-    [1, 0, '이미지 캡셔닝 · VLM', 'R^(H×W×C)', '토큰열', '토큰 교차엔트로피'],
+    [1, 0, '이미지 캡셔닝 · VLM', 'R^(H×W×C)', '토큰열', '토큰 교차엔트로피', '캡셔닝·VLM'],
     [2, 0, '음성 인식', '파형 R^T', '토큰열', 'CTC · seq2seq'],
     [0, 2, '음성 합성', '토큰열', '파형 R^T', '스펙트로그램 L1 · 적대손실'],
     [1, 1, '컴퓨터 비전', 'R^(H×W×C)', '라벨 · 상자 · 마스크', '교차엔트로피 · IoU'],
-    [0, 1, '텍스트→이미지 생성', '토큰열', 'R^(H×W×C)', '확산 잡음예측'],
-    [3, 3, '로보틱스 · 자율주행', '관측 s_t', '행동 a_t', '보상 최대화 · 모방'],
+    [0, 1, '텍스트→이미지 생성', '토큰열', 'R^(H×W×C)', '확산 잡음예측', '이미지 생성'],
+    [3, 3, '로보틱스 · 자율주행', '관측 s_t', '행동 a_t', '보상 최대화 · 모방', '로보틱스·주행'],
     [3, 3, 'World Model', '(s_t, a_t)', 's_(t+1)', '예측 오차'],
     [1, 3, 'Embodied AI', '시각·촉각 관측', '물리 행동', '과제 성공률']
   ];
@@ -667,7 +667,18 @@ WIDGETS.register('field-map', function (root, ctx) {
     var g = el('g', { tabindex: '0', role: 'button', 'aria-label': f[2], style: 'cursor:pointer' });
     var rect = el('rect', { x: x + 2, y: y + 2, width: W - 7, height: seen ? 13 : 24, rx: 3, fill: 'var(--jade)', 'fill-opacity': .2, stroke: 'var(--jade)', 'stroke-width': 1.2 });
     g.appendChild(rect);
-    g.appendChild(el('text', { x: x + (W - 3) / 2, y: y + (seen ? 12 : 17), 'text-anchor': 'middle', class: 'viz-label', 'font-size': 9.5, 'font-weight': '600', text: f[2].length > 13 ? f[2].slice(0, 12) + '…' : f[2] }));
+    /* 한글은 글자당 폭이 글꼴 크기와 거의 같다. 글자수가 아니라 폭으로 잘라야
+       칸(W-7 px)을 넘지 않는다. */
+    var FS = 9.5, MAXW = W - 9;
+    var label = f[6] || f[2];
+    var wOf = function (t) {
+      var acc = 0;
+      for (var k = 0; k < t.length; k++) acc += /[\uac00-\ud7af\u3000-\u30ff]/.test(t[k]) ? FS : FS * 0.55;
+      return acc;
+    };
+    while (label.length > 1 && wOf(label) > MAXW) label = label.slice(0, -1);
+    if (label !== (f[6] || f[2])) label = label.slice(0, -1) + '…';
+    g.appendChild(el('text', { x: x + (W - 3) / 2, y: y + (seen ? 12 : 17), 'text-anchor': 'middle', class: 'viz-label', 'font-size': FS, 'font-weight': '600', text: label }));
     g.addEventListener('click', function () { show(f, rect); });
     g.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(f, rect); } });
     svg.appendChild(g);
@@ -759,7 +770,7 @@ WIDGETS.register('direction-pairs', function (root, ctx) {
       svg.appendChild(el('text', { x: q[0] + 55, y: 59, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 14, 'font-weight': '700', text: q[1] }));
     });
     svg.appendChild(el('path', { d: 'M175 54 L330 54', stroke: 'var(--seal)', 'stroke-width': 2.5 }));
-    svg.appendChild(el('path', { d: 'M338 54 L328 49 L328 59 Z', fill: 'var(--seal)' }));
+    svg.appendChild(el('path', { d: 'M338 54 L327 50.5 L327 57.5 Z', fill: 'var(--seal)' }));
     svg.appendChild(el('text', { x: 252, y: 44, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 12, 'font-weight': '700', fill: 'var(--seal)', text: fwd ? p.fwd : p.bwd }));
     svg.appendChild(el('text', { x: 252, y: 88, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 11, text: fwd ? '정보를 버린다 (다대일)' : '정보를 만든다 (일대다)' }));
     stage.innerHTML = ''; stage.appendChild(svg);

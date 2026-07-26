@@ -904,7 +904,7 @@ WIDGETS.register('train-infer', function (root, ctx) {
       }));
       p.dot(X[i], Y[i], 4.5);
     }
-    p.text(0.1, 8.1, '데이터와 직선 f(x)=wx', { size: 11 });
+    p.text(4.5, 8.1, '데이터와 직선 f(x)=wx', { size: 11, anchor: 'end' });
     if (infer) {
       p.add(VIZ.el('circle', { cx: p.X(4), cy: p.Y(w * 4), r: 7, fill: 'none', stroke: 'var(--jade)', 'stroke-width': 2.5 }));
       p.dot(4, w * 4, 4.5, 'viz-handle');
@@ -917,7 +917,7 @@ WIDGETS.register('train-infer', function (root, ctx) {
     q.dot(w, loss(w), 6);
     q.add(VIZ.el('line', { x1: q.X(WSTAR), y1: q.Y(0), x2: q.X(WSTAR), y2: q.Y(46), stroke: 'var(--jade)', 'stroke-width': 1, 'stroke-dasharray': '4 3' }));
     q.text(WSTAR, 43, ' w*', { fill: 'var(--jade)', size: 11 });
-    q.text(0.1, 43, '손실 곡선 L(w)', { size: 11 });
+    q.text(0.08, 43, '손실 곡선 L(w)', { size: 11 });
 
     out.set('w', w);
     out.set('L', loss(w));
@@ -946,11 +946,13 @@ WIDGETS.register('agent-loop', function (root, ctx) {
   var FB = { k: 'fb', t: '되먹임', d: '행동의 결과(정답·보상·사용자 반응)를 다시 받아 모델을 고친다. 이 화살표가 없으면 한 번 만든 규칙을 그대로 쓰는 정적 시스템이고, 있으면 경험 E 가 쌓이는 학습 시스템이 된다.' };
 
   var svg = el('svg', { viewBox: '0 0 480 190', role: 'img', 'aria-label': '지능형 시스템의 구성 요소와 되먹임 순환' });
-  var W = 82, H = 46, GAP = 17, Y = 34;
+  /* 폭 계산: X0 + 5*W + 4*GAP 이 480 을 넘지 않아야 한다.
+     10 + 5*80 + 4*13 = 462  (오른쪽 여백 18px) */
+  var X0 = 10, W = 80, H = 46, GAP = 13, Y = 34;
   var shapes = {};
 
   BLOCKS.forEach(function (b, i) {
-    var x = 8 + i * (W + GAP);
+    var x = X0 + i * (W + GAP);
     var g = el('g', { tabindex: '0', role: 'button', 'aria-label': b.t, style: 'cursor:pointer' });
     var r = el('rect', { x: x, y: Y, width: W, height: H, rx: 5, fill: 'var(--jade)', 'fill-opacity': .12, stroke: 'var(--jade)', 'stroke-width': 1.5 });
     g.appendChild(r);
@@ -963,11 +965,11 @@ WIDGETS.register('agent-loop', function (root, ctx) {
     if (i < BLOCKS.length - 1) {
       var ax = x + W, ay = Y + H / 2;
       svg.appendChild(el('path', {
-        d: 'M' + ax + ' ' + ay + ' L' + (ax + GAP - 5) + ' ' + ay,
+        d: 'M' + ax + ' ' + ay + ' L' + (ax + GAP - 8) + ' ' + ay,
         stroke: 'var(--ink-3)', 'stroke-width': 1.5
       }));
       svg.appendChild(el('path', {
-        d: 'M' + (ax + GAP) + ' ' + ay + ' L' + (ax + GAP - 6) + ' ' + (ay - 4) + ' L' + (ax + GAP - 6) + ' ' + (ay + 4) + ' Z',
+        d: 'M' + (ax + GAP) + ' ' + ay + ' L' + (ax + GAP - 8) + ' ' + (ay - 3) + ' L' + (ax + GAP - 8) + ' ' + (ay + 3) + ' Z',
         fill: 'var(--ink-3)'
       }));
     }
@@ -975,13 +977,13 @@ WIDGETS.register('agent-loop', function (root, ctx) {
 
   /* 되먹임 — 행동에서 표현·모델로 되돌아온다 */
   var fbG = el('g', { tabindex: '0', role: 'button', 'aria-label': '되먹임', style: 'cursor:pointer' });
-  var x0 = 8 + 4 * (W + GAP) + W / 2, x1 = 8 + (W + GAP) + W / 2;
+  var x0 = X0 + 4 * (W + GAP) + W / 2, x1 = X0 + 2 * (W + GAP) + W / 2;   /* 행동 → 모델 */
   var fbPath = el('path', {
     d: 'M' + x0 + ' ' + (Y + H) + ' L' + x0 + ' 148 L' + x1 + ' 148 L' + x1 + ' ' + (Y + H + 6),
     fill: 'none', stroke: 'var(--seal)', 'stroke-width': 2, 'stroke-dasharray': '6 3'
   });
   fbG.appendChild(fbPath);
-  fbG.appendChild(el('path', { d: 'M' + x1 + ' ' + (Y + H) + ' L' + (x1 - 4.5) + ' ' + (Y + H + 8) + ' L' + (x1 + 4.5) + ' ' + (Y + H + 8) + ' Z', fill: 'var(--seal)' }));
+  fbG.appendChild(el('path', { d: 'M' + x1 + ' ' + (Y + H) + ' L' + (x1 - 3.25) + ' ' + (Y + H + 9) + ' L' + (x1 + 3.25) + ' ' + (Y + H + 9) + ' Z', fill: 'var(--seal)' }));
   fbG.appendChild(el('text', { x: (x0 + x1) / 2, y: 164, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 12, 'font-weight': '700', fill: 'var(--seal)', text: '되먹임 — 학습' }));
   fbG.addEventListener('click', function () { show('fb'); });
   fbG.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show('fb'); } });

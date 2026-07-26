@@ -88,7 +88,9 @@
         api.add(el('line', { x1: p.l, y1: y0, x2: p.l + iw, y2: y0, class: 'viz-axis' }));
         api.add(el('line', { x1: x0, y1: p.t, x2: x0, y2: p.t + ih, class: 'viz-axis' }));
         if (labelX) api.add(el('text', { x: p.l + iw, y: y0 - 6, 'text-anchor': 'end', class: 'viz-label', text: labelX }));
-        if (labelY) api.add(el('text', { x: x0 + 6, y: p.t + 10, class: 'viz-label', text: labelY }));
+        /* y축 이름은 플롯 안이 아니라 위쪽 여백에 둔다.
+           안쪽(x0+6, p.t+10)에 두면 좌상단에 넣는 캡션과 반드시 겹친다. */
+        if (labelY) api.add(el('text', { x: Math.max(2, x0 - 4), y: Math.max(9, p.t - 5), class: 'viz-label', text: labelY }));
         return api;
       },
 

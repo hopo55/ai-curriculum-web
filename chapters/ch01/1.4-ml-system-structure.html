@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.4 머신러닝 시스템의 기본 구조 — AI 이론 학습</title>
+<meta name="description" content="데이터 수집부터 재학습까지 11단계. 파이프라인은 함수 합성이고, 재학습 주기는 비용 최소화로 풀린다 — T* = √(2C/kδ)를 유도하고 손으로 계산한다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="1.4">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">1.4</span>
+        <span>1장 · AI 개론</span>
+      </div>
+      <h1>머신러닝 시스템의 기본 구조</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 40분</span>
+        <span><b>난이도</b>★★☆☆☆</span>
+        <span><b>선수지식</b>
+          <a href="1.1-ai-fundamentals.html">1.1 인공지능의 기본 개념</a>
+        </span>
+      </div>
+    </header>
+
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-collect">데이터 수집</a>
+      <a class="chip" href="#c-preprocess">데이터 전처리</a>
+      <a class="chip" href="#c-feature">특성 표현</a>
+      <a class="chip" href="#c-select">모델 선택</a>
+      <a class="chip" href="#c-train">학습</a>
+      <a class="chip" href="#c-validate">검증</a>
+      <a class="chip" href="#c-evaluate">평가</a>
+      <a class="chip" href="#c-infer">추론</a>
+      <a class="chip" href="#c-deploy">배포</a>
+      <a class="chip" href="#c-monitor">모니터링</a>
+      <a class="chip" href="#c-retrain">재학습</a>
+    </nav>
+
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        모델 학습은 이 열한 단계 중 <strong>하나</strong>일 뿐이다.
+        그리고 이 파이프라인은 한 번 흐르고 끝나는 직선이 아니라,
+        모니터링 → 재학습으로 <strong>되돌아오는 고리</strong>다.
+      </p>
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>열한 단계를 순서대로 나열하고, 각 단계가 무엇을 입력받아 무엇을 내놓는지 말할 수 있다.</li>
+        <li>검증과 평가를 구분하고, 왜 둘을 분리해야 하는지 설명할 수 있다.</li>
+        <li>재학습 주기 $T^{*} = \sqrt{2C/(k\delta)}$ 를 유도하고 실제 숫자를 넣어 계산할 수 있다.</li>
+      </ol>
+    </section>
+
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+      <p>
+        입문자가 흔히 그리는 그림은 이렇다 — <em>데이터를 넣고, 모델을 학습시키고, 끝.</em>
+        실제로 돌아가는 시스템에서 모델 학습 코드가 차지하는 비중은 아주 작다.
+        Sculley 등은 이를 두고 <strong>"ML 코드는 전체 시스템의 작은 상자 하나에 불과하다"</strong>고
+        지적했다<a class="cite" href="#ref-sculley2015-tech-debt" data-ref="sculley2015-tech-debt">1</a>.
+        나머지는 데이터 수집·검증·서빙·모니터링 같은 주변 인프라다.
+      </p>
+      <p>
+        더 중요한 차이가 하나 있다. 이 파이프라인은 <strong>끝나지 않는다.</strong>
+        세상이 변하면 모델이 낡는다. 그래서 모니터링이 재학습을 부르고, 고리가 다시 돈다.
+      </p>
+
+      <figure class="widget" data-widget="pipeline-map">
+        <figcaption class="widget__bar">열한 단계 파이프라인 — 각 단계를 눌러보세요</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <p class="watch">모니터링에서 재학습으로 돌아오는 화살표가 이 그림의 핵심입니다. 직선이 아니라 고리입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <p>
+        파이프라인은 <strong>함수 합성</strong>으로 쓸 수 있다.
+        <a href="1.1-ai-fundamentals.html#c-dl">1.1절의 딥러닝 정의</a>와 같은 형식이다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \hat{y} \;=\; \bigl(h_{\theta^{*}} \circ \phi \circ \rho\bigr)(x_{\text{raw}}) $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        원자료 $x_{\text{raw}}$ 가 전처리 $\rho$, 특성 표현 $\phi$, 학습된 모델 $h_{\theta^{*}}$ 를 차례로 통과한다.
+        <strong>학습할 때와 추론할 때 이 합성이 정확히 같아야 한다</strong> — 이것이 지켜지지 않는 것이 실무의 가장 흔한 버그다.
+      </p>
+
+      <h3>준비 단계</h3>
+      <span class="anchor" id="c-collect"></span>
+      <p>
+        <strong>데이터 수집</strong> — 무엇을 모을지가 곧 무엇을 배울지를 정한다.
+        수집 과정의 편향은 나중에 어떤 알고리즘으로도 지울 수 없다.
+        "어떤 표본이 빠졌는가"를 묻는 것이 이 단계의 핵심이다.
+      </p>
+      <span class="anchor" id="c-preprocess"></span>
+      <p>
+        <strong>데이터 전처리</strong> $\rho$ — 결측 처리, 이상치 제거, 중복 제거, 스케일 조정.
+        여기서 쓰는 통계량(평균·표준편차 등)은 <strong>반드시 훈련 데이터에서만</strong> 계산해야 한다.
+        검증·테스트 데이터를 포함해 계산하면 정보가 새어 든다(<a href="1.5-data-split-evaluation.html#c-leakage">1.5절 데이터 누출</a>).
+      </p>
+      <span class="anchor" id="c-feature"></span>
+      <p>
+        <strong>특성 표현</strong> $\phi$ — 원자료를 모델이 다룰 수 있는 벡터로 바꾼다.
+        전통적으로는 사람이 설계했고(feature engineering),
+        딥러닝은 이 단계를 <a href="1.2-ml-paradigms.html#c-selfsup">학습으로 대체</a>한다.
+        그래도 완전히 사라지지는 않는다 — 토큰화, 정규화, 창 나누기는 여전히 사람이 정한다.
+      </p>
+      <span class="anchor" id="c-select"></span>
+      <p>
+        <strong>모델 선택</strong> — 가설 공간을 고르는 일이다.
+        <a href="1.1-ai-fundamentals.html#c-model-algo">1.1절에서 구분한 대로</a> 모델은 <em>무엇을 표현할 수 있는가</em>를 정한다.
+        하이퍼파라미터 탐색도 여기에 속하며, <strong>검증 데이터로 판단</strong>한다.
+      </p>
+
+      <h3>학습과 검증</h3>
+      <span class="anchor" id="c-train"></span>
+      <p>
+        <strong>학습</strong> — $\theta^{*} = \arg\min_\theta \frac{1}{n}\sum L$.
+        훈련 데이터만 쓴다.
+      </p>
+      <span class="anchor" id="c-validate"></span>
+      <p>
+        <strong>검증</strong> — 학습 중에 <em>선택</em>을 하기 위해 쓴다.
+        어느 하이퍼파라미터가 나은가, 언제 멈출까(early stopping), 어느 모델을 채택할까.
+        검증 데이터는 <strong>여러 번 본다.</strong>
+      </p>
+      <span class="anchor" id="c-evaluate"></span>
+      <p>
+        <strong>평가</strong> — 모든 선택이 끝난 뒤 <em>단 한 번</em> 성능을 재기 위해 쓴다.
+        테스트 데이터를 보고 모델을 고치면, 그 순간 테스트 데이터는 검증 데이터가 되어 버린다.
+      </p>
+      <div class="note note--key">
+        <span class="note__label">검증과 평가의 차이</span>
+        <p>
+          같은 "성능 측정"처럼 보이지만 목적이 다르다.
+          <strong>검증은 고르기 위해, 평가는 보고하기 위해</strong> 잰다.
+          검증 점수는 여러 번 최적화의 대상이 되므로 낙관적으로 치우친다.
+          그래서 편향 없는 추정치를 얻으려면 손대지 않은 테스트 집합이 따로 필요하다.
+        </p>
+      </div>
+
+      <h3>운영 단계</h3>
+      <span class="anchor" id="c-infer"></span>
+      <p>
+        <strong>추론</strong> — 학습된 $\theta^{*}$ 로 새 입력에 답한다.
+        학습과 달리 <em>지연시간·처리량·비용</em>이 제약이 된다.
+        같은 모델도 배치 추론이냐 실시간이냐에 따라 설계가 달라진다.
+      </p>
+      <span class="anchor" id="c-deploy"></span>
+      <p>
+        <strong>배포</strong> — 모델을 실제 서비스에 올린다.
+        버전 관리, 점진적 롤아웃, 문제 시 되돌리기(rollback)가 필요하다.
+        <strong>학습 때의 전처리 $\rho, \phi$ 를 그대로 재현</strong>하는 것이 핵심 과제다.
+      </p>
+      <span class="anchor" id="c-monitor"></span>
+      <p>
+        <strong>모니터링</strong> — 예측 품질, 입력 분포, 지연시간, 오류율을 지켜본다.
+        정답이 늦게 오거나 아예 안 오는 경우가 많아, 정답 없이도 이상을 감지하는 장치가 필요하다
+        (입력 분포 변화 감시 등).
+      </p>
+      <span class="anchor" id="c-retrain"></span>
+      <p>
+        <strong>재학습</strong> — 성능이 떨어지면 새 데이터로 다시 학습해 배포한다.
+        <em>얼마나 자주</em> 할지는 감이 아니라 계산으로 정할 수 있다. 아래에서 유도한다.
+      </p>
+    </section>
+
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>
+        재학습 주기를 정하는 문제를 세운다. 모델은 배포 직후가 가장 좋고, 시간이 지나면 성능이 떨어진다.
+        <strong>자주 재학습하면 비용이 들고, 드물게 하면 성능 손실이 쌓인다.</strong>
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \text{일일 총비용}\quad J(T) \;=\; \underbrace{\frac{C}{T}}_{\text{재학습 비용}} \;+\; \underbrace{\frac{k\,\delta\,T}{2}}_{\text{성능 손실 비용}} $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        성능이 하루에 $\delta$ 만큼 선형으로 떨어진다면, 주기 $T$ 동안 <em>평균</em> 저하량은 $\delta T / 2$ 다
+        (0에서 $\delta T$ 까지 고르게 늘어나므로 평균은 절반).
+        여기에 저하 한 단위의 비용 $k$ 를 곱했다.
+      </p>
+
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead><tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr></thead>
+          <tbody>
+            <tr><td>$x_{\text{raw}}$</td><td>엑스 로우</td><td>가공하지 않은 원자료</td><td>—</td><td>—</td></tr>
+            <tr><td>$\rho$</td><td>로</td><td>전처리 함수</td><td>함수</td><td>—</td></tr>
+            <tr><td>$\phi$</td><td>파이</td><td>특성 표현 함수</td><td>함수 → $\mathbb{R}^{d}$</td><td>—</td></tr>
+            <tr><td>$h_{\theta^{*}}$</td><td>에이치 세타 스타</td><td>학습이 끝난 모델</td><td>함수</td><td>—</td></tr>
+            <tr><td>$T$</td><td>티</td><td>재학습 주기 (일)</td><td>스칼라</td><td>$T > 0$</td></tr>
+            <tr><td>$C$</td><td>씨</td><td>재학습 1회 비용</td><td>스칼라</td><td>$C > 0$</td></tr>
+            <tr><td>$\delta$</td><td>델타</td><td>하루당 성능 저하량 (예: %p/일)</td><td>스칼라</td><td>$\delta > 0$</td></tr>
+            <tr><td>$k$</td><td>케이</td><td>성능 저하 1단위의 비용</td><td>스칼라</td><td>$k > 0$</td></tr>
+            <tr><td>$J(T)$</td><td>제이 오브 티</td><td>주기 $T$ 일 때의 일일 총비용</td><td>스칼라</td><td>$> 0$</td></tr>
+            <tr><td>$T^{*}$</td><td>티 스타</td><td>총비용을 최소로 하는 주기</td><td>스칼라</td><td>$> 0$</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도 — 최적 재학습 주기</h2></div>
+
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ J(T) = \frac{C}{T} + \frac{k\delta}{2}\,T $$</div>
+          <div class="derive__why">식 (2). 앞항은 $T$ 가 커지면 줄고, 뒷항은 커진다 — 상충한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{dJ}{dT} = -\frac{C}{T^{2}} + \frac{k\delta}{2} $$</div>
+          <div class="derive__why">$C/T = CT^{-1}$ 의 미분은 $-CT^{-2}$, 뒷항은 상수 곱이라 그대로</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{C}{T^{2}} = \frac{k\delta}{2} $$</div>
+          <div class="derive__why">최솟값에서 도함수는 0. 두 항을 같게 놓았다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ T^{2} = \frac{2C}{k\delta} $$</div>
+          <div class="derive__why">양변에 $T^{2}$ 을 곱하고 $k\delta/2$ 로 나눴다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \boxed{\;T^{*} = \sqrt{\frac{2C}{k\delta}}\;} $$</div>
+          <div class="derive__why">$T > 0$ 이므로 양의 제곱근만 취한다</div>
+        </div>
+      </div>
+
+      <div class="note note--tip">
+        <span class="note__label">이 식이 말해주는 것</span>
+        <p>
+          <strong>제곱근</strong>이 핵심이다. 재학습 비용 $C$ 가 4배가 되어도 주기는 2배만 길어진다.
+          비용이 비싸다고 재학습을 무한정 미루는 것이 최적이 아니라는 뜻이다.
+          반대로 성능이 빨리 낡는 영역($\delta$ 가 큰 곳 — 예: 추천, 이상탐지)에서는
+          주기가 $1/\sqrt{\delta}$ 로 짧아진다.
+        </p>
+      </div>
+
+      <details>
+        <summary>정말 최솟값인가 — 2계 도함수</summary>
+        <p>
+          $\dfrac{d^2J}{dT^2} = \dfrac{2C}{T^{3}} > 0$ ($T>0$, $C>0$).
+          2계 도함수가 양수이므로 $J$ 는 아래로 볼록이고, $T^{*}$ 는 유일한 전역 최솟값이다.
+          <a href="1.1-ai-fundamentals.html#s-derivation">1.1절의 최소제곱 유도</a>와 같은 논법이다.
+        </p>
+      </details>
+    </section>
+
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <p>추천 모델을 운영한다고 하자. 관측된 값은 이렇다.</p>
+      <ul>
+        <li>재학습 1회 비용 $C = 100$ (만원) — GPU 시간과 검증 인건비</li>
+        <li>정확도가 하루에 $\delta = 0.1$ %p 씩 떨어진다</li>
+        <li>정확도 1%p 하락은 하루 $k = 2$ (만원)의 매출 손실</li>
+      </ul>
+
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ k\delta = 2 \times 0.1 = 0.2 $$</div>
+          <div class="derive__why">하루 늦출 때마다 추가로 생기는 손실의 기울기</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{2C}{k\delta} = \frac{2 \times 100}{0.2} = \frac{200}{0.2} = 1000 $$</div>
+          <div class="derive__why">유도한 식의 제곱근 안쪽을 먼저 계산</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ T^{*} = \sqrt{1000} \approx 31.6\ \text{일} $$</div>
+          <div class="derive__why">약 한 달에 한 번. <strong>감이 아니라 계산으로 나온 값이다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ J(T^{*}) = \frac{100}{31.6} + \frac{0.2 \times 31.6}{2} = 3.16 + 3.16 = 6.32 $$</div>
+          <div class="derive__why">최적점에서 <strong>두 비용이 정확히 같아진다</strong> — 유도 3단계가 그 뜻이었다</div>
+        </div>
+      </div>
+
+      <p>다른 주기와 비교하면 최적점의 의미가 분명해진다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>주기 $T$</th><th>재학습 비용 $C/T$</th><th>성능 손실 $k\delta T/2$</th><th>일일 총비용 $J(T)$</th></tr></thead>
+          <tbody>
+            <tr><td>10일</td><td>10.00</td><td>1.00</td><td>11.00</td></tr>
+            <tr><td>20일</td><td>5.00</td><td>2.00</td><td>7.00</td></tr>
+            <tr><td><b>31.6일</b></td><td><b>3.16</b></td><td><b>3.16</b></td><td><b>6.32</b> ← 최소</td></tr>
+            <tr><td>50일</td><td>2.00</td><td>5.00</td><td>7.00</td></tr>
+            <tr><td>100일</td><td>1.00</td><td>10.00</td><td>11.00</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">이 모형이 가정한 것</span>
+        <p>
+          성능이 <strong>선형으로</strong> 떨어진다고 가정했다. 실제로는 계단식으로 떨어지거나
+          (제품 개편, 계절 변화), 한동안 멀쩡하다가 급락하기도 한다.
+          또 $\delta$ 를 미리 안다고 가정했지만, 현실에서는 모니터링으로 <em>추정</em>해야 한다.
+        </p>
+        <p>
+          그래도 이 식은 쓸모가 있다. <strong>주기를 정하는 근거를 숫자로 만들고</strong>,
+          "재학습 비용을 절반으로 줄이면 주기가 $\sqrt{2}$ 배 짧아진다" 같은 판단을 가능하게 한다.
+          모형이 틀렸다는 것과 쓸모없다는 것은 다르다.
+        </p>
+      </div>
+    </section>
+
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <h3>재학습 주기를 바꿔가며</h3>
+      <figure class="widget" data-widget="retrain-cost">
+        <figcaption class="widget__bar">비용 곡선과 최적 주기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">재학습 비용 $C$ 를 4배로 올려 보세요. 최적 주기는 4배가 아니라 <strong>2배</strong>만 길어집니다.</p>
+        </div>
+      </figure>
+
+      <h3>학습·서빙 왜곡 — 가장 흔한 배포 버그</h3>
+      <p>
+        학습 때 쓴 전처리와 서빙 때 쓴 전처리가 어긋나면, 모델은 그대로인데 성능만 떨어진다.
+        원인을 찾기 어려워 실무에서 악명 높다.
+      </p>
+      <figure class="widget" data-widget="skew-demo">
+        <figcaption class="widget__bar">전처리가 어긋나면 무슨 일이 일어나는가</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">서빙 쪽 평균·표준편차를 바꿔 보세요. 모델은 손대지 않았는데 정확도가 무너집니다.</p>
+        </div>
+      </figure>
+
+      <h3>단계별 작업 비중</h3>
+      <figure class="widget" data-widget="effort-split">
+        <figcaption class="widget__bar">어느 단계에 시간이 들어가는가</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <p class="watch">'모델 학습'이 차지하는 칸의 크기를 보세요. 입문 과정에서 배우는 부분입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"파이프라인은 한 번 흐르면 끝이다."</p>
+        <p>
+          <strong>실제로는</strong> 고리다. 세상이 변하면 데이터 분포가 변하고, 모델은 가만히 있어도 낡는다.
+          모니터링 → 재학습 → 배포로 되돌아오는 화살표가 없으면
+          그것은 <em>실험</em>이지 <em>시스템</em>이 아니다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"검증 데이터와 테스트 데이터는 사실상 같다."</p>
+        <p>
+          <strong>실제로는</strong> 역할이 다르다. 검증은 <em>고르기 위해</em>, 평가는 <em>보고하기 위해</em> 쓴다.
+          검증 점수를 보고 하이퍼파라미터를 100번 조정했다면 그 점수는 이미 낙관적으로 편향돼 있다.
+          테스트 점수를 보고 모델을 고치는 순간, 테스트 집합도 같은 운명이 된다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"전처리는 사소한 준비 작업이다."</p>
+        <p>
+          <strong>실제로는</strong> 식 (1)의 $\rho, \phi$ 는 <strong>모델의 일부</strong>다.
+          학습 때와 서빙 때 이 함수가 다르면 모델이 아무리 좋아도 결과가 무너진다(학습·서빙 왜곡).
+          그래서 전처리를 코드로 한 곳에 묶어 학습·서빙이 같은 경로를 쓰게 만드는 것이 표준 관행이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"성능이 떨어지면 무조건 재학습하면 된다."</p>
+        <p>
+          <strong>실제로는</strong> 원인을 먼저 나눠야 한다.
+          <em>입력 분포가 변한 것</em>(covariate shift)이라면 새 데이터 재학습이 맞지만,
+          <em>데이터 파이프라인이 깨진 것</em>이라면 재학습은 오염된 데이터를 학습하는 셈이 되어 더 나빠진다.
+          모니터링이 "성능"만이 아니라 <strong>입력 분포와 데이터 품질</strong>을 함께 봐야 하는 이유다.
+        </p>
+      </div>
+    </section>
+
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <details>
+        <summary>NumPy — 최적 재학습 주기 (12줄)</summary>
+<pre><code>import numpy as np
+
+C, delta, k = 100.0, 0.1, 2.0          # 비용, 일일 저하, 저하 단가
+
+T_star = np.sqrt(2 * C / (k * delta))
+print(T_star)                           # 31.6227766...  = √1000
+
+J = lambda T: C / T + k * delta * T / 2
+print(J(T_star))                        # 6.3245553...
+
+# 수치적으로도 확인 — 격자 탐색의 최소가 같은 자리에 있는가
+grid = np.linspace(1, 200, 20000)
+print(grid[np.argmin(J(grid))])         # 31.62...  ✓
+
+# 최적점에서 두 비용이 같아진다
+print(C / T_star, k * delta * T_star / 2)   # 3.162... 3.162...
+</code></pre>
+      </details>
+    </section>
+
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $C = 200$, $k\delta = 0.4$ 일 때 $T^{*}$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\sqrt{1000} \approx 31.6$ 일</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$\sqrt{500} \approx 22.4$ 일</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$63.2$ 일</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $T^{*} = \sqrt{2 \times 200 / 0.4} = \sqrt{400/0.4} = \sqrt{1000} \approx 31.6$.
+            본문 예제와 <strong>같은 값</strong>이다 — $C$ 와 $k\delta$ 가 둘 다 2배가 되어 비율이 유지됐기 때문이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            재학습 비용 $C$ 만 9배로 늘면 최적 주기는 몇 배가 되는가?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>3배</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>9배</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>변하지 않는다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $T^{*} \propto \sqrt{C}$ 이므로 $\sqrt{9} = 3$ 배.
+            제곱근이라 비용이 크게 늘어도 주기는 완만하게만 길어진다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            전처리에 쓸 평균과 표준편차는 어느 데이터에서 계산해야 하는가?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>훈련 데이터에서만</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>전체 데이터에서</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>테스트 데이터에서</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            전체에서 계산하면 검증·테스트의 정보가 훈련 과정에 새어 든다(데이터 누출).
+            테스트 성능이 실제보다 좋아 보이게 되어, 배포 후에 성능이 떨어진다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            식 (1)에서 배포 시 가장 자주 깨지는 부분은?</p>
+          <div class="opts">
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>$h_{\theta^{*}}$ — 모델 가중치</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>$\rho, \phi$ — 전처리와 특성 표현</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$x_{\text{raw}}$ — 원자료</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            가중치는 파일로 그대로 옮겨지지만, 전처리는 학습 코드(예: 파이썬 노트북)와
+            서빙 코드(예: 자바 서비스)에 <em>따로 구현되기 쉽다</em>.
+            이 둘이 어긋나는 것이 학습·서빙 왜곡이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            다음 중 <strong>틀린</strong> 진술은?</p>
+          <div class="opts">
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>최적 주기에서는 재학습 비용과 성능 손실 비용이 같다</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>성능이 떨어지면 언제나 재학습이 해법이다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>검증 데이터는 여러 번, 테스트 데이터는 한 번 쓴다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            나가 틀렸다. 데이터 파이프라인이 깨져서 성능이 떨어진 경우,
+            재학습은 오염된 데이터를 학습하게 되어 오히려 악화된다.
+            가는 유도 3단계에서 확인했고(예제에서 3.16 = 3.16), 다는 검증과 평가의 정의다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+      <ul>
+        <li><strong><a href="1.5-data-split-evaluation.html">1.5 데이터 분할과 평가</a></strong> — 검증·평가 단계의 상세와 데이터 누출.</li>
+        <li><strong>5.14 모델 선택</strong> — 하이퍼파라미터 탐색과 중첩 교차검증.</li>
+        <li><strong>16.12 Foundation Model 운영</strong> — 대규모 학습 파이프라인.</li>
+        <li><strong>19.2 분포 변화와 견고성</strong> — 재학습을 부르는 분포 이동의 종류.</li>
+        <li><strong>23.34 배포 파이프라인</strong> — On-device 환경에서의 변환·검증·배포.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-sculley2015-tech-debt" data-ref="sculley2015-tech-debt">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Sculley, D. et al. (2015). <em>Hidden Technical Debt in Machine Learning Systems</em>. NeurIPS.</span>
+          <span class="ref__where">Fig. 1 — ML 코드가 전체 시스템에서 차지하는 작은 상자 그림. '직관' 절과 '단계별 작업 비중' 위젯의 근거</span>
+          <a class="ref__link" href="https://papers.nips.cc/paper_files/paper/2015/hash/86df7dcfd896fcaf2674f757a2463eba-Abstract.html">papers.nips.cc</a>
+        </li>
+        <li class="ref" id="ref-google-rules-of-ml" data-ref="google-rules-of-ml">
+          <span class="ref__type" data-type="web">웹문서</span>
+          <span class="ref__cite">Zinkevich, M. <em>Rules of Machine Learning: Best Practices for ML Engineering</em>. Google.</span>
+          <span class="ref__where">Rule 29 · 32 — 학습·서빙 왜곡을 막으려면 전처리 코드를 공유하고 서빙 시점 특성을 로그로 남기라는 지침. '오해 3'과 왜곡 위젯의 근거</span>
+          <a class="ref__link" href="https://developers.google.com/machine-learning/guides/rules-of-ml">developers.google.com</a>
+        </li>
+        <li class="ref" id="ref-hastie2009-esl" data-ref="hastie2009-esl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>. Springer.</span>
+          <span class="ref__where">7.2절 — 검증(모델 선택)과 평가(성능 추정)를 구분해야 하는 이유. '검증과 평가의 차이' 콜아웃의 근거</span>
+          <a class="ref__link" href="https://hastie.su.domains/ElemStatLearn/">hastie.su.domains</a>
+        </li>
+        <li class="ref" id="ref-goodfellow2016-dl" data-ref="goodfellow2016-dl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>. MIT Press.</span>
+          <span class="ref__where">11장 Practical Methodology — 파이프라인 구성 순서와 무엇을 먼저 고칠지 판단하는 절차</span>
+          <a class="ref__link" href="https://www.deeplearningbook.org/">deeplearningbook.org</a>
+        </li>
+        <li class="ref" id="ref-hf-courses" data-ref="hf-courses">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Hugging Face. <em>NLP Course</em> — 전처리·학습·배포 파이프라인.</span>
+          <span class="ref__where">토크나이저를 모델과 함께 저장·복원해 학습·서빙 경로를 일치시키는 실습 부분</span>
+          <a class="ref__link" href="https://huggingface.co/learn">huggingface.co/learn</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+/* 위젯 1 — 11단계 파이프라인 (고리 구조) */
+WIDGETS.register('pipeline-map', function (root, ctx) {
+  var el = VIZ.el;
+  var S = [
+    ['수집', '무엇을 모을지가 무엇을 배울지를 정한다. 수집 편향은 나중에 어떤 알고리즘으로도 지울 수 없다.'],
+    ['전처리', '결측·이상치·중복 처리와 스케일 조정. 통계량은 반드시 훈련 데이터에서만 계산한다.'],
+    ['특성 표현', '원자료를 벡터로. 딥러닝은 이 단계를 학습으로 대체하지만 토큰화·정규화는 여전히 사람이 정한다.'],
+    ['모델 선택', '가설 공간을 고른다. 하이퍼파라미터 탐색 포함. 판단 근거는 검증 데이터다.'],
+    ['학습', 'θ* = argmin (1/n)ΣL. 훈련 데이터만 쓴다.'],
+    ['검증', '고르기 위해 잰다 — 하이퍼파라미터, 조기 종료, 모델 채택. 여러 번 본다.'],
+    ['평가', '보고하기 위해 잰다. 모든 선택이 끝난 뒤 단 한 번. 보고 나서 고치면 검증이 되어버린다.'],
+    ['추론', '학습된 θ* 로 새 입력에 답한다. 지연시간·처리량·비용이 제약이 된다.'],
+    ['배포', '서비스에 올린다. 버전 관리·롤아웃·롤백. 학습 때의 전처리를 그대로 재현하는 것이 핵심.'],
+    ['모니터링', '예측 품질·입력 분포·지연시간·오류율. 정답이 늦게 오므로 분포 감시가 중요하다.'],
+    ['재학습', '성능이 떨어지면 새 데이터로 다시 학습. 주기는 T* = √(2C/kδ) 로 정할 수 있다.']
+  ];
+
+  var svg = el('svg', { viewBox: '0 0 480 200', role: 'img', 'aria-label': '머신러닝 시스템 11단계 파이프라인과 되먹임 고리' });
+  var W = 74, H = 32, PER = 4, GX = 8, GY = 12, X0 = 12, Y0 = 18;
+  var shapes = {};
+
+  S.forEach(function (s, i) {
+    var r = Math.floor(i / PER), c = i % PER;
+    var x = X0 + c * (W + GX), y = Y0 + r * (H + GY);
+    var g = el('g', { tabindex: '0', role: 'button', 'aria-label': s[0], style: 'cursor:pointer' });
+    var color = i >= 9 ? 'var(--seal)' : (i >= 7 ? 'var(--amber)' : 'var(--jade)');
+    var rect = el('rect', { x: x, y: y, width: W, height: H, rx: 4, fill: color, 'fill-opacity': .14, stroke: color, 'stroke-width': 1.4 });
+    g.appendChild(rect);
+    g.appendChild(el('text', { x: x + W / 2, y: y + H / 2 + 4, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 11, 'font-weight': '700', text: (i + 1) + '. ' + s[0] }));
+    g.addEventListener('click', function () { show(i); });
+    g.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(i); } });
+    svg.appendChild(g);
+    shapes[i] = rect;
+
+    if (i < S.length - 1 && c < PER - 1) {
+      svg.appendChild(el('path', { d: 'M' + (x + W) + ' ' + (y + H / 2) + ' L' + (x + W + GX - 2) + ' ' + (y + H / 2), stroke: 'var(--ink-3)', 'stroke-width': 1.2 }));
+    }
+  });
+
+  /* 되먹임: 재학습(11) → 학습(5) */
+  var fb = el('g', { tabindex: '0', role: 'button', 'aria-label': '되먹임 고리', style: 'cursor:pointer' });
+  fb.appendChild(el('path', {
+    d: 'M' + (X0 + 2 * (W + GX) + W / 2) + ' 150 L' + (X0 + 2 * (W + GX) + W / 2) + ' 178 L' + (X0 + W / 2) + ' 178 L' + (X0 + W / 2) + ' 106',
+    fill: 'none', stroke: 'var(--seal)', 'stroke-width': 2, 'stroke-dasharray': '6 3'
+  }));
+  fb.appendChild(el('path', { d: 'M' + (X0 + W / 2) + ' 98 L' + (X0 + W / 2 - 4.5) + ' 107 L' + (X0 + W / 2 + 4.5) + ' 107 Z', fill: 'var(--seal)' }));
+  fb.appendChild(el('text', { x: 200, y: 192, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 11, 'font-weight': '700', fill: 'var(--seal)', text: '되먹임 — 이 화살표가 있어야 시스템이다' }));
+  svg.appendChild(fb);
+
+  ctx.stage.appendChild(svg);
+  var panel = document.createElement('div');
+  panel.className = 'note note--tip'; panel.style.marginTop = '0';
+  ctx.controls.appendChild(panel);
+
+  function show(i) {
+    panel.innerHTML = '<span class="note__label"></span><p></p>';
+    panel.querySelector('.note__label').textContent = (i + 1) + '. ' + S[i][0];
+    panel.querySelector('p').textContent = S[i][1];
+    Object.keys(shapes).forEach(function (k) { shapes[k].setAttribute('stroke-width', +k === i ? 3.2 : 1.4); });
+  }
+  show(0);
+});
+
+/* 위젯 2 — 재학습 비용 곡선 */
+WIDGETS.register('retrain-cost', function (root, ctx) {
+  var C = 100, kd = 0.2;
+  var p = VIZ.plot({ w: 460, h: 260, xmin: 0, xmax: 120, ymin: 0, ymax: 20, pad: { t: 18, r: 14, b: 30, l: 42 } });
+  ctx.stage.appendChild(p.svg);
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'T', label: '최적 주기 T*', digits: 1 },
+    { key: 'J', label: '최소 일일 비용', digits: 2 },
+    { key: 'eq', label: '최적점에서' }
+  ]);
+
+  function draw() {
+    var Ts = Math.sqrt(2 * C / kd);
+    p.clear().grid(20, 5).axes('주기 T (일)', '비용').ticks(20, 5);
+    p.curve(function (T) { return T > 0.5 ? C / T : NaN; }, { alt: true, dash: '5 3' });
+    p.curve(function (T) { return kd * T / 2; }, { dash: '5 3' });
+    p.curve(function (T) { return T > 0.5 ? C / T + kd * T / 2 : NaN; }, { width: 3 });
+    p.add(VIZ.el('line', { x1: p.X(Ts), y1: p.Y(0), x2: p.X(Ts), y2: p.Y(20), stroke: 'var(--seal)', 'stroke-width': 1.2, 'stroke-dasharray': '4 3' }));
+    p.dot(Ts, C / Ts + kd * Ts / 2, 6);
+    p.text(Ts, 19, ' T*', { fill: 'var(--seal)', size: 12 });
+    p.text(2, 18.4, '굵은 선 = 총비용 · 점선 = 각 항', { size: 10.5 });
+
+    out.set('T', Ts);
+    out.set('J', C / Ts + kd * Ts / 2);
+    out.setRaw('eq', (C / Ts).toFixed(2) + ' = ' + (kd * Ts / 2).toFixed(2));
+  }
+
+  WIDGETS.slider({ host: ctx.controls, label: '재학습 1회 비용 C', min: 20, max: 800, step: 10, value: 100, digits: 0,
+    onInput: function (v) { C = v; draw(); } });
+  WIDGETS.slider({ host: ctx.controls, label: '일일 손실 기울기 kδ', min: .05, max: 1.5, step: .05, value: .2, digits: 2,
+    onInput: function (v) { kd = v; draw(); } });
+  draw();
+});
+
+/* 위젯 3 — 학습·서빙 왜곡 */
+WIDGETS.register('skew-demo', function (root, ctx) {
+  /* 학습 데이터의 참 통계량 */
+  var TRAIN_MU = 50, TRAIN_SD = 10;
+  var serveMu = 50, serveSd = 10;
+  /* 고정 표본 */
+  var RAW = [31,38,42,45,47,49,50,51,53,55,58,62,66,70,35,44,52,60,48,56];
+  var LAB = RAW.map(function (v) { return v > 50 ? 1 : 0; });
+
+  var p = VIZ.plot({ w: 460, h: 210, xmin: -4, xmax: 4, ymin: -0.6, ymax: 1.6, pad: { t: 16, r: 14, b: 28, l: 34 } });
+  ctx.stage.appendChild(p.svg);
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'acc', label: '정확도' },
+    { key: 'note', label: '상태' }
+  ]);
+
+  function draw() {
+    /* 모델은 학습 시 정규화 기준으로 z=0 에서 자르도록 배웠다 */
+    var pts = RAW.map(function (v, i) { return { z: (v - serveMu) / serveSd, y: LAB[i] }; });
+    var hit = pts.filter(function (q) { return ((q.z > 0) ? 1 : 0) === q.y; }).length;
+    var acc = hit / pts.length;
+
+    p.clear().grid(1, .5).axes('정규화된 입력 z', '라벨').ticks(1, 1);
+    p.add(VIZ.el('line', { x1: p.X(0), y1: p.Y(-0.6), x2: p.X(0), y2: p.Y(1.6), stroke: 'var(--seal)', 'stroke-width': 2, 'stroke-dasharray': '5 3' }));
+    p.text(0, 1.45, ' 모델의 결정 경계 z=0', { dx: 4, fill: 'var(--seal)', size: 11 });
+    pts.forEach(function (q) {
+      p.add(VIZ.el('circle', { cx: p.X(Math.max(-3.9, Math.min(3.9, q.z))), cy: p.Y(q.y + (Math.random ? 0 : 0)), r: 4.5,
+        fill: q.y ? 'var(--jade)' : 'var(--amber)', 'fill-opacity': .85 }));
+    });
+
+    out.setRaw('acc', (acc * 100).toFixed(0) + ' %');
+    var ok = Math.abs(serveMu - TRAIN_MU) < 0.01 && Math.abs(serveSd - TRAIN_SD) < 0.01;
+    out.setRaw('note', ok ? '학습과 일치 — 정상' : '왜곡 발생 — 모델은 그대로인데 성능만 하락');
+  }
+
+  WIDGETS.slider({ host: ctx.controls, label: '서빙 쪽 평균 μ (학습값 50)', min: 30, max: 70, step: 1, value: 50, digits: 0,
+    onInput: function (v) { serveMu = v; draw(); } });
+  WIDGETS.slider({ host: ctx.controls, label: '서빙 쪽 표준편차 σ (학습값 10)', min: 2, max: 30, step: 1, value: 10, digits: 0,
+    onInput: function (v) { serveSd = v; draw(); } });
+  draw();
+});
+
+/* 위젯 4 — 단계별 작업 비중 */
+WIDGETS.register('effort-split', function (root, ctx) {
+  var el = VIZ.el;
+  var VIEW = {
+    real: { t: '실제 시스템', d: '데이터를 모으고 정리하고 지켜보는 일이 대부분이다. 모델 학습 코드는 전체의 작은 조각이다.',
+      seg: [['데이터 수집·정리', 38, 'var(--jade)'], ['특성·전처리', 17, 'var(--jade)'], ['모델 학습', 8, 'var(--seal)'],
+            ['검증·평가', 12, 'var(--amber)'], ['배포·서빙', 12, 'var(--ink-3)'], ['모니터링·재학습', 13, 'var(--ink-3)']] },
+    course: { t: '입문 강의에서 배우는 비중', d: '강의는 모델과 학습에 집중한다. 배울 때는 효율적이지만, 실제 시스템을 만들 때 무엇이 기다리는지는 알려주지 않는다.',
+      seg: [['데이터 수집·정리', 8, 'var(--jade)'], ['특성·전처리', 10, 'var(--jade)'], ['모델 학습', 55, 'var(--seal)'],
+            ['검증·평가', 20, 'var(--amber)'], ['배포·서빙', 4, 'var(--ink-3)'], ['모니터링·재학습', 3, 'var(--ink-3)']] }
+  };
+  var cur = 'real';
+
+  var stage = document.createElement('div'); stage.style.width = '100%';
+  ctx.stage.appendChild(stage);
+  var panel = document.createElement('div');
+  panel.className = 'note note--tip'; panel.style.marginTop = '.7rem';
+  ctx.controls.appendChild(panel);
+
+  function draw() {
+    var v = VIEW[cur];
+    var svg = el('svg', { viewBox: '0 0 460 150', role: 'img', 'aria-label': v.t + ' 의 단계별 비중' });
+    var x = 10;
+    v.seg.forEach(function (s, i) {
+      var w = s[1] / 100 * 440;
+      svg.appendChild(el('rect', { x: x, y: 24, width: w - 2, height: 40, rx: 3, fill: s[2], 'fill-opacity': s[2] === 'var(--seal)' ? .5 : .2, stroke: s[2], 'stroke-width': 1.3 }));
+      if (w > 46) svg.appendChild(el('text', { x: x + w / 2, y: 49, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 11, 'font-weight': '700', text: s[1] + '%' }));
+      svg.appendChild(el('rect', { x: 12, y: 80 + i * 11.5, width: 9, height: 9, rx: 2, fill: s[2], 'fill-opacity': s[2] === 'var(--seal)' ? .5 : .2, stroke: s[2], 'stroke-width': 1 }));
+      svg.appendChild(el('text', { x: 26, y: 88.5 + i * 11.5, class: 'viz-label', 'font-size': 10.5, text: s[0] + ' — ' + s[1] + '%' }));
+      x += w;
+    });
+    svg.appendChild(el('text', { x: 230, y: 16, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 11.5, 'font-weight': '700', text: v.t }));
+    stage.innerHTML = ''; stage.appendChild(svg);
+    panel.innerHTML = '<span class="note__label"></span><p></p>';
+    panel.querySelector('.note__label').textContent = v.t;
+    panel.querySelector('p').textContent = v.d;
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '무엇을 볼까요',
+    options: [{ value: 'real', label: '실제 시스템' }, { value: 'course', label: '입문 강의' }],
+    value: 'real', onChange: function (v) { cur = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

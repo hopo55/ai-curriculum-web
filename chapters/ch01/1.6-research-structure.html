@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.6 AI 연구의 기본 구조 — AI 이론 학습</title>
+<meta name="description" content="연구 문제부터 후속 연구까지. Ablation 기여도와 시드 분산을 손으로 계산해 '이 차이가 정말 유의한가'를 판단하는 법을 익힌다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="1.6">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">1.6</span>
+        <span>1장 · AI 개론</span>
+      </div>
+      <h1>AI 연구의 기본 구조</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 40분</span>
+        <span><b>난이도</b>★★☆☆☆</span>
+        <span><b>선수지식</b>
+          <a href="1.5-data-split-evaluation.html">1.5 데이터 분할과 평가</a>
+        </span>
+      </div>
+    </header>
+
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-question">연구 문제</a>
+      <a class="chip" href="#c-related">관련 연구</a>
+      <a class="chip" href="#c-method">방법론</a>
+      <a class="chip" href="#c-design">실험 설계</a>
+      <a class="chip" href="#c-compare">비교 실험</a>
+      <a class="chip" href="#c-ablation">Ablation Study</a>
+      <a class="chip" href="#c-limits">한계</a>
+      <a class="chip" href="#c-repro">재현성</a>
+      <a class="chip" href="#c-ethics">윤리적 고려</a>
+      <a class="chip" href="#c-future">후속 연구</a>
+    </nav>
+
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        논문의 구조는 형식이 아니라 <strong>주장을 검증 가능하게 만드는 장치</strong>다.
+        "무엇이 좋아졌는가"가 아니라 <strong>"무엇 때문에 좋아졌고, 그 차이가 잡음보다 큰가"</strong>에
+        답할 수 있어야 연구다.
+      </p>
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>논문의 열 부분이 각각 어떤 반론을 막기 위한 것인지 설명할 수 있다.</li>
+        <li>Ablation 표에서 각 성분의 기여도를 계산하고, 시드 분산과 비교해 유의성을 판단할 수 있다.</li>
+        <li>표준오차 $s/\sqrt{m}$ 를 손으로 구해 "이 향상은 노이즈다"라고 말할 수 있다.</li>
+      </ol>
+    </section>
+
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+      <p>
+        어떤 논문이 "우리 방법이 85.0%로 기존 82.0%를 넘었다"고 주장한다.
+        이 주장을 무너뜨릴 수 있는 반론은 무엇일까?
+      </p>
+      <ul>
+        <li>"애초에 왜 이 문제가 중요한가?" → <strong>연구 문제</strong>가 답한다</li>
+        <li>"이미 누가 한 것 아닌가?" → <strong>관련 연구</strong>가 답한다</li>
+        <li>"운이 좋았던 것 아닌가?" → <strong>여러 시드·신뢰구간</strong>이 답한다</li>
+        <li>"당신 방법 때문이 아니라 데이터를 더 써서 아닌가?" → <strong>공정한 비교 설계</strong>가 답한다</li>
+        <li>"방법의 어느 부분이 효과를 냈는가?" → <strong>Ablation</strong>이 답한다</li>
+        <li>"우리 환경에서도 되는가?" → <strong>재현성 정보</strong>가 답한다</li>
+      </ul>
+      <p>
+        논문의 각 절은 <strong>예상되는 반론을 하나씩 차단하는 자리</strong>다.
+        형식을 외우는 대신 "이 절이 막는 반론이 무엇인가"를 물으면 구조가 자연스럽게 이해된다.
+      </p>
+
+      <figure class="widget" data-widget="claim-defense">
+        <figcaption class="widget__bar">각 절이 막는 반론</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <p class="watch">반론을 눌러 보세요. 그것을 막는 절이 무엇이고 무엇을 써야 하는지 나옵니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-question"></span>
+      <p>
+        <strong>연구 문제</strong> — 무엇을 모르고 있으며, 알면 무엇이 달라지는가.
+        좋은 연구 문제는 <em>틀릴 수 있게</em> 진술된다.
+        "성능을 높인다"는 반증 불가능하지만, "긴 문맥에서 성능이 떨어지는 원인이 위치 인코딩에 있다"는
+        틀릴 수 있다.
+      </p>
+      <span class="anchor" id="c-related"></span>
+      <p>
+        <strong>관련 연구</strong> — 이미 알려진 것과 이 연구의 경계를 긋는다.
+        목록 나열이 아니라 <em>왜 기존 방법으로는 부족한가</em>를 보이는 자리다.
+      </p>
+      <span class="anchor" id="c-method"></span>
+      <p>
+        <strong>방법론</strong> — 무엇을 새로 했는지 재현 가능하게 적는다.
+        <a href="1.1-ai-fundamentals.html#c-model-algo">1.1절의 구분</a>대로
+        모델 구조, 손실함수, 최적화 절차를 나눠 쓰면 무엇이 새로운지 분명해진다.
+      </p>
+
+      <span class="anchor" id="c-design"></span>
+      <h3>실험 설계</h3>
+      <p>
+        주장을 검증할 수 있는 실험을 구성한다. 최소 조건 셋:
+      </p>
+      <ul>
+        <li><strong>통제</strong> — 비교 대상과 <em>내 방법 외의 모든 것</em>을 같게 한다 (데이터, 학습량, 탐색 예산).</li>
+        <li><strong>반복</strong> — 시드를 여러 개 돌린다. 한 번 실행한 숫자는 표본 하나일 뿐이다.</li>
+        <li><strong>사전 등록에 준하는 태도</strong> — 테스트 집합은 <a href="1.5-data-split-evaluation.html#c-test">마지막에 한 번</a>만 연다.</li>
+      </ul>
+
+      <span class="anchor" id="c-compare"></span>
+      <h3>비교 실험</h3>
+      <p>
+        비교가 공정하려면 <strong>탐색 예산</strong>도 같아야 한다.
+        내 방법은 하이퍼파라미터를 100번 탐색하고 베이스라인은 기본값만 썼다면,
+        그 차이는 방법의 우수성이 아니라 <em>들인 노력의 차이</em>일 수 있다.
+        Dodge 등은 이 문제를 지적하며 <strong>탐색 예산을 함께 보고</strong>할 것을 제안했다<a class="cite" href="#ref-dodge2019-show-your-work" data-ref="dodge2019-show-your-work">1</a>.
+      </p>
+
+      <span class="anchor" id="c-ablation"></span>
+      <h3>Ablation Study</h3>
+      <p>
+        방법이 여러 성분으로 이뤄져 있을 때, <strong>성분을 하나씩 제거해</strong> 각각의 기여를 잰다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \Delta_{A} \;=\; \mathrm{Acc}(\text{전체}) \;-\; \mathrm{Acc}(\text{전체} \setminus A) $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        $\Delta_A$ 가 크면 성분 $A$ 가 중요하다는 뜻이다.
+        <strong>다만 이 값이 시드 분산보다 커야</strong> 의미가 있다. 아래에서 계산한다.
+      </p>
+
+      <span class="anchor" id="c-limits"></span>
+      <p>
+        <strong>한계</strong> — 어디까지 주장하고 어디부터는 주장하지 않는지 긋는다.
+        Lipton과 Steinhardt는 좋은 논문의 조건으로
+        <em>직관과 근거 있는 결론을 명확히 구분할 것</em>,
+        <em>대안 가설을 검토하고 배제할 것</em>,
+        <em>이론적 분석과 경험적 주장의 관계를 분명히 할 것</em>,
+        <em>오해를 부르는 용어를 피할 것</em>을 든다<a class="cite" href="#ref-lipton2018-troubling-trends-in" data-ref="lipton2018-troubling-trends-in">2</a>.
+        한계를 적는 것은 약점 고백이 아니라 <strong>주장의 범위를 정확히 하는 일</strong>이다.
+      </p>
+
+      <span class="anchor" id="c-repro"></span>
+      <p>
+        <strong>재현성</strong> — 코드·데이터·시드·하이퍼파라미터·계산 자원·탐색 횟수를 밝힌다.
+        NeurIPS 재현성 체크리스트가 요구하는 항목들이다<a class="cite" href="#ref-pineau2020-improving-reproducibility-in" data-ref="pineau2020-improving-reproducibility-in">3</a>.
+        <a href="1.5-data-split-evaluation.html#c-repro">1.5절</a>에서 본 대로, 밝히지 않은 탐색량은 결과를 낙관적으로 만든다.
+      </p>
+
+      <span class="anchor" id="c-ethics"></span>
+      <p>
+        <strong>윤리적 고려</strong> — 데이터 출처와 동의, 개인정보, 편향과 그 영향, 오용 가능성, 환경 비용.
+        주요 학회는 이제 이 항목을 심사 대상에 포함한다.
+        <em>누가 이득을 보고 누가 위험을 지는가</em>를 묻는 자리다.
+      </p>
+
+      <span class="anchor" id="c-future"></span>
+      <p>
+        <strong>후속 연구</strong> — 이 연구가 열어놓은 질문.
+        한계와 짝을 이룬다. "무엇을 못 했는가"가 곧 "다음에 무엇을 할 것인가"다.
+      </p>
+    </section>
+
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>
+        "85.0% vs 84.5%"가 의미 있는 차이인지 판단하려면
+        <strong>측정값이 얼마나 흔들리는지</strong>를 알아야 한다.
+        같은 설정으로 시드만 바꿔 $m$ 번 돌린 결과에서 다음을 구한다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \bar{a} = \frac{1}{m}\sum_{i=1}^{m} a_i, \qquad s^{2} = \frac{1}{m-1}\sum_{i=1}^{m}\bigl(a_i - \bar{a}\bigr)^{2}, \qquad \mathrm{SE} = \frac{s}{\sqrt{m}} $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead><tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr></thead>
+          <tbody>
+            <tr><td>$a_i$</td><td>에이 아이</td><td>$i$ 번째 시드의 성능</td><td>스칼라</td><td>보통 $[0,100]$</td></tr>
+            <tr><td>$m$</td><td>엠</td><td>반복 실행 횟수 (시드 개수)</td><td>정수</td><td>$\geq 2$</td></tr>
+            <tr><td>$\bar{a}$</td><td>에이 바</td><td>표본평균</td><td>스칼라</td><td>—</td></tr>
+            <tr><td>$s^{2}$</td><td>에스 제곱</td><td>표본분산 — $m-1$ 로 나눈다</td><td>스칼라</td><td>$\geq 0$</td></tr>
+            <tr><td>$s$</td><td>에스</td><td>표본표준편차</td><td>스칼라</td><td>$\geq 0$</td></tr>
+            <tr><td>$\mathrm{SE}$</td><td>표준오차</td><td>평균값 자체가 흔들리는 정도</td><td>스칼라</td><td>$\geq 0$</td></tr>
+            <tr><td>$\Delta_A$</td><td>델타 에이</td><td>성분 $A$ 의 기여도 (식 1)</td><td>스칼라</td><td>실수</td></tr>
+            <tr><td>$\setminus$</td><td>빼기 · 여집합</td><td>해당 성분을 제거한 구성</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$t_{m-1}$</td><td>티 분포</td><td>자유도 $m-1$ 의 $t$ 값. $m=5$ 일 때 95%는 2.78</td><td>스칼라</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">$m$ 이 아니라 $m-1$ 인 이유</span>
+        <p>
+          평균 $\bar{a}$ 자체를 데이터에서 추정했기 때문에 자유도가 하나 줄어든다.
+          $m$ 으로 나누면 분산을 <em>과소평가</em>하게 되어, 있지도 않은 유의성을 주장하게 된다.
+          자세한 것은 <span class="tex">4.5</span>절 추정량의 편향에서 다룬다.
+        </p>
+      </div>
+    </section>
+
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도 — 몇 번 돌려야 차이를 말할 수 있는가</h2></div>
+
+      <p>
+        두 방법의 차이 $d$ 를 "노이즈가 아니다"라고 말하려면,
+        차이가 신뢰구간 폭보다 커야 한다.
+      </p>
+
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ d \;>\; t_{m-1}\cdot \mathrm{SE} \;=\; t_{m-1}\cdot\frac{s}{\sqrt{m}} $$</div>
+          <div class="derive__why">차이가 오차 막대를 넘어야 한다는 조건</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sqrt{m} \;>\; \frac{t_{m-1}\, s}{d} $$</div>
+          <div class="derive__why">양변에 $\sqrt{m}/d$ 를 곱했다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ m \;>\; \left(\frac{t_{m-1}\, s}{d}\right)^{2} $$</div>
+          <div class="derive__why">제곱. $t$ 가 $m$ 에 의존하므로 엄밀히는 반복 계산이 필요하지만, 대략 $t \approx 2$ 로 두면 감을 잡을 수 있다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ m \;\gtrsim\; \left(\frac{2s}{d}\right)^{2} $$</div>
+          <div class="derive__why"><strong>차이가 절반이 되면 필요한 실행 횟수는 4배</strong>가 된다 — 제곱이기 때문</div>
+        </div>
+      </div>
+
+      <div class="note note--key">
+        <span class="note__label">이 식이 말하는 것</span>
+        <p>
+          시드 표준편차 $s = 0.5$%p 인 실험에서 $d = 0.5$%p 향상을 주장하려면
+          $m \gtrsim (2 \times 0.5 / 0.5)^2 = 4$ 번이면 되지만,
+          $d = 0.2$%p 를 주장하려면 $m \gtrsim 25$ 번을 돌려야 한다.
+          <strong>작은 향상일수록 훨씬 많은 실험이 필요하다.</strong>
+          논문에서 시드 하나로 0.2%p 향상을 주장한다면 근거가 부족한 것이다.
+        </p>
+      </div>
+    </section>
+
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제 — Ablation 읽기</h2></div>
+
+      <p>어떤 논문이 성분 A·B·C로 이뤄진 방법을 제안하고 다음 표를 실었다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>구성</th><th>정확도 (%)</th><th>$\Delta$ (기여도)</th></tr></thead>
+          <tbody>
+            <tr><td>전체 방법</td><td>85.0</td><td>—</td></tr>
+            <tr><td>− A 제거</td><td>82.0</td><td>3.0</td></tr>
+            <tr><td>− B 제거</td><td>84.5</td><td>0.5</td></tr>
+            <tr><td>− C 제거</td><td>79.0</td><td>6.0</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        표만 보면 <strong>C가 가장 중요하고, B도 조금 기여</strong>하는 것처럼 보인다.
+        그런데 같은 설정으로 시드만 바꿔 5번 돌린 전체 방법의 결과가 이렇다면?
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ a = (84.2,\; 85.1,\; 84.8,\; 85.4,\; 85.5) $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \bar{a} = \frac{84.2+85.1+84.8+85.4+85.5}{5} = \frac{425.0}{5} = 85.0 $$</div>
+          <div class="derive__why">평균. 표에 적힌 85.0과 일치한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ (a_i - \bar{a}) = (-0.8,\; 0.1,\; -0.2,\; 0.4,\; 0.5) $$</div>
+          <div class="derive__why">각 편차</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sum (a_i-\bar{a})^{2} = 0.64+0.01+0.04+0.16+0.25 = 1.10 $$</div>
+          <div class="derive__why">제곱해서 더한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ s^{2} = \frac{1.10}{5-1} = 0.275 \;\Rightarrow\; s = \sqrt{0.275} \approx 0.524 $$</div>
+          <div class="derive__why">$m-1 = 4$ 로 나눈다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{SE} = \frac{0.524}{\sqrt{5}} \approx 0.235 $$</div>
+          <div class="derive__why">평균값 자체의 흔들림</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 95\%\ \text{구간} = 85.0 \pm 2.78 \times 0.235 = 85.0 \pm 0.65 $$</div>
+          <div class="derive__why">$t_{4} = 2.78$. 즉 $[84.35,\; 85.65]$</div>
+        </div>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">이제 표를 다시 읽어보자</span>
+        <p>
+          시드만 바꿔도 성능이 <strong>±0.65%p</strong> 흔들린다.
+        </p>
+        <ul>
+          <li><strong>C ($\Delta = 6.0$)</strong> — 오차 막대의 9배. 확실히 유의하다.</li>
+          <li><strong>A ($\Delta = 3.0$)</strong> — 오차 막대의 4.6배. 유의하다.</li>
+          <li><strong>B ($\Delta = 0.5$)</strong> — <strong>오차 막대 안에 있다.</strong> 시드를 바꾼 것과 구분되지 않는다.</li>
+        </ul>
+        <p>
+          B가 기여한다고 주장하려면 시드를 더 돌려야 한다.
+          앞의 유도로 계산하면 $m \gtrsim (2 \times 0.524 / 0.5)^{2} \approx 4.4$ — 최소 5회 이상,
+          안전하게는 10회 이상이 필요하다.
+          <strong>표의 숫자만으로 "B도 기여한다"고 말하는 것은 근거가 없다.</strong>
+        </p>
+      </div>
+    </section>
+
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <h3>Ablation 기여도와 오차 막대</h3>
+      <figure class="widget" data-widget="ablation-lab">
+        <figcaption class="widget__bar">기여도가 노이즈보다 큰가</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">시드 개수를 늘려 보세요. 오차 막대가 $1/\sqrt{m}$ 로 줄어들며 B의 판정이 바뀝니다.</p>
+        </div>
+      </figure>
+
+      <h3>몇 번 돌려야 하는가</h3>
+      <figure class="widget" data-widget="sample-size">
+        <figcaption class="widget__bar">주장하려는 차이와 필요한 실행 횟수</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">주장하려는 차이 $d$ 를 절반으로 줄여 보세요. 필요한 횟수가 <strong>4배</strong>가 됩니다.</p>
+        </div>
+      </figure>
+
+      <h3>공정한 비교인가 점검하기</h3>
+      <figure class="widget" data-widget="fairness-check">
+        <figcaption class="widget__bar">비교 실험 점검표</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">항목을 껐다 켜 보세요. 하나만 어긋나도 "내 방법 덕분"이라는 결론이 흔들립니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"숫자가 더 크면 더 좋은 방법이다."</p>
+        <p>
+          <strong>실제로는</strong> 오차 막대를 보기 전에는 알 수 없다.
+          위 예제에서 B의 0.5%p 는 시드 노이즈 ±0.65%p 안에 있었다.
+          <strong>평균만 있고 분산이 없는 표는 절반의 정보만 준다.</strong>
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"Ablation은 성분을 하나씩 빼보면 끝이다."</p>
+        <p>
+          <strong>실제로는</strong> 성분끼리 상호작용하면 개별 $\Delta$ 의 합이 전체 효과와 맞지 않는다.
+          A와 B가 서로를 보완한다면, 각각 빼도 조금씩만 떨어지지만 둘 다 빼면 크게 떨어질 수 있다.
+          그래서 중요한 조합은 <em>함께 제거한 경우</em>도 보고해야 한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"베이스라인은 원 논문 수치를 인용하면 된다."</p>
+        <p>
+          <strong>실제로는</strong> 데이터 전처리·평가 프로토콜·계산 예산이 다르면 비교가 성립하지 않는다.
+          같은 조건에서 직접 재현한 수치를 함께 싣는 것이 원칙이다.
+          내 방법에만 하이퍼파라미터 탐색을 100번 하고 베이스라인은 기본값을 썼다면,
+          그 차이는 <em>방법의 차이가 아니라 노력의 차이</em>다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"한계를 쓰면 논문이 약해 보인다."</p>
+        <p>
+          <strong>실제로는</strong> 반대다. 한계를 명시하면 주장의 <em>적용 범위</em>가 분명해져
+          그 범위 안에서는 더 강한 주장이 된다.
+          한계를 숨긴 논문은 범위 밖 반례 하나로 전체가 흔들린다.
+          Lipton과 Steinhardt가 지적한 "직관과 근거 있는 결론의 혼동"이 이 지점에서 생긴다.
+        </p>
+      </div>
+    </section>
+
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <details>
+        <summary>NumPy — 시드 분산과 유의성 판정 (16줄)</summary>
+<pre><code>import numpy as np
+
+a = np.array([84.2, 85.1, 84.8, 85.4, 85.5])   # 전체 방법, 시드 5개
+m = len(a)
+
+mean = a.mean()
+s = a.std(ddof=1)              # ddof=1 → m-1 로 나눈다
+se = s / np.sqrt(m)
+print(mean, round(s, 3), round(se, 3))   # 85.0 0.524 0.235
+
+ci = 2.78 * se                 # t_4 (95%)
+print(round(ci, 2))            # 0.65
+
+for name, delta in [("A", 3.0), ("B", 0.5), ("C", 6.0)]:
+    print(name, delta, "유의" if delta > ci else "노이즈 범위")
+# A 3.0 유의 / B 0.5 노이즈 범위 / C 6.0 유의
+</code></pre>
+      </details>
+    </section>
+
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            시드 4개의 결과가 $(80, 82, 84, 86)$ 일 때 표본표준편차 $s$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\sqrt{20/3} \approx 2.58$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$\sqrt{5} \approx 2.24$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$2.0$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            평균 83, 편차 $(-3,-1,1,3)$, 제곱합 $9+1+1+9 = 20$.
+            $s^2 = 20/(4-1) = 20/3 \approx 6.67$, $s \approx 2.58$.
+            나는 $m$ 으로 나눈 값($\sqrt{5}$)으로, 분산을 과소평가한다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $s = 1.0$ 일 때 $d = 0.5$ 를 주장하려면 대략 몇 번 돌려야 하는가? ($t \approx 2$)</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 16번</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>약 4번</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>약 8번</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $m \gtrsim (2s/d)^2 = (2 \times 1.0 / 0.5)^2 = 4^2 = 16$.
+            차이가 작을수록 제곱으로 늘어난다 — $d$ 를 절반으로 줄이면 필요 횟수는 4배다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            Ablation에서 $\Delta_B = 0.4$, 95% 오차 막대가 $\pm 0.7$ 이다. 어떻게 보고해야 하는가?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>노이즈와 구분되지 않는다고 밝히거나, 시드를 더 늘린다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>B가 기여한다고 보고한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>B를 방법에서 뺀다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            현재 근거로는 기여를 주장할 수 없다. 다도 성급하다 —
+            <em>효과가 없다</em>는 것과 <em>효과를 확인하지 못했다</em>는 것은 다르다.
+            실행을 늘려 판단하거나, 불확실하다고 정직하게 쓰는 것이 맞다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            "우리 방법이 SOTA를 0.3%p 넘었다"는 주장을 검증하려면 먼저 무엇을 확인해야 하는가?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>시드 분산과 하이퍼파라미터 탐색 예산이 같은지</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>모델 파라미터 수가 더 많은지</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>학습이 더 오래 걸렸는지</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            0.3%p는 대개 시드 노이즈 범위 안이다. 또 탐색 예산이 다르면
+            방법이 아니라 <em>들인 노력</em>이 만든 차이일 수 있다.
+            Dodge 등이 탐색 예산 보고를 제안한 이유다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            다음 중 <strong>틀린</strong> 진술은?</p>
+          <div class="opts">
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>개별 Ablation의 합이 전체 효과와 다를 수 있다</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>한계를 명시하면 주장이 약해진다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>표본분산은 $m-1$ 로 나눈다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            나가 틀렸다. 한계는 주장의 <em>적용 범위</em>를 정하는 장치이며,
+            범위가 분명해질수록 그 안에서의 주장은 오히려 강해진다.
+            가는 성분 간 상호작용, 다는 자유도 보정이다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+      <ul>
+        <li><strong>4.8 가설검정과 통계적 비교</strong> — 식 (2)의 이론적 배경. $p$-값, 검정력, 다중검정 보정.</li>
+        <li><strong>5.13~5.14 모델 평가와 선택</strong> — 지표 선택과 중첩 교차검증.</li>
+        <li><strong>13.9 LLM 평가</strong> — 벤치마크 오염과 LLM-as-a-Judge의 신뢰성.</li>
+        <li><strong>16.13 Foundation Model 거버넌스</strong> — 모델 카드와 위험 평가로 확장된 윤리적 고려.</li>
+        <li><strong>19.6 공정성과 편향</strong> — 윤리적 고려를 측정 가능한 기준으로 만드는 방법.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-lipton2018-troubling-trends-in" data-ref="lipton2018-troubling-trends-in">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Lipton, Z. C. &amp; Steinhardt, J. (2018). <em>Troubling Trends in Machine Learning Scholarship</em>. ICML Debates.</span>
+          <span class="ref__where">권고 (i)~(iv) — 직관과 근거 있는 결론을 구분할 것, 대안 가설을 배제할 것, 이론과 경험적 주장의 관계를 밝힐 것, 오해를 부르는 용어를 피할 것. '한계'와 '오해 4'의 근거</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1807.03341">arXiv:1807.03341</a>
+        </li>
+        <li class="ref" id="ref-dodge2019-show-your-work" data-ref="dodge2019-show-your-work">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Dodge, J. et al. (2019). <em>Show Your Work: Improved Reporting of Experimental Results</em>. EMNLP.</span>
+          <span class="ref__where">하이퍼파라미터 탐색 예산에 따라 보고 성능이 달라지므로 예산을 함께 보고해야 한다는 제안. '비교 실험'과 '오해 3'의 근거</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1909.03004">arXiv:1909.03004</a>
+        </li>
+        <li class="ref" id="ref-pineau2020-improving-reproducibility-in" data-ref="pineau2020-improving-reproducibility-in">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Pineau, J. et al. (2020). <em>Improving Reproducibility in Machine Learning Research</em>. NeurIPS Reproducibility Program.</span>
+          <span class="ref__where">체크리스트 항목 — 코드·데이터·시드·하이퍼파라미터·계산 자원·실행 횟수를 명시하도록 요구. '재현성' 절의 근거</span>
+          <a class="ref__link" href="https://arxiv.org/abs/2003.12206">arXiv:2003.12206</a>
+        </li>
+        <li class="ref" id="ref-russell2021-aima" data-ref="russell2021-aima">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Russell, S. &amp; Norvig, P. (2021). <em>Artificial Intelligence: A Modern Approach</em> (4th ed.). Pearson.</span>
+          <span class="ref__where">27장 — AI 연구의 윤리적 고려 항목(편향, 프라이버시, 오용, 영향 평가)의 분류</span>
+          <a class="ref__link" href="https://aima.cs.berkeley.edu/">aima.cs.berkeley.edu</a>
+        </li>
+        <li class="ref" id="ref-hastie2009-esl" data-ref="hastie2009-esl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>. Springer.</span>
+          <span class="ref__where">7.10절 — 반복 실행에서 표본표준편차와 표준오차를 구하는 절차. 식 (2)의 근거</span>
+          <a class="ref__link" href="https://hastie.su.domains/ElemStatLearn/">hastie.su.domains</a>
+        </li>
+        <li class="ref" id="ref-mit-6s191" data-ref="mit-6s191">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">MIT 6.S191: <em>Introduction to Deep Learning</em> — 편향과 공정성 강의.</span>
+          <span class="ref__where">Lecture 8 — 데이터 편향의 출처와 완화 기법. '윤리적 고려' 절 참고</span>
+          <a class="ref__link" href="https://introtodeeplearning.com/">introtodeeplearning.com</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+/* 위젯 1 — 반론과 그것을 막는 절 */
+WIDGETS.register('claim-defense', function (root, ctx) {
+  var el = VIZ.el;
+  var D = [
+    ['왜 이 문제가 중요한가?', '연구 문제', '문제를 반증 가능하게 진술한다. "성능을 높인다"가 아니라 "무엇이 왜 안 되는가"를 특정한다.'],
+    ['이미 누가 한 것 아닌가?', '관련 연구', '기존 방법이 어디까지 했고 왜 부족한지를 보여 경계를 긋는다. 목록 나열이 아니다.'],
+    ['정확히 무엇을 했는가?', '방법론', '모델 구조·손실·최적화를 나눠 적어 무엇이 새로운지 분명히 한다. 재현 가능해야 한다.'],
+    ['운이 좋았던 것 아닌가?', '실험 설계 · 반복', '시드를 여러 개 돌리고 평균과 표준오차를 함께 보고한다. 한 번 실행은 표본 하나다.'],
+    ['조건이 유리했던 것 아닌가?', '비교 실험', '데이터·학습량·하이퍼파라미터 탐색 예산을 같게 맞춘다. 예산 차이는 방법 차이가 아니다.'],
+    ['어느 부분이 효과를 냈는가?', 'Ablation Study', '성분을 하나씩 제거해 기여도를 잰다. 단, 오차 막대와 비교해야 의미가 있다.'],
+    ['어디까지 믿을 수 있는가?', '한계', '주장의 적용 범위를 명시한다. 숨기면 범위 밖 반례 하나로 전체가 흔들린다.'],
+    ['우리 환경에서도 되는가?', '재현성', '코드·시드·하이퍼파라미터·계산 자원·탐색 횟수를 밝힌다.'],
+    ['누가 피해를 보는가?', '윤리적 고려', '데이터 출처와 동의, 편향, 오용 가능성, 환경 비용을 검토한다.'],
+    ['그래서 다음은?', '후속 연구', '한계와 짝을 이룬다. 못 한 것이 곧 다음 질문이다.']
+  ];
+
+  var svg = el('svg', { viewBox: '0 0 480 260', role: 'img', 'aria-label': '예상 반론과 그것을 막는 논문의 각 절' });
+  var shapes = [];
+  D.forEach(function (d, i) {
+    var y = 10 + i * 24;
+    var g = el('g', { tabindex: '0', role: 'button', 'aria-label': d[0], style: 'cursor:pointer' });
+    var r = el('rect', { x: 8, y: y, width: 464, height: 21, rx: 3, fill: 'var(--jade)', 'fill-opacity': .1, stroke: 'var(--jade)', 'stroke-width': 1.1 });
+    g.appendChild(r);
+    g.appendChild(el('text', { x: 16, y: y + 14.5, class: 'viz-label', 'font-size': 11, text: '"' + d[0] + '"' }));
+    g.appendChild(el('text', { x: 464, y: y + 14.5, 'text-anchor': 'end', class: 'viz-label', 'font-size': 11, 'font-weight': '700', fill: 'var(--seal)', text: d[1] }));
+    g.addEventListener('click', function () { show(i); });
+    g.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(i); } });
+    svg.appendChild(g);
+    shapes.push(r);
+  });
+  ctx.stage.appendChild(svg);
+
+  var panel = document.createElement('div');
+  panel.className = 'note note--tip'; panel.style.marginTop = '0';
+  ctx.controls.appendChild(panel);
+
+  function show(i) {
+    panel.innerHTML = '<span class="note__label"></span><p></p>';
+    panel.querySelector('.note__label').textContent = D[i][1] + ' — "' + D[i][0] + '" 에 답한다';
+    panel.querySelector('p').textContent = D[i][2];
+    shapes.forEach(function (s, j) { s.setAttribute('stroke-width', j === i ? 2.8 : 1.1); });
+  }
+  show(0);
+});
+
+/* 위젯 2 — Ablation 기여도 vs 오차 막대 */
+WIDGETS.register('ablation-lab', function (root, ctx) {
+  var BASE = [84.2, 85.1, 84.8, 85.4, 85.5];
+  var TVAL = { 2: 12.71, 3: 4.30, 4: 3.18, 5: 2.78, 6: 2.57, 7: 2.45, 8: 2.36, 9: 2.31, 10: 2.26,
+               11: 2.23, 12: 2.20, 13: 2.18, 14: 2.16, 15: 2.14, 16: 2.13, 17: 2.12, 18: 2.11, 19: 2.10, 20: 2.09 };
+  var m = 5, comp = [['A', 3.0], ['B', 0.5], ['C', 6.0]];
+
+  var p = VIZ.plot({ w: 460, h: 230, xmin: -0.5, xmax: 2.5, ymin: 0, ymax: 7.2, pad: { t: 18, r: 14, b: 30, l: 40 } });
+  ctx.stage.appendChild(p.svg);
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 's', label: '표본표준편차 s', digits: 3 },
+    { key: 'ci', label: '95% 오차 막대', digits: 3 },
+    { key: 'v', label: '유의한 성분' }
+  ]);
+
+  function draw() {
+    /* 시드를 늘리면 같은 분포에서 더 뽑았다고 보고, s 는 유지하되 SE 만 줄어든다 */
+    var mean = BASE.reduce(function (a, b) { return a + b; }, 0) / BASE.length;
+    var ss = BASE.reduce(function (a, b) { return a + (b - mean) * (b - mean); }, 0);
+    var s = Math.sqrt(ss / (BASE.length - 1));
+    var se = s / Math.sqrt(m);
+    var t = TVAL[m] || 2.0;
+    var ci = t * se;
+
+    p.clear().grid(0, 1).axes('', 'Δ 기여도 (%p)').ticks(0, 1);
+    /* 오차 막대 영역 */
+    p.add(VIZ.el('rect', {
+      x: p.X(-0.5), y: p.Y(ci), width: p.X(2.5) - p.X(-0.5), height: p.Y(0) - p.Y(ci),
+      fill: 'var(--seal)', 'fill-opacity': .12
+    }));
+    p.add(VIZ.el('line', { x1: p.X(-0.5), y1: p.Y(ci), x2: p.X(2.5), y2: p.Y(ci), stroke: 'var(--seal)', 'stroke-width': 1.6, 'stroke-dasharray': '5 3' }));
+    p.text(-0.42, ci, ' 노이즈 범위 (±' + ci.toFixed(2) + ')', { dy: -5, fill: 'var(--seal)', size: 10.5 });
+
+    var sig = [];
+    comp.forEach(function (c, i) {
+      var ok = c[1] > ci;
+      if (ok) sig.push(c[0]);
+      p.add(VIZ.el('rect', {
+        x: p.X(i - 0.22), y: p.Y(c[1]), width: p.X(i + 0.22) - p.X(i - 0.22), height: p.Y(0) - p.Y(c[1]),
+        rx: 3, fill: ok ? 'var(--jade)' : 'var(--ink-3)', 'fill-opacity': ok ? .55 : .3,
+        stroke: ok ? 'var(--jade)' : 'var(--ink-3)', 'stroke-width': 1.4
+      }));
+      p.text(i, c[1], c[1].toFixed(1), { dy: -6, anchor: 'middle', size: 11 });
+      p.text(i, 0, '성분 ' + c[0], { dy: 16, anchor: 'middle', size: 11 });
+    });
+
+    out.set('s', s); out.set('ci', ci);
+    out.setRaw('v', sig.length ? sig.join(', ') : '없음');
+  }
+
+  WIDGETS.slider({ host: ctx.controls, label: '시드 개수 m', min: 2, max: 20, step: 1, value: 5, digits: 0,
+    onInput: function (v) { m = v; draw(); } });
+  WIDGETS.slider({ host: ctx.controls, label: '성분 B 의 기여도 Δ', min: 0, max: 3, step: .1, value: .5, digits: 1,
+    onInput: function (v) { comp[1][1] = v; draw(); } });
+  draw();
+});
+
+/* 위젯 3 — 필요한 실행 횟수 */
+WIDGETS.register('sample-size', function (root, ctx) {
+  var s = 1.0, d = 0.5;
+  var p = VIZ.plot({ w: 460, h: 220, xmin: 0.05, xmax: 2, ymin: 0, ymax: 80, pad: { t: 16, r: 14, b: 30, l: 40 } });
+  ctx.stage.appendChild(p.svg);
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'm', label: '필요한 실행 횟수 m' },
+    { key: 'note', label: '판단' }
+  ]);
+
+  function need(dd) { return Math.pow(2 * s / dd, 2); }
+
+  function draw() {
+    p.clear().grid(0.5, 20).axes('주장하려는 차이 d (%p)', '필요 횟수 m').ticks(0.5, 20);
+    p.curve(function (x) { return x > 0.05 ? Math.min(need(x), 80) : NaN; }, { samples: 300 });
+    var m = need(d);
+    p.add(VIZ.el('line', { x1: p.X(d), y1: p.Y(0), x2: p.X(d), y2: p.Y(Math.min(m, 80)), stroke: 'var(--seal)', 'stroke-width': 1.4, 'stroke-dasharray': '4 3' }));
+    p.dot(d, Math.min(m, 80), 6);
+    p.text(0.1, 76, 'm ≳ (2s/d)²', { size: 12 });
+
+    out.setRaw('m', m > 200 ? '200회 초과' : Math.ceil(m) + ' 회');
+    out.setRaw('note', m <= 5 ? '몇 번이면 충분' : (m <= 20 ? '현실적 범위' : '이 정도 차이는 주장하기 어렵다'));
+  }
+
+  WIDGETS.slider({ host: ctx.controls, label: '시드 표준편차 s', min: .2, max: 2, step: .1, value: 1, digits: 1,
+    onInput: function (v) { s = v; draw(); } });
+  WIDGETS.slider({ host: ctx.controls, label: '주장하려는 차이 d', min: .1, max: 2, step: .1, value: .5, digits: 1,
+    onInput: function (v) { d = v; draw(); } });
+  draw();
+});
+
+/* 위젯 4 — 공정한 비교 점검표 */
+WIDGETS.register('fairness-check', function (root, ctx) {
+  var ITEMS = [
+    ['같은 데이터·같은 분할', true, '데이터가 다르면 방법이 아니라 데이터를 비교한 것이 된다.'],
+    ['같은 학습 예산 (스텝·에폭)', true, '더 오래 학습한 쪽이 유리하다. 계산량을 맞춰야 한다.'],
+    ['같은 하이퍼파라미터 탐색 예산', true, '내 방법만 100번 탐색했다면 그것은 노력의 차이다.'],
+    ['여러 시드로 반복', true, '한 번 실행은 표본 하나. 평균과 표준오차가 필요하다.'],
+    ['같은 평가 프로토콜', true, '전처리·지표·후처리가 다르면 숫자를 나란히 놓을 수 없다.'],
+    ['테스트셋을 마지막에 한 번만', true, '보고 고치면 검증셋이 되어 점수가 낙관적으로 치우친다.']
+  ];
+  var state = ITEMS.map(function () { return true; });
+
+  var box = document.createElement('div'); box.style.width = '100%';
+  ctx.stage.appendChild(box);
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'ok', label: '충족한 조건' }, { key: 'verdict', label: '결론을 믿을 수 있는가' }
+  ]);
+
+  function draw() {
+    box.innerHTML = '<div style="display:grid;gap:.3rem">' + ITEMS.map(function (it, i) {
+      return '<button class="opt" type="button" data-i="' + i + '" style="text-align:left">' +
+        '<span class="opt__mark">' + (state[i] ? '✓' : '✗') + '</span>' +
+        '<span><b>' + it[0] + '</b><br><small style="color:var(--ink-3)">' + it[2] + '</small></span></button>';
+    }).join('') + '</div>';
+    Array.prototype.forEach.call(box.querySelectorAll('[data-i]'), function (b) {
+      var i = +b.getAttribute('data-i');
+      b.classList.add(state[i] ? 'is-correct' : 'is-wrong');
+      b.addEventListener('click', function () { state[i] = !state[i]; draw(); });
+    });
+    var n = state.filter(Boolean).length;
+    out.setRaw('ok', n + ' / ' + ITEMS.length);
+    out.setRaw('verdict', n === ITEMS.length ? '예 — 방법의 차이로 볼 수 있다'
+      : (n >= 4 ? '조건부 — 어긋난 항목을 명시해야 한다' : '아니오 — 다른 요인이 결과를 설명할 수 있다'));
+  }
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

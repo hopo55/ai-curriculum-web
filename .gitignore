@@ -17,3 +17,6 @@ node_modules/
 # 내려받은 원문 — 저작권 때문에 공개 저장소에 올리지 않는다.
 # 메타데이터(해시·크기·출처)는 references/registry.json 에 남는다.
 references/library/
+
+# Claude Code 작업용 워크트리 — 저장소에 커밋하지 않는다
+.claude/worktrees/

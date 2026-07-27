@@ -80,8 +80,8 @@ chapters/ch{장번호 2자리}/{절번호}-{영문슬러그}.html
 
 ```html
 <nav class="chips" aria-label="이 절에서 다루는 항목">
-  <a class="chip" href="#c-inner">내적</a>
-  <a class="chip" href="#c-ortho">직교성</a>
+  <a class="chip" href="#c-inner">Inner Product</a>
+  <a class="chip" href="#c-ortho">Orthogonality</a>
   ...
 </nav>
 ```
@@ -101,9 +101,9 @@ chapters/ch{장번호 2자리}/{절번호}-{영문슬러그}.html
   <table class="symtab">
     <thead><tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr></thead>
     <tbody>
-      <tr><td>$\mathbf{w}$</td><td>더블유</td><td>가중치 벡터</td><td>벡터 $(d,)$</td><td>실수</td></tr>
-      <tr><td>$\nabla$</td><td>나블라</td><td>그래디언트 연산자</td><td>연산자</td><td>—</td></tr>
-      <tr><td>$\odot$</td><td>아다마르 곱</td><td>원소별 곱</td><td>연산자</td><td>—</td></tr>
+      <tr><td>$\mathbf{w}$</td><td>bold w</td><td>weight vector</td><td>vector $(d,)$</td><td>실수</td></tr>
+      <tr><td>$\nabla$</td><td>nabla 나블라</td><td>gradient 연산자</td><td>연산자</td><td>—</td></tr>
+      <tr><td>$\odot$</td><td>Hadamard product 아다마르 곱</td><td>원소별 곱</td><td>연산자</td><td>—</td></tr>
     </tbody>
   </table>
 </div>
@@ -196,7 +196,56 @@ node tools/refs.mjs scan               # 페이지의 data-ref → cited_by 갱�
 
 ## 5. 서술 규칙
 
-- 본문은 한국어. 전문용어는 첫 등장 시 `내적(inner product)` 형태로 병기, 이후 한국어만.
+### 5.1 용어는 영어로 쓴다 (핵심 규칙)
+
+문장은 한국어, **핵심 용어는 영어**다. 논문·문서·코드에서 만나는 표기와 같아야
+읽은 것이 그대로 쓰인다. 한국어 번역어를 기본형으로 쓰지 않는다.
+
+- 각 절에서 **처음 나올 때만** `inner product(내적)` 로 한글을 병기하고, 이후에는 영어만 쓴다.
+  같은 절 안에서 두 번 이상 병기하지 않는다.
+- 적용 범위는 **페이지 전체**다 — 다루는 항목 칩 · 소제목 · 본문 · 표 · 기호표 ·
+  함정 · 퀴즈 · 위젯 제목과 라벨 · `.watch` 안내.
+
+| 자리 | 형식 | 예 |
+|---|---|---|
+| 칩 (`.chips`) | 영어만, Title Case | `Inner Product` `Null Space` |
+| 소제목 (`h3`) | `English 한글` | `Inner Product 내적` |
+| 본문 첫 등장 | `english(한글)` | `inner product(내적)는 …` |
+| 본문 이후 | 영어만 | `inner product 가 0 이면 …` |
+| 기호표 '읽는 법' | `english 한글음차` | `nabla 나블라`, `transpose 트랜스포즈` |
+| 위젯 제목 | `English — 한 줄 설명` | `Orthogonal Projection — v 가 u 위에 드리우는 그림자` |
+
+**칩은 커리큘럼 항목의 영어 표기다.** 개수와 순서는 커리큘럼 그대로 두고 이름만 영어로 쓴다
+(`check.mjs` 는 개수를 세므로 이름을 바꿔도 통과하지만, 항목 대응이 흐트러지면 안 된다).
+
+**절 제목(`h1`)과 `<title>`, 헤더(`.sechead`)는 한국어를 유지한다.** 이것들은
+`curriculum/ai_curriculum_v2.md` 의 절 이름이고, `index.html` 목차·검색과 글자까지 같아야 하기 때문이다.
+소제목(`h3`)부터가 영어 표기 대상이다.
+
+### 5.2 조사와 띄어쓰기
+
+조사는 **영어 단어를 한글로 옮겼을 때의 끝소리**에 맞춘다. 대부분의 영어 단어는
+한글 음차에서 모음으로 끝나므로 `는/가/를/와` 가 기본이다.
+
+| 끝소리 | 조사 | 예 |
+|---|---|---|
+| 모음 (대다수) | 는 · 가 · 를 · 와 | `matrix는`(매트릭스) · `rank가`(랭크) · `vector를`(벡터) |
+| `n` `m` `l` `ng` `-ion` `-ic` | 은 · 이 · 을 · 과 | `span은`(스팬) · `norm이`(놈) · `attention을`(어텐션) |
+
+- 영어 단어와 조사는 **붙여 쓴다**: `matrix는` (○) / `matrix 는` (✗).
+- 영어 단어와 한국어 용언 사이는 띄운다: `orthogonal 하다`, `diagonalize 할 수 있다`.
+
+### 5.3 영어로 바꾸지 않는 것
+
+굳어진 일상어까지 영어로 바꾸면 오히려 읽기 어려워진다. 다음은 한국어로 둔다.
+
+- 기본 명사: 행 · 열 · 크기 · 길이 · 넓이 · 방향 · 합 · 곱 · 점 · 직선 · 평면 · 축
+- 서술어와 접속: 이다 · 된다 · 따라서 · 그러므로
+- 이미 한국어가 표준인 것: 검산 · 유도 · 예제 · 함정
+- 단, 이들이 **전문용어의 일부**이면 영어로 간다: `row space`, `column space`, `unit vector`
+
+### 5.4 그 밖의 서술 규칙
+
 - 수식 기호는 원 표기 유지 — 번역하지 않는다.
 - 문장은 짧게. 한 문단은 3~5문장.
 - 영문 용어·절 번호·숫자에는 `.tex` / `.num` 클래스를 써서 Computer Modern 으로 조판한다.

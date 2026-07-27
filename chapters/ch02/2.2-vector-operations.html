@@ -61,31 +61,31 @@
 
     <!-- ===== 1. 다루는 항목 ===== -->
     <nav class="chips" aria-label="이 절에서 다루는 항목">
-      <a class="chip" href="#c-add">벡터 덧셈</a>
-      <a class="chip" href="#c-smul">스칼라 곱</a>
-      <a class="chip" href="#c-lincomb">선형결합</a>
+      <a class="chip" href="#c-add">Vector Addition</a>
+      <a class="chip" href="#c-smul">Scalar Multiplication</a>
+      <a class="chip" href="#c-lincomb">Linear Combination</a>
       <a class="chip" href="#c-span">Span</a>
-      <a class="chip" href="#c-indep">선형독립</a>
-      <a class="chip" href="#c-dep">선형종속</a>
-      <a class="chip" href="#c-norm">벡터의 크기</a>
-      <a class="chip" href="#c-unit">단위벡터</a>
-      <a class="chip" href="#c-dist">거리</a>
-      <a class="chip" href="#c-angle">각도</a>
+      <a class="chip" href="#c-indep">Linear Independence</a>
+      <a class="chip" href="#c-dep">Linear Dependence</a>
+      <a class="chip" href="#c-norm">Vector Norm</a>
+      <a class="chip" href="#c-unit">Unit Vector</a>
+      <a class="chip" href="#c-dist">Distance</a>
+      <a class="chip" href="#c-angle">Angle</a>
     </nav>
 
     <!-- ===== 2. 한 줄 요약 ===== -->
     <section class="sec" id="s-summary">
       <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
       <p class="tldr">
-        벡터로 할 수 있는 일은 근본적으로 <strong>더하기와 상수배 두 가지뿐</strong>이고,
-        그 둘을 섞은 것이 선형결합이다. 선형대수 전체가 이 하나의 연산을 파고든 학문이다.
+        vector(벡터)로 할 수 있는 일은 근본적으로 <strong>더하기와 상수배 두 가지뿐</strong>이고,
+        그 둘을 섞은 것이 linear combination(선형결합)이다. linear algebra(선형대수) 전체가 이 하나의 연산을 파고든 학문이다.
       </p>
 
       <h3>학습 목표</h3>
       <ol class="goals">
-        <li>선형결합 · Span · 선형독립을 정의하고, 주어진 벡터 두세 개가 독립인지 판정할 수 있다.</li>
-        <li>$\|\mathbf{x}\|_2$, 단위벡터, 두 점 사이 거리, 두 벡터의 각도를 손으로 계산할 수 있다.</li>
-        <li>Span 이 항상 부분공간이 되는 이유를 세 조건으로 설명할 수 있다.</li>
+        <li>linear combination · Span · linear independence(선형독립)를 정의하고, 주어진 vector 두세 개가 독립인지 판정할 수 있다.</li>
+        <li>$\|\mathbf{x}\|_2$, unit vector(단위벡터), 두 점 사이 거리, 두 vector의 각도를 손으로 계산할 수 있다.</li>
+        <li>Span이 항상 subspace(부분공간)가 되는 이유를 세 조건으로 설명할 수 있다.</li>
       </ol>
     </section>
 
@@ -94,9 +94,9 @@
       <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
 
       <p>
-        벡터를 <em>이동 명령</em>으로 보자. $(3,1)$ 은 "오른쪽으로 3, 위로 1 가라"는 뜻이다.
+        vector를 <em>이동 명령</em>으로 보자. $(3,1)$ 은 "오른쪽으로 3, 위로 1 가라"는 뜻이다.
         그러면 <strong>덧셈은 명령을 이어서 수행하는 것</strong>이고,
-        <strong>스칼라 곱은 같은 방향으로 몇 배만큼 더 가라는 것</strong>이다.
+        <strong>scalar multiplication(스칼라 곱)은 같은 방향으로 몇 배만큼 더 가라는 것</strong>이다.
         음수배는 뒤로 돌아 가라는 뜻이다.
       </p>
 
@@ -106,12 +106,12 @@
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">u 를 먼저 가든 v 를 먼저 가든 도착점이 같습니다 — 이것이 교환법칙의 그림입니다.</p>
+          <p class="watch">u를 먼저 가든 v를 먼저 가든 도착점이 같습니다 — 이것이 교환법칙의 그림입니다.</p>
         </div>
       </figure>
 
       <figure class="widget" data-widget="scalar-mul">
-        <figcaption class="widget__bar">스칼라 곱 — 늘이고, 줄이고, 뒤집기</figcaption>
+        <figcaption class="widget__bar">scalar multiplication — 늘이고, 줄이고, 뒤집기</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
@@ -123,9 +123,9 @@
       <div class="note note--key">
         <span class="note__label">핵심</span>
         <p>
-          두 연산을 섞으면 $\alpha\mathbf{u} + \beta\mathbf{v}$ 가 된다. 이것이 <strong>선형결합</strong>이고,
-          만들 수 있는 모든 결과를 모은 것이 <strong>Span</strong> 이다.
-          Span 이 평면이 되느냐 직선으로 주저앉느냐가 <strong>선형독립</strong> 여부다.
+          두 연산을 섞으면 $\alpha\mathbf{u} + \beta\mathbf{v}$ 가 된다. 이것이 <strong>linear combination</strong>이고,
+          만들 수 있는 모든 결과를 모은 것이 <strong>Span</strong>이다.
+          Span이 평면이 되느냐 직선으로 주저앉느냐가 <strong>linear independence</strong> 여부다.
           이 절의 열 개 항목은 사실상 이 한 문장의 전개다.
         </p>
       </div>
@@ -136,9 +136,9 @@
       <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
 
       <span class="anchor" id="c-add"></span>
-      <h3>벡터 덧셈</h3>
+      <h3>Vector Addition 벡터 덧셈</h3>
       <p>
-        같은 공간의 두 벡터는 <strong>성분끼리</strong> 더한다. shape 가 다르면 정의되지 않는다.
+        같은 공간의 두 vector는 <strong>성분끼리</strong> 더한다. shape가 다르면 정의되지 않는다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{u} + \mathbf{v} = \begin{bmatrix} u_1 + v_1 \\ \vdots \\ u_n + v_n \end{bmatrix}, \qquad \mathbf{u}, \mathbf{v} \in \mathbb{R}^n $$</div>
@@ -147,14 +147,14 @@
       <p>
         기하학적으로는 $\mathbf{u}$ 의 머리에 $\mathbf{v}$ 의 꼬리를 붙였을 때의 도착점이다.
         순서를 바꿔도 같은 곳에 도착하므로($\mathbf{u}+\mathbf{v} = \mathbf{v}+\mathbf{u}$),
-        두 화살표는 평행사변형을 이룬다.
+        두 화살표는 parallelogram(평행사변형)을 이룬다.
       </p>
 
       <span class="anchor" id="c-smul"></span>
-      <h3>스칼라 곱</h3>
+      <h3>Scalar Multiplication 스칼라 곱</h3>
       <p>
-        스칼라 곱(scalar multiplication)은 모든 성분에 같은 수를 곱한다.
-        <strong>내적(dot product)과 다른 연산</strong>이므로 혼동하지 않는다 — 내적은
+        scalar multiplication은 모든 성분에 같은 수를 곱한다.
+        <strong>inner product(내적)과 다른 연산</strong>이므로 혼동하지 않는다 — inner product는
         <a href="2.3-inner-product.html">2.3</a>에서 다룬다.
       </p>
       <div class="eq">
@@ -163,28 +163,28 @@
       </div>
       <p>
         $|c| > 1$ 이면 늘어나고, $0 < |c| < 1$ 이면 줄어들고, $c < 0$ 이면 방향이 뒤집힌다.
-        $c = 0$ 이면 영벡터가 된다. 어떤 $c$ 를 써도 <strong>원점을 지나는 같은 직선 위</strong>에 남는다.
+        $c = 0$ 이면 zero vector(영벡터)가 된다. 어떤 $c$ 를 써도 <strong>원점을 지나는 같은 직선 위</strong>에 남는다.
       </p>
 
       <span class="anchor" id="c-lincomb"></span>
-      <h3>선형결합</h3>
+      <h3>Linear Combination 선형결합</h3>
       <p>
-        벡터 $\mathbf{v}_1, \dots, \mathbf{v}_k$ 와 스칼라 $\lambda_1, \dots, \lambda_k$ 에 대해
-        아래 형태의 벡터를 <strong>선형결합</strong>(linear combination)이라 한다.
+        vector $\mathbf{v}_1, \dots, \mathbf{v}_k$ 와 scalar(스칼라) $\lambda_1, \dots, \lambda_k$ 에 대해
+        아래 형태의 vector를 <strong>linear combination</strong>이라 한다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{w} = \lambda_1 \mathbf{v}_1 + \lambda_2 \mathbf{v}_2 + \cdots + \lambda_k \mathbf{v}_k = \sum_{i=1}^{k} \lambda_i \mathbf{v}_i $$</div>
         <span class="eq__tag num">(3)</span>
       </div>
       <p>
-        신경망의 한 뉴런이 하는 계산 $\sum_i w_i x_i$ 도, 임베딩 평균도, 이미지의 픽셀 혼합도 모두 이 형태다.
-        <strong>딥러닝에서 "선형"이라 부르는 것은 대부분 식 (3)을 가리킨다.</strong>
+        neural network(신경망)의 한 뉴런이 하는 계산 $\sum_i w_i x_i$ 도, embedding(임베딩) 평균도, image(이미지)의 pixel(픽셀) 혼합도 모두 이 형태다.
+        <strong>deep learning(딥러닝)에서 "선형"이라 부르는 것은 대부분 식 (3)을 가리킨다.</strong>
       </p>
 
       <span class="anchor" id="c-span"></span>
       <h3>Span</h3>
       <p>
-        Span 은 <strong>가능한 모든 선형결합의 집합</strong>이다. "이 벡터들로 도달할 수 있는 곳 전부"라고 읽으면 된다.
+        Span은 <strong>가능한 모든 linear combination의 집합</strong>이다. "이 vector들로 도달할 수 있는 곳 전부"라고 읽으면 된다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \operatorname{span}\{\mathbf{v}_1,\dots,\mathbf{v}_k\} = \Bigl\{\, \sum_{i=1}^{k}\lambda_i\mathbf{v}_i \;\Big|\; \lambda_i \in \mathbb{R} \,\Bigr\} $$</div>
@@ -192,7 +192,7 @@
       </div>
       <div class="tablewrap">
         <table>
-          <thead><tr><th>벡터</th><th>Span 의 모양</th><th>차원</th></tr></thead>
+          <thead><tr><th>vector</th><th>Span의 모양</th><th>dimension(차원)</th></tr></thead>
           <tbody>
             <tr><td>$\{\mathbf{0}\}$</td><td>원점 한 점</td><td class="num">0</td></tr>
             <tr><td>$\{\mathbf{v}\}$, $\mathbf{v}\neq\mathbf{0}$</td><td>원점을 지나는 직선</td><td class="num">1</td></tr>
@@ -202,18 +202,18 @@
         </table>
       </div>
       <p>
-        Span 은 언제나 부분공간이다 — <a href="#s-derivation">유도</a>에서 세 조건으로 확인한다.
+        Span은 언제나 subspace다 — <a href="#s-derivation">유도</a>에서 세 조건으로 확인한다.
       </p>
 
       <span class="anchor" id="c-indep"></span>
       <span class="anchor" id="c-dep"></span>
-      <h3>선형독립과 선형종속</h3>
+      <h3>Linear Independence and Dependence 선형독립과 선형종속</h3>
       <div class="note note--key">
         <span class="note__label">정의</span>
         <p>
           $\lambda_1\mathbf{v}_1 + \cdots + \lambda_k\mathbf{v}_k = \mathbf{0}$ 을 만족하는 방법이
-          <strong>$\lambda_1=\cdots=\lambda_k=0$ 뿐</strong>이면 그 벡터들은 <strong>선형독립</strong>(linearly independent)이다.
-          0 이 아닌 계수로도 $\mathbf{0}$ 을 만들 수 있으면 <strong>선형종속</strong>(linearly dependent)이다.
+          <strong>$\lambda_1=\cdots=\lambda_k=0$ 뿐</strong>이면 그 vector들은 <strong>linear independence</strong>(linearly independent)이다.
+          0 이 아닌 계수로도 $\mathbf{0}$ 을 만들 수 있으면 <strong>linear dependence(선형종속)</strong>(linearly dependent)이다.
         </p>
       </div>
       <p>
@@ -224,16 +224,16 @@
       </p>
       <p>실무에서 쓰는 판정법은 이렇다.</p>
       <ul>
-        <li>벡터가 <strong>2개</strong>: 한쪽이 다른 쪽의 스칼라배이면 종속. 2차원에서는 $\det[\mathbf{u}\ \mathbf{v}] = u_1v_2 - u_2v_1 = 0$ 인지 보면 된다.</li>
-        <li>벡터가 <strong>$k$ 개</strong>: 열로 세운 행렬의 rank 가 $k$ 이면 독립 (<a href="2.5-linear-transformation.html">2.5</a>).</li>
+        <li>vector가 <strong>2개</strong>: 한쪽이 다른 쪽의 스칼라배이면 종속. 2dimension에서는 $\det[\mathbf{u}\ \mathbf{v}] = u_1v_2 - u_2v_1 = 0$ 인지 보면 된다.</li>
+        <li>vector가 <strong>$k$ 개</strong>: 열로 세운 matrix(행렬)의 rank가 $k$ 이면 독립 (<a href="2.5-linear-transformation.html">2.5</a>).</li>
         <li><strong>$\mathbb{R}^n$ 안에서 $n+1$ 개 이상이면 무조건 종속</strong>이다. 방이 좁으면 반드시 겹친다.</li>
         <li>집합에 $\mathbf{0}$ 이 들어 있으면 무조건 종속이다 ($1\cdot\mathbf{0} = \mathbf{0}$).</li>
       </ul>
 
       <span class="anchor" id="c-norm"></span>
-      <h3>벡터의 크기 (노름)</h3>
+      <h3>Vector Norm 벡터의 크기</h3>
       <p>
-        크기는 <strong>노름</strong>(norm)이라는 함수 $\|\cdot\| : V \to \mathbb{R}$ 로 정의한다.
+        크기는 <strong>norm(노름)</strong>이라는 함수 $\|\cdot\| : V \to \mathbb{R}$ 로 정의한다.
         아무 함수나 되는 것이 아니라 세 조건을 만족해야 한다<a class="cite" href="#ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">1</a>.
       </p>
       <div class="tablewrap">
@@ -241,55 +241,55 @@
           <thead><tr><th>조건</th><th>식</th><th>뜻</th></tr></thead>
           <tbody>
             <tr><td>절대 동차성</td><td>$\|c\mathbf{x}\| = |c|\,\|\mathbf{x}\|$</td><td>2배로 늘리면 길이도 2배</td></tr>
-            <tr><td>삼각부등식</td><td>$\|\mathbf{x}+\mathbf{y}\| \leq \|\mathbf{x}\| + \|\mathbf{y}\|$</td><td>돌아가는 길이 더 길다</td></tr>
-            <tr><td>양의 정부호</td><td>$\|\mathbf{x}\| \geq 0$, &nbsp; $\|\mathbf{x}\| = 0 \Leftrightarrow \mathbf{x}=\mathbf{0}$</td><td>길이는 음수가 아니고, 0이면 영벡터</td></tr>
+            <tr><td>triangle inequality(삼각부등식)</td><td>$\|\mathbf{x}+\mathbf{y}\| \leq \|\mathbf{x}\| + \|\mathbf{y}\|$</td><td>돌아가는 길이 더 길다</td></tr>
+            <tr><td>positive definite(양의 정부호)</td><td>$\|\mathbf{x}\| \geq 0$, &nbsp; $\|\mathbf{x}\| = 0 \Leftrightarrow \mathbf{x}=\mathbf{0}$</td><td>길이는 음수가 아니고, 0이면 zero vector</td></tr>
           </tbody>
         </table>
       </div>
-      <p>세 조건을 만족하는 노름은 여럿이다. 자주 쓰는 셋은 다음과 같다.</p>
+      <p>세 조건을 만족하는 norm은 여럿이다. 자주 쓰는 셋은 다음과 같다.</p>
       <div class="eq">
         <div class="eq__body">$$ \|\mathbf{x}\|_1 = \sum_{i=1}^{n} |x_i|, \qquad \|\mathbf{x}\|_2 = \sqrt{\sum_{i=1}^{n} x_i^2}, \qquad \|\mathbf{x}\|_\infty = \max_i |x_i| $$</div>
         <span class="eq__tag num">(5)</span>
       </div>
       <p>
-        그냥 "크기"라고 하면 보통 $\|\cdot\|_2$(유클리드 노름)를 뜻하고, 아래첨자를 생략해 $\|\mathbf{x}\|$ 로 쓴다.
-        어느 노름을 쓰느냐에 따라 "단위 크기인 점들의 모양"이 달라진다 — 아래 위젯에서 직접 확인한다.
-        이 선택은 정규화 항 $L_1$ / $L_2$ 의 성질 차이로 그대로 이어진다.
+        그냥 "크기"라고 하면 보통 $\|\cdot\|_2$(Euclidean(유클리드) norm)를 뜻하고, 아래첨자를 생략해 $\|\mathbf{x}\|$ 로 쓴다.
+        어느 norm을 쓰느냐에 따라 "단위 크기인 점들의 모양"이 달라진다 — 아래 위젯에서 직접 확인한다.
+        이 선택은 normalization(정규화) 항 $L_1$ / $L_2$ 의 성질 차이로 그대로 이어진다.
       </p>
 
       <span class="anchor" id="c-unit"></span>
-      <h3>단위벡터</h3>
+      <h3>Unit Vector 단위벡터</h3>
       <p>
-        길이가 1인 벡터를 단위벡터(unit vector)라 한다. 영이 아닌 벡터는 자기 길이로 나누면 단위벡터가 된다.
+        길이가 1인 vector를 unit vector라 한다. 영이 아닌 vector는 자기 길이로 나누면 unit vector가 된다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \hat{\mathbf{v}} = \frac{\mathbf{v}}{\|\mathbf{v}\|}, \qquad \|\hat{\mathbf{v}}\| = 1 $$</div>
         <span class="eq__tag num">(6)</span>
       </div>
       <p>
-        이렇게 하면 <strong>크기를 버리고 방향만 남긴다</strong>. 임베딩을 비교할 때 길이 차이를 없애기 위해
-        먼저 정규화하는 관행이 여기서 나온다(<a href="2.3-inner-product.html">2.3</a>).
+        이렇게 하면 <strong>크기를 버리고 방향만 남긴다</strong>. embedding을 비교할 때 길이 차이를 없애기 위해
+        먼저 normalize 하는 관행이 여기서 나온다(<a href="2.3-inner-product.html">2.3</a>).
       </p>
 
       <span class="anchor" id="c-dist"></span>
-      <h3>거리</h3>
+      <h3>Distance 거리</h3>
       <p>
-        두 벡터 사이의 거리는 <strong>차이 벡터의 크기</strong>다.
+        두 vector 사이의 거리는 <strong>차이 vector의 크기</strong>다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ d(\mathbf{u}, \mathbf{v}) = \|\mathbf{u} - \mathbf{v}\| = \sqrt{\sum_{i=1}^{n}(u_i - v_i)^2} $$</div>
         <span class="eq__tag num">(7)</span>
       </div>
       <p>
-        노름을 무엇으로 잡느냐에 따라 거리도 달라진다. $\|\cdot\|_1$ 을 쓰면 맨해튼 거리,
-        $\|\cdot\|_2$ 를 쓰면 유클리드 거리다. 거리 공간의 형식적 조건은
-        <a href="2.3-inner-product.html">2.3 내적과 유사도</a>에서 정리한다.
+        norm을 무엇으로 잡느냐에 따라 거리도 달라진다. $\|\cdot\|_1$ 을 쓰면 Manhattan distance(맨해튼 거리),
+        $\|\cdot\|_2$ 를 쓰면 Euclidean 거리다. metric space(거리 공간)의 형식적 조건은
+        <a href="2.3-inner-product.html">2.3 inner product와 similarity(유사도)</a>에서 정리한다.
       </p>
 
       <span class="anchor" id="c-angle"></span>
-      <h3>각도</h3>
+      <h3>Angle 각도</h3>
       <p>
-        두 벡터가 이루는 각도는 내적으로 정의한다. 내적 자체는 다음 절의 주제이므로,
+        두 vector가 이루는 각도는 inner product로 정의한다. inner product 자체는 다음 절의 주제이므로,
         여기서는 각도를 재는 <em>공식</em>만 먼저 확보한다.
       </p>
       <div class="eq">
@@ -298,7 +298,7 @@
       </div>
       <p>
         분모가 두 길이의 곱이므로 $\cos\theta$ 는 항상 $[-1, 1]$ 에 들어간다
-        (코시–슈바르츠 부등식 — <a href="2.3-inner-product.html">2.3</a>에서 증명).
+        (Cauchy–Schwarz(코시–슈바르츠) inequality(부등식) — <a href="2.3-inner-product.html">2.3</a>에서 증명).
         $\theta = 90^\circ$ 면 $\mathbf{u}^\top\mathbf{v} = 0$ 이고, 이를 직교라 한다.
       </p>
     </section>
@@ -308,17 +308,17 @@
       <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
 
       <p>
-        선형결합 (3)은 행렬 곱 하나로 압축된다. 벡터들을 열로 세운 행렬을 $\mathbf{V} = [\mathbf{v}_1\ \cdots\ \mathbf{v}_k]$,
-        계수를 모은 벡터를 $\boldsymbol{\lambda}$ 라 하면 다음과 같다.
+        linear combination (3)은 matrix multiplication(행렬 곱) 하나로 압축된다. vector들을 열로 세운 matrix를 $\mathbf{V} = [\mathbf{v}_1\ \cdots\ \mathbf{v}_k]$,
+        계수를 모은 vector를 $\boldsymbol{\lambda}$ 라 하면 다음과 같다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \sum_{i=1}^{k}\lambda_i\mathbf{v}_i = \mathbf{V}\boldsymbol{\lambda}, \qquad \operatorname{span}\{\mathbf{v}_i\} = \{\mathbf{V}\boldsymbol{\lambda} : \boldsymbol{\lambda}\in\mathbb{R}^k\} $$</div>
         <span class="eq__tag num">(9)</span>
       </div>
       <p>
-        오른쪽 집합은 <strong>$\mathbf{V}$ 의 열공간</strong>(column space)이라 불린다.
-        "Span 을 구하라"와 "열공간을 구하라"는 같은 문제다 (<a href="2.5-linear-transformation.html">2.5</a>).
-        같은 표기로 선형독립은 이렇게 쓴다.
+        오른쪽 집합은 <strong>$\mathbf{V}$ 의 column space(열공간)</strong>이라 불린다.
+        "Span을 구하라"와 "column space를 구하라"는 같은 문제다 (<a href="2.5-linear-transformation.html">2.5</a>).
+        같은 표기로 linear independence는 이렇게 쓴다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{V}\boldsymbol{\lambda} = \mathbf{0} \;\Longrightarrow\; \boldsymbol{\lambda} = \mathbf{0} \qquad(\text{선형독립}) $$</div>
@@ -332,24 +332,24 @@
             <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
           </thead>
           <tbody>
-            <tr><td>$\mathbf{u}, \mathbf{v}, \mathbf{w}$</td><td>볼드 유·브이·더블유</td><td>벡터</td><td>벡터 $(n,)$</td><td>$\mathbb{R}^n$</td></tr>
-            <tr><td>$u_i$</td><td>유 아이</td><td>$\mathbf{u}$ 의 $i$ 번째 성분</td><td>스칼라</td><td>$\mathbb{R}$</td></tr>
-            <tr><td>$c$</td><td>씨</td><td>스칼라 곱의 배수</td><td>스칼라</td><td>$\mathbb{R}$</td></tr>
-            <tr><td>$\lambda_i$</td><td>람다 아이</td><td>선형결합의 계수</td><td>스칼라</td><td>$\mathbb{R}$</td></tr>
-            <tr><td>$\boldsymbol{\lambda}$</td><td>볼드 람다</td><td>계수를 모은 벡터</td><td>벡터 $(k,)$</td><td>$\mathbb{R}^k$</td></tr>
-            <tr><td>$\operatorname{span}$</td><td>스팬</td><td>모든 선형결합의 집합</td><td>연산자 → 집합</td><td>—</td></tr>
-            <tr><td>$\|\mathbf{x}\|$</td><td>노름 오브 엑스</td><td>벡터의 크기 (기본은 $\|\cdot\|_2$)</td><td>스칼라</td><td>$\geq 0$</td></tr>
-            <tr><td>$\|\mathbf{x}\|_1$</td><td>엘원 노름</td><td>성분 절댓값의 합 (맨해튼)</td><td>스칼라</td><td>$\geq 0$</td></tr>
-            <tr><td>$\|\mathbf{x}\|_2$</td><td>엘투 노름</td><td>제곱합의 제곱근 (유클리드)</td><td>스칼라</td><td>$\geq 0$</td></tr>
-            <tr><td>$\|\mathbf{x}\|_\infty$</td><td>엘인피니티 노름</td><td>성분 절댓값의 최댓값</td><td>스칼라</td><td>$\geq 0$</td></tr>
-            <tr><td>$\hat{\mathbf{v}}$</td><td>브이 햇</td><td>$\mathbf{v}$ 방향의 단위벡터</td><td>벡터 $(n,)$</td><td>$\|\hat{\mathbf{v}}\|=1$</td></tr>
-            <tr><td>$d(\mathbf{u},\mathbf{v})$</td><td>디 오브 유 브이</td><td>두 벡터 사이 거리</td><td>스칼라</td><td>$\geq 0$</td></tr>
-            <tr><td>$\theta$</td><td>세타</td><td>두 벡터가 이루는 각</td><td>스칼라</td><td>$[0, \pi]$</td></tr>
-            <tr><td>$\mathbf{u}^\top\mathbf{v}$</td><td>유 트랜스포즈 브이</td><td>내적 — 성분곱의 합</td><td>스칼라</td><td>$\mathbb{R}$</td></tr>
-            <tr><td>$|c|$</td><td>절댓값</td><td>부호를 뗀 크기</td><td>스칼라</td><td>$\geq 0$</td></tr>
-            <tr><td>$\det$</td><td>디터미넌트</td><td>행렬식 — 2차원에서 넓이 배율</td><td>스칼라</td><td>$\mathbb{R}$</td></tr>
-            <tr><td>$\max_i$</td><td>맥스</td><td>가장 큰 값</td><td>연산자</td><td>—</td></tr>
-            <tr><td>$\Rightarrow$</td><td>임플라이</td><td>"…이면 …이다"</td><td>논리 기호</td><td>—</td></tr>
+            <tr><td>$\mathbf{u}, \mathbf{v}, \mathbf{w}$</td><td>bold u·v·w</td><td>vector</td><td>vector $(n,)$</td><td>$\mathbb{R}^n$</td></tr>
+            <tr><td>$u_i$</td><td>u i</td><td>$\mathbf{u}$ 의 $i$ 번째 성분</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$c$</td><td>c</td><td>scalar multiplication의 배수</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\lambda_i$</td><td>lambda i</td><td>linear combination의 계수</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\boldsymbol{\lambda}$</td><td>bold lambda 볼드 람다</td><td>계수를 모은 vector</td><td>vector $(k,)$</td><td>$\mathbb{R}^k$</td></tr>
+            <tr><td>$\operatorname{span}$</td><td>span</td><td>모든 linear combination의 집합</td><td>연산자 → 집합</td><td>—</td></tr>
+            <tr><td>$\|\mathbf{x}\|$</td><td>norm of x</td><td>vector의 크기 (기본은 $\|\cdot\|_2$)</td><td>scalar</td><td>$\geq 0$</td></tr>
+            <tr><td>$\|\mathbf{x}\|_1$</td><td>L1 norm</td><td>성분 절댓값의 합 (Manhattan(맨해튼))</td><td>scalar</td><td>$\geq 0$</td></tr>
+            <tr><td>$\|\mathbf{x}\|_2$</td><td>L2 norm</td><td>제곱합의 제곱근 (Euclidean)</td><td>scalar</td><td>$\geq 0$</td></tr>
+            <tr><td>$\|\mathbf{x}\|_\infty$</td><td>L-infinity norm</td><td>성분 절댓값의 최댓값</td><td>scalar</td><td>$\geq 0$</td></tr>
+            <tr><td>$\hat{\mathbf{v}}$</td><td>v hat</td><td>$\mathbf{v}$ 방향의 unit vector</td><td>vector $(n,)$</td><td>$\|\hat{\mathbf{v}}\|=1$</td></tr>
+            <tr><td>$d(\mathbf{u},\mathbf{v})$</td><td>d of u v</td><td>두 vector 사이 거리</td><td>scalar</td><td>$\geq 0$</td></tr>
+            <tr><td>$\theta$</td><td>theta 세타</td><td>두 vector가 이루는 각</td><td>scalar</td><td>$[0, \pi]$</td></tr>
+            <tr><td>$\mathbf{u}^\top\mathbf{v}$</td><td>u transpose v</td><td>inner product — 성분곱의 합</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$|c|$</td><td>absolute value</td><td>부호를 뗀 크기</td><td>scalar</td><td>$\geq 0$</td></tr>
+            <tr><td>$\det$</td><td>determinant</td><td>determinant(행렬식) — 2dimension에서 넓이 배율</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\max_i$</td><td>max</td><td>가장 큰 값</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$\Rightarrow$</td><td>implies 임플라이</td><td>"…이면 …이다"</td><td>논리 기호</td><td>—</td></tr>
           </tbody>
         </table>
       </div>
@@ -359,7 +359,7 @@
     <section class="sec" id="s-derivation">
       <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
 
-      <h3>유도 1 — Span 은 언제나 부분공간이다</h3>
+      <h3>유도 1 — Span은 언제나 부분공간이다</h3>
       <p>
         <a href="2.1-numbers-and-spaces.html">2.1</a>의 판정법 세 가지를 그대로 확인하면 된다.
         $U = \operatorname{span}\{\mathbf{v}_1,\dots,\mathbf{v}_k\}$ 라 하자.
@@ -367,19 +367,19 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ 0\cdot\mathbf{v}_1 + \cdots + 0\cdot\mathbf{v}_k = \mathbf{0} \;\in U $$</div>
-          <div class="derive__why">① 계수를 모두 0으로 두면 영벡터가 나온다. 원점 포함</div>
+          <div class="derive__why">① 계수를 모두 0으로 두면 zero vector가 나온다. 원점 포함</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{a} = \sum_i \alpha_i\mathbf{v}_i,\quad \mathbf{b} = \sum_i \beta_i\mathbf{v}_i \;\in U $$</div>
-          <div class="derive__why">$U$ 의 원소 둘을 임의로 잡았다 — Span 의 정의상 이런 꼴로 쓸 수 있다</div>
+          <div class="derive__why">$U$ 의 원소 둘을 임의로 잡았다 — Span의 정의상 이런 꼴로 쓸 수 있다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{a}+\mathbf{b} = \sum_i (\alpha_i + \beta_i)\mathbf{v}_i \;\in U $$</div>
-          <div class="derive__why">② 같은 $\mathbf{v}_i$ 끼리 묶으니 <em>다시 선형결합</em>이다. 덧셈에 닫힘</div>
+          <div class="derive__why">② 같은 $\mathbf{v}_i$ 끼리 묶으니 <em>다시 linear combination</em>이다. 덧셈에 닫힘</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ c\,\mathbf{a} = \sum_i (c\alpha_i)\mathbf{v}_i \;\in U $$</div>
-          <div class="derive__why">③ 계수만 $c$ 배 되었을 뿐 여전히 선형결합. 실수배에 닫힘</div>
+          <div class="derive__why">③ 계수만 $c$ 배 되었을 뿐 여전히 linear combination. 실수배에 닫힘</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \boxed{\;\operatorname{span}\{\mathbf{v}_1,\dots,\mathbf{v}_k\} \text{ 는 부분공간}\;} $$</div>
@@ -387,8 +387,8 @@
         </div>
       </div>
       <p>
-        핵심은 <strong>"선형결합의 선형결합은 여전히 선형결합"</strong>이라는 한 줄이다.
-        이 닫힘 성질 때문에 선형대수의 대상이 안정적으로 다뤄진다.
+        핵심은 <strong>"linear combination의 linear combination은 여전히 linear combination"</strong>이라는 한 줄이다.
+        이 닫힘 성질 때문에 linear algebra의 대상이 안정적으로 다뤄진다.
       </p>
 
       <h3>유도 2 — 두 벡터가 종속이라는 것은 무슨 뜻인가</h3>
@@ -407,7 +407,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \det\begin{bmatrix} u_1 & v_1 \\ u_2 & v_2\end{bmatrix} = u_1v_2 - u_2v_1 = c v_1 v_2 - c v_2 v_1 = 0 $$</div>
-          <div class="derive__why">2차원에서는 행렬식으로 즉시 판정된다. $\mathbf{u}=c\mathbf{v}$ 를 대입하니 0</div>
+          <div class="derive__why">2dimension에서는 determinant로 즉시 판정된다. $\mathbf{u}=c\mathbf{v}$ 를 대입하니 0</div>
         </div>
       </div>
       <details>
@@ -415,8 +415,8 @@
         <p>
           성립한다. $u_1v_2 = u_2v_1$ 일 때, $\mathbf{v}\neq\mathbf{0}$ 이면 $v_1$ 또는 $v_2$ 가 0이 아니다.
           $v_1 \neq 0$ 인 경우 $c = u_1/v_1$ 로 두면 $u_2 = u_1v_2/v_1 = cv_2$ 이므로 $\mathbf{u}=c\mathbf{v}$ 다.
-          $v_2 \neq 0$ 인 경우도 대칭적으로 같다. 따라서 2차원에서
-          <strong>$\det = 0 \iff$ 선형종속</strong>이다. 일반 차원에서는 rank 로 확장된다
+          $v_2 \neq 0$ 인 경우도 대칭적으로 같다. 따라서 2dimension에서
+          <strong>$\det = 0 \iff$ linear dependence</strong>이다. 일반 dimension에서는 rank로 확장된다
           (<a href="2.5-linear-transformation.html">2.5</a>).
         </p>
       </details>
@@ -426,7 +426,7 @@
     <section class="sec" id="s-example">
       <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
 
-      <p>이 절 내내 같은 두 벡터를 쓴다. 값이 작아 모든 계산을 종이에서 따라갈 수 있다.</p>
+      <p>이 절 내내 같은 두 vector를 쓴다. 값이 작아 모든 계산을 종이에서 따라갈 수 있다.</p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{u} = \begin{bmatrix}3\\1\end{bmatrix}, \qquad \mathbf{v} = \begin{bmatrix}1\\2\end{bmatrix} $$</div>
         <span class="eq__tag num">(11)</span>
@@ -456,7 +456,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \|\mathbf{u}\|_1 = |3| + |1| = 4, \qquad \|\mathbf{u}\|_\infty = \max(3, 1) = 3 $$</div>
-          <div class="derive__why">같은 벡터라도 노름마다 값이 다르다. $\|\cdot\|_\infty \leq \|\cdot\|_2 \leq \|\cdot\|_1$</div>
+          <div class="derive__why">같은 vector라도 norm마다 값이 다르다. $\|\cdot\|_\infty \leq \|\cdot\|_2 \leq \|\cdot\|_1$</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \hat{\mathbf{u}} = \frac{1}{\sqrt{10}}\begin{bmatrix}3\\1\end{bmatrix} \approx \begin{bmatrix}0.9487\\0.3162\end{bmatrix} $$</div>
@@ -472,15 +472,15 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{u}-\mathbf{v} = \begin{bmatrix}2\\-1\end{bmatrix} $$</div>
-          <div class="derive__why">먼저 차이 벡터를 구한다</div>
+          <div class="derive__why">먼저 차이 vector를 구한다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ d_2(\mathbf{u},\mathbf{v}) = \sqrt{2^2 + (-1)^2} = \sqrt{5} \approx 2.2361 $$</div>
-          <div class="derive__why">유클리드 거리 — 직선거리</div>
+          <div class="derive__why">Euclidean distance(유클리드 거리) — 직선거리</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ d_1(\mathbf{u},\mathbf{v}) = |2| + |-1| = 3 $$</div>
-          <div class="derive__why">맨해튼 거리 — 격자를 따라 가는 거리. 항상 유클리드보다 크거나 같다</div>
+          <div class="derive__why">Manhattan distance — 격자를 따라 가는 거리. 항상 Euclidean보다 크거나 같다</div>
         </div>
       </div>
 
@@ -505,7 +505,7 @@
       </div>
 
       <h3>⑤ 선형결합과 독립 판정</h3>
-      <p>$\mathbf{w} = (4,3)^\top$ 을 $\mathbf{u}, \mathbf{v}$ 의 선형결합으로 쓸 수 있는가?</p>
+      <p>$\mathbf{w} = (4,3)^\top$ 을 $\mathbf{u}, \mathbf{v}$ 의 linear combination으로 쓸 수 있는가?</p>
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \alpha\begin{bmatrix}3\\1\end{bmatrix} + \beta\begin{bmatrix}1\\2\end{bmatrix} = \begin{bmatrix}4\\3\end{bmatrix} $$</div>
@@ -529,11 +529,11 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \det\begin{bmatrix}3&1\\1&2\end{bmatrix} = 3\cdot2 - 1\cdot1 = 6-1 = 5 \neq 0 $$</div>
-          <div class="derive__why"><strong>선형독립.</strong> 0이 아니므로 $\operatorname{span}\{\mathbf{u},\mathbf{v}\} = \mathbb{R}^2$ — 평면 전체를 덮는다</div>
+          <div class="derive__why"><strong>linear independence.</strong> 0이 아니므로 $\operatorname{span}\{\mathbf{u},\mathbf{v}\} = \mathbb{R}^2$ — 평면 전체를 덮는다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \det\begin{bmatrix}3&6\\1&2\end{bmatrix} = 3\cdot2 - 6\cdot1 = 0 $$</div>
-          <div class="derive__why">반대 예: $\mathbf{u}=(3,1)$ 과 $2\mathbf{u}=(6,2)$ 는 <strong>종속</strong>. Span 이 직선으로 주저앉는다</div>
+          <div class="derive__why">반대 예: $\mathbf{u}=(3,1)$ 과 $2\mathbf{u}=(6,2)$ 는 <strong>종속</strong>. Span이 직선으로 주저앉는다</div>
         </div>
       </div>
     </section>
@@ -544,7 +544,7 @@
 
       <h3>선형결합과 Span</h3>
       <p>
-        계수 $\alpha, \beta$ 를 움직이면 결과 점이 이동한다. 두 벡터가 독립이면 점은 평면 <em>어디든</em> 갈 수 있고,
+        계수 $\alpha, \beta$ 를 움직이면 결과 점이 이동한다. 두 vector가 독립이면 점은 평면 <em>어디든</em> 갈 수 있고,
         종속이면 <strong>직선 위에 갇힌다</strong>. 오른쪽 아래 토글로 두 경우를 바꿔 보라.
       </p>
 
@@ -554,23 +554,23 @@
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">'종속' 로 바꾸면 α, β 를 아무리 돌려도 점이 직선을 벗어나지 못합니다. 자유도가 2에서 1로 줄어든 것입니다.</p>
+          <p class="watch">'종속' 로 바꾸면 α, β 를 아무리 돌려도 점이 직선을 벗어나지 못합니다. degrees of freedom(자유도)이 2에서 1로 줄어든 것입니다.</p>
         </div>
       </figure>
 
       <h3>독립인가 종속인가</h3>
       <p>
-        두 초록 점을 끌어 보라. 나란해질수록 $\det$ 가 0에 가까워지고, 두 벡터가 만드는
-        평행사변형의 넓이(= $|\det|$)가 납작해진다. <strong>독립 · 넓이 · 행렬식은 같은 말의 세 가지 표현</strong>이다.
+        두 초록 점을 끌어 보라. 나란해질수록 $\det$ 가 0에 가까워지고, 두 vector가 만드는
+        parallelogram의 넓이(= $|\det|$)가 납작해진다. <strong>독립 · 넓이 · determinant는 같은 말의 세 가지 표현</strong>이다.
       </p>
 
       <figure class="widget" data-widget="independence-test">
-        <figcaption class="widget__bar">선형독립 판정기 — 평행사변형의 넓이로 보기</figcaption>
+        <figcaption class="widget__bar">linear independence 판정기 — parallelogram의 넓이로 보기</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">두 화살표를 겹치면 넓이가 0이 됩니다. 그 순간이 정확히 선형종속입니다.</p>
+          <p class="watch">두 화살표를 겹치면 넓이가 0이 됩니다. 그 순간이 정확히 linear dependence입니다.</p>
         </div>
       </figure>
 
@@ -578,16 +578,16 @@
       <p>
         $\|\mathbf{x}\| = 1$ 인 점들을 모으면 단위공(unit ball)이 된다.
         $L_2$ 는 원, $L_1$ 은 마름모, $L_\infty$ 는 정사각형이다.
-        정규화 항으로 $L_1$ 을 쓰면 해가 축 위(희소해)로 몰리는 이유가 이 모양에서 나온다.
+        normalization 항으로 $L_1$ 을 쓰면 해가 축 위(희소해)로 몰리는 이유가 이 모양에서 나온다.
       </p>
 
       <figure class="widget" data-widget="norm-unit">
-        <figcaption class="widget__bar">노름 실험실 — 단위공과 단위벡터</figcaption>
+        <figcaption class="widget__bar">norm 실험실 — 단위공과 unit vector</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">같은 벡터인데 세 노름의 값이 다릅니다. 항상 $\|x\|_\infty \le \|x\|_2 \le \|x\|_1$ 인지 확인해 보세요.</p>
+          <p class="watch">같은 벡터인데 세 norm의 값이 다릅니다. 항상 $\|x\|_\infty \le \|x\|_2 \le \|x\|_1$ 인지 확인해 보세요.</p>
         </div>
       </figure>
 
@@ -614,22 +614,22 @@
 
       <div class="note note--trap">
         <span class="note__label">오해 1</span>
-        <p>"선형독립이면 직교한다."</p>
+        <p>"선형독립이면 orthogonal 한다."</p>
         <p>
-          <strong>실제로는</strong> 직교가 훨씬 강한 조건이다. $\mathbf{u}=(3,1)$, $\mathbf{v}=(1,2)$ 는
-          $\det = 5 \neq 0$ 이라 독립이지만 사잇각이 $45^\circ$ 라 직교가 아니다.
-          <strong>직교 ⟹ 독립</strong>은 참이지만 역은 거짓이다
-          (영이 아닌 직교 벡터들은 항상 독립이다 — <a href="2.3-inner-product.html">2.3</a>).
+          <strong>실제로는</strong> orthogonal(직교)이 훨씬 강한 조건이다. $\mathbf{u}=(3,1)$, $\mathbf{v}=(1,2)$ 는
+          $\det = 5 \neq 0$ 이라 독립이지만 사잇각이 $45^\circ$ 라 orthogonal이 아니다.
+          <strong>orthogonal ⟹ 독립</strong>은 참이지만 역은 거짓이다
+          (영이 아닌 orthogonal vector들은 항상 독립이다 — <a href="2.3-inner-product.html">2.3</a>).
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 2</span>
-        <p>"벡터가 $n$ 개면 $n$ 차원 공간을 만든다."</p>
+        <p>"vector가 $n$ 개면 $n$ dimension 공간을 만든다."</p>
         <p>
-          <strong>실제로는</strong> 독립일 때만 그렇다. $(3,1)$ 과 $(6,2)$ 는 두 개지만 Span 은 1차원 직선이다.
-          반대로 $\mathbb{R}^2$ 에 벡터를 100개 넣어도 Span 은 최대 2차원이다.
-          <strong>개수가 아니라 rank 가 차원을 정한다.</strong>
+          <strong>실제로는</strong> 독립일 때만 그렇다. $(3,1)$ 과 $(6,2)$ 는 두 개지만 Span은 1dimension 직선이다.
+          반대로 $\mathbb{R}^2$ 에 vector를 100개 넣어도 Span은 최대 2dimension이다.
+          <strong>개수가 아니라 rank가 dimension을 정한다.</strong>
         </p>
       </div>
 
@@ -637,30 +637,30 @@
         <span class="note__label">오해 3</span>
         <p>"크기라고 하면 하나로 정해진다."</p>
         <p>
-          <strong>실제로는</strong> 노름의 종류만큼 있다. 같은 $(3,1)$ 이
+          <strong>실제로는</strong> norm의 종류만큼 있다. 같은 $(3,1)$ 이
           $\|\cdot\|_2$ 로는 $\sqrt{10}\approx3.16$, $\|\cdot\|_1$ 로는 4, $\|\cdot\|_\infty$ 로는 3이다.
           논문에서 "norm" 이라고만 쓰여 있으면 대개 $L_2$ 지만,
-          정규화·클리핑·희소성 논의에서는 <strong>어느 노름인지가 결론을 바꾼다</strong>.
+          normalization·클리핑·희소성 논의에서는 <strong>어느 노름인지가 결론을 바꾼다</strong>.
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 4</span>
-        <p>"영벡터를 포함해도 독립일 수 있다."</p>
+        <p>"zero vector를 포함해도 독립일 수 있다."</p>
         <p>
-          <strong>실제로는</strong> 영벡터가 하나라도 들어 있으면 무조건 종속이다.
+          <strong>실제로는</strong> zero vector가 하나라도 들어 있으면 무조건 종속이다.
           $1\cdot\mathbf{0} + 0\cdot\mathbf{v}_2 + \cdots = \mathbf{0}$ 이므로
-          0이 아닌 계수로 영벡터를 만들어 냈기 때문이다.
-          그래서 "죽은 뉴런"(출력이 항상 0인 뉴런)이 생기면 그 층의 유효 rank 가 즉시 줄어든다.
+          0이 아닌 계수로 zero vector를 만들어 냈기 때문이다.
+          그래서 "죽은 뉴런"(출력이 항상 0인 뉴런)이 생기면 그 layer(층)의 유효 rank가 즉시 줄어든다.
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 5</span>
-        <p>"단위벡터로 만들면 정보가 보존된다."</p>
+        <p>"unit vector로 만들면 정보가 보존된다."</p>
         <p>
           <strong>실제로는</strong> 크기 정보를 <em>버리는</em> 연산이다.
-          문서 길이나 단어 빈도처럼 크기 자체가 신호일 때 정규화하면 그 신호가 사라진다.
+          문서 길이나 단어 빈도처럼 크기 자체가 신호일 때 normalize 하면 그 신호가 사라진다.
           방향만 비교하고 싶을 때만 쓰는 것이 맞다.
         </p>
       </div>
@@ -671,7 +671,7 @@
       <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
       <p>예제 ②–⑤의 값을 그대로 검증한다.</p>
       <details>
-        <summary>NumPy — 노름 · 거리 · 각도 · 독립 판정 (18줄)</summary>
+        <summary>NumPy — norm · 거리 · 각도 · 독립 판정 (18줄)</summary>
 <pre><code>import numpy as np
 
 u = np.array([3.0, 1.0])
@@ -696,8 +696,8 @@ print(np.linalg.det(np.column_stack([u, 2 * u])))  # 0.0  -> 종속
 </code></pre>
         <p>
           <small>
-            <code>np.column_stack</code> 은 벡터를 <strong>열</strong>로 세운다.
-            행으로 세워도 행렬식의 값은 같지만, 이 사이트는 "벡터는 열" 규약을 지킨다.
+            <code>np.column_stack</code>은 vector를 <strong>열</strong>로 세운다.
+            행으로 세워도 determinant의 값은 같지만, 이 사이트는 "vector는 열" 규약을 지킨다.
           </small>
         </p>
       </details>
@@ -712,7 +712,7 @@ print(np.linalg.det(np.column_stack([u, 2 * u])))  # 0.0  -> 종속
           <p class="q__stem"><span class="q__tag">계산</span>
             $\mathbf{a}=(1,-2)^\top$, $\mathbf{b}=(4,2)^\top$ 일 때 $\cos\theta$ 는?</p>
           <div class="opts">
-            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$0$ — 두 벡터는 직교한다</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$0$ — 두 vector는 orthogonal 한다</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>$1$ — 같은 방향이다</span></button>
             <button class="opt" type="button"><span class="opt__mark">다</span><span>$-1$ — 반대 방향이다</span></button>
           </div>
@@ -741,15 +741,15 @@ print(np.linalg.det(np.column_stack([u, 2 * u])))  # 0.0  -> 종속
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">개념</span>
-            $\mathbb{R}^3$ 에서 벡터 4개를 아무렇게나 골랐다. 반드시 참인 것은?</p>
+            $\mathbb{R}^3$ 에서 vector 4개를 아무렇게나 골랐다. 반드시 참인 것은?</p>
           <div class="opts">
-            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>선형종속이다</span></button>
-            <button class="opt" type="button"><span class="opt__mark">나</span><span>Span 이 $\mathbb{R}^3$ 이다</span></button>
-            <button class="opt" type="button"><span class="opt__mark">다</span><span>넷 중 둘은 직교한다</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>linear dependence다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>Span이 $\mathbb{R}^3$ 이다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>넷 중 둘은 orthogonal 한다</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            $\mathbb{R}^n$ 에서 독립인 벡터는 최대 $n$ 개다. 4개는 3보다 많으므로 반드시 종속이다.
-            나는 반례가 있다 — 넷이 모두 같은 직선 위에 있으면 Span 은 1차원이다.
+            $\mathbb{R}^n$ 에서 독립인 vector는 최대 $n$ 개다. 4개는 3보다 많으므로 반드시 종속이다.
+            나는 반례가 있다 — 넷이 모두 같은 직선 위에 있으면 Span은 1dimension이다.
           </div>
         </div>
 
@@ -762,8 +762,8 @@ print(np.linalg.det(np.column_stack([u, 2 * u])))  # 0.0  -> 종속
             <button class="opt" type="button"><span class="opt__mark">다</span><span>원점 한 점</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            $(2,4) = 2\cdot(1,2)$ 이므로 두 벡터는 종속이고, 둘째 벡터는 아무것도 보태지 못한다.
-            따라서 Span 은 $(1,2)$ 가 만드는 직선, 즉 $y=2x$ 다.
+            $(2,4) = 2\cdot(1,2)$ 이므로 두 vector는 종속이고, 둘째 vector는 아무것도 보태지 못한다.
+            따라서 Span은 $(1,2)$ 가 만드는 직선, 즉 $y=2x$ 다.
             $\det = 1\cdot4 - 2\cdot2 = 0$ 으로도 즉시 확인된다.
           </div>
         </div>
@@ -780,23 +780,23 @@ print(np.linalg.det(np.column_stack([u, 2 * u])))  # 0.0  -> 종속
             $3\alpha+\beta = 5$, $\alpha+2\beta = 0$ 에서 $\alpha = -2\beta$.
             대입하면 $-6\beta+\beta = 5 \Rightarrow -5\beta = 5 \Rightarrow \beta = -1$, $\alpha = 2$.
             검산: $2(3,1) - (1,2) = (6,2)-(1,2) = (5,0)$ ✓.
-            두 벡터가 독립이라 $\mathbb{R}^2$ 의 <em>어떤</em> 벡터도 만들 수 있다.
+            두 vector가 독립이라 $\mathbb{R}^2$ 의 <em>어떤</em> vector도 만들 수 있다.
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">함정</span>
-            임베딩을 단위벡터로 정규화한 뒤 유클리드 거리로 비교했다. 옳은 설명은?</p>
+            embedding을 unit vector로 normalize 한 뒤 Euclidean distance로 비교했다. 옳은 설명은?</p>
           <div class="opts">
-            <button class="opt" type="button"><span class="opt__mark">가</span><span>정규화해도 아무것도 잃지 않는다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>normalize 해도 아무것도 잃지 않는다</span></button>
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>크기 정보를 버리고 방향만 비교하게 된다</span></button>
             <button class="opt" type="button"><span class="opt__mark">다</span><span>거리 계산이 불가능해진다</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            정규화는 모든 벡터를 단위구 위로 밀어 놓는 사영이라 크기 차이가 사라진다.
-            단어 빈도나 신호 세기처럼 크기가 의미를 갖는 경우에는 손실이 된다.
+            normalization은 모든 vector를 unit sphere(단위구) 위로 밀어 놓는 projection(사영)이라 크기 차이가 사라진다.
+            단어 빈도나 신호 세기처럼 크기가 의미를 갖는 경우에는 loss(손실)가 된다.
             한편 단위벡터끼리는 $\|\hat{\mathbf{u}}-\hat{\mathbf{v}}\|^2 = 2 - 2\cos\theta$ 가 성립해
-            유클리드 거리와 코사인 유사도가 사실상 같은 순위를 준다 (<a href="2.3-inner-product.html">2.3</a>).
+            Euclidean distance와 cosine similarity(코사인 유사도)가 사실상 같은 순위를 준다 (<a href="2.3-inner-product.html">2.3</a>).
           </div>
         </div>
       </div>
@@ -807,11 +807,11 @@ print(np.linalg.det(np.column_stack([u, 2 * u])))  # 0.0  -> 종속
       <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
 
       <ul>
-        <li><strong><a href="2.3-inner-product.html">2.3 내적과 유사도</a></strong> — 식 (8)의 분자인 내적을 제대로 정의하고, 코시–슈바르츠로 각도가 잘 정의됨을 보인다.</li>
-        <li><strong><a href="2.4-matrix-operations.html">2.4 행렬 연산</a></strong> — 선형결합을 한꺼번에 처리하는 장치가 행렬 곱이다.</li>
-        <li><strong><a href="2.5-linear-transformation.html">2.5 선형변환</a></strong> — Span 은 열공간, 독립 여부는 rank 로 일반화된다.</li>
-        <li><strong><a href="2.6-linear-systems.html">2.6 연립방정식과 행렬 분해</a></strong> — 예제 ⑤의 "계수 찾기"가 곧 연립방정식 풀이다.</li>
-        <li><strong><a href="2.9-dimensionality-reduction.html">2.9 차원 축소</a></strong> — 데이터가 실제로 Span 하는 부분공간을 찾는 문제.</li>
+        <li><strong><a href="2.3-inner-product.html">2.3 inner product와 similarity</a></strong> — 식 (8)의 분자인 inner product를 제대로 정의하고, Cauchy–Schwarz로 각도가 잘 정의됨을 보인다.</li>
+        <li><strong><a href="2.4-matrix-operations.html">2.4 matrix 연산</a></strong> — linear combination을 한꺼번에 처리하는 장치가 matrix multiplication이다.</li>
+        <li><strong><a href="2.5-linear-transformation.html">2.5 linear transformation(선형변환)</a></strong> — Span은 column space, 독립 여부는 rank로 generalize 된다.</li>
+        <li><strong><a href="2.6-linear-systems.html">2.6 system of equations(연립방정식)와 matrix factorization(행렬 분해)</a></strong> — 예제 ⑤의 "계수 찾기"가 곧 system of equations 풀이다.</li>
+        <li><strong><a href="2.9-dimensionality-reduction.html">2.9 dimensionality reduction(차원 축소)</a></strong> — data(데이터)가 실제로 Span 하는 subspace를 찾는 문제.</li>
       </ul>
 
       <h3>출처</h3>
@@ -819,31 +819,31 @@ print(np.linalg.det(np.column_stack([u, 2 * u])))  # 0.0  -> 종속
         <li class="ref" id="ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Deisenroth, M. P., Faisal, A. A. &amp; Ong, C. S. (2020). <em>Mathematics for Machine Learning</em>. Cambridge University Press.</span>
-          <span class="ref__where">2.5절(Linear Independence) — 선형독립의 정의와 판정 규칙(개수 초과 시 종속, 영벡터 포함 시 종속). 2.6.1절(Generating Set and Span) — Span 정의. 3.1절(Norms) — 노름의 세 조건과 $L_1/L_2$ 비교</span>
+          <span class="ref__where">2.5절(Linear Independence) — linear independence의 정의와 판정 규칙(개수 초과 시 종속, zero vector 포함 시 종속). 2.6.1절(Generating Set and Span) — Span 정의. 3.1절(Norms) — norm의 세 조건과 $L_1/L_2$ 비교</span>
           <a class="ref__link" href="https://mml-book.github.io/">mml-book.github.io</a>
         </li>
         <li class="ref" id="ref-goodfellow2016-dl" data-ref="goodfellow2016-dl">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>. MIT Press.</span>
-          <span class="ref__where">2.4절(Linear Dependence and Span)과 2.5절(Norms) — Span·독립을 열공간 관점으로 서술한 부분, 그리고 $L^1$·$L^2$·$L^\infty$ 노름의 실무적 차이(희소성 유도)에 대한 서술</span>
+          <span class="ref__where">2.4절(Linear Dependence and Span)과 2.5절(Norms) — Span·독립을 column space 관점으로 서술한 부분, 그리고 $L^1$·$L^2$·$L^\infty$ norm의 실무적 차이(희소성 유도)에 대한 서술</span>
           <a class="ref__link" href="https://www.deeplearningbook.org/">deeplearningbook.org</a>
         </li>
         <li class="ref" id="ref-mit-1806" data-ref="mit-1806">
           <span class="ref__type" data-type="course">강의</span>
           <span class="ref__cite">Strang, G. <em>MIT 18.06 Linear Algebra</em> (Spring 2010). MIT OpenCourseWare.</span>
-          <span class="ref__where">Lecture 1 (The geometry of linear equations) — 선형결합을 '열의 조합'으로 보는 관점. Lecture 9 (Independence, basis, and dimension) — 독립 · Span · 차원의 관계 정리</span>
+          <span class="ref__where">Lecture 1 (The geometry of linear equations) — linear combination을 '열의 조합'으로 보는 관점. Lecture 9 (Independence, basis, and dimension) — 독립 · Span · dimension의 관계 정리</span>
           <a class="ref__link" href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/">ocw.mit.edu</a>
         </li>
         <li class="ref" id="ref-3blue1brown-linalg" data-ref="3blue1brown-linalg">
           <span class="ref__type" data-type="video">영상</span>
           <span class="ref__cite">3Blue1Brown. <em>Essence of Linear Algebra</em>, Ch.1–2 (<em>Vectors</em> / <em>Linear combinations, span, and basis vectors</em>).</span>
-          <span class="ref__where">Ch.2 03:00–08:30 — 계수를 움직여 Span 을 훑는 장면. 'αu+βv' 위젯과 '종속이면 직선으로 주저앉는다'는 서술의 시각적 원형</span>
+          <span class="ref__where">Ch.2 03:00–08:30 — 계수를 움직여 Span을 훑는 장면. 'αu+βv' 위젯과 '종속이면 직선으로 주저앉는다'는 서술의 시각적 원형</span>
           <a class="ref__link" href="https://www.3blue1brown.com/topics/linear-algebra">3blue1brown.com</a>
         </li>
         <li class="ref" id="ref-zhang2023-d2l" data-ref="zhang2023-d2l">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Zhang, A., Lipton, Z. C., Li, M. &amp; Smola, A. J. (2023). <em>Dive into Deep Learning</em>. Cambridge University Press.</span>
-          <span class="ref__where">2.3절 Linear Algebra — 노름을 코드와 함께 정의한 부분. 코드 예제의 API 사용(<code>np.linalg.norm</code> 의 ord 인자)과 대조 확인</span>
+          <span class="ref__where">2.3절 Linear Algebra — norm을 코드와 함께 정의한 부분. 코드 예제의 API 사용(<code>np.linalg.norm</code>의 ord 인자)과 대조 확인</span>
           <a class="ref__link" href="https://d2l.ai/">d2l.ai</a>
         </li>
       </ol>
@@ -877,7 +877,7 @@ print(np.linalg.det(np.column_stack([u, 2 * u])))  # 0.0  -> 종속
 <script>
 /* ============================================================
    위젯 1 — 덧셈: 꼬리에 머리를 잇기
-   u, v 를 끌면 평행사변형/삼각형 두 방식으로 u+v 를 보여준다.
+   u, v를 끌면 평행사변형/삼각형 두 방식으로 u+v를 보여준다.
    ============================================================ */
 WIDGETS.register('vector-add-drag', function (root, ctx) {
   var u = [3, 1], v = [1, 2];
@@ -905,7 +905,7 @@ WIDGETS.register('vector-add-drag', function (root, ctx) {
       p.line([[u[0], u[1]], [s[0], s[1]]], { dash: '4 4' });
       p.line([[v[0], v[1]], [s[0], s[1]]], { dash: '4 4' });
     } else {
-      /* u 를 간 뒤 v 를 이어 간다 */
+      /* u를 간 뒤 v를 이어 간다 */
       p.vector(s[0], s[1], { ox: u[0], oy: u[1], stroke: 'var(--amber)', width: 2, label: 'v (이어서)' });
     }
 
@@ -929,12 +929,12 @@ WIDGETS.register('vector-add-drag', function (root, ctx) {
       draw();
     };
   }
-  VIZ.draggable(hu, p, mover(u), { label: '벡터 u' });
-  VIZ.draggable(hv, p, mover(v), { label: '벡터 v' });
+  VIZ.draggable(hu, p, mover(u), { label: 'vector u' });
+  VIZ.draggable(hv, p, mover(v), { label: 'vector v' });
 
   WIDGETS.toggle({
     host: ctx.controls, label: '그리는 방식',
-    options: [{ value: 'para', label: '평행사변형' }, { value: 'tri', label: '삼각형 (이어 가기)' }],
+    options: [{ value: 'para', label: 'parallelogram' }, { value: 'tri', label: '삼각형 (이어 가기)' }],
     value: 'para', onChange: function (m) { mode = m; draw(); }
   });
   draw();
@@ -942,7 +942,7 @@ WIDGETS.register('vector-add-drag', function (root, ctx) {
 
 /* ============================================================
    위젯 2 — 스칼라 곱
-   c 를 움직이면 화살표가 늘고 줄고 뒤집힌다. 직선은 벗어나지 않는다.
+   c를 움직이면 화살표가 늘고 줄고 뒤집힌다. 직선은 벗어나지 않는다.
    ============================================================ */
 WIDGETS.register('scalar-mul', function (root, ctx) {
   var v = [2, 1], c = 1.5;
@@ -959,7 +959,7 @@ WIDGETS.register('scalar-mul', function (root, ctx) {
 
   function draw() {
     p.clear().grid(1, 1).axes('x', 'y').ticks(1, 1);
-    /* v 가 만드는 직선 = span{v} */
+    /* v가 만드는 직선 = span{v} */
     p.line([[-5 * v[0] / 2, -5 * v[1] / 2], [5 * v[0] / 2, 5 * v[1] / 2]], { dash: '3 5' });
     p.vector(v[0], v[1], { label: 'v' });
     p.vector(c * v[0], c * v[1], { stroke: 'var(--seal)', width: 3, label: 'c·v' });
@@ -968,7 +968,7 @@ WIDGETS.register('scalar-mul', function (root, ctx) {
     out.set('c', c);
     out.setRaw('cv', '(' + (c * v[0]).toFixed(2) + ', ' + (c * v[1]).toFixed(2) + ')');
     out.set('len', len);
-    out.setRaw('dir', c > 0 ? 'v 와 같은 방향' : (c < 0 ? 'v 와 반대 방향' : '영벡터'));
+    out.setRaw('dir', c > 0 ? 'v와 같은 방향' : (c < 0 ? 'v와 반대 방향' : 'zero vector'));
   }
 
   WIDGETS.slider({
@@ -994,7 +994,7 @@ WIDGETS.register('lincomb-span', function (root, ctx) {
     { key: 'res', label: 'αu + βv' },
     { key: 'det', label: 'det [u v]', digits: 2 },
     { key: 'span', label: 'Span' },
-    { key: 'dim', label: '자유도' }
+    { key: 'dim', label: 'degrees of freedom' }
   ]);
 
   function draw() {
@@ -1005,10 +1005,10 @@ WIDGETS.register('lincomb-span', function (root, ctx) {
     p.clear().grid(1, 1).axes('x', 'y').ticks(2, 2);
 
     if (Math.abs(det) < 1e-9) {
-      /* 종속 — Span 은 직선 */
+      /* 종속 — Span은 직선 */
       p.line([[-6 * u[0] / 3, -6 * u[1] / 3], [6 * u[0] / 3, 6 * u[1] / 3]], { width: 3 });
     } else {
-      /* 독립 — Span 은 평면 전체 */
+      /* 독립 — Span은 평면 전체 */
       p.add(VIZ.el('rect', {
         x: p.X(-6), y: p.Y(4), width: p.X(6) - p.X(-6), height: p.Y(-4) - p.Y(4),
         fill: 'var(--jade)', 'fill-opacity': 0.08
@@ -1024,7 +1024,7 @@ WIDGETS.register('lincomb-span', function (root, ctx) {
 
     out.setRaw('res', '(' + r[0].toFixed(2) + ', ' + r[1].toFixed(2) + ')');
     out.set('det', det);
-    out.setRaw('span', Math.abs(det) < 1e-9 ? '직선 (1차원)' : '평면 R² (2차원)');
+    out.setRaw('span', Math.abs(det) < 1e-9 ? '직선 (1dimension)' : '평면 R² (2dimension)');
     out.setRaw('dim', Math.abs(det) < 1e-9 ? '1' : '2');
   }
 
@@ -1037,7 +1037,7 @@ WIDGETS.register('lincomb-span', function (root, ctx) {
     onInput: function (x) { b = x; draw(); }
   });
   WIDGETS.toggle({
-    host: ctx.controls, label: '두 번째 벡터',
+    host: ctx.controls, label: '두 번째 vector',
     options: [{ value: 'ind', label: '독립  v = (1,2)' }, { value: 'dep', label: '종속  v = 2u' }],
     value: 'ind', onChange: function (m) { dep = (m === 'dep'); draw(); }
   });
@@ -1061,7 +1061,7 @@ WIDGETS.register('independence-test', function (root, ctx) {
 
   var out = WIDGETS.readout(ctx.readout, [
     { key: 'det', label: 'det [u v]', digits: 3 },
-    { key: 'area', label: '평행사변형 넓이', digits: 3 },
+    { key: 'area', label: 'parallelogram 넓이', digits: 3 },
     { key: 'verdict', label: '판정' },
     { key: 'why', label: '근거' }
   ]);
@@ -1090,7 +1090,7 @@ WIDGETS.register('independence-test', function (root, ctx) {
 
     out.set('det', det);
     out.set('area', Math.abs(det));
-    out.setRaw('verdict', dep ? '선형종속 ✗' : '선형독립 ✓');
+    out.setRaw('verdict', dep ? 'linear dependence ✗' : 'linear independence ✓');
     out.setRaw('why', dep ? '넓이가 0 — 같은 직선 위' : '넓이가 0이 아님 — 평면을 채운다');
   }
 
@@ -1102,8 +1102,8 @@ WIDGETS.register('independence-test', function (root, ctx) {
       draw();
     };
   }
-  VIZ.draggable(hu, p, mover(u), { label: '벡터 u' });
-  VIZ.draggable(hv, p, mover(v), { label: '벡터 v' });
+  VIZ.draggable(hu, p, mover(u), { label: 'vector u' });
+  VIZ.draggable(hv, p, mover(v), { label: 'vector v' });
   draw();
 });
 
@@ -1125,7 +1125,7 @@ WIDGETS.register('norm-unit', function (root, ctx) {
     { key: 'l1', label: '‖x‖₁', digits: 3 },
     { key: 'l2', label: '‖x‖₂', digits: 3 },
     { key: 'li', label: '‖x‖∞', digits: 3 },
-    { key: 'unit', label: '단위벡터 (선택 노름)' }
+    { key: 'unit', label: 'unit vector (선택 norm)' }
   ]);
 
   function normOf(a, k) {
@@ -1168,10 +1168,10 @@ WIDGETS.register('norm-unit', function (root, ctx) {
     x[1] = Math.max(-1.5, Math.min(1.5, x[1]));
     if (Math.abs(x[0]) < 1e-3 && Math.abs(x[1]) < 1e-3) x[0] = 0.05;
     draw();
-  }, { label: '벡터 x' });
+  }, { label: 'vector x' });
 
   WIDGETS.toggle({
-    host: ctx.controls, label: '단위공을 그릴 노름',
+    host: ctx.controls, label: '단위공을 그릴 norm',
     options: [
       { value: '1', label: 'L₁ (마름모)' },
       { value: '2', label: 'L₂ (원)' },
@@ -1197,8 +1197,8 @@ WIDGETS.register('distance-angle', function (root, ctx) {
   p.svg.appendChild(hu); p.svg.appendChild(hv);
 
   var out = WIDGETS.readout(ctx.readout, [
-    { key: 'd2', label: '유클리드 거리', digits: 3 },
-    { key: 'd1', label: '맨해튼 거리', digits: 3 },
+    { key: 'd2', label: 'Euclidean distance', digits: 3 },
+    { key: 'd1', label: 'Manhattan distance', digits: 3 },
     { key: 'cos', label: 'cos θ', digits: 4 },
     { key: 'deg', label: '각도 θ' }
   ]);
@@ -1252,8 +1252,8 @@ WIDGETS.register('distance-angle', function (root, ctx) {
       draw();
     };
   }
-  VIZ.draggable(hu, p, mover(u), { label: '벡터 u' });
-  VIZ.draggable(hv, p, mover(v), { label: '벡터 v' });
+  VIZ.draggable(hu, p, mover(u), { label: 'vector u' });
+  VIZ.draggable(hv, p, mover(v), { label: 'vector v' });
   draw();
 });
 </script>

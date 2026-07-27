@@ -61,31 +61,31 @@
 
     <!-- ===== 1. 다루는 항목 ===== -->
     <nav class="chips" aria-label="이 절에서 다루는 항목">
-      <a class="chip" href="#c-scalar">스칼라</a>
-      <a class="chip" href="#c-vector">벡터</a>
-      <a class="chip" href="#c-matrix">행렬</a>
-      <a class="chip" href="#c-tensor">텐서</a>
-      <a class="chip" href="#c-dim">차원</a>
+      <a class="chip" href="#c-scalar">Scalar</a>
+      <a class="chip" href="#c-vector">Vector</a>
+      <a class="chip" href="#c-matrix">Matrix</a>
+      <a class="chip" href="#c-tensor">Tensor</a>
+      <a class="chip" href="#c-dim">Dimension</a>
       <a class="chip" href="#c-shape">Shape</a>
-      <a class="chip" href="#c-coord">좌표계</a>
-      <a class="chip" href="#c-basis">기저</a>
-      <a class="chip" href="#c-vspace">벡터 공간</a>
-      <a class="chip" href="#c-subspace">부분공간</a>
+      <a class="chip" href="#c-coord">Coordinate System</a>
+      <a class="chip" href="#c-basis">Basis</a>
+      <a class="chip" href="#c-vspace">Vector Space</a>
+      <a class="chip" href="#c-subspace">Subspace</a>
     </nav>
 
     <!-- ===== 2. 한 줄 요약 ===== -->
     <section class="sec" id="s-summary">
       <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
       <p class="tldr">
-        스칼라 · 벡터 · 행렬 · 텐서는 서로 다른 물건이 아니라 <strong>축(axis)의 개수만 다른 같은 물건</strong>이고,
-        그 벡터가 놓인 공간에 <strong>기저</strong>를 하나 정해야 비로소 "숫자 목록"으로 적을 수 있다.
+        scalar(스칼라) · vector(벡터) · matrix(행렬) · tensor(텐서)는 서로 다른 물건이 아니라 <strong>축(axis)의 개수만 다른 같은 물건</strong>이고,
+        그 vector가 놓인 공간에 <strong>basis(기저)</strong>를 하나 정해야 비로소 "숫자 목록"으로 적을 수 있다.
       </p>
 
       <h3>학습 목표</h3>
       <ol class="goals">
-        <li>스칼라 · 벡터 · 행렬 · 텐서를 축의 개수로 통일해 설명하고, 주어진 배열의 shape 와 원소 수를 계산할 수 있다.</li>
-        <li>벡터 공간의 조건을 보고 어떤 집합이 부분공간인지 아닌지 판정할 수 있다.</li>
-        <li>기저를 바꿔 같은 벡터의 좌표 $[\mathbf{x}]_B$ 를 손으로 다시 계산할 수 있다.</li>
+        <li>scalar · vector · matrix · tensor를 축의 개수로 통일해 설명하고, 주어진 배열의 shape와 원소 수를 계산할 수 있다.</li>
+        <li>vector space(벡터 공간)의 조건을 보고 어떤 집합이 부분공간인지 아닌지 판정할 수 있다.</li>
+        <li>basis를 바꿔 같은 vector의 coordinates(좌표) $[\mathbf{x}]_B$ 를 손으로 다시 계산할 수 있다.</li>
       </ol>
     </section>
 
@@ -94,14 +94,14 @@
       <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
 
       <p>
-        신경망이 다루는 데이터를 늘어놓아 보자. 온도 하나는 숫자 한 개다.
+        neural network(신경망)가 다루는 data(데이터)를 늘어놓아 보자. 온도 하나는 숫자 한 개다.
         한 사람의 키·몸무게·나이는 숫자 세 개를 <em>순서대로</em> 묶은 것이다.
         흑백 사진은 숫자를 가로세로로 깐 것이고, 컬러 사진은 그 판을 세 장(빨강·초록·파랑) 겹친 것이다.
         영상은 그것을 시간축으로 또 쌓는다.
       </p>
       <p>
         모두 <strong>"숫자를 담는 상자"</strong>이고, 다른 것은 <strong>상자를 몇 겹으로 포갰는가</strong>뿐이다.
-        이 겹의 수를 축(axis)의 개수라 부른다. 축이 0개면 스칼라, 1개면 벡터, 2개면 행렬,
+        이 겹의 수를 축(axis)의 개수라 부른다. 축이 0개면 scalar, 1개면 vector, 2개면 matrix,
         3개 이상이면 그냥 텐서라 부른다. 이름이 넷이지만 개념은 하나다.
       </p>
 
@@ -109,12 +109,12 @@
         <span class="note__label">핵심</span>
         <p>
           <strong>축의 개수</strong>가 이름을 정하고, <strong>각 축의 길이</strong>를 나열한 것이 shape 다.
-          shape 만 알면 원소가 몇 개인지, 어떤 연산이 가능한지가 거의 다 결정된다.
+          shape만 알면 원소가 몇 개인지, 어떤 연산이 가능한지가 거의 다 결정된다.
         </p>
       </div>
 
       <figure class="widget" data-widget="tensor-ladder">
-        <figcaption class="widget__bar">축을 하나씩 늘려 보기 — 스칼라에서 4축 텐서까지</figcaption>
+        <figcaption class="widget__bar">축을 하나씩 늘려 보기 — scalar에서 4축 tensor까지</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
@@ -124,13 +124,13 @@
       </figure>
 
       <p>
-        축이 1개인 경우, 즉 벡터는 <strong>세 가지 얼굴</strong>을 동시에 갖는다.
+        축이 1개인 경우, 즉 vector는 <strong>세 가지 얼굴</strong>을 동시에 갖는다.
         숫자 목록이고, 원점에서 뻗은 화살표이고, "오른쪽으로 몇 걸음 + 위로 몇 걸음"이라는 <em>이동 명령</em>이다.
         아래에서 초록 점을 끌어 보면 세 얼굴이 같이 움직인다.
       </p>
 
       <figure class="widget" data-widget="vector-three-views">
-        <figcaption class="widget__bar">벡터의 세 얼굴 — 숫자 · 화살표 · 걸음</figcaption>
+        <figcaption class="widget__bar">vector의 세 얼굴 — 숫자 · 화살표 · 걸음</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
@@ -140,10 +140,10 @@
       </figure>
 
       <p>
-        여기서 한 가지가 더 필요하다. 벡터를 <span class="tex">(3, 1)</span> 이라고 적을 때,
-        그 숫자 3과 1은 <strong>벡터 자체가 아니라 어떤 자를 대고 잰 눈금</strong>이다.
-        자를 바꾸면 같은 화살표라도 다른 숫자가 나온다. 그 자가 <strong>기저</strong>이고,
-        기저를 정해 숫자를 읽는 방식이 <strong>좌표계</strong>다.
+        여기서 한 가지가 더 필요하다. vector를 <span class="tex">(3, 1)</span> 이라고 적을 때,
+        그 숫자 3과 1은 <strong>vector 자체가 아니라 어떤 자를 대고 잰 눈금</strong>이다.
+        자를 바꾸면 같은 화살표라도 다른 숫자가 나온다. 그 자가 <strong>basis</strong>이고,
+        basis를 정해 숫자를 읽는 방식이 <strong>coordinate system(좌표계)</strong>다.
       </p>
     </section>
 
@@ -152,17 +152,17 @@
       <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
 
       <span class="anchor" id="c-scalar"></span>
-      <h3>스칼라</h3>
+      <h3>Scalar 스칼라</h3>
       <p>
-        스칼라(scalar)는 축이 0개인 값, 즉 실수 하나다. $a \in \mathbb{R}$ 로 쓰고 기울인 소문자로 표기한다.
-        학습률 $\eta$, 손실값 $L$, 정규화 계수 $\lambda$ 가 모두 스칼라다.
+        scalar는 축이 0개인 값, 즉 실수 하나다. $a \in \mathbb{R}$ 로 쓰고 기울인 소문자로 표기한다.
+        learning rate(학습률) $\eta$, 손실값 $L$, normalization(정규화) 계수 $\lambda$ 가 모두 스칼라다.
       </p>
 
       <span class="anchor" id="c-vector"></span>
-      <h3>벡터</h3>
+      <h3>Vector 벡터</h3>
       <p>
-        벡터(vector)는 축이 1개인 값이다. $\mathbf{x} \in \mathbb{R}^{n}$ 은 실수 $n$ 개를 <em>순서대로</em> 묶은 것이고,
-        이 사이트에서는 특별한 말이 없으면 <strong>열벡터</strong>(세로로 세운 것)로 본다.
+        vector는 축이 1개인 값이다. $\mathbf{x} \in \mathbb{R}^{n}$ 은 실수 $n$ 개를 <em>순서대로</em> 묶은 것이고,
+        이 사이트에서는 특별한 말이 없으면 <strong>column vector(열벡터)</strong>(세로로 세운 것)로 본다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{x} = \begin{bmatrix} x_1 \\ x_2 \\ \vdots \\ x_n \end{bmatrix} \in \mathbb{R}^{n}, \qquad \mathbf{x}^\top = [\,x_1\ x_2\ \cdots\ x_n\,] \in \mathbb{R}^{1 \times n} $$</div>
@@ -170,13 +170,13 @@
       </div>
       <p>
         "순서대로"가 중요하다. $(170, 65)$ 와 $(65, 170)$ 은 같은 두 숫자를 담고 있지만 다른 벡터다.
-        벡터의 $i$ 번째 자리에 무엇을 넣을지 정하는 것 자체가 이미 설계 결정이다.
+        vector의 $i$ 번째 자리에 무엇을 넣을지 정하는 것 자체가 이미 설계 결정이다.
       </p>
 
       <span class="anchor" id="c-matrix"></span>
-      <h3>행렬</h3>
+      <h3>Matrix 행렬</h3>
       <p>
-        행렬(matrix)은 축이 2개인 값이다. $\mathbf{A} \in \mathbb{R}^{m \times n}$ 은 $m$ 행 $n$ 열의 직사각형 배열이고,
+        matrix는 축이 2개인 값이다. $\mathbf{A} \in \mathbb{R}^{m \times n}$ 은 $m$ 행 $n$ 열의 직사각형 배열이고,
         $(i, j)$ 자리의 원소를 $a_{ij}$ 로 쓴다. <strong>행이 먼저, 열이 나중</strong>이라는 순서는 관례이며 이 사이트 전체에서 지킨다.
       </p>
       <div class="eq">
@@ -184,37 +184,37 @@
         <span class="eq__tag num">(2)</span>
       </div>
       <p>
-        행렬은 두 얼굴을 갖는다. <strong>데이터를 담은 표</strong>(행 = 샘플, 열 = 특성)이기도 하고,
-        <strong>벡터를 다른 벡터로 보내는 함수</strong>이기도 하다. 두 번째 얼굴은
-        <a href="2.5-linear-transformation.html">2.5 선형변환</a>에서 본격적으로 다룬다.
+        matrix는 두 얼굴을 갖는다. <strong>data를 담은 표</strong>(행 = 샘플, 열 = 특성)이기도 하고,
+        <strong>vector를 다른 vector로 보내는 함수</strong>이기도 하다. 두 번째 얼굴은
+        <a href="2.5-linear-transformation.html">2.5 linear transformation(선형변환)</a>에서 본격적으로 다룬다.
       </p>
 
       <span class="anchor" id="c-tensor"></span>
-      <h3>텐서</h3>
+      <h3>Tensor 텐서</h3>
       <p>
-        축이 3개 이상이면 텐서(tensor)라 부른다. 정확히 말하면 축이 몇 개든 텐서이므로
-        스칼라는 0차 텐서, 벡터는 1차 텐서, 행렬은 2차 텐서다. 축의 개수를
-        텐서의 <strong>차수</strong>(order) 또는 <strong>모드 수</strong>(number of modes)라 하고, 이 용어는
-        텐서 분해 문헌의 표준을 따른다<a class="cite" href="#ref-kolda2009-tensor-decompositions" data-ref="kolda2009-tensor-decompositions">1</a>.
+        축이 3개 이상이면 tensor라 부른다. 정확히 말하면 축이 몇 개든 텐서이므로
+        scalar는 0차 tensor, vector는 1차 tensor, matrix는 2차 텐서다. 축의 개수를
+        tensor의 <strong>차수</strong>(order) 또는 <strong>모드 수</strong>(number of modes)라 하고, 이 용어는
+        tensor 분해 문헌의 표준을 따른다<a class="cite" href="#ref-kolda2009-tensor-decompositions" data-ref="kolda2009-tensor-decompositions">1</a>.
       </p>
       <div class="tablewrap">
         <table>
-          <thead><tr><th>축 수</th><th>이름</th><th>표기 예</th><th>딥러닝에서의 예</th></tr></thead>
+          <thead><tr><th>축 수</th><th>이름</th><th>표기 예</th><th>deep learning(딥러닝)에서의 예</th></tr></thead>
           <tbody>
-            <tr><td class="num">0</td><td>스칼라</td><td>$a$</td><td>학습률, 손실값</td></tr>
-            <tr><td class="num">1</td><td>벡터</td><td>$\mathbf{x} \in \mathbb{R}^{n}$</td><td>단어 임베딩 <span class="tex">(768,)</span></td></tr>
-            <tr><td class="num">2</td><td>행렬</td><td>$\mathbf{A} \in \mathbb{R}^{m \times n}$</td><td>선형층 가중치, 흑백 이미지</td></tr>
-            <tr><td class="num">3</td><td>3차 텐서</td><td>$\mathcal{T} \in \mathbb{R}^{d_1 \times d_2 \times d_3}$</td><td>컬러 이미지 <span class="tex">(3, 224, 224)</span></td></tr>
-            <tr><td class="num">4</td><td>4차 텐서</td><td>$\mathcal{T} \in \mathbb{R}^{d_1 \times d_2 \times d_3 \times d_4}$</td><td>이미지 미니배치 <span class="tex">(32, 3, 224, 224)</span></td></tr>
+            <tr><td class="num">0</td><td>scalar</td><td>$a$</td><td>learning rate, 손실값</td></tr>
+            <tr><td class="num">1</td><td>vector</td><td>$\mathbf{x} \in \mathbb{R}^{n}$</td><td>단어 embedding(임베딩) <span class="tex">(768,)</span></td></tr>
+            <tr><td class="num">2</td><td>matrix</td><td>$\mathbf{A} \in \mathbb{R}^{m \times n}$</td><td>linear layer(선형층) weight(가중치), 흑백 image(이미지)</td></tr>
+            <tr><td class="num">3</td><td>3차 tensor</td><td>$\mathcal{T} \in \mathbb{R}^{d_1 \times d_2 \times d_3}$</td><td>컬러 image <span class="tex">(3, 224, 224)</span></td></tr>
+            <tr><td class="num">4</td><td>4차 tensor</td><td>$\mathcal{T} \in \mathbb{R}^{d_1 \times d_2 \times d_3 \times d_4}$</td><td>image 미니배치 <span class="tex">(32, 3, 224, 224)</span></td></tr>
           </tbody>
         </table>
       </div>
 
       <span class="anchor" id="c-vspace"></span>
-      <h3>벡터 공간</h3>
+      <h3>Vector Space 벡터 공간</h3>
       <p>
         지금까지는 "숫자를 어떻게 담는가"였다. 이제 "그 안에서 무엇을 할 수 있는가"를 정한다.
-        <strong>벡터 공간</strong>(vector space)은 <em>더하기</em>와 <em>실수배</em>가 정의되어 있고,
+        <strong>vector space</strong>은 <em>더하기</em>와 <em>실수배</em>가 정의되어 있고,
         그 두 연산이 밖으로 새지 않는 집합이다. 형식적으로는 여덟 개의 조건을 만족하는
         집합 $V$ 와 두 연산의 짝 $(V, +, \cdot)$ 을 말한다<a class="cite" href="#ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">2</a>.
       </p>
@@ -236,17 +236,17 @@
       <p>
         여덟 조건을 외울 필요는 없다. 실무에서 필요한 것은 하나다 —
         <strong>더해도, 상수배해도 그 집합을 벗어나지 않는가.</strong>
-        이 성질 덕분에 "여러 벡터를 섞는" 모든 연산이 안전해진다.
+        이 성질 덕분에 "여러 vector를 섞는" 모든 연산이 안전해진다.
       </p>
 
       <span class="anchor" id="c-subspace"></span>
-      <h3>부분공간</h3>
+      <h3>Subspace 부분공간</h3>
       <p>
-        벡터 공간 $V$ 의 부분집합 $U \subseteq V$ 가 그 자체로 벡터 공간이면 <strong>부분공간</strong>(subspace)이라 한다.
+        vector space $V$ 의 부분집합 $U \subseteq V$ 가 그 자체로 vector 공간이면 <strong>subspace(부분공간)</strong>이라 한다.
         여덟 조건을 다시 확인할 필요 없이 <strong>세 가지만</strong> 보면 된다.
       </p>
       <div class="note note--key">
-        <span class="note__label">부분공간 판정법</span>
+        <span class="note__label">subspace 판정법</span>
         <p>
           ① $\mathbf{0} \in U$ &nbsp;·&nbsp;
           ② $\mathbf{u}, \mathbf{v} \in U \Rightarrow \mathbf{u}+\mathbf{v} \in U$ (덧셈에 닫힘) &nbsp;·&nbsp;
@@ -255,44 +255,44 @@
       </div>
       <p>
         조건 ①은 나머지 조건에서 따라오지만(③에 $\alpha = 0$ 을 넣으면 된다) 먼저 확인하면 반례를 빨리 찾는다.
-        <strong>원점을 지나지 않으면 부분공간이 아니다</strong> — 이 한 줄이 실전에서 가장 자주 쓰인다.
+        <strong>원점을 지나지 않으면 subspace가 아니다</strong> — 이 한 줄이 실전에서 가장 자주 쓰인다.
       </p>
 
       <span class="anchor" id="c-basis"></span>
-      <h3>기저</h3>
+      <h3>Basis 기저</h3>
       <p>
-        벡터 집합 $B = \{\mathbf{b}_1, \dots, \mathbf{b}_k\} \subseteq V$ 가 다음 둘을 동시에 만족하면 $V$ 의 <strong>기저</strong>(basis)다.
+        vector 집합 $B = \{\mathbf{b}_1, \dots, \mathbf{b}_k\} \subseteq V$ 가 다음 둘을 동시에 만족하면 $V$ 의 <strong>basis</strong>다.
       </p>
       <ul>
-        <li><strong>생성</strong>(spanning): $V$ 의 모든 벡터를 $\mathbf{b}_i$ 들의 합과 상수배로 만들 수 있다.</li>
-        <li><strong>선형독립</strong>(linear independence): 하나도 군더더기가 없다 — 어느 하나도 나머지로 만들 수 없다.</li>
+        <li><strong>생성</strong>(spanning): $V$ 의 모든 vector를 $\mathbf{b}_i$ 들의 합과 상수배로 만들 수 있다.</li>
+        <li><strong>linear independence(선형독립)</strong>: 하나도 군더더기가 없다 — 어느 하나도 나머지로 만들 수 없다.</li>
       </ul>
       <p>
         생성만 하면 "충분하지만 낭비가 있는" 집합이고, 독립이기만 하면 "낭비는 없지만 모자란" 집합이다.
-        기저는 <strong>딱 맞는</strong> 집합이다. 선형독립의 정확한 정의는
-        <a href="2.2-vector-operations.html">2.2 벡터 연산</a>에서 다룬다.
+        basis는 <strong>딱 맞는</strong> 집합이다. linear independence의 정확한 정의는
+        <a href="2.2-vector-operations.html">2.2 vector 연산</a>에서 다룬다.
       </p>
 
       <span class="anchor" id="c-dim"></span>
-      <h3>차원</h3>
+      <h3>Dimension 차원</h3>
       <p>
-        벡터 공간 $V$ 의 <strong>차원</strong>(dimension) $\dim V$ 는 기저에 든 벡터의 개수다.
-        기저는 여러 개 있을 수 있지만 <strong>그 개수는 항상 같다</strong>. 그래서 차원은 잘 정의된다.
+        vector space $V$ 의 <strong>dimension(차원)</strong> $\dim V$ 는 basis에 든 vector의 개수다.
+        basis는 여러 개 있을 수 있지만 <strong>그 개수는 항상 같다</strong>. 그래서 dimension은 잘 정의된다.
       </p>
       <div class="note note--trap">
-        <span class="note__label">"차원"은 세 군데서 다른 뜻으로 쓰인다</span>
+        <span class="note__label">"dimension"은 세 군데서 다른 뜻으로 쓰인다</span>
         <p>
-          ① <strong>공간의 차원</strong> — 기저의 크기. $\dim \mathbb{R}^3 = 3$.<br>
-          ② <strong>벡터의 길이</strong> — 성분 개수. "768차원 임베딩"은 $\mathbb{R}^{768}$ 의 벡터를 뜻한다.<br>
-          ③ <strong>배열의 축 수</strong> — NumPy 의 <code>ndim</code>. <span class="tex">(32, 3, 224, 224)</span> 배열은 <code>ndim</code> 이 4다.<br>
-          ①과 ②는 사실상 같은 말이지만, ③은 완전히 다른 뜻이다. "4차원 텐서"와 "4차원 벡터"는 전혀 다른 것을 가리킨다.
+          ① <strong>공간의 dimension</strong> — basis의 크기. $\dim \mathbb{R}^3 = 3$.<br>
+          ② <strong>vector의 길이</strong> — 성분 개수. "768dimension embedding"은 $\mathbb{R}^{768}$ 의 vector를 뜻한다.<br>
+          ③ <strong>배열의 축 수</strong> — NumPy의 <code>ndim</code>. <span class="tex">(32, 3, 224, 224)</span> 배열은 <code>ndim</code> 이 4다.<br>
+          ①과 ②는 사실상 같은 말이지만, ③은 완전히 다른 뜻이다. "4dimension tensor"와 "4dimension vector"는 전혀 다른 것을 가리킨다.
         </p>
       </div>
 
       <span class="anchor" id="c-shape"></span>
       <h3>Shape</h3>
       <p>
-        shape 는 <strong>각 축의 길이를 축 순서대로 적은 튜플</strong>이다.
+        shape는 <strong>각 축의 길이를 축 순서대로 적은 튜플</strong>이다.
         축 수는 <code>len(shape)</code>, 원소 수는 shape 원소들의 곱이다.
       </p>
       <div class="eq">
@@ -300,26 +300,26 @@
         <span class="eq__tag num">(3)</span>
       </div>
       <p>
-        shape 는 단순한 메타데이터가 아니라 <strong>연산 가능 여부를 판정하는 타입</strong>이다.
+        shape는 단순한 메타데이터가 아니라 <strong>연산 가능 여부를 판정하는 타입</strong>이다.
         NumPy · PyTorch 계열 라이브러리는 shape 규칙(브로드캐스팅)을 언어의 문법처럼 쓰며,
         이 규약이 배열 프로그래밍 생태계 전체의 공통 기반이 되었다<a class="cite" href="#ref-harris2020-array-programming-with" data-ref="harris2020-array-programming-with">3</a>.
-        실무 오류의 상당수는 수학이 틀려서가 아니라 shape 가 어긋나서 난다.
+        실무 오류의 상당수는 수학이 틀려서가 아니라 shape가 어긋나서 난다.
       </p>
 
       <span class="anchor" id="c-coord"></span>
-      <h3>좌표계</h3>
+      <h3>Coordinate System 좌표계</h3>
       <p>
-        기저 $B = (\mathbf{b}_1, \dots, \mathbf{b}_n)$ 를 <em>순서까지</em> 정하면 좌표계가 된다.
-        임의의 $\mathbf{x} \in V$ 는 단 하나의 계수 조합으로 표현되고, 그 계수를 모은 벡터가 <strong>좌표</strong>다.
+        basis $B = (\mathbf{b}_1, \dots, \mathbf{b}_n)$ 를 <em>순서까지</em> 정하면 coordinate system이 된다.
+        임의의 $\mathbf{x} \in V$ 는 단 하나의 계수 조합으로 표현되고, 그 계수를 모은 vector가 <strong>coordinates</strong>다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{x} = \sum_{i=1}^{n} \alpha_i \mathbf{b}_i \qquad\Longleftrightarrow\qquad [\mathbf{x}]_B = \begin{bmatrix} \alpha_1 \\ \vdots \\ \alpha_n \end{bmatrix} $$</div>
         <span class="eq__tag num">(4)</span>
       </div>
       <p>
-        우리가 평소에 벡터를 $(3, 1)$ 로 적을 때 쓰는 것은 <strong>표준기저</strong>
-        $\mathbf{e}_1 = (1,0)^\top,\ \mathbf{e}_2 = (0,1)^\top$ 다. 표준기저에서는 좌표와 성분이 우연히 같아 보이지만,
-        기저를 바꾸면 <strong>같은 화살표가 다른 숫자</strong>가 된다. 이것이 이 절의 마지막 요점이다.
+        우리가 평소에 vector를 $(3, 1)$ 로 적을 때 쓰는 것은 <strong>standard basis(표준기저)</strong>
+        $\mathbf{e}_1 = (1,0)^\top,\ \mathbf{e}_2 = (0,1)^\top$ 다. standard basis에서는 coordinates와 성분이 우연히 같아 보이지만,
+        basis를 바꾸면 <strong>같은 화살표가 다른 숫자</strong>가 된다. 이것이 이 절의 마지막 요점이다.
       </p>
     </section>
 
@@ -328,16 +328,16 @@
       <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
 
       <p>
-        기저 $B$ 의 벡터들을 열로 세운 행렬을 $\mathbf{B} = [\mathbf{b}_1\ \cdots\ \mathbf{b}_n]$ 이라 하면,
-        식 (4)의 합은 행렬 하나로 압축된다.
+        basis $B$ 의 vector들을 열로 세운 matrix를 $\mathbf{B} = [\mathbf{b}_1\ \cdots\ \mathbf{b}_n]$ 이라 하면,
+        식 (4)의 합은 matrix 하나로 압축된다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{x} = \mathbf{B}\,[\mathbf{x}]_B \qquad\Longleftrightarrow\qquad [\mathbf{x}]_B = \mathbf{B}^{-1}\mathbf{x} $$</div>
         <span class="eq__tag num">(5)</span>
       </div>
       <p>
-        오른쪽 식은 $\mathbf{B}$ 가 역행렬을 가질 때만 성립하는데, 기저의 정의(선형독립 + 생성)가
-        정확히 그 조건이다. 역행렬은 <a href="2.4-matrix-operations.html">2.4 행렬 연산</a>에서 다룬다.
+        오른쪽 식은 $\mathbf{B}$ 가 inverse matrix(역행렬)를 가질 때만 성립하는데, basis의 정의(linear independence + 생성)가
+        정확히 그 조건이다. inverse matrix는 <a href="2.4-matrix-operations.html">2.4 matrix 연산</a>에서 다룬다.
       </p>
 
       <h3>기호표</h3>
@@ -347,29 +347,29 @@
             <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
           </thead>
           <tbody>
-            <tr><td>$a$</td><td>에이</td><td>스칼라</td><td>스칼라</td><td>$\mathbb{R}$</td></tr>
-            <tr><td>$\mathbf{x}$</td><td>볼드 엑스</td><td>벡터 (굵은 소문자)</td><td>벡터 $(n,)$</td><td>$\mathbb{R}^n$</td></tr>
-            <tr><td>$\mathbf{A}$</td><td>볼드 에이</td><td>행렬 (굵은 대문자)</td><td>행렬 $(m, n)$</td><td>$\mathbb{R}^{m\times n}$</td></tr>
-            <tr><td>$\mathcal{T}$</td><td>스크립트 티</td><td>3차 이상 텐서</td><td>텐서 $(d_1,\dots,d_r)$</td><td>—</td></tr>
-            <tr><td>$x_i$</td><td>엑스 아이</td><td>벡터의 $i$ 번째 성분</td><td>스칼라</td><td>$\mathbb{R}$</td></tr>
-            <tr><td>$a_{ij}$</td><td>에이 아이 제이</td><td>행렬의 $i$ 행 $j$ 열 원소</td><td>스칼라</td><td>$\mathbb{R}$</td></tr>
-            <tr><td>$\mathbb{R}$</td><td>블랙보드 알</td><td>실수 전체의 집합</td><td>집합</td><td>—</td></tr>
-            <tr><td>$\mathbb{R}^{n}$</td><td>알 엔</td><td>실수 $n$ 개짜리 벡터들의 집합</td><td>집합</td><td>—</td></tr>
-            <tr><td>$\mathbb{R}^{m\times n}$</td><td>알 엠 바이 엔</td><td>$m$ 행 $n$ 열 행렬들의 집합</td><td>집합</td><td>—</td></tr>
-            <tr><td>$\in$</td><td>원소</td><td>"…의 원소이다"</td><td>관계</td><td>—</td></tr>
-            <tr><td>$\subseteq$</td><td>부분집합</td><td>"…에 포함된다"</td><td>관계</td><td>—</td></tr>
-            <tr><td>$\top$</td><td>트랜스포즈</td><td>전치 — 행과 열을 바꿈</td><td>연산자</td><td>—</td></tr>
-            <tr><td>$V$</td><td>브이</td><td>벡터 공간</td><td>집합</td><td>—</td></tr>
-            <tr><td>$U$</td><td>유</td><td>부분공간</td><td>집합</td><td>$U \subseteq V$</td></tr>
-            <tr><td>$\mathbf{0}$</td><td>볼드 영</td><td>영벡터 — 모든 성분이 0</td><td>벡터 $(n,)$</td><td>—</td></tr>
-            <tr><td>$B$</td><td>비</td><td>기저 (벡터들의 순서 있는 모음)</td><td>집합/튜플</td><td>—</td></tr>
-            <tr><td>$\mathbf{b}_i$</td><td>볼드 비 아이</td><td>$i$ 번째 기저 벡터</td><td>벡터 $(n,)$</td><td>$\mathbb{R}^n$</td></tr>
-            <tr><td>$\mathbf{e}_i$</td><td>볼드 이 아이</td><td>표준기저 벡터 — $i$ 번째만 1, 나머지 0</td><td>벡터 $(n,)$</td><td>$\mathbb{R}^n$</td></tr>
-            <tr><td>$[\mathbf{x}]_B$</td><td>엑스 브래킷 비</td><td>기저 $B$ 에서 $\mathbf{x}$ 의 좌표</td><td>벡터 $(n,)$</td><td>$\mathbb{R}^n$</td></tr>
-            <tr><td>$\alpha, \beta$</td><td>알파, 베타</td><td>스칼라 계수</td><td>스칼라</td><td>$\mathbb{R}$</td></tr>
-            <tr><td>$\dim V$</td><td>딤 브이</td><td>$V$ 의 차원 — 기저의 크기</td><td>정수</td><td>$\geq 0$</td></tr>
-            <tr><td>$\prod_{k}$</td><td>파이 · 곱</td><td>모두 곱함</td><td>연산자</td><td>—</td></tr>
-            <tr><td>$\sum_{i}$</td><td>시그마 · 합</td><td>모두 더함</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$a$</td><td>a</td><td>scalar</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\mathbf{x}$</td><td>bold x</td><td>vector (굵은 소문자)</td><td>vector $(n,)$</td><td>$\mathbb{R}^n$</td></tr>
+            <tr><td>$\mathbf{A}$</td><td>bold A</td><td>matrix (굵은 대문자)</td><td>matrix $(m, n)$</td><td>$\mathbb{R}^{m\times n}$</td></tr>
+            <tr><td>$\mathcal{T}$</td><td>script T</td><td>3차 이상 tensor</td><td>tensor $(d_1,\dots,d_r)$</td><td>—</td></tr>
+            <tr><td>$x_i$</td><td>x i</td><td>vector의 $i$ 번째 성분</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$a_{ij}$</td><td>a i j</td><td>matrix의 $i$ 행 $j$ 열 원소</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\mathbb{R}$</td><td>blackboard R</td><td>실수 전체의 집합</td><td>집합</td><td>—</td></tr>
+            <tr><td>$\mathbb{R}^{n}$</td><td>R n</td><td>실수 $n$ 개짜리 vector들의 집합</td><td>집합</td><td>—</td></tr>
+            <tr><td>$\mathbb{R}^{m\times n}$</td><td>R m by n</td><td>$m$ 행 $n$ 열 matrix들의 집합</td><td>집합</td><td>—</td></tr>
+            <tr><td>$\in$</td><td>element of</td><td>"…의 원소이다"</td><td>관계</td><td>—</td></tr>
+            <tr><td>$\subseteq$</td><td>subset</td><td>"…에 포함된다"</td><td>관계</td><td>—</td></tr>
+            <tr><td>$\top$</td><td>transpose 트랜스포즈</td><td>전치 — 행과 열을 바꿈</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$V$</td><td>v</td><td>vector space</td><td>집합</td><td>—</td></tr>
+            <tr><td>$U$</td><td>u</td><td>subspace</td><td>집합</td><td>$U \subseteq V$</td></tr>
+            <tr><td>$\mathbf{0}$</td><td>bold zero</td><td>zero vector(영벡터) — 모든 성분이 0</td><td>vector $(n,)$</td><td>—</td></tr>
+            <tr><td>$B$</td><td>b</td><td>basis (vector들의 순서 있는 모음)</td><td>집합/튜플</td><td>—</td></tr>
+            <tr><td>$\mathbf{b}_i$</td><td>bold b i</td><td>$i$ 번째 basis vector(기저 벡터)</td><td>vector $(n,)$</td><td>$\mathbb{R}^n$</td></tr>
+            <tr><td>$\mathbf{e}_i$</td><td>bold e i</td><td>standard basis vector — $i$ 번째만 1, 나머지 0</td><td>vector $(n,)$</td><td>$\mathbb{R}^n$</td></tr>
+            <tr><td>$[\mathbf{x}]_B$</td><td>x bracket B</td><td>basis $B$ 에서 $\mathbf{x}$ 의 coordinates</td><td>vector $(n,)$</td><td>$\mathbb{R}^n$</td></tr>
+            <tr><td>$\alpha, \beta$</td><td>alpha, beta 알파·베타</td><td>scalar 계수</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\dim V$</td><td>dim V</td><td>$V$ 의 dimension — basis의 크기</td><td>정수</td><td>$\geq 0$</td></tr>
+            <tr><td>$\prod_{k}$</td><td>pi · product 파이</td><td>모두 곱함</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$\sum_{i}$</td><td>sigma · sum 시그마</td><td>모두 더함</td><td>연산자</td><td>—</td></tr>
           </tbody>
         </table>
       </div>
@@ -377,9 +377,9 @@
       <div class="note note--tip">
         <span class="note__label">표기 규약 — 이 사이트 전체에서 지킨다</span>
         <p>
-          스칼라는 기울인 소문자 $a$, 벡터는 굵은 소문자 $\mathbf{x}$, 행렬은 굵은 대문자 $\mathbf{A}$,
-          3차 이상 텐서는 스크립트 대문자 $\mathcal{T}$. 벡터는 별말 없으면 열벡터다.
-          논문마다 다르므로(특히 행벡터를 기본으로 쓰는 문헌이 있다) 새 논문을 읽을 때는 표기 규약부터 확인한다.
+          scalar는 기울인 소문자 $a$, vector는 굵은 소문자 $\mathbf{x}$, matrix는 굵은 대문자 $\mathbf{A}$,
+          3차 이상 tensor는 스크립트 대문자 $\mathcal{T}$. vector는 별말 없으면 열벡터다.
+          논문마다 다르므로(특히 row vector(행벡터)를 기본으로 쓰는 문헌이 있다) 새 논문을 읽을 때는 표기 규약부터 확인한다.
         </p>
       </div>
     </section>
@@ -389,14 +389,14 @@
       <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
 
       <p>
-        기저를 정하면 좌표가 <strong>하나로 정해진다</strong>. 이것이 좌표계라는 개념이 성립하는 근거이므로,
+        basis를 정하면 coordinates가 <strong>하나로 정해진다</strong>. 이것이 coordinate system라는 개념이 성립하는 근거이므로,
         왜 그런지 끝까지 따라가 보자. 두 가지를 보여야 한다 — <em>있다</em>(존재)와 <em>하나뿐이다</em>(유일).
       </p>
 
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ B = \{\mathbf{b}_1, \dots, \mathbf{b}_n\} \text{ 이 } V \text{ 를 생성한다} $$</div>
-          <div class="derive__why">기저의 조건 ①. 그래서 임의의 $\mathbf{x}\in V$ 를 $\mathbf{b}_i$ 들로 적을 수 <strong>있다</strong> (존재)</div>
+          <div class="derive__why">basis의 조건 ①. 그래서 임의의 $\mathbf{x}\in V$ 를 $\mathbf{b}_i$ 들로 적을 수 <strong>있다</strong> (존재)</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{x} = \sum_{i=1}^{n}\alpha_i \mathbf{b}_i = \sum_{i=1}^{n}\beta_i \mathbf{b}_i $$</div>
@@ -408,32 +408,32 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \sum_{i=1}^{n}(\alpha_i - \beta_i)\,\mathbf{b}_i = \mathbf{0} $$</div>
-          <div class="derive__why">같은 $\mathbf{b}_i$ 끼리 묶었다 (분배법칙 — 벡터 공간의 조건이라 쓸 수 있다)</div>
+          <div class="derive__why">같은 $\mathbf{b}_i$ 끼리 묶었다 (분배법칙 — vector space의 조건이라 쓸 수 있다)</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \alpha_i - \beta_i = 0 \quad (i = 1,\dots,n) $$</div>
-          <div class="derive__why">기저의 조건 ② <strong>선형독립</strong>: 계수를 모두 0으로 두는 방법 말고는 $\mathbf{0}$ 을 만들 수 없다</div>
+          <div class="derive__why">basis의 조건 ② <strong>linear independence</strong>: 계수를 모두 0으로 두는 방법 말고는 $\mathbf{0}$ 을 만들 수 없다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \boxed{\;\alpha_i = \beta_i \;\;\Rightarrow\;\; [\mathbf{x}]_B \text{ 는 유일하다}\;} $$</div>
-          <div class="derive__why">두 표현이 사실 같은 표현이었다. 좌표가 하나로 정해진다</div>
+          <div class="derive__why">두 표현이 사실 같은 표현이었다. coordinates가 하나로 정해진다</div>
         </div>
       </div>
 
       <div class="note note--tip">
         <span class="note__label">여기서 눈여겨볼 것</span>
         <p>
-          <strong>생성은 "존재"를, 독립은 "유일"을 준다.</strong> 기저의 두 조건이 각각 무엇을 담당하는지 알면
-          왜 둘 다 필요한지가 분명해진다. 생성만 하면 좌표를 여러 방법으로 쓸 수 있어 자가 하나로 정해지지 않고,
-          독립이기만 하면 아예 못 적는 벡터가 생긴다.
+          <strong>생성은 "존재"를, 독립은 "유일"을 준다.</strong> basis의 두 조건이 각각 무엇을 담당하는지 알면
+          왜 둘 다 필요한지가 분명해진다. 생성만 하면 coordinates를 여러 방법으로 쓸 수 있어 자가 하나로 정해지지 않고,
+          독립이기만 하면 아예 못 적는 vector가 생긴다.
         </p>
       </div>
 
       <details>
-        <summary>왜 기저의 크기는 항상 같은가 (차원이 잘 정의되는 이유) — 증명 스케치</summary>
+        <summary>왜 basis의 크기는 항상 같은가 (dimension이 잘 정의되는 이유) — 증명 스케치</summary>
         <p>
-          핵심 보조정리는 이것이다. <strong>$m$ 개의 벡터가 $V$ 를 생성하고 $k$ 개의 벡터가 선형독립이면 $k \leq m$ 이다.</strong>
-          (독립인 벡터를 생성 집합의 벡터와 하나씩 바꿔치기해도 여전히 생성 집합이 유지된다는 교환 논법으로 보인다.)
+          핵심 보조정리는 이것이다. <strong>$m$ 개의 vector가 $V$ 를 생성하고 $k$ 개의 vector가 선형독립이면 $k \leq m$ 이다.</strong>
+          (독립인 vector를 생성 집합의 vector와 하나씩 바꿔치기해도 여전히 생성 집합이 유지된다는 교환 논법으로 보인다.)
         </p>
         <p>
           이제 $B_1$ 과 $B_2$ 가 모두 기저라 하자. $B_1$ 은 생성하고 $B_2$ 는 독립이므로 $|B_2| \leq |B_1|$,
@@ -447,14 +447,14 @@
     <section class="sec" id="s-example">
       <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
 
-      <h3>예제 1 — shape 와 원소 수</h3>
+      <h3>예제 1 — shape와 원소 수</h3>
       <p>
-        컬러 이미지 32장을 한 번에 처리한다고 하자. 배열의 shape 는 <span class="tex">(32, 3, 224, 224)</span> 다.
+        컬러 image 32장을 한 번에 처리한다고 하자. 배열의 shape는 <span class="tex">(32, 3, 224, 224)</span> 다.
       </p>
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \text{축 수} = 4 $$</div>
-          <div class="derive__why">튜플의 길이. 배치 · 채널 · 세로 · 가로</div>
+          <div class="derive__why">튜플의 길이. batch(배치) · channel(채널) · 세로 · 가로</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ 32 \times 3 = 96 $$</div>
@@ -470,19 +470,19 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ 4{,}816{,}896 \times 4\ \text{바이트} \approx 18.4\ \text{MB} $$</div>
-          <div class="derive__why"><span class="tex">float32</span> 는 원소당 4바이트. shape 만 알면 메모리도 계산된다</div>
+          <div class="derive__why"><span class="tex">float32</span> 는 원소당 4바이트. shape만 알면 메모리도 계산된다</div>
         </div>
       </div>
 
       <h3>예제 2 — 기저를 바꿔 좌표 다시 쓰기</h3>
       <p>
-        표준기저에서 $\mathbf{x} = (3, 1)^\top$ 인 벡터를, 기저
+        standard basis에서 $\mathbf{x} = (3, 1)^\top$ 인 vector를, basis
         $B = \{\mathbf{b}_1, \mathbf{b}_2\}$, $\mathbf{b}_1 = (1,1)^\top$, $\mathbf{b}_2 = (1,-1)^\top$ 로 다시 적어 보자.
       </p>
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \alpha\begin{bmatrix}1\\1\end{bmatrix} + \beta\begin{bmatrix}1\\-1\end{bmatrix} = \begin{bmatrix}3\\1\end{bmatrix} $$</div>
-          <div class="derive__why">좌표의 정의 (4)를 그대로 쓴 것. 미지수는 $\alpha, \beta$ 둘</div>
+          <div class="derive__why">coordinates의 정의 (4)를 그대로 쓴 것. 미지수는 $\alpha, \beta$ 둘</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \alpha + \beta = 3, \qquad \alpha - \beta = 1 $$</div>
@@ -498,11 +498,11 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ 2\begin{bmatrix}1\\1\end{bmatrix} + 1\begin{bmatrix}1\\-1\end{bmatrix} = \begin{bmatrix}2+1\\2-1\end{bmatrix} = \begin{bmatrix}3\\1\end{bmatrix}\ \checkmark $$</div>
-          <div class="derive__why"><strong>검산.</strong> 원래 벡터가 나왔다</div>
+          <div class="derive__why"><strong>검산.</strong> 원래 vector가 나왔다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ [\mathbf{x}]_{E} = \begin{bmatrix}3\\1\end{bmatrix}, \qquad [\mathbf{x}]_{B} = \begin{bmatrix}2\\1\end{bmatrix} $$</div>
-          <div class="derive__why"><strong>같은 화살표, 다른 숫자.</strong> $E$ 는 표준기저</div>
+          <div class="derive__why"><strong>같은 화살표, 다른 숫자.</strong> $E$ 는 standard basis</div>
         </div>
       </div>
 
@@ -510,8 +510,8 @@
         <span class="note__label">이 예제의 요점</span>
         <p>
           $(3,1)$ 과 $(2,1)$ 은 같은 벡터다. 숫자가 다른 이유는 <strong>잰 자가 달라서</strong>다.
-          "임베딩 벡터의 3번째 값이 무슨 뜻인가"라는 질문이 대개 답이 없는 이유도 여기 있다 —
-          그 값은 학습이 우연히 고른 기저에서의 눈금일 뿐이다.
+          "embedding vector의 3번째 값이 무슨 뜻인가"라는 질문이 대개 답이 없는 이유도 여기 있다 —
+          그 값은 training(학습)이 우연히 고른 basis에서의 눈금일 뿐이다.
         </p>
       </div>
 
@@ -525,14 +525,14 @@
               <td>✔ $(0,0)$</td>
               <td>✔ $(1,2)+(3,6)=(4,8)$, $8 = 2\cdot4$</td>
               <td>✔ $\alpha(1,2)=(\alpha,2\alpha)$</td>
-              <td><strong>부분공간</strong></td>
+              <td><strong>subspace</strong></td>
             </tr>
             <tr>
               <td>$U_2 = \{(x,y) : y = 2x + 1\}$</td>
               <td>✘ $(0,0)$ 은 $0 \neq 1$</td>
               <td>✘ $(0,1)+(1,3)=(1,4)$, 그런데 $2\cdot1+1=3 \neq 4$</td>
               <td>✘ $2\cdot(0,1)=(0,2)$, 그런데 $2\cdot 0 + 1 = 1 \neq 2$</td>
-              <td>아님 (아핀 부분공간)</td>
+              <td>아님 (affine subspace(아핀 부분공간))</td>
             </tr>
             <tr>
               <td>$U_3 = \{(x,y) : x \geq 0,\ y \geq 0\}$</td>
@@ -545,8 +545,8 @@
         </table>
       </div>
       <p>
-        $U_2$ 처럼 <strong>원점을 지나지 않는 직선·평면</strong>은 아핀 부분공간(affine subspace)이라 부르며 부분공간이 아니다.
-        신경망의 편향 $\mathbf{b}$ 가 있는 층 $\mathbf{W}\mathbf{x} + \mathbf{b}$ 의 출력 집합이 바로 이런 아핀 집합이다.
+        $U_2$ 처럼 <strong>원점을 지나지 않는 직선·평면</strong>은 affine subspace이라 부르며 subspace가 아니다.
+        neural network의 bias(편향) $\mathbf{b}$ 가 있는 layer(층) $\mathbf{W}\mathbf{x} + \mathbf{b}$ 의 출력 집합이 바로 이런 affine(아핀) 집합이다.
       </p>
     </section>
 
@@ -556,7 +556,7 @@
 
       <h3>격자가 바뀌는 장면</h3>
       <p>
-        기저를 바꾼다는 것은 <strong>평면에 깔아 둔 모눈종이를 갈아 끼우는 일</strong>이다.
+        basis를 바꾼다는 것은 <strong>평면에 깔아 둔 모눈종이를 갈아 끼우는 일</strong>이다.
         화살표는 그대로 있고 모눈만 기울어진다. 재생 버튼을 눌러 표준 모눈이
         $\mathbf{b}_1=(1,1)$, $\mathbf{b}_2=(1,-1)$ 의 모눈으로 변해 가는 것을 보라.
       </p>
@@ -567,24 +567,24 @@
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">빨간 화살표는 한 번도 움직이지 않습니다. 그런데 좌표 (α, β) 는 (3,1) 에서 (2,1) 로 바뀝니다.</p>
+          <p class="watch">빨간 화살표는 한 번도 움직이지 않습니다. 그런데 coordinates (α, β)는 (3,1)에서 (2,1)로 바뀝니다.</p>
         </div>
       </figure>
 
       <h3>기저를 바꾸면 좌표가 바뀐다</h3>
       <p>
-        아래에서 초록 점 두 개가 기저 벡터 $\mathbf{b}_1, \mathbf{b}_2$ 다. 마우스로 끌거나
-        Tab 으로 선택한 뒤 화살표 키로 움직여 보라. 빨간 점 $\mathbf{x} = (3,1)$ 은 <strong>고정</strong>이지만,
-        그 좌표 $(\alpha, \beta)$ 는 계속 바뀐다.
+        아래에서 초록 점 두 개가 basis vector $\mathbf{b}_1, \mathbf{b}_2$ 다. 마우스로 끌거나
+        Tab으로 선택한 뒤 화살표 키로 움직여 보라. 빨간 점 $\mathbf{x} = (3,1)$ 은 <strong>고정</strong>이지만,
+        그 coordinates $(\alpha, \beta)$ 는 계속 바뀐다.
       </p>
 
       <figure class="widget" data-widget="basis-coords">
-        <figcaption class="widget__bar">같은 벡터, 다른 좌표 — 기저를 끌어 보기</figcaption>
+        <figcaption class="widget__bar">같은 vector, 다른 coordinates — basis를 끌어 보기</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">두 기저 벡터를 나란하게 만들어 보세요. 행렬식이 0에 가까워지면 좌표가 폭주합니다 — 기저가 되지 못한 것입니다.</p>
+          <p class="watch">두 basis vector를 나란하게 만들어 보세요. determinant(행렬식)가 0에 가까워지면 coordinates가 폭주합니다 — basis가 되지 못한 것입니다.</p>
         </div>
       </figure>
 
@@ -595,7 +595,7 @@
       </p>
 
       <figure class="widget" data-widget="subspace-check">
-        <figcaption class="widget__bar">부분공간 판정기 — 원점 · 덧셈 · 실수배</figcaption>
+        <figcaption class="widget__bar">subspace 판정기 — 원점 · 덧셈 · 실수배</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
@@ -604,9 +604,9 @@
         </div>
       </figure>
 
-      <h3>shape 와 메모리 배치</h3>
+      <h3>shape와 메모리 배치</h3>
       <p>
-        축의 길이를 바꿔 가며 원소 수가 어떻게 변하는지, 그리고 2차원 배열이 메모리에는
+        축의 길이를 바꿔 가며 원소 수가 어떻게 변하는지, 그리고 2dimension 배열이 메모리에는
         <strong>한 줄로</strong> 어떻게 펴지는지 확인한다(행 우선, row-major).
       </p>
 
@@ -627,48 +627,48 @@
 
       <div class="note note--trap">
         <span class="note__label">오해 1</span>
-        <p>"텐서는 다차원 배열이다."</p>
+        <p>"tensor는 다차원 배열이다."</p>
         <p>
-          <strong>실제로는</strong> 딥러닝에서만 그렇게 쓴다. 물리학과 미분기하에서 텐서는
-          <em>좌표를 바꿀 때 정해진 규칙대로 성분이 변하는 다중선형 사상</em>이고, 배열은 그것을 적어 둔 표에 불과하다.
-          PyTorch 의 <code>Tensor</code> 는 이 변환 규칙을 요구하지 않으므로 엄밀히는 다차원 배열이다.
+          <strong>실제로는</strong> deep learning에서만 그렇게 쓴다. 물리학과 미분기하에서 tensor는
+          <em>coordinates를 바꿀 때 정해진 규칙대로 성분이 변하는 다중선형 사상</em>이고, 배열은 그것을 적어 둔 표에 불과하다.
+          PyTorch의 <code>Tensor</code>는 이 변환 규칙을 요구하지 않으므로 엄밀히는 다차원 배열이다.
           논문에서 "tensor"를 만나면 어느 쪽 뜻인지 확인해야 한다.
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 2</span>
-        <p>"<span class="tex">(3,)</span> 벡터와 <span class="tex">(3,1)</span> 행렬은 같은 것이다."</p>
+        <p>"<span class="tex">(3,)</span> vector와 <span class="tex">(3,1)</span> matrix는 같은 것이다."</p>
         <p>
           <strong>실제로는</strong> 축 수가 다르다. 수학적으로는 자연스럽게 동일시하지만,
           NumPy · PyTorch 에서는 브로드캐스팅 결과가 달라진다.
-          <span class="tex">(3,)</span> 과 <span class="tex">(3,1)</span> 을 더하면 <span class="tex">(3,3)</span> 행렬이 나온다 —
-          의도한 것이 벡터 덧셈이었다면 조용히 잘못된 값이 흘러간다.
+          <span class="tex">(3,)</span> 과 <span class="tex">(3,1)</span> 을 더하면 <span class="tex">(3,3)</span> matrix가 나온다 —
+          의도한 것이 vector 덧셈이었다면 조용히 잘못된 값이 흘러간다.
           이 종류의 버그는 예외를 던지지 않아서 더 위험하다.
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 3</span>
-        <p>"벡터의 성분값 자체에 의미가 있다."</p>
+        <p>"vector의 성분값 자체에 의미가 있다."</p>
         <p>
-          <strong>실제로는</strong> 성분값은 <em>기저에 의존하는 눈금</em>이다.
-          기저를 바꾸면 모든 성분이 바뀌지만 벡터는 그대로다.
-          그래서 임베딩의 특정 축 하나를 떼어 "이 축은 감정을 뜻한다"고 해석하는 것은
+          <strong>실제로는</strong> 성분값은 <em>basis에 의존하는 눈금</em>이다.
+          basis를 바꾸면 모든 성분이 바뀌지만 vector는 그대로다.
+          그래서 embedding의 특정 축 하나를 떼어 "이 축은 감정을 뜻한다"고 해석하는 것은
           추가 근거 없이는 성립하지 않는다.
-          반면 <strong>내적 · 노름 · 각도</strong>처럼 기저를 바꿔도 변하지 않는 양은 해석해도 좋다
-          (<a href="2.3-inner-product.html">2.3 내적과 유사도</a>).
+          반면 <strong>inner product(내적) · norm(노름) · 각도</strong>처럼 basis를 바꿔도 변하지 않는 양은 해석해도 좋다
+          (<a href="2.3-inner-product.html">2.3 inner product와 similarity(유사도)</a>).
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 4</span>
-        <p>"차원이 높을수록 표현력이 좋다."</p>
+        <p>"dimension이 높을수록 표현력이 좋다."</p>
         <p>
-          <strong>실제로는</strong> 차원은 <em>기저의 크기</em>일 뿐 정보량이 아니다.
-          $\mathbb{R}^{1000}$ 안에 있어도 데이터가 2차원 부분공간에만 놓여 있으면 실제 자유도는 2다.
-          이 간극을 이용해 차원을 줄이는 것이 <a href="2.9-dimensionality-reduction.html">2.9 차원 축소</a>이고,
-          고차원에서 거리가 무의미해지는 현상(차원의 저주)은 오히려 높은 차원의 대가다.
+          <strong>실제로는</strong> dimension은 <em>basis의 크기</em>일 뿐 정보량이 아니다.
+          $\mathbb{R}^{1000}$ 안에 있어도 data가 2dimension subspace에만 놓여 있으면 실제 degrees of freedom(자유도)은 2다.
+          이 간극을 이용해 dimension을 줄이는 것이 <a href="2.9-dimensionality-reduction.html">2.9 dimensionality reduction(차원 축소)</a>이고,
+          high-dimensional(고차원)에서 거리가 무의미해지는 현상(dimension의 저주)은 오히려 높은 dimension의 대가다.
         </p>
       </div>
     </section>
@@ -676,9 +676,9 @@
     <!-- ===== 10. 코드 ===== -->
     <section class="sec" id="s-code">
       <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
-      <p>예제 1의 원소 수와 예제 2의 좌표를 확인한다.</p>
+      <p>예제 1의 원소 수와 예제 2의 coordinates를 확인한다.</p>
       <details>
-        <summary>NumPy — shape · ndim · 좌표 변환 (16줄)</summary>
+        <summary>NumPy — shape · ndim · coordinates 변환 (16줄)</summary>
 <pre><code>import numpy as np
 
 t = np.zeros((32, 3, 224, 224), dtype=np.float32)
@@ -699,7 +699,7 @@ print((np.zeros(3) + np.zeros((3, 1))).shape)      # (3, 3)  ← 오해 2
 </code></pre>
         <p>
           <small>
-            마지막 두 줄이 오해 2의 실제 동작이다. 벡터 덧셈을 의도했는데
+            마지막 두 줄이 오해 2의 실제 동작이다. vector addition(벡터 덧셈)을 의도했는데
             <code>(3, 3)</code> 이 나오면 그 뒤의 모든 계산이 조용히 어긋난다.
           </small>
         </p>
@@ -713,23 +713,23 @@ print((np.zeros(3) + np.zeros((3, 1))).shape)      # (3, 3)  ← 오해 2
       <div class="quiz">
         <div class="q">
           <p class="q__stem"><span class="q__tag">계산</span>
-            shape 가 <span class="tex">(8, 3, 32, 32)</span> 인 <span class="tex">float32</span> 배열의 원소 수와 메모리 크기는?</p>
+            shape가 <span class="tex">(8, 3, 32, 32)</span> 인 <span class="tex">float32</span> 배열의 원소 수와 메모리 크기는?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span class="num">24,576</span><span>개 · 98,304 B</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span class="num">3,072</span><span>개 · 12,288 B</span></button>
             <button class="opt" type="button"><span class="opt__mark">다</span><span class="num">75</span><span>개 · 300 B</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            $32 \times 32 = 1{,}024$, $1{,}024 \times 3 = 3{,}072$ (이미지 <em>한 장</em>),
-            $3{,}072 \times 8 = 24{,}576$ (배치 전체). <span class="tex">float32</span> 는 원소당 4바이트이므로
+            $32 \times 32 = 1{,}024$, $1{,}024 \times 3 = 3{,}072$ (image <em>한 장</em>),
+            $3{,}072 \times 8 = 24{,}576$ (batch 전체). <span class="tex">float32</span> 는 원소당 4바이트이므로
             $24{,}576 \times 4 = 98{,}304$ 바이트.
-            나는 배치 축을 빠뜨린 값이고, 다는 곱해야 할 것을 더한 값이다.
+            나는 batch 축을 빠뜨린 값이고, 다는 곱해야 할 것을 더한 값이다.
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">계산</span>
-            기저 $B=\{(2,0)^\top,\ (1,1)^\top\}$ 에서 $\mathbf{x}=(4,1)^\top$ 의 좌표 $[\mathbf{x}]_B$ 는?</p>
+            basis $B=\{(2,0)^\top,\ (1,1)^\top\}$ 에서 $\mathbf{x}=(4,1)^\top$ 의 coordinates $[\mathbf{x}]_B$ 는?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$(1.5,\ 1)^\top$</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>$(2,\ 1)^\top$</span></button>
@@ -744,7 +744,7 @@ print((np.zeros(3) + np.zeros((3, 1))).shape)      # (3, 3)  ← 오해 2
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">개념</span>
-            다음 중 $\mathbb{R}^2$ 의 <strong>부분공간</strong>인 것은?</p>
+            다음 중 $\mathbb{R}^2$ 의 <strong>subspace</strong>인 것은?</p>
           <div class="opts">
             <button class="opt" type="button"><span class="opt__mark">가</span><span>$\{(x,y) : x + y = 1\}$</span></button>
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>$\{(x,y) : x + y = 0\}$</span></button>
@@ -759,45 +759,45 @@ print((np.zeros(3) + np.zeros((3, 1))).shape)      # (3, 3)  ← 오해 2
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">개념</span>
-            $\mathbb{R}^3$ 에서 서로 다른 기저를 두 개 골랐다. 반드시 같은 것은?</p>
+            $\mathbb{R}^3$ 에서 서로 다른 basis를 두 개 골랐다. 반드시 같은 것은?</p>
           <div class="opts">
-            <button class="opt" type="button"><span class="opt__mark">가</span><span>각 벡터의 성분값</span></button>
-            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>기저에 든 벡터의 개수</span></button>
-            <button class="opt" type="button"><span class="opt__mark">다</span><span>임의의 $\mathbf{x}$ 의 좌표 $[\mathbf{x}]_B$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>각 vector의 성분값</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>basis에 든 vector의 개수</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>임의의 $\mathbf{x}$ 의 coordinates $[\mathbf{x}]_B$</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            기저는 무수히 많지만 <em>크기</em>는 항상 $\dim \mathbb{R}^3 = 3$ 으로 같다.
-            좌표는 기저마다 달라진다 — 그것이 예제 2에서 본 현상이다.
+            basis는 무수히 많지만 <em>크기</em>는 항상 $\dim \mathbb{R}^3 = 3$ 으로 같다.
+            coordinates는 basis마다 달라진다 — 그것이 예제 2에서 본 현상이다.
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">함정</span>
-            "4차원 텐서"와 "4차원 벡터"에 대한 설명으로 옳은 것은?</p>
+            "4dimension tensor"와 "4dimension vector"에 대한 설명으로 옳은 것은?</p>
           <div class="opts">
             <button class="opt" type="button"><span class="opt__mark">가</span><span>둘 다 원소가 4개다</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>둘 다 축이 4개다</span></button>
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">다</span><span>앞은 축이 4개, 뒤는 축이 1개이고 원소가 4개다</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            "4차원 텐서"의 4는 <em>축의 수</em>(<code>ndim</code>), "4차원 벡터"의 4는 <em>성분의 수</em>다.
-            <span class="tex">(32,3,224,224)</span> 텐서는 4차원 텐서지만 원소는 480만 개가 넘는다.
+            "4dimension tensor"의 4는 <em>축의 수</em>(<code>ndim</code>), "4dimension vector"의 4는 <em>성분의 수</em>다.
+            <span class="tex">(32,3,224,224)</span> tensor는 4dimension 텐서지만 원소는 480만 개가 넘는다.
             같은 단어가 다른 것을 세고 있다.
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">개념</span>
-            신경망 층 $\mathbf{y} = \mathbf{W}\mathbf{x} + \mathbf{b}$ 에서 $\mathbf{b} \neq \mathbf{0}$ 일 때,
+            neural network layer $\mathbf{y} = \mathbf{W}\mathbf{x} + \mathbf{b}$ 에서 $\mathbf{b} \neq \mathbf{0}$ 일 때,
             가능한 출력 $\mathbf{y}$ 들의 집합은?</p>
           <div class="opts">
-            <button class="opt" type="button"><span class="opt__mark">가</span><span>부분공간이다</span></button>
-            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>부분공간을 $\mathbf{b}$ 만큼 평행이동한 아핀 집합이다</span></button>
-            <button class="opt" type="button"><span class="opt__mark">다</span><span>출력 공간 전체다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>subspace다</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>subspace를 $\mathbf{b}$ 만큼 평행이동한 affine 집합이다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>output space(출력 공간) 전체다</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            $\mathbf{W}\mathbf{x}$ 들의 집합은 부분공간(열공간)이지만, 거기에 $\mathbf{b}$ 를 더하면
-            원점을 지나지 않게 되어 부분공간 조건 ①이 깨진다. 예제 3의 $U_2$ 와 같은 상황이다.
+            $\mathbf{W}\mathbf{x}$ 들의 집합은 subspace(column space(열공간))이지만, 거기에 $\mathbf{b}$ 를 더하면
+            원점을 지나지 않게 되어 subspace 조건 ①이 깨진다. 예제 3의 $U_2$ 와 같은 상황이다.
           </div>
         </div>
       </div>
@@ -808,11 +808,11 @@ print((np.zeros(3) + np.zeros((3, 1))).shape)      # (3, 3)  ← 오해 2
       <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
 
       <ul>
-        <li><strong><a href="2.2-vector-operations.html">2.2 벡터 연산</a></strong> — 여기서 미룬 선형독립 · Span 의 정확한 정의.</li>
-        <li><strong><a href="2.3-inner-product.html">2.3 내적과 유사도</a></strong> — 기저를 바꿔도 변하지 않는 양(길이 · 각도)을 만든다.</li>
-        <li><strong><a href="2.5-linear-transformation.html">2.5 선형변환</a></strong> — 행렬의 두 번째 얼굴. 좌표 변환이 곧 기저 변경이다.</li>
-        <li><strong><a href="2.9-dimensionality-reduction.html">2.9 차원 축소</a></strong> — 데이터가 실제로 놓인 저차원 부분공간을 찾는 일.</li>
-        <li><strong><a href="2.10-linear-algebra-in-ai.html">2.10 AI와 선형대수</a></strong> — 이미지 · 시퀀스 · 멀티모달 텐서의 shape 규약.</li>
+        <li><strong><a href="2.2-vector-operations.html">2.2 vector 연산</a></strong> — 여기서 미룬 linear independence · Span의 정확한 정의.</li>
+        <li><strong><a href="2.3-inner-product.html">2.3 inner product와 similarity</a></strong> — basis를 바꿔도 변하지 않는 양(길이 · 각도)을 만든다.</li>
+        <li><strong><a href="2.5-linear-transformation.html">2.5 linear transformation</a></strong> — matrix의 두 번째 얼굴. coordinates 변환이 곧 basis 변경이다.</li>
+        <li><strong><a href="2.9-dimensionality-reduction.html">2.9 dimensionality reduction</a></strong> — data가 실제로 놓인 low-dimensional(저차원) subspace를 찾는 일.</li>
+        <li><strong><a href="2.10-linear-algebra-in-ai.html">2.10 AI와 linear algebra(선형대수)</a></strong> — image · sequence(시퀀스) · multimodal(멀티모달) tensor의 shape 규약.</li>
       </ul>
 
       <h3>출처</h3>
@@ -820,19 +820,19 @@ print((np.zeros(3) + np.zeros((3, 1))).shape)      # (3, 3)  ← 오해 2
         <li class="ref" id="ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Deisenroth, M. P., Faisal, A. A. &amp; Ong, C. S. (2020). <em>Mathematics for Machine Learning</em>. Cambridge University Press.</span>
-          <span class="ref__where">2.4절(Vector Spaces) — 벡터 공간 8개 조건과 부분공간 판정법 표의 근거. 2.6절(Basis and Rank) — 기저의 정의, 좌표의 유일성, 기저 크기가 일정하다는 정리(유도와 접이식 증명 스케치)</span>
+          <span class="ref__where">2.4절(Vector Spaces) — vector space 8개 조건과 subspace 판정법 표의 근거. 2.6절(Basis and Rank) — basis의 정의, coordinates의 유일성, basis 크기가 일정하다는 정리(유도와 접이식 증명 스케치)</span>
           <a class="ref__link" href="https://mml-book.github.io/">mml-book.github.io</a>
         </li>
         <li class="ref" id="ref-goodfellow2016-dl" data-ref="goodfellow2016-dl">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>. MIT Press.</span>
-          <span class="ref__where">2.1절 Scalars, Vectors, Matrices and Tensors — 스칼라·벡터·행렬·텐서를 축 수로 통일해 소개하는 서술과 이 사이트의 표기 규약(굵은 소문자/대문자)의 근거</span>
+          <span class="ref__where">2.1절 Scalars, Vectors, Matrices and Tensors — scalar·vector·matrix·tensor를 축 수로 통일해 소개하는 서술과 이 사이트의 표기 규약(굵은 소문자/대문자)의 근거</span>
           <a class="ref__link" href="https://www.deeplearningbook.org/">deeplearningbook.org</a>
         </li>
         <li class="ref" id="ref-kolda2009-tensor-decompositions" data-ref="kolda2009-tensor-decompositions">
           <span class="ref__type" data-type="paper">논문</span>
           <span class="ref__cite">Kolda, T. G. &amp; Bader, B. W. (2009). <em>Tensor Decompositions and Applications</em>. SIAM Review, 51(3), 455–500.</span>
-          <span class="ref__where">2절 Notation and Preliminaries — 텐서의 '차수(order)·모드(mode)' 용어 정의. 본문 '텐서' 문단에서 축 수를 차수라 부르는 근거</span>
+          <span class="ref__where">2절 Notation and Preliminaries — tensor의 '차수(order)·모드(mode)' 용어 정의. 본문 'tensor' 문단에서 축 수를 차수라 부르는 근거</span>
           <a class="ref__link" href="https://www.kolda.net/publication/TensorReview.pdf">kolda.net · PDF</a>
         </li>
         <li class="ref" id="ref-harris2020-array-programming-with" data-ref="harris2020-array-programming-with">
@@ -844,13 +844,13 @@ print((np.zeros(3) + np.zeros((3, 1))).shape)      # (3, 3)  ← 오해 2
         <li class="ref" id="ref-mit-1806" data-ref="mit-1806">
           <span class="ref__type" data-type="course">강의</span>
           <span class="ref__cite">Strang, G. <em>MIT 18.06 Linear Algebra</em> (Spring 2010). MIT OpenCourseWare.</span>
-          <span class="ref__where">Lecture 5–6 (Vector spaces and subspaces / Column space and nullspace) — 부분공간을 '원점을 지나는가'로 판정하는 서술과 예제 3의 구성 참고</span>
+          <span class="ref__where">Lecture 5–6 (Vector spaces and subspaces / Column space and nullspace) — subspace를 '원점을 지나는가'로 판정하는 서술과 예제 3의 구성 참고</span>
           <a class="ref__link" href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/">ocw.mit.edu</a>
         </li>
         <li class="ref" id="ref-3blue1brown-linalg" data-ref="3blue1brown-linalg">
           <span class="ref__type" data-type="video">영상</span>
           <span class="ref__cite">3Blue1Brown. <em>Essence of Linear Algebra</em>, Ch.2 <em>Linear combinations, span, and basis vectors</em>.</span>
-          <span class="ref__where">00:40–06:30 — 좌표를 '기저 벡터에 붙은 스칼라'로 보는 시각. '기저를 바꾸면 좌표가 바뀐다' 위젯의 설계 근거</span>
+          <span class="ref__where">00:40–06:30 — coordinates를 'basis vector에 붙은 scalar'로 보는 시각. 'basis를 바꾸면 coordinates가 바뀐다' 위젯의 설계 근거</span>
           <a class="ref__link" href="https://www.3blue1brown.com/topics/linear-algebra">3blue1brown.com</a>
         </li>
       </ol>
@@ -890,11 +890,11 @@ print((np.zeros(3) + np.zeros((3, 1))).shape)      # (3, 3)  ← 오해 2
 WIDGETS.register('tensor-ladder', function (root, ctx) {
   var el = VIZ.el;
   var STEPS = [
-    { name: '스칼라',    shape: [],        cell: 34 },
-    { name: '벡터',      shape: [4],       cell: 34 },
-    { name: '행렬',      shape: [3, 4],    cell: 32 },
-    { name: '3차 텐서',  shape: [2, 3, 4], cell: 26 },
-    { name: '4차 텐서',  shape: [3, 2, 3, 4], cell: 15 }
+    { name: 'scalar',    shape: [],        cell: 34 },
+    { name: 'vector',      shape: [4],       cell: 34 },
+    { name: 'matrix',      shape: [3, 4],    cell: 32 },
+    { name: '3차 tensor',  shape: [2, 3, 4], cell: 26 },
+    { name: '4차 tensor',  shape: [3, 2, 3, 4], cell: 15 }
   ];
 
   var VW = 480, VH = 200;
@@ -1019,14 +1019,14 @@ WIDGETS.register('vector-three-views', function (root, ctx) {
     v[0] = Math.max(-4.2, Math.min(4.2, v[0]));
     v[1] = Math.max(-2.8, Math.min(2.8, v[1]));
     draw();
-  }, { label: '벡터 x' });
+  }, { label: 'vector x' });
   draw();
 });
 
 /* ============================================================
    위젯 3 — 모눈종이 갈아 끼우기
    표준기저 격자 → {(1,1),(1,-1)} 격자로 연속 변형.
-   화살표 x=(3,1) 은 고정, 좌표만 (3,1) → (2,1) 로 바뀐다.
+   화살표 x=(3,1)은 고정, 좌표만 (3,1) → (2,1)로 바뀐다.
    ============================================================ */
 WIDGETS.register('basis-grid-morph', function (root, ctx) {
   var TARGET = [3, 1];
@@ -1038,9 +1038,9 @@ WIDGETS.register('basis-grid-morph', function (root, ctx) {
   ctx.stage.appendChild(p.svg);
 
   var out = WIDGETS.readout(ctx.readout, [
-    { key: 'b1', label: '기저 b₁' },
-    { key: 'b2', label: '기저 b₂' },
-    { key: 'coord', label: '좌표 (α, β)' },
+    { key: 'b1', label: 'basis b₁' },
+    { key: 'b2', label: 'basis b₂' },
+    { key: 'coord', label: 'coordinates (α, β)' },
     { key: 'x', label: '화살표 x' }
   ]);
 
@@ -1063,7 +1063,7 @@ WIDGETS.register('basis-grid-morph', function (root, ctx) {
     var a = (TARGET[0] * b2[1] - TARGET[1] * b2[0]) / det;
     var b = (b1[0] * TARGET[1] - b1[1] * TARGET[0]) / det;
 
-    /* α b1 + β b2 를 두 걸음으로 */
+    /* α b1 + β b2를 두 걸음으로 */
     p.line([[0, 0], [a * b1[0], a * b1[1]]], { alt: true, dash: '5 4' });
     p.line([[a * b1[0], a * b1[1]], [TARGET[0], TARGET[1]]], { alt: true, dash: '5 4' });
 
@@ -1085,7 +1085,7 @@ WIDGETS.register('basis-grid-morph', function (root, ctx) {
 
 /* ============================================================
    위젯 4 — 같은 벡터, 다른 좌표
-   x=(3,1) 은 고정. 기저 b1,b2 를 끌면 좌표 (α,β) 가 바뀐다.
+   x=(3,1)은 고정. 기저 b1,b2를 끌면 좌표 (α,β)가 바뀐다.
    det → 0 이면 기저가 되지 못해 좌표가 폭주한다.
    ============================================================ */
 WIDGETS.register('basis-coords', function (root, ctx) {
@@ -1095,15 +1095,15 @@ WIDGETS.register('basis-coords', function (root, ctx) {
   var p = VIZ.plot({ w: 460, h: 300, xmin: -4, xmax: 4, ymin: -2.6, ymax: 2.6 });
   ctx.stage.appendChild(p.svg);
 
-  /* 핸들은 clear() 로 지워지는 레이어 밖에 둔다 — 드래그 중 노드가 사라지면 안 된다 */
+  /* 핸들은 clear()로 지워지는 레이어 밖에 둔다 — 드래그 중 노드가 사라지면 안 된다 */
   var h1 = VIZ.el('circle', { r: 7, class: 'viz-handle' });
   var h2 = VIZ.el('circle', { r: 7, class: 'viz-handle' });
   p.svg.appendChild(h1); p.svg.appendChild(h2);
 
   var out = WIDGETS.readout(ctx.readout, [
-    { key: 'a', label: '좌표 α', digits: 2 },
-    { key: 'b', label: '좌표 β', digits: 2 },
-    { key: 'det', label: '행렬식 det', digits: 3 },
+    { key: 'a', label: 'coordinates α', digits: 2 },
+    { key: 'b', label: 'coordinates β', digits: 2 },
+    { key: 'det', label: 'determinant det', digits: 3 },
     { key: 'ok', label: '기저인가' }
   ]);
 
@@ -1129,7 +1129,7 @@ WIDGETS.register('basis-coords', function (root, ctx) {
       }
     }
 
-    /* x = α b1 + β b2 를 두 걸음으로 그린다 */
+    /* x = α b1 + β b2를 두 걸음으로 그린다 */
     if (ok) {
       p.line([[0, 0], [a * b1[0], a * b1[1]]], { alt: true, dash: '5 4' });
       p.line([[a * b1[0], a * b1[1]], [TARGET[0], TARGET[1]]], { alt: true, dash: '5 4' });
@@ -1145,7 +1145,7 @@ WIDGETS.register('basis-coords', function (root, ctx) {
 
     out.set('det', det);
     if (ok) { out.set('a', a); out.set('b', b); } else { out.setRaw('a', '—'); out.setRaw('b', '—'); }
-    out.setRaw('ok', ok ? '기저 ✓' : '두 벡터가 나란함 ✗');
+    out.setRaw('ok', ok ? 'basis ✓' : '두 vector가 나란함 ✗');
   }
 
   function mover(v) {
@@ -1155,15 +1155,15 @@ WIDGETS.register('basis-coords', function (root, ctx) {
       draw();
     };
   }
-  VIZ.draggable(h1, p, mover(b1), { label: '기저 벡터 b1' });
-  VIZ.draggable(h2, p, mover(b2), { label: '기저 벡터 b2' });
+  VIZ.draggable(h1, p, mover(b1), { label: 'basis vector b1' });
+  VIZ.draggable(h2, p, mover(b2), { label: 'basis vector b2' });
 
   WIDGETS.toggle({
-    host: ctx.controls, label: '기저 되돌리기',
+    host: ctx.controls, label: 'basis 되돌리기',
     options: [
-      { value: 'std', label: '표준기저 (1,0),(0,1)' },
+      { value: 'std', label: 'standard basis (1,0),(0,1)' },
       { value: 'diag', label: '대각기저 (1,1),(1,-1)' },
-      { value: 'near', label: '거의 나란한 기저' }
+      { value: 'near', label: '거의 나란한 basis' }
     ],
     value: 'diag',
     onChange: function (v) {
@@ -1197,9 +1197,9 @@ WIDGETS.register('subspace-check', function (root, ctx) {
   ctx.stage.appendChild(p.svg);
 
   var out = WIDGETS.readout(ctx.readout, [
-    { key: 'zero', label: '① 0 을 포함' },
-    { key: 'add', label: '② u+v 가 안에' },
-    { key: 'mul', label: '③ (−1)u 가 안에' },
+    { key: 'zero', label: '① 0을 포함' },
+    { key: 'add', label: '② u+v가 안에' },
+    { key: 'mul', label: '③ (−1)u가 안에' },
     { key: 'verdict', label: '판정' }
   ]);
 
@@ -1239,7 +1239,7 @@ WIDGETS.register('subspace-check', function (root, ctx) {
     out.setRaw('zero', okZero ? '✓ 포함' : '✗ 없음');
     out.setRaw('add', okAdd ? '✓ 닫힘' : '✗ 벗어남');
     out.setRaw('mul', okMul ? '✓ 닫힘' : '✗ 벗어남');
-    out.setRaw('verdict', (okZero && okAdd && okMul) ? '부분공간 ✓' : '부분공간 아님 ✗');
+    out.setRaw('verdict', (okZero && okAdd && okMul) ? 'subspace ✓' : 'subspace 아님 ✗');
   }
 
   WIDGETS.toggle({
@@ -1265,7 +1265,7 @@ WIDGETS.register('shape-lab', function (root, ctx) {
   var rows = 3, cols = 4;
   var VW = 480, VH = 210;
 
-  var svg = el('svg', { viewBox: '0 0 ' + VW + ' ' + VH, role: 'img', 'aria-label': '행렬의 메모리 저장 순서' });
+  var svg = el('svg', { viewBox: '0 0 ' + VW + ' ' + VH, role: 'img', 'aria-label': 'matrix의 메모리 저장 순서' });
   ctx.stage.appendChild(svg);
 
   var out = WIDGETS.readout(ctx.readout, [

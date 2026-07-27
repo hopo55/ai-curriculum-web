@@ -61,31 +61,31 @@
 
     <!-- ===== 1. 다루는 항목 ===== -->
     <nav class="chips" aria-label="이 절에서 다루는 항목">
-      <a class="chip" href="#c-madd">행렬 덧셈</a>
-      <a class="chip" href="#c-mmul">행렬 곱</a>
-      <a class="chip" href="#c-transpose">전치행렬</a>
-      <a class="chip" href="#c-identity">단위행렬</a>
-      <a class="chip" href="#c-inverse">역행렬</a>
-      <a class="chip" href="#c-symmetric">대칭행렬</a>
-      <a class="chip" href="#c-diagonal">대각행렬</a>
-      <a class="chip" href="#c-orthogonal">직교행렬</a>
-      <a class="chip" href="#c-block">블록행렬</a>
-      <a class="chip" href="#c-sparse">희소행렬</a>
+      <a class="chip" href="#c-madd">Matrix Addition</a>
+      <a class="chip" href="#c-mmul">Matrix Multiplication</a>
+      <a class="chip" href="#c-transpose">Transpose</a>
+      <a class="chip" href="#c-identity">Identity Matrix</a>
+      <a class="chip" href="#c-inverse">Inverse Matrix</a>
+      <a class="chip" href="#c-symmetric">Symmetric Matrix</a>
+      <a class="chip" href="#c-diagonal">Diagonal Matrix</a>
+      <a class="chip" href="#c-orthogonal">Orthogonal Matrix</a>
+      <a class="chip" href="#c-block">Block Matrix</a>
+      <a class="chip" href="#c-sparse">Sparse Matrix</a>
     </nav>
 
     <!-- ===== 2. 한 줄 요약 ===== -->
     <section class="sec" id="s-summary">
       <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
       <p class="tldr">
-        행렬 곱은 <strong>여러 개의 선형결합을 한꺼번에 처리하는 장치</strong>이고,
-        나머지 연산(전치 · 역 · 대칭 · 직교)은 전부 이 곱을 다루기 쉽게 만들려는 도구다.
+        matrix multiplication(행렬 곱)은 <strong>여러 개의 linear combination(선형결합)을 한꺼번에 처리하는 장치</strong>이고,
+        나머지 연산(전치 · 역 · 대칭 · orthogonal(직교))은 전부 이 곱을 다루기 쉽게 만들려는 도구다.
       </p>
 
       <h3>학습 목표</h3>
       <ol class="goals">
-        <li>행렬 곱을 네 가지 관점(원소별 내적 · 열의 결합 · 행의 결합 · 외적의 합)으로 설명할 수 있다.</li>
-        <li>$(\mathbf{AB})^\top = \mathbf{B}^\top\mathbf{A}^\top$ 와 $2\times2$ 역행렬 공식을 유도하고 검산할 수 있다.</li>
-        <li>대칭 · 대각 · 직교 · 희소 행렬이 각각 어떤 계산 이득을 주는지 말할 수 있다.</li>
+        <li>matrix multiplication을 네 가지 관점(원소별 inner product(내적) · 열의 결합 · 행의 결합 · outer product(외적)의 합)으로 설명할 수 있다.</li>
+        <li>$(\mathbf{AB})^\top = \mathbf{B}^\top\mathbf{A}^\top$ 와 $2\times2$ inverse matrix(역행렬) 공식을 유도하고 검산할 수 있다.</li>
+        <li>대칭 · 대각 · orthogonal · sparse(희소) matrix(행렬)가 각각 어떤 계산 이득을 주는지 말할 수 있다.</li>
       </ol>
     </section>
 
@@ -94,23 +94,23 @@
       <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
 
       <p>
-        신경망의 한 층이 하는 일은 "입력 벡터에 가중치를 곱해 더하기"다.
-        뉴런이 하나면 내적 하나로 끝나지만, 뉴런이 512개면 <strong>내적 512개</strong>를 해야 한다.
-        그 512개를 한 줄로 적는 표기가 행렬 곱이다.
+        neural network(신경망)의 한 layer(층)가 하는 일은 "입력 vector(벡터)에 weight(가중치)를 곱해 더하기"다.
+        뉴런이 하나면 inner product 하나로 끝나지만, 뉴런이 512개면 <strong>inner product 512개</strong>를 해야 한다.
+        그 512개를 한 줄로 적는 표기가 matrix multiplication이다.
       </p>
       <p>
-        그래서 행렬 곱을 처음 배울 때의 "행과 열을 곱해 더한다"는 절차는
+        그래서 matrix multiplication을 처음 배울 때의 "행과 열을 곱해 더한다"는 절차는
         <strong>정의라기보다 계산법</strong>이다. 왜 그렇게 정의했는지는
-        아래 네 가지 관점 중 두 번째(열의 선형결합)를 보면 분명해진다.
+        아래 네 가지 관점 중 두 번째(열의 linear combination)를 보면 분명해진다.
       </p>
 
       <figure class="widget" data-widget="matmul-step">
-        <figcaption class="widget__bar">행렬 곱 — 한 칸씩 채워 보기</figcaption>
+        <figcaption class="widget__bar">matrix multiplication — 한 칸씩 채워 보기</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">결과의 (i, j) 칸은 언제나 <strong>A 의 i 행</strong>과 <strong>B 의 j 열</strong>만 봅니다. 다른 칸은 전혀 관여하지 않습니다.</p>
+          <p class="watch">결과의 (i, j) 칸은 언제나 <strong>A의 i 행</strong>과 <strong>B의 j 열</strong>만 봅니다. 다른 칸은 전혀 관여하지 않습니다.</p>
         </div>
       </figure>
 
@@ -129,10 +129,10 @@
       <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
 
       <span class="anchor" id="c-madd"></span>
-      <h3>행렬 덧셈</h3>
+      <h3>Matrix Addition 행렬 덧셈</h3>
       <p>
-        <strong>shape 가 완전히 같아야</strong> 정의되고, 성분끼리 더한다.
-        스칼라배도 성분마다 곱한다. 이 두 연산 덕분에 $\mathbb{R}^{m\times n}$ 자체가 벡터 공간이 된다.
+        <strong>shape가 완전히 같아야</strong> 정의되고, 성분끼리 더한다.
+        스칼라배도 성분마다 곱한다. 이 두 연산 덕분에 $\mathbb{R}^{m\times n}$ 자체가 vector space(벡터 공간)가 된다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ (\mathbf{A}+\mathbf{B})_{ij} = a_{ij} + b_{ij}, \qquad (c\mathbf{A})_{ij} = c\,a_{ij} $$</div>
@@ -140,7 +140,7 @@
       </div>
 
       <span class="anchor" id="c-mmul"></span>
-      <h3>행렬 곱</h3>
+      <h3>Matrix Multiplication 행렬 곱</h3>
       <p>
         $\mathbf{A}\in\mathbb{R}^{m\times n}$, $\mathbf{B}\in\mathbb{R}^{n\times p}$ 일 때
         곱 $\mathbf{C}=\mathbf{AB} \in \mathbb{R}^{m\times p}$ 는 다음과 같다.
@@ -154,10 +154,10 @@
         <table>
           <thead><tr><th>관점</th><th>읽는 법</th><th>어디서 쓰이나</th></tr></thead>
           <tbody>
-            <tr><td>① 원소별 내적</td><td>$c_{ij} = (\mathbf{A}\text{의 }i\text{행})^\top(\mathbf{B}\text{의 }j\text{열})$</td><td>어텐션 점수 $\mathbf{QK}^\top$</td></tr>
-            <tr><td>② 열의 선형결합</td><td>$\mathbf{C}$ 의 $j$ 열 $= \mathbf{A}\mathbf{b}_j$ — $\mathbf{A}$ 열들을 $\mathbf{b}_j$ 계수로 섞음</td><td>선형층, 열공간</td></tr>
-            <tr><td>③ 행의 선형결합</td><td>$\mathbf{C}$ 의 $i$ 행 $=$ $\mathbf{B}$ 행들을 $\mathbf{A}$ 의 $i$ 행 계수로 섞음</td><td>가우스 소거법</td></tr>
-            <tr><td>④ 외적의 합</td><td>$\mathbf{C} = \sum_{k} (\mathbf{A}\text{의 }k\text{열})(\mathbf{B}\text{의 }k\text{행})$</td><td>저랭크 근사, LoRA</td></tr>
+            <tr><td>① 원소별 inner product</td><td>$c_{ij} = (\mathbf{A}\text{의 }i\text{행})^\top(\mathbf{B}\text{의 }j\text{열})$</td><td>attention(어텐션) 점수 $\mathbf{QK}^\top$</td></tr>
+            <tr><td>② 열의 linear combination</td><td>$\mathbf{C}$ 의 $j$ 열 $= \mathbf{A}\mathbf{b}_j$ — $\mathbf{A}$ 열들을 $\mathbf{b}_j$ 계수로 섞음</td><td>linear layer(선형층), column space(열공간)</td></tr>
+            <tr><td>③ 행의 linear combination</td><td>$\mathbf{C}$ 의 $i$ 행 $=$ $\mathbf{B}$ 행들을 $\mathbf{A}$ 의 $i$ 행 계수로 섞음</td><td>Gaussian elimination(가우스 소거법)</td></tr>
+            <tr><td>④ outer product의 합</td><td>$\mathbf{C} = \sum_{k} (\mathbf{A}\text{의 }k\text{열})(\mathbf{B}\text{의 }k\text{행})$</td><td>low-rank approximation(저랭크 근사), LoRA</td></tr>
           </tbody>
         </table>
       </div>
@@ -166,11 +166,11 @@
         <li>결합법칙: $(\mathbf{AB})\mathbf{C} = \mathbf{A}(\mathbf{BC})$ — 계산 순서를 바꿔 <em>비용</em>을 줄일 수 있다.</li>
         <li>분배법칙: $\mathbf{A}(\mathbf{B}+\mathbf{C}) = \mathbf{AB}+\mathbf{AC}$</li>
         <li><strong>교환법칙 없음</strong>: 일반적으로 $\mathbf{AB} \neq \mathbf{BA}$. 크기가 안 맞아 아예 정의되지 않는 경우도 흔하다.</li>
-        <li>계산량: $(m,n)\times(n,p)$ 는 곱셈·덧셈이 각각 약 $mnp$ 회. 이 세 수의 곱이 딥러닝 연산량의 기본 단위다.</li>
+        <li>계산량: $(m,n)\times(n,p)$ 는 곱셈·덧셈이 각각 약 $mnp$ 회. 이 세 수의 곱이 deep learning(딥러닝) 연산량의 기본 단위다.</li>
       </ul>
 
       <span class="anchor" id="c-transpose"></span>
-      <h3>전치행렬</h3>
+      <h3>Transpose 전치행렬</h3>
       <p>행과 열을 맞바꾼다. $(m,n) \to (n,m)$.</p>
       <div class="eq">
         <div class="eq__body">$$ (\mathbf{A}^\top)_{ij} = a_{ji}, \qquad (\mathbf{A}^\top)^\top = \mathbf{A}, \qquad (\mathbf{A}\mathbf{B})^\top = \mathbf{B}^\top\mathbf{A}^\top $$</div>
@@ -178,7 +178,7 @@
       </div>
       <p>
         마지막 식에서 <strong>순서가 뒤집힌다</strong>는 것이 중요하다.
-        역행렬도 마찬가지로 $(\mathbf{AB})^{-1} = \mathbf{B}^{-1}\mathbf{A}^{-1}$ 이다.
+        inverse matrix도 마찬가지로 $(\mathbf{AB})^{-1} = \mathbf{B}^{-1}\mathbf{A}^{-1}$ 이다.
         옷을 입은 순서의 역순으로 벗는 것과 같다.
       </p>
 
@@ -193,67 +193,67 @@
       </figure>
 
       <span class="anchor" id="c-identity"></span>
-      <h3>단위행렬</h3>
+      <h3>Identity Matrix 단위행렬</h3>
       <p>
-        대각선이 1이고 나머지가 0인 정사각행렬 $\mathbf{I}_n$ 이다. 곱셈의 항등원 역할을 한다.
+        대각선이 1이고 나머지가 0인 square matrix(정사각행렬) $\mathbf{I}_n$ 이다. 곱셈의 항등원 역할을 한다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{I}_3 = \begin{bmatrix}1&0&0\\0&1&0\\0&0&1\end{bmatrix}, \qquad \mathbf{A}\mathbf{I}_n = \mathbf{I}_m\mathbf{A} = \mathbf{A} $$</div>
         <span class="eq__tag num">(4)</span>
       </div>
       <p>
-        잔차 연결(residual connection) $\mathbf{y} = \mathbf{x} + f(\mathbf{x})$ 은
+        residual connection(잔차 연결) $\mathbf{y} = \mathbf{x} + f(\mathbf{x})$ 은
         $\mathbf{y} = (\mathbf{I} + \mathbf{W})\mathbf{x}$ 형태로 볼 수 있어,
-        단위행렬이 항등 경로를 보장하는 장치가 된다.
+        identity matrix(단위행렬)가 항등 경로를 보장하는 장치가 된다.
       </p>
 
       <span class="anchor" id="c-inverse"></span>
-      <h3>역행렬</h3>
+      <h3>Inverse Matrix 역행렬</h3>
       <p>
-        정사각행렬 $\mathbf{A}$ 에 대해 $\mathbf{A}\mathbf{A}^{-1} = \mathbf{A}^{-1}\mathbf{A} = \mathbf{I}$ 인 행렬이 있으면
-        $\mathbf{A}$ 를 <strong>가역</strong>(invertible) 또는 정칙(nonsingular)이라 한다.
+        square matrix $\mathbf{A}$ 에 대해 $\mathbf{A}\mathbf{A}^{-1} = \mathbf{A}^{-1}\mathbf{A} = \mathbf{I}$ 인 matrix가 있으면
+        $\mathbf{A}$ 를 <strong>invertible(가역)</strong> 또는 정칙(nonsingular)이라 한다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{A} = \begin{bmatrix}a&b\\c&d\end{bmatrix} \;\Rightarrow\; \mathbf{A}^{-1} = \frac{1}{ad-bc}\begin{bmatrix}d&-b\\-c&a\end{bmatrix}, \qquad \det\mathbf{A} = ad-bc $$</div>
         <span class="eq__tag num">(5)</span>
       </div>
       <p>
-        $\det\mathbf{A} = 0$ 이면 나눌 수 없으므로 역행렬이 없다. 이때를 <strong>특이</strong>(singular)하다고 한다.
-        기하적으로 $|\det|$ 는 <a href="2.2-vector-operations.html">2.2</a>에서 본 평행사변형의 넓이 배율이고,
+        $\det\mathbf{A} = 0$ 이면 나눌 수 없으므로 inverse matrix가 없다. 이때를 <strong>특이</strong>(singular)하다고 한다.
+        기하적으로 $|\det|$ 는 <a href="2.2-vector-operations.html">2.2</a>에서 본 parallelogram(평행사변형)의 넓이 배율이고,
         0이 되었다는 것은 <strong>공간이 납작하게 눌려 되돌릴 수 없다</strong>는 뜻이다.
       </p>
 
       <figure class="widget" data-widget="inverse-2x2">
-        <figcaption class="widget__bar">2×2 역행렬 계산기 — 넓이가 0이 되는 순간</figcaption>
+        <figcaption class="widget__bar">2×2 inverse matrix 계산기 — 넓이가 0이 되는 순간</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">원소를 고쳐 det 를 0으로 만들어 보세요. 두 열이 같은 직선 위에 서고 역행렬이 사라집니다.</p>
+          <p class="watch">원소를 고쳐 det를 0으로 만들어 보세요. 두 열이 같은 직선 위에 서고 inverse matrix가 사라집니다.</p>
         </div>
       </figure>
 
       <span class="anchor" id="c-symmetric"></span>
-      <h3>대칭행렬</h3>
+      <h3>Symmetric Matrix 대칭행렬</h3>
       <p>
-        $\mathbf{A} = \mathbf{A}^\top$ 인 정사각행렬이다. 어떤 행렬 $\mathbf{X}$ 를 가져와도
+        $\mathbf{A} = \mathbf{A}^\top$ 인 square matrix다. 어떤 matrix $\mathbf{X}$ 를 가져와도
         $\mathbf{X}^\top\mathbf{X}$ 와 $\mathbf{X}\mathbf{X}^\top$ 는 <strong>항상 대칭</strong>이다(<a href="#s-derivation">유도 2</a>).
-        그람 행렬 · 공분산 행렬 · 커널 행렬이 모두 이 형태라서 대칭행렬은 어디에나 나온다.
+        Gram matrix(그람 행렬) · covariance matrix(공분산 행렬) · kernel(커널) matrix가 모두 이 형태라서 symmetric matrix(대칭행렬)는 어디에나 나온다.
       </p>
       <p>
-        대칭행렬은 <strong>항상 실수 고윳값과 직교하는 고유벡터를 갖는다</strong>(스펙트럴 정리).
-        이 성질 덕분에 PCA 가 성립한다 — <a href="2.7-eigenvalues.html">2.7</a>, <a href="2.9-dimensionality-reduction.html">2.9</a>.
+        symmetric matrix는 <strong>항상 실수 eigenvalue(고윳값)와 orthogonal 하는 eigenvector(고유벡터)를 갖는다</strong>(spectral theorem(스펙트럴 정리)).
+        이 성질 덕분에 PCA가 성립한다 — <a href="2.7-eigenvalues.html">2.7</a>, <a href="2.9-dimensionality-reduction.html">2.9</a>.
       </p>
 
       <span class="anchor" id="c-diagonal"></span>
-      <h3>대각행렬</h3>
+      <h3>Diagonal Matrix 대각행렬</h3>
       <p>
-        대각선 밖이 전부 0인 행렬 $\mathbf{D} = \operatorname{diag}(d_1,\dots,d_n)$ 이다.
+        대각선 밖이 전부 0인 matrix $\mathbf{D} = \operatorname{diag}(d_1,\dots,d_n)$ 이다.
         <strong>축마다 따로 스케일을 주는 변환</strong>이라 계산이 매우 싸다.
       </p>
       <div class="tablewrap">
         <table>
-          <thead><tr><th>연산</th><th>일반 행렬</th><th>대각행렬</th></tr></thead>
+          <thead><tr><th>연산</th><th>일반 matrix</th><th>diagonal matrix(대각행렬)</th></tr></thead>
           <tbody>
             <tr><td>$\mathbf{Dx}$</td><td>$O(n^2)$</td><td>$O(n)$ — 성분별 곱</td></tr>
             <tr><td>$\mathbf{D}^{-1}$</td><td>$O(n^3)$</td><td>$1/d_i$ (모든 $d_i\neq0$)</td></tr>
@@ -264,42 +264,42 @@
       </div>
       <p>
         $\mathbf{DA}$ 는 <strong>행</strong>을 스케일하고 $\mathbf{AD}$ 는 <strong>열</strong>을 스케일한다 — 순서가 다른 일을 한다.
-        층 정규화의 스케일 파라미터, 어텐션의 $1/\sqrt{d_k}$ 도 실질적으로 대각행렬 곱이다.
+        layer normalization(정규화)의 스케일 parameter(파라미터), attention의 $1/\sqrt{d_k}$ 도 실질적으로 diagonal matrix 곱이다.
       </p>
 
       <span class="anchor" id="c-orthogonal"></span>
-      <h3>직교행렬</h3>
+      <h3>Orthogonal Matrix 직교행렬</h3>
       <p>
-        열들이 서로 직교하고 길이가 1인 <strong>정사각</strong>행렬이다. 정의는 다음 한 줄이다.
+        열들이 서로 orthogonal 하고 길이가 1인 <strong>정사각</strong>matrix다. 정의는 다음 한 줄이다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{Q}^\top\mathbf{Q} = \mathbf{Q}\mathbf{Q}^\top = \mathbf{I} \qquad\Longleftrightarrow\qquad \mathbf{Q}^{-1} = \mathbf{Q}^\top $$</div>
         <span class="eq__tag num">(6)</span>
       </div>
       <p>
-        <strong>역행렬이 전치</strong>라는 것은 실용적으로 엄청난 이득이다 — $O(n^3)$ 이 $O(1)$ 이 된다.
+        <strong>inverse matrix가 전치</strong>라는 것은 실용적으로 엄청난 이득이다 — $O(n^3)$ 이 $O(1)$ 이 된다.
         게다가 직교변환은 길이와 각도를 그대로 보존한다(<a href="#s-derivation">유도 3</a>).
-        회전 · 반사가 대표적이고, 수치적으로도 오차를 키우지 않아 QR · SVD 의 뼈대가 된다.
+        rotation(회전) · reflection(반사)이 대표적이고, 수치적으로도 오차를 키우지 않아 QR · SVD의 뼈대가 된다.
       </p>
 
       <span class="anchor" id="c-block"></span>
-      <h3>블록행렬</h3>
+      <h3>Block Matrix 블록행렬</h3>
       <p>
-        행렬을 부분 행렬(블록)로 나눠 적은 것이다. <strong>블록 경계가 맞으면 블록을 원소처럼 다뤄 곱할 수 있다.</strong>
+        matrix를 부분 matrix로 나눠 적은 것이다. <strong>블록 경계가 맞으면 블록을 원소처럼 다뤄 곱할 수 있다.</strong>
       </p>
       <div class="eq">
         <div class="eq__body">$$ \begin{bmatrix}\mathbf{A}&\mathbf{B}\\\mathbf{C}&\mathbf{D}\end{bmatrix}\begin{bmatrix}\mathbf{X}\\\mathbf{Y}\end{bmatrix} = \begin{bmatrix}\mathbf{AX}+\mathbf{BY}\\\mathbf{CX}+\mathbf{DY}\end{bmatrix} $$</div>
         <span class="eq__tag num">(7)</span>
       </div>
       <p>
-        멀티헤드 어텐션에서 $\mathbf{W}_Q$ 를 헤드별 블록으로 쪼개는 것, GPU 커널이 행렬을 타일로 나눠
+        multi-head(멀티헤드) attention에서 $\mathbf{W}_Q$ 를 헤드별 블록으로 쪼개는 것, GPU kernel이 matrix를 타일로 나눠
         캐시에 올리는 것이 모두 블록 관점이다. 개념이 아니라 <strong>성능의 문제</strong>로 자주 만난다.
       </p>
 
       <span class="anchor" id="c-sparse"></span>
-      <h3>희소행렬</h3>
+      <h3>Sparse Matrix 희소행렬</h3>
       <p>
-        원소 대부분이 0인 행렬이다. 0을 저장하지 않으면 메모리와 연산을 함께 아낀다.
+        원소 대부분이 0인 matrix다. 0을 저장하지 않으면 메모리와 연산을 함께 아낀다.
         대표적인 저장 형식이 CSR(Compressed Sparse Row)로, <em>0이 아닌 값 · 열 인덱스 · 행 시작 위치</em> 세 배열만 갖는다.
       </p>
       <div class="eq">
@@ -307,24 +307,24 @@
         <span class="eq__tag num">(8)</span>
       </div>
       <p>
-        그래프의 인접행렬, 원-핫 표현, 단어–문서 행렬이 전형적인 희소행렬이다.
+        graph(그래프)의 adjacency matrix(인접행렬), one-hot(원-핫) 표현, 단어–문서 matrix가 전형적인 sparse matrix(희소행렬)다.
         메모리 기준 손익분기는 밀도 약 50% 지만, <strong>속도</strong> 기준은 훨씬 낮다 —
-        GPU 의 밀집 행렬 곱이 워낙 최적화되어 있어 밀도가 몇 %만 되어도 밀집이 더 빠른 경우가 흔하다.
+        GPU의 dense(밀집) matrix multiplication이 워낙 optimize 되어 있어 밀도가 몇 %만 되어도 dense가 더 빠른 경우가 흔하다.
         아래 위젯에서 메모리 쪽 손익분기점을 확인한다.
       </p>
 
       <figure class="widget" data-widget="matrix-zoo">
-        <figcaption class="widget__bar">행렬 동물원 — 패턴으로 성질을 알아보기</figcaption>
+        <figcaption class="widget__bar">matrix 동물원 — 패턴으로 성질을 알아보기</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">색 패턴만 보고도 대칭·대각·블록·희소를 구별할 수 있습니다. 대칭행렬은 주대각선을 기준으로 무늬가 접힙니다.</p>
+          <p class="watch">색 패턴만 보고도 대칭·대각·블록·sparse를 구별할 수 있습니다. symmetric matrix는 주대각선을 기준으로 무늬가 접힙니다.</p>
         </div>
       </figure>
 
       <figure class="widget" data-widget="sparse-cost">
-        <figcaption class="widget__bar">희소 저장의 손익분기점</figcaption>
+        <figcaption class="widget__bar">sparse 저장의 손익분기점</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
@@ -339,14 +339,14 @@
       <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
 
       <p>
-        관점 ②를 식으로 쓰면 행렬 곱이 왜 "선형결합의 묶음"인지 분명해진다.
+        관점 ②를 식으로 쓰면 matrix multiplication이 왜 "linear combination의 묶음"인지 분명해진다.
         $\mathbf{A}$ 의 열을 $\mathbf{a}_1,\dots,\mathbf{a}_n$, $\mathbf{B}$ 의 $j$ 번째 열을 $\mathbf{b}_j$ 라 하면
       </p>
       <div class="eq">
         <div class="eq__body">$$ (\mathbf{AB})\text{의 }j\text{열} \;=\; \mathbf{A}\mathbf{b}_j \;=\; \sum_{k=1}^{n} b_{kj}\,\mathbf{a}_k $$</div>
         <span class="eq__tag num">(9)</span>
       </div>
-      <p>관점 ④는 랭크 1 조각으로 분해하는 형태이며, 저랭크 근사의 출발점이다.</p>
+      <p>관점 ④는 랭크 1 조각으로 분해하는 형태이며, low-rank approximation의 출발점이다.</p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{AB} = \sum_{k=1}^{n} \mathbf{a}_k\,\mathbf{b}^{(k)\top}, \qquad \mathbf{a}_k \in \mathbb{R}^{m},\ \ \mathbf{b}^{(k)} \in \mathbb{R}^{p} $$</div>
         <span class="eq__tag num">(10)</span>
@@ -359,21 +359,21 @@
             <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
           </thead>
           <tbody>
-            <tr><td>$\mathbf{A}, \mathbf{B}$</td><td>볼드 에이·비</td><td>행렬</td><td>$(m,n)$, $(n,p)$</td><td>$\mathbb{R}$</td></tr>
-            <tr><td>$a_{ij}$</td><td>에이 아이 제이</td><td>$i$ 행 $j$ 열 원소</td><td>스칼라</td><td>$\mathbb{R}$</td></tr>
-            <tr><td>$\mathbf{a}_k$</td><td>볼드 에이 케이</td><td>$\mathbf{A}$ 의 $k$ 번째 <em>열</em></td><td>벡터 $(m,)$</td><td>$\mathbb{R}^m$</td></tr>
-            <tr><td>$\mathbf{b}^{(k)}$</td><td>비 위첨자 케이</td><td>$\mathbf{B}$ 의 $k$ 번째 <em>행</em></td><td>벡터 $(p,)$</td><td>$\mathbb{R}^p$</td></tr>
-            <tr><td>$\mathbf{A}^\top$</td><td>에이 트랜스포즈</td><td>전치행렬</td><td>$(n,m)$</td><td>—</td></tr>
-            <tr><td>$\mathbf{I}_n$</td><td>아이 엔</td><td>$n\times n$ 단위행렬</td><td>$(n,n)$</td><td>—</td></tr>
-            <tr><td>$\mathbf{A}^{-1}$</td><td>에이 인버스</td><td>역행렬</td><td>$(n,n)$</td><td>$\det\neq0$ 일 때만</td></tr>
-            <tr><td>$\det\mathbf{A}$</td><td>디터미넌트</td><td>행렬식 — 부피 배율</td><td>스칼라</td><td>$\mathbb{R}$</td></tr>
-            <tr><td>$\mathbf{D}$</td><td>볼드 디</td><td>대각행렬</td><td>$(n,n)$</td><td>대각 외 0</td></tr>
-            <tr><td>$\operatorname{diag}(\cdot)$</td><td>다이애그</td><td>대각행렬 만들기</td><td>연산자</td><td>—</td></tr>
-            <tr><td>$\mathbf{Q}$</td><td>볼드 큐</td><td>직교행렬</td><td>$(n,n)$</td><td>$\mathbf{Q}^\top\mathbf{Q}=\mathbf{I}$</td></tr>
-            <tr><td>$\mathrm{nnz}$</td><td>넌지로</td><td>0이 아닌 원소 개수</td><td>정수</td><td>$\geq0$</td></tr>
-            <tr><td>$\prod_i$</td><td>파이 · 곱</td><td>모두 곱함</td><td>연산자</td><td>—</td></tr>
-            <tr><td>$O(\cdot)$</td><td>빅 오</td><td>계산량의 증가 차수</td><td>표기법</td><td>—</td></tr>
-            <tr><td>$\mathbf{x}\mathbf{y}^\top$</td><td>외적</td><td>랭크 1 행렬을 만드는 곱</td><td>$(m,p)$</td><td>—</td></tr>
+            <tr><td>$\mathbf{A}, \mathbf{B}$</td><td>bold A·B</td><td>matrix</td><td>$(m,n)$, $(n,p)$</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$a_{ij}$</td><td>a i j</td><td>$i$ 행 $j$ 열 원소</td><td>scalar(스칼라)</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\mathbf{a}_k$</td><td>bold a k</td><td>$\mathbf{A}$ 의 $k$ 번째 <em>열</em></td><td>vector $(m,)$</td><td>$\mathbb{R}^m$</td></tr>
+            <tr><td>$\mathbf{b}^{(k)}$</td><td>b superscript k</td><td>$\mathbf{B}$ 의 $k$ 번째 <em>행</em></td><td>vector $(p,)$</td><td>$\mathbb{R}^p$</td></tr>
+            <tr><td>$\mathbf{A}^\top$</td><td>A transpose</td><td>transpose(전치행렬)</td><td>$(n,m)$</td><td>—</td></tr>
+            <tr><td>$\mathbf{I}_n$</td><td>I n</td><td>$n\times n$ identity matrix</td><td>$(n,n)$</td><td>—</td></tr>
+            <tr><td>$\mathbf{A}^{-1}$</td><td>A inverse</td><td>inverse matrix</td><td>$(n,n)$</td><td>$\det\neq0$ 일 때만</td></tr>
+            <tr><td>$\det\mathbf{A}$</td><td>determinant</td><td>determinant(행렬식) — 부피 배율</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\mathbf{D}$</td><td>bold D</td><td>diagonal matrix</td><td>$(n,n)$</td><td>대각 외 0</td></tr>
+            <tr><td>$\operatorname{diag}(\cdot)$</td><td>diag 다이애그</td><td>diagonal matrix 만들기</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$\mathbf{Q}$</td><td>bold Q</td><td>orthogonal matrix(직교행렬)</td><td>$(n,n)$</td><td>$\mathbf{Q}^\top\mathbf{Q}=\mathbf{I}$</td></tr>
+            <tr><td>$\mathrm{nnz}$</td><td>nnz 넌지로</td><td>0이 아닌 원소 개수</td><td>정수</td><td>$\geq0$</td></tr>
+            <tr><td>$\prod_i$</td><td>pi · product 파이</td><td>모두 곱함</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$O(\cdot)$</td><td>big-O 빅 오</td><td>계산량의 증가 차수</td><td>표기법</td><td>—</td></tr>
+            <tr><td>$\mathbf{x}\mathbf{y}^\top$</td><td>outer product</td><td>랭크 1 matrix를 만드는 곱</td><td>$(m,p)$</td><td>—</td></tr>
           </tbody>
         </table>
       </div>
@@ -399,7 +399,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ = \sum_{k} a_{jk}\,b_{ki} $$</div>
-          <div class="derive__why">행렬 곱의 정의 (2)를 $(j,i)$ 성분에 적용</div>
+          <div class="derive__why">matrix multiplication의 정의 (2)를 $(j,i)$ 성분에 적용</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ = \sum_{k} (\mathbf{B}^\top)_{ik}\,(\mathbf{A}^\top)_{kj} $$</div>
@@ -407,7 +407,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ = (\mathbf{B}^\top\mathbf{A}^\top)_{ij} $$</div>
-          <div class="derive__why">다시 행렬 곱의 정의로 묶었다. <strong>순서가 뒤집힌 이유는 첨자를 맞추기 위해서</strong></div>
+          <div class="derive__why">다시 matrix multiplication의 정의로 묶었다. <strong>순서가 뒤집힌 이유는 첨자를 맞추기 위해서</strong></div>
         </div>
       </div>
 
@@ -423,19 +423,19 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{z}^\top(\mathbf{X}^\top\mathbf{X})\mathbf{z} = (\mathbf{Xz})^\top(\mathbf{Xz}) = \|\mathbf{Xz}\|^2 \geq 0 $$</div>
-          <div class="derive__why">덤으로 <strong>준정부호</strong>임도 나온다 — 고윳값이 모두 0 이상이다</div>
+          <div class="derive__why">덤으로 <strong>positive semi-definite(준정부호)</strong>임도 나온다 — eigenvalue가 모두 0 이상이다</div>
         </div>
       </div>
       <p>
-        이 두 줄이 최소제곱(<a href="2.6-linear-systems.html">2.6</a>)과 PCA(<a href="2.9-dimensionality-reduction.html">2.9</a>)의
-        토대다. 정규방정식에 등장하는 $\mathbf{X}^\top\mathbf{X}$ 가 대칭·준정부호라서 해가 잘 다뤄진다.
+        이 두 줄이 least squares(최소제곱)(<a href="2.6-linear-systems.html">2.6</a>)과 PCA(<a href="2.9-dimensionality-reduction.html">2.9</a>)의
+        토대다. normal equation(정규방정식)에 등장하는 $\mathbf{X}^\top\mathbf{X}$ 가 대칭·준정부호라서 해가 잘 다뤄진다.
       </p>
 
       <h3>유도 3 — 직교행렬은 길이와 각도를 보존한다</h3>
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \|\mathbf{Qx}\|^2 = (\mathbf{Qx})^\top(\mathbf{Qx}) $$</div>
-          <div class="derive__why">노름의 정의를 내적으로 폈다</div>
+          <div class="derive__why">norm(노름)의 정의를 inner product로 폈다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ = \mathbf{x}^\top\mathbf{Q}^\top\mathbf{Q}\,\mathbf{x} $$</div>
@@ -447,14 +447,14 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ (\mathbf{Qx})^\top(\mathbf{Qy}) = \mathbf{x}^\top\mathbf{Q}^\top\mathbf{Q}\mathbf{y} = \mathbf{x}^\top\mathbf{y} $$</div>
-          <div class="derive__why">내적도 보존되므로 <strong>각도도 그대로</strong>다 (식 2, 2.3절)</div>
+          <div class="derive__why">inner product도 보존되므로 <strong>각도도 그대로</strong>다 (식 2, 2.3절)</div>
         </div>
       </div>
 
       <details>
-        <summary>2×2 역행렬 공식은 어디서 나오는가</summary>
+        <summary>2×2 inverse matrix 공식은 어디서 나오는가</summary>
         <p>
-          $\mathbf{A}\mathbf{X}=\mathbf{I}$ 를 미지수 4개짜리 연립방정식으로 풀면 된다.
+          $\mathbf{A}\mathbf{X}=\mathbf{I}$ 를 미지수 4개짜리 system of equations(연립방정식)로 풀면 된다.
           $\mathbf{A}=\begin{bmatrix}a&b\\c&d\end{bmatrix}$, $\mathbf{X}=\begin{bmatrix}x_1&x_2\\x_3&x_4\end{bmatrix}$ 로 두면
           $ax_1+bx_3=1$, $cx_1+dx_3=0$ 등 네 식이 나온다.
           앞의 두 식에서 $x_3 = -cx_1/d$ 를 대입하면 $x_1(ad-bc)=d$, 즉 $x_1 = d/(ad-bc)$ 다.
@@ -462,7 +462,7 @@
         </p>
         <p>
           일반 $n\times n$ 은 가우스–조던 소거로 구하지만, 실무에서는
-          <strong>역행렬을 만들지 않고 연립방정식을 직접 푸는 편</strong>이 빠르고 정확하다
+          <strong>inverse matrix를 만들지 않고 system of equations를 직접 푸는 편</strong>이 빠르고 정확하다
           (<a href="2.6-linear-systems.html">2.6</a>).
         </p>
       </details>
@@ -481,19 +481,19 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ (\mathbf{AC})_{11} = 1\cdot5 + 2\cdot7 = 5 + 14 = 19 $$</div>
-          <div class="derive__why">A 의 1행 $(1,2)$ 와 C 의 1열 $(5,7)$ 의 내적</div>
+          <div class="derive__why">A의 1행 $(1,2)$ 와 C의 1열 $(5,7)$ 의 inner product</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ (\mathbf{AC})_{12} = 1\cdot6 + 2\cdot8 = 6 + 16 = 22 $$</div>
-          <div class="derive__why">A 의 1행과 C 의 2열</div>
+          <div class="derive__why">A의 1행과 C의 2열</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ (\mathbf{AC})_{21} = 3\cdot5 + 4\cdot7 = 15 + 28 = 43 $$</div>
-          <div class="derive__why">A 의 2행과 C 의 1열</div>
+          <div class="derive__why">A의 2행과 C의 1열</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ (\mathbf{AC})_{22} = 3\cdot6 + 4\cdot8 = 18 + 32 = 50 $$</div>
-          <div class="derive__why">A 의 2행과 C 의 2열</div>
+          <div class="derive__why">A의 2행과 C의 2열</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{AC} = \begin{bmatrix}19&22\\43&50\end{bmatrix} $$</div>
@@ -502,7 +502,7 @@
       </div>
 
       <h3>② 교환법칙이 성립하지 않는다</h3>
-      <p>$\mathbf{B}$ 는 두 좌표를 맞바꾸는 <strong>치환행렬</strong>이다. 곱하는 쪽이 왼쪽이냐 오른쪽이냐로 하는 일이 달라진다.</p>
+      <p>$\mathbf{B}$ 는 두 coordinates(좌표)를 맞바꾸는 <strong>permutation matrix(치환행렬)</strong>이다. 곱하는 쪽이 왼쪽이냐 오른쪽이냐로 하는 일이 달라진다.</p>
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{AB} = \begin{bmatrix}1\cdot0+2\cdot1 & 1\cdot1+2\cdot0\\ 3\cdot0+4\cdot1 & 3\cdot1+4\cdot0\end{bmatrix} = \begin{bmatrix}2&1\\4&3\end{bmatrix} $$</div>
@@ -517,7 +517,7 @@
         <span class="note__label">기억하는 법</span>
         <p>
           <strong>왼쪽 곱은 행에, 오른쪽 곱은 열에 작용한다.</strong>
-          대각행렬도 마찬가지다 — $\mathbf{DA}$ 는 행별 스케일, $\mathbf{AD}$ 는 열별 스케일.
+          diagonal matrix도 마찬가지다 — $\mathbf{DA}$ 는 행별 스케일, $\mathbf{AD}$ 는 열별 스케일.
         </p>
       </div>
 
@@ -525,7 +525,7 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \det\mathbf{A} = 1\cdot4 - 2\cdot3 = 4 - 6 = -2 $$</div>
-          <div class="derive__why">$ad-bc$. 0이 아니므로 역행렬이 있다</div>
+          <div class="derive__why">$ad-bc$. 0이 아니므로 inverse matrix가 있다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{A}^{-1} = \frac{1}{-2}\begin{bmatrix}4&-2\\-3&1\end{bmatrix} = \begin{bmatrix}-2&1\\1.5&-0.5\end{bmatrix} $$</div>
@@ -545,7 +545,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ (\mathbf{A}\mathbf{A}^{-1})_{22} = 3(1) + 4(-0.5) = 3 - 2 = 1 \;\Rightarrow\; \mathbf{A}\mathbf{A}^{-1} = \mathbf{I} \ \checkmark $$</div>
-          <div class="derive__why">단위행렬이 나왔다</div>
+          <div class="derive__why">identity matrix가 나왔다</div>
         </div>
       </div>
 
@@ -569,7 +569,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{Q}^\top\mathbf{Q} = \frac12\begin{bmatrix}1&1\\-1&1\end{bmatrix}\begin{bmatrix}1&-1\\1&1\end{bmatrix} = \frac12\begin{bmatrix}2&0\\0&2\end{bmatrix} = \mathbf{I} \ \checkmark $$</div>
-          <div class="derive__why">직교행렬 조건 (6) 확인</div>
+          <div class="derive__why">orthogonal matrix 조건 (6) 확인</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{Q}\begin{bmatrix}3\\1\end{bmatrix} = \frac{1}{\sqrt2}\begin{bmatrix}3-1\\3+1\end{bmatrix} = \frac{1}{\sqrt2}\begin{bmatrix}2\\4\end{bmatrix} \approx \begin{bmatrix}1.414\\2.828\end{bmatrix} $$</div>
@@ -582,7 +582,7 @@
       </div>
 
       <h3>⑥ 희소 저장이 이득인가</h3>
-      <p>$1000\times1000$ 행렬, 0이 아닌 원소가 5,000개(밀도 0.5%)라 하자. <span class="tex">float32</span> · <span class="tex">int32</span> 기준이다.</p>
+      <p>$1000\times1000$ matrix, 0이 아닌 원소가 5,000개(밀도 0.5%)라 하자. <span class="tex">float32</span> · <span class="tex">int32</span> 기준이다.</p>
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \text{밀집} = 4 \times 1000 \times 1000 = 4{,}000{,}000\ \text{바이트} = 4\ \text{MB} $$</div>
@@ -606,15 +606,15 @@
       <p>
         이 절의 위젯은 개념이 나오는 자리마다 배치했다.
         <a href="#s-intuition">직관</a>의 <strong>단계별 곱셈</strong>과 <strong>네 가지 관점</strong>,
-        <a href="#s-definition">정의</a>의 <strong>전치 애니메이션</strong> · <strong>역행렬 계산기</strong> ·
-        <strong>행렬 동물원</strong> · <strong>희소 저장 손익분기</strong> 를 차례로 만져 본 뒤,
+        <a href="#s-definition">정의</a>의 <strong>전치 애니메이션</strong> · <strong>inverse matrix 계산기</strong> ·
+        <strong>matrix 동물원</strong> · <strong>sparse 저장 손익분기</strong> 를 차례로 만져 본 뒤,
         아래에서 <strong>곱셈 순서에 따른 비용</strong>을 확인한다.
       </p>
 
       <h3>결합법칙과 계산 비용</h3>
       <p>
         $(\mathbf{AB})\mathbf{C}$ 와 $\mathbf{A}(\mathbf{BC})$ 는 <em>결과가 같지만 비용이 다르다</em>.
-        딥러닝에서 저랭크 분해가 이득인 이유가 정확히 이 차이다.
+        deep learning에서 low-rank(저랭크) 분해가 이득인 이유가 정확히 이 차이다.
       </p>
 
       <figure class="widget" data-widget="matmul-cost">
@@ -623,7 +623,7 @@
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">가운데 차원 r 을 작게 만들면 왼쪽부터 곱하는 쪽이 압도적으로 싸집니다. LoRA 가 이 원리를 씁니다.</p>
+          <p class="watch">가운데 dimension(차원) r을 작게 만들면 왼쪽부터 곱하는 쪽이 압도적으로 싸집니다. LoRA가 이 원리를 씁니다.</p>
         </div>
       </figure>
     </section>
@@ -638,7 +638,7 @@
         <p>
           <strong>실제로는</strong> 둘 다 0이 아니어도 곱이 0이 될 수 있다.
           $\begin{bmatrix}1&0\\0&0\end{bmatrix}\begin{bmatrix}0&0\\0&1\end{bmatrix} = \mathbf{0}$ 이 반례다.
-          숫자에서 성립하던 규칙이 행렬에서는 깨진다. 마찬가지로 $\mathbf{AB}=\mathbf{AC}$ 라고 $\mathbf{B}=\mathbf{C}$ 인 것도 아니다
+          숫자에서 성립하던 규칙이 matrix에서는 깨진다. 마찬가지로 $\mathbf{AB}=\mathbf{AC}$ 라고 $\mathbf{B}=\mathbf{C}$ 인 것도 아니다
           ($\mathbf{A}$ 가 가역일 때만 소거할 수 있다).
         </p>
       </div>
@@ -649,39 +649,39 @@
         <p>
           <strong>실제로는</strong> 순서가 뒤집혀 $\mathbf{B}^\top\mathbf{A}^\top$ 다.
           $\mathbf{A}$ 가 $(2,3)$, $\mathbf{B}$ 가 $(3,4)$ 라면 $\mathbf{A}^\top\mathbf{B}^\top$ 은
-          $(3,2)\times(4,3)$ 이라 <strong>shape 부터 맞지 않는다</strong>.
-          역행렬 $(\mathbf{AB})^{-1} = \mathbf{B}^{-1}\mathbf{A}^{-1}$ 도 같은 규칙이다.
+          $(3,2)\times(4,3)$ 이라 <strong>shape부터 맞지 않는다</strong>.
+          inverse matrix $(\mathbf{AB})^{-1} = \mathbf{B}^{-1}\mathbf{A}^{-1}$ 도 같은 규칙이다.
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 3</span>
-        <p>"연립방정식을 풀려면 역행렬을 구해야 한다."</p>
+        <p>"system of equations를 풀려면 inverse matrix를 구해야 한다."</p>
         <p>
-          <strong>실제로는</strong> 역행렬을 명시적으로 만드는 것은 느리고 수치적으로 불안정하다.
-          <code>np.linalg.inv(A) @ b</code> 대신 <code>np.linalg.solve(A, b)</code> 를 쓴다.
+          <strong>실제로는</strong> inverse matrix를 명시적으로 만드는 것은 느리고 수치적으로 불안정하다.
+          <code>np.linalg.inv(A) @ b</code> 대신 <code>np.linalg.solve(A, b)</code>를 쓴다.
           내부적으로 LU 분해로 바로 푸는 편이 연산량도 적고 오차도 작다 (<a href="2.6-linear-systems.html">2.6</a>).
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 4</span>
-        <p>"열이 서로 직교하면 직교행렬이다."</p>
+        <p>"열이 서로 orthogonal 하면 orthogonal matrix다."</p>
         <p>
-          <strong>실제로는</strong> ① 길이가 1이어야 하고(정규직교), ② <strong>정사각</strong>이어야 한다.
-          $(5,2)$ 크기 행렬의 두 열이 정규직교하면 $\mathbf{Q}^\top\mathbf{Q}=\mathbf{I}_2$ 는 성립하지만
+          <strong>실제로는</strong> ① 길이가 1이어야 하고(orthonormal(정규직교)), ② <strong>정사각</strong>이어야 한다.
+          $(5,2)$ 크기 matrix의 두 열이 정규직교하면 $\mathbf{Q}^\top\mathbf{Q}=\mathbf{I}_2$ 는 성립하지만
           $\mathbf{Q}\mathbf{Q}^\top \neq \mathbf{I}_5$ 다(랭크가 2뿐이다).
-          이런 행렬은 직교행렬이 아니라 <em>정규직교 열을 가진 행렬</em>이라 부른다.
+          이런 matrix는 orthogonal matrix가 아니라 <em>orthonormal 열을 가진 matrix</em>이라 부른다.
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 5</span>
-        <p>"희소행렬은 언제나 메모리를 아낀다."</p>
+        <p>"sparse matrix는 언제나 메모리를 아낀다."</p>
         <p>
           <strong>실제로는</strong> 값 하나당 4바이트 인덱스가 따라붙으므로 밀도가 50% 를 넘으면 메모리조차 손해다(예제 ⑥).
-          게다가 GPU 에서는 밀집 행렬 곱이 극도로 최적화되어 있어,
-          <strong>희소 연산이 느린 경우도 흔하다</strong>. 메모리와 속도는 따로 판단해야 한다.
+          게다가 GPU 에서는 dense matrix multiplication이 극도로 optimize 되어 있어,
+          <strong>sparse 연산이 느린 경우도 흔하다</strong>. 메모리와 속도는 따로 판단해야 한다.
         </p>
       </div>
     </section>
@@ -691,7 +691,7 @@
       <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
       <p>예제 ①–⑤와 오해 1·2를 검증한다.</p>
       <details>
-        <summary>NumPy — 곱 · 전치 · 역 · 직교 (19줄)</summary>
+        <summary>NumPy — 곱 · 전치 · 역 · orthogonal (19줄)</summary>
 <pre><code>import numpy as np
 
 A = np.array([[1., 2.], [3., 4.]])
@@ -719,8 +719,8 @@ print(Z1 @ Z2)            # [[0. 0.] [0. 0.]]  둘 다 0이 아닌데 곱은 0
 </code></pre>
         <p>
           <small>
-            <code>det(A)</code> 가 정확히 <code>-2.0</code> 이 아닌 것은 부동소수점 반올림 때문이다.
-            "행렬식이 0인가"를 <code>== 0</code> 으로 판정하면 안 되는 이유가 이것이다.
+            <code>det(A)</code>가 정확히 <code>-2.0</code> 이 아닌 것은 부동소수점 반올림 때문이다.
+            "determinant가 0인가"를 <code>== 0</code>으로 판정하면 안 되는 이유가 이것이다.
           </small>
         </p>
       </details>
@@ -733,7 +733,7 @@ print(Z1 @ Z2)            # [[0. 0.] [0. 0.]]  둘 다 0이 아닌데 곱은 0
       <div class="quiz">
         <div class="q">
           <p class="q__stem"><span class="q__tag">계산</span>
-            $\mathbf{A}\in\mathbb{R}^{4\times3}$, $\mathbf{B}\in\mathbb{R}^{3\times5}$ 일 때 $\mathbf{AB}$ 의 shape 와 곱셈 횟수는?</p>
+            $\mathbf{A}\in\mathbb{R}^{4\times3}$, $\mathbf{B}\in\mathbb{R}^{3\times5}$ 일 때 $\mathbf{AB}$ 의 shape와 곱셈 횟수는?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$(4,5)$ · <span class="num">60</span>회</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>$(3,3)$ · <span class="num">45</span>회</span></button>
@@ -748,7 +748,7 @@ print(Z1 @ Z2)            # [[0. 0.] [0. 0.]]  둘 다 0이 아닌데 곱은 0
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">계산</span>
-            $\mathbf{A}=\begin{bmatrix}2&1\\4&3\end{bmatrix}$ 의 역행렬은?</p>
+            $\mathbf{A}=\begin{bmatrix}2&1\\4&3\end{bmatrix}$ 의 inverse matrix는?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\begin{bmatrix}1.5&-0.5\\-2&1\end{bmatrix}$</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>$\begin{bmatrix}0.5&1\\0.25&1/3\end{bmatrix}$</span></button>
@@ -770,9 +770,9 @@ print(Z1 @ Z2)            # [[0. 0.] [0. 0.]]  둘 다 0이 아닌데 곱은 0
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">다</span><span>$\mathbf{Q}$ 의 모든 원소가 0 또는 1이다</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            가와 나는 직교행렬의 정의와 유도 3의 결론이다.
-            원소 값에는 아무 제약이 없다 — 45도 회전행렬은 모든 원소가 $\pm1/\sqrt2$ 다.
-            단위행렬과 치환행렬만 0/1 로 이루어진 특수한 경우다.
+            가와 나는 orthogonal matrix의 정의와 유도 3의 결론이다.
+            원소 값에는 아무 제약이 없다 — 45도 rotation matrix(회전행렬)는 모든 원소가 $\pm1/\sqrt2$ 다.
+            identity matrix와 permutation matrix만 0/1로 이루어진 특수한 경우다.
           </div>
         </div>
 
@@ -786,22 +786,22 @@ print(Z1 @ Z2)            # [[0. 0.] [0. 0.]]  둘 다 0이 아닌데 곱은 0
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
             <strong>왼쪽 곱은 행에 작용한다.</strong> $(\mathbf{DA})_{ij} = d_i a_{ij}$ 이므로 행마다 다른 배수가 붙는다.
-            나는 $\mathbf{AD}$ 의 결과다. 예제 ②의 치환행렬에서 본 것과 같은 규칙이다.
+            나는 $\mathbf{AD}$ 의 결과다. 예제 ②의 permutation matrix에서 본 것과 같은 규칙이다.
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">계산</span>
-            $\mathbf{W}\in\mathbb{R}^{4096\times4096}$ 를 $\mathbf{BA}$ ($\mathbf{B}\in\mathbb{R}^{4096\times8}$, $\mathbf{A}\in\mathbb{R}^{8\times4096}$) 로 대체하면 파라미터 수는?</p>
+            $\mathbf{W}\in\mathbb{R}^{4096\times4096}$ 를 $\mathbf{BA}$ ($\mathbf{B}\in\mathbb{R}^{4096\times8}$, $\mathbf{A}\in\mathbb{R}^{8\times4096}$)로 대체하면 parameter 수는?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 <span class="num">1,677</span>만 → <span class="num">6.6</span>만 (약 0.4%)</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>약 <span class="num">1,677</span>만 → <span class="num">838</span>만 (절반)</span></button>
             <button class="opt" type="button"><span class="opt__mark">다</span><span>변하지 않는다</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            $4096^2 = 16{,}777{,}216$. 저랭크 쪽은 $4096\times8 + 8\times4096 = 65{,}536$.
+            $4096^2 = 16{,}777{,}216$. low-rank 쪽은 $4096\times8 + 8\times4096 = 65{,}536$.
             비율은 $65536/16777216 = 0.39\%$ 다.
-            이 계산이 LoRA 의 출발점이다 (<a href="2.10-linear-algebra-in-ai.html">2.10</a>).
+            이 계산이 LoRA의 출발점이다 (<a href="2.10-linear-algebra-in-ai.html">2.10</a>).
           </div>
         </div>
 
@@ -815,7 +815,7 @@ print(Z1 @ Z2)            # [[0. 0.] [0. 0.]]  둘 다 0이 아닌데 곱은 0
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
             $\mathbf{A}(\mathbf{X}-\mathbf{Y})=\mathbf{0}$ 에서 $\mathbf{X}-\mathbf{Y}$ 가 $\mathbf{A}$ 의
-            영공간에 있으면 되므로, 영공간이 $\{\mathbf{0}\}$ 일 때 — 즉 $\mathbf{A}$ 가 가역일 때만 소거된다
+            null space(영공간)에 있으면 되므로, null space가 $\{\mathbf{0}\}$ 일 때 — 즉 $\mathbf{A}$ 가 가역일 때만 소거된다
             (<a href="2.5-linear-transformation.html">2.5</a>). 대칭성은 이와 무관하다.
           </div>
         </div>
@@ -827,11 +827,11 @@ print(Z1 @ Z2)            # [[0. 0.] [0. 0.]]  둘 다 0이 아닌데 곱은 0
       <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
 
       <ul>
-        <li><strong><a href="2.5-linear-transformation.html">2.5 선형변환</a></strong> — 행렬 곱이 곧 함수 합성이라는 관점.</li>
-        <li><strong><a href="2.6-linear-systems.html">2.6 연립방정식과 행렬 분해</a></strong> — 역행렬 대신 LU · QR 로 푸는 법.</li>
-        <li><strong><a href="2.7-eigenvalues.html">2.7 고유값과 고유벡터</a></strong> — 대칭행렬이 왜 특별한지.</li>
-        <li><strong><a href="2.8-svd.html">2.8 특이값 분해</a></strong> — 관점 ④(외적의 합)가 저랭크 근사로 이어진다.</li>
-        <li><strong><a href="2.10-linear-algebra-in-ai.html">2.10 AI와 선형대수</a></strong> — 선형층 · 어텐션 · LoRA 의 행렬 연산.</li>
+        <li><strong><a href="2.5-linear-transformation.html">2.5 linear transformation(선형변환)</a></strong> — matrix multiplication이 곧 함수 합성이라는 관점.</li>
+        <li><strong><a href="2.6-linear-systems.html">2.6 system of equations와 matrix factorization(행렬 분해)</a></strong> — inverse matrix 대신 LU · QR로 푸는 법.</li>
+        <li><strong><a href="2.7-eigenvalues.html">2.7 eigenvalue와 eigenvector</a></strong> — symmetric matrix가 왜 특별한지.</li>
+        <li><strong><a href="2.8-svd.html">2.8 singular value decomposition(특이값 분해)</a></strong> — 관점 ④(outer product의 합)가 low-rank approximation으로 이어진다.</li>
+        <li><strong><a href="2.10-linear-algebra-in-ai.html">2.10 AI와 linear algebra(선형대수)</a></strong> — linear layer · attention · LoRA의 matrix 연산.</li>
       </ul>
 
       <h3>출처</h3>
@@ -839,25 +839,25 @@ print(Z1 @ Z2)            # [[0. 0.] [0. 0.]]  둘 다 0이 아닌데 곱은 0
         <li class="ref" id="ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Deisenroth, M. P., Faisal, A. A. &amp; Ong, C. S. (2020). <em>Mathematics for Machine Learning</em>. Cambridge University Press.</span>
-          <span class="ref__where">2.2절(Matrices) — 곱셈 정의·결합/분배법칙·비가환성, 역행렬과 $2\times2$ 공식, 전치 규칙 $(\mathbf{AB})^\top=\mathbf{B}^\top\mathbf{A}^\top$. 3.4절 Definition(Orthogonal Matrix) — 식 (6)과 길이·각도 보존</span>
+          <span class="ref__where">2.2절(Matrices) — 곱셈 정의·결합/분배법칙·비가환성, inverse matrix와 $2\times2$ 공식, 전치 규칙 $(\mathbf{AB})^\top=\mathbf{B}^\top\mathbf{A}^\top$. 3.4절 Definition(Orthogonal Matrix) — 식 (6)과 길이·각도 보존</span>
           <a class="ref__link" href="https://mml-book.github.io/">mml-book.github.io</a>
         </li>
         <li class="ref" id="ref-goodfellow2016-dl" data-ref="goodfellow2016-dl">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>. MIT Press.</span>
-          <span class="ref__where">2.2–2.3절 — 행렬 곱을 선형층 계산으로 보는 서술과 단위행렬·역행렬의 역할. 2.8절 이후의 대각·대칭·직교 행렬 정리 표와 대조 확인</span>
+          <span class="ref__where">2.2–2.3절 — matrix multiplication을 linear layer 계산으로 보는 서술과 identity matrix·inverse matrix의 역할. 2.8절 이후의 대각·대칭·orthogonal matrix 정리 표와 대조 확인</span>
           <a class="ref__link" href="https://www.deeplearningbook.org/">deeplearningbook.org</a>
         </li>
         <li class="ref" id="ref-petersen2012-matrix-cookbook" data-ref="petersen2012-matrix-cookbook">
           <span class="ref__type" data-type="doc">문서</span>
           <span class="ref__cite">Petersen, K. B. &amp; Pedersen, M. S. (2012). <em>The Matrix Cookbook</em> (ver. 20121115). Technical University of Denmark.</span>
-          <span class="ref__where">1.1–1.3절(Basics / Trace / Determinant)과 9.4절(Block matrices) — 전치·역의 순서 규칙, 블록행렬 곱 공식 (7)의 근거. 항등식을 찾아볼 때의 표준 참조표</span>
+          <span class="ref__where">1.1–1.3절(Basics / Trace / Determinant)과 9.4절(Block matrices) — 전치·역의 순서 규칙, block matrix(블록행렬) 곱 공식 (7)의 근거. 항등식을 찾아볼 때의 표준 참조표</span>
           <a class="ref__link" href="https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf">matrixcookbook.pdf</a>
         </li>
         <li class="ref" id="ref-mit-1806" data-ref="mit-1806">
           <span class="ref__type" data-type="course">강의</span>
           <span class="ref__cite">Strang, G. <em>MIT 18.06 Linear Algebra</em> (Spring 2010). MIT OpenCourseWare.</span>
-          <span class="ref__where">Lecture 3 (Multiplication and inverse matrices) — 행렬 곱의 다섯 가지 관점을 제시하는 구성. 본문의 네 가지 관점 표와 '네 가지 관점' 위젯이 여기에 기댄다</span>
+          <span class="ref__where">Lecture 3 (Multiplication and inverse matrices) — matrix multiplication의 다섯 가지 관점을 제시하는 구성. 본문의 네 가지 관점 표와 '네 가지 관점' 위젯이 여기에 기댄다</span>
           <a class="ref__link" href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/">ocw.mit.edu</a>
         </li>
         <li class="ref" id="ref-3blue1brown-linalg" data-ref="3blue1brown-linalg">
@@ -896,7 +896,7 @@ print(Z1 @ Z2)            # [[0. 0.] [0. 0.]]  둘 다 0이 아닌데 곱은 0
 
 <script>
 /* ============================================================
-   공통 — SVG 로 행렬 격자 그리기
+   공통 — SVG로 행렬 격자 그리기
    (이 페이지 안의 여러 위젯이 함께 쓴다)
    ============================================================ */
 var MATVIZ = (function () {
@@ -948,7 +948,7 @@ WIDGETS.register('matmul-step', function (root, ctx) {
   var ORDER = [[0, 0], [0, 1], [1, 0], [1, 1]];
 
   var VW = 480, VH = 190, cell = 32;
-  var svg = el('svg', { viewBox: '0 0 ' + VW + ' ' + VH, role: 'img', 'aria-label': '행렬 곱 단계별 계산' });
+  var svg = el('svg', { viewBox: '0 0 ' + VW + ' ' + VH, role: 'img', 'aria-label': 'matrix multiplication 단계별 계산' });
   ctx.stage.appendChild(svg);
 
   var out = WIDGETS.readout(ctx.readout, [
@@ -1013,29 +1013,29 @@ WIDGETS.register('matmul-views', function (root, ctx) {
 
   var VIEWS = {
     dot: {
-      t: '① 원소별 내적',
-      d: 'C[1,1] 은 A 의 1행 (1, 2) 와 B 의 1열 (5, 7) 의 내적입니다. 1·5 + 2·7 = 19. 결과의 각 칸은 딱 한 쌍의 행·열만 봅니다.',
+      t: '① 원소별 inner product',
+      d: 'C[1,1] 은 A의 1행 (1, 2)와 B의 1열 (5, 7)의 inner product입니다. 1·5 + 2·7 = 19. 결과의 각 칸은 딱 한 쌍의 행·열만 봅니다.',
       hiA: function (r) { return r === 0 ? 'a' : null; },
       hiB: function (r, c) { return c === 0 ? 'b' : null; },
       hiC: function (r, c) { return (r === 0 && c === 0) ? 'c' : null; }
     },
     col: {
-      t: '② 열의 선형결합',
-      d: 'C 의 1열 = A 의 열들을 B 의 1열 계수 (5, 7) 로 섞은 것입니다. 5·(1,3) + 7·(2,4) = (5+14, 15+28) = (19, 43). 선형층이 하는 일이 정확히 이것입니다.',
+      t: '② 열의 linear combination',
+      d: 'C의 1열 = A의 열들을 B의 1열 계수 (5, 7)로 섞은 것입니다. 5·(1,3) + 7·(2,4) = (5+14, 15+28) = (19, 43). linear layer가 하는 일이 정확히 이것입니다.',
       hiA: function () { return 'a'; },
       hiB: function (r, c) { return c === 0 ? 'b' : null; },
       hiC: function (r, c) { return c === 0 ? 'c' : null; }
     },
     row: {
-      t: '③ 행의 선형결합',
-      d: 'C 의 1행 = B 의 행들을 A 의 1행 계수 (1, 2) 로 섞은 것입니다. 1·(5,6) + 2·(7,8) = (5+14, 6+16) = (19, 22). 가우스 소거법이 쓰는 관점입니다.',
+      t: '③ 행의 linear combination',
+      d: 'C의 1행 = B의 행들을 A의 1행 계수 (1, 2)로 섞은 것입니다. 1·(5,6) + 2·(7,8) = (5+14, 6+16) = (19, 22). Gaussian elimination이 쓰는 관점입니다.',
       hiA: function (r) { return r === 0 ? 'a' : null; },
       hiB: function () { return 'b'; },
       hiC: function (r) { return r === 0 ? 'c' : null; }
     },
     outer: {
-      t: '④ 외적의 합',
-      d: 'C = (A의 1열)(B의 1행) + (A의 2열)(B의 2행) 입니다. (1,3)ᵀ(5,6) + (2,4)ᵀ(7,8). 각 항이 랭크 1 행렬이고, 이 분해가 저랭크 근사·LoRA 의 출발점입니다.',
+      t: '④ outer product의 합',
+      d: 'C = (A의 1열)(B의 1행) + (A의 2열)(B의 2행) 입니다. (1,3)ᵀ(5,6) + (2,4)ᵀ(7,8). 각 항이 랭크 1 matrix고, 이 분해가 low-rank approximation·LoRA의 출발점입니다.',
       hiA: function (r, c) { return c === 0 ? 'a' : null; },
       hiB: function (r) { return r === 0 ? 'b' : null; },
       hiC: function () { return 'c'; }
@@ -1044,7 +1044,7 @@ WIDGETS.register('matmul-views', function (root, ctx) {
   var cur = 'dot';
 
   var VW = 480, VH = 130, cell = 34;
-  var svg = el('svg', { viewBox: '0 0 ' + VW + ' ' + VH, role: 'img', 'aria-label': '행렬 곱의 네 가지 관점' });
+  var svg = el('svg', { viewBox: '0 0 ' + VW + ' ' + VH, role: 'img', 'aria-label': 'matrix multiplication의 네 가지 관점' });
   ctx.stage.appendChild(svg);
 
   var panel = document.createElement('div');
@@ -1080,10 +1080,10 @@ WIDGETS.register('matmul-views', function (root, ctx) {
   WIDGETS.toggle({
     host: ctx.controls, label: '관점 고르기',
     options: [
-      { value: 'dot', label: '① 원소별 내적' },
+      { value: 'dot', label: '① 원소별 inner product' },
       { value: 'col', label: '② 열의 결합' },
       { value: 'row', label: '③ 행의 결합' },
-      { value: 'outer', label: '④ 외적의 합' }
+      { value: 'outer', label: '④ outer product의 합' }
     ],
     value: 'dot', onChange: function (v) { cur = v; draw(); }
   });
@@ -1183,16 +1183,16 @@ WIDGETS.register('inverse-2x2', function (root, ctx) {
     out.set('det', det);
     if (sing) {
       out.setRaw('inv1', '—'); out.setRaw('inv2', '—');
-      out.setRaw('state', '특이행렬 — 역행렬 없음');
+      out.setRaw('state', 'singular matrix — inverse matrix 없음');
     } else {
       out.setRaw('inv1', '(' + (d / det).toFixed(3) + ', ' + (-b / det).toFixed(3) + ')');
       out.setRaw('inv2', '(' + (-c / det).toFixed(3) + ', ' + (a / det).toFixed(3) + ')');
-      out.setRaw('state', '가역 · 넓이 배율 |det| = ' + Math.abs(det).toFixed(3));
+      out.setRaw('state', 'invertible · 넓이 배율 |det| = ' + Math.abs(det).toFixed(3));
     }
   }
 
   WIDGETS.matrix({
-    host: ctx.controls, rows: 2, cols: 2, values: M, step: 0.5, label: '행렬 A 의 원소',
+    host: ctx.controls, rows: 2, cols: 2, values: M, step: 0.5, label: 'matrix A의 원소',
     onChange: function (v) { M = v; draw(); }
   });
   draw();
@@ -1234,12 +1234,12 @@ WIDGETS.register('matrix-zoo', function (root, ctx) {
   }
 
   var INFO = {
-    diag:  ['대각행렬', '대각선 밖이 전부 0. Dx 는 성분별 곱이라 O(n), 역행렬은 1/dᵢ.'],
-    iden:  ['단위행렬', '곱셈의 항등원. AI = IA = A. 잔차 연결의 항등 경로.'],
-    sym:   ['대칭행렬', 'A = Aᵀ. 주대각선을 접으면 무늬가 겹친다. 공분산·그람·커널 행렬이 여기 속한다.'],
-    orth:  ['직교행렬 (치환)', 'QᵀQ = I. 행마다 1이 하나씩 — 순서만 바꾼다. 길이와 각도를 보존한다.'],
-    block: ['블록행렬', '블록 경계가 맞으면 블록을 원소처럼 곱할 수 있다. 멀티헤드 어텐션·타일링의 관점.'],
-    sparse:['희소행렬', '0이 아닌 원소가 7개뿐. 값·열 인덱스·행 시작만 저장하면 메모리가 크게 준다.']
+    diag:  ['diagonal matrix', '대각선 밖이 전부 0. Dx는 성분별 곱이라 O(n), inverse matrix는 1/dᵢ.'],
+    iden:  ['identity matrix', '곱셈의 항등원. AI = IA = A. residual connection의 항등 경로.'],
+    sym:   ['symmetric matrix', 'A = Aᵀ. 주대각선을 접으면 무늬가 겹친다. covariance·그람·kernel matrix가 여기 속한다.'],
+    orth:  ['orthogonal matrix (치환)', 'QᵀQ = I. 행마다 1이 하나씩 — 순서만 바꾼다. 길이와 각도를 보존한다.'],
+    block: ['block matrix', '블록 경계가 맞으면 블록을 원소처럼 곱할 수 있다. multi-head attention·타일링의 관점.'],
+    sparse:['sparse matrix', '0이 아닌 원소가 7개뿐. 값·열 인덱스·행 시작만 저장하면 메모리가 크게 준다.']
   };
 
   var cur = 'sym';
@@ -1269,14 +1269,14 @@ WIDGETS.register('matrix-zoo', function (root, ctx) {
   }
 
   WIDGETS.toggle({
-    host: ctx.controls, label: '행렬 종류',
+    host: ctx.controls, label: 'matrix 종류',
     options: [
       { value: 'sym', label: '대칭' },
       { value: 'diag', label: '대각' },
       { value: 'iden', label: '단위' },
-      { value: 'orth', label: '직교' },
+      { value: 'orth', label: 'orthogonal' },
       { value: 'block', label: '블록' },
-      { value: 'sparse', label: '희소' }
+      { value: 'sparse', label: 'sparse' }
     ],
     value: 'sym', onChange: function (v) { cur = v; draw(); }
   });
@@ -1299,7 +1299,7 @@ WIDGETS.register('sparse-cost', function (root, ctx) {
 
   var out = WIDGETS.readout(ctx.readout, [
     { key: 'nnz', label: '0이 아닌 원소' },
-    { key: 'dense', label: '밀집 저장', digits: 2 },
+    { key: 'dense', label: 'dense 저장', digits: 2 },
     { key: 'csr', label: 'CSR 저장', digits: 2 },
     { key: 'verdict', label: '판정' }
   ]);
@@ -1322,7 +1322,7 @@ WIDGETS.register('sparse-cost', function (root, ctx) {
     out.set('csr', csrMB(density));
     out.setRaw('verdict', csrMB(density) < denseMB()
       ? 'CSR 이 유리 (' + (denseMB() / csrMB(density)).toFixed(1) + '배 절약)'
-      : 'CSR 이 손해 — 밀집으로 두는 편이 낫다');
+      : 'CSR 이 손해 — dense로 두는 편이 낫다');
   }
 
   WIDGETS.slider({
@@ -1334,10 +1334,10 @@ WIDGETS.register('sparse-cost', function (root, ctx) {
 
 /* ============================================================
    위젯 7 — 곱셈 순서와 비용
-   (AB)C 와 A(BC) 는 결과가 같지만 연산량이 다르다.
+   (AB)C와 A(BC)는 결과가 같지만 연산량이 다르다.
    ============================================================ */
 WIDGETS.register('matmul-cost', function (root, ctx) {
-  var m = 4096, r = 8, p2 = 4096, k = 1;   /* (m×r)(r×p) 를 벡터 k개에 적용 */
+  var m = 4096, r = 8, p2 = 4096, k = 1;   /* (m×r)(r×p)를 벡터 k개에 적용 */
 
   var p = VIZ.plot({
     w: 460, h: 250, xmin: 0, xmax: 64, ymin: 0, ymax: 0.7,
@@ -1361,7 +1361,7 @@ WIDGETS.register('matmul-cost', function (root, ctx) {
     p.clear().grid(8, 0.1).axes('r', '백만 회').ticks(16, 0.2);
     p.curve(function (rr) { return costRight(rr); });
     p.dot(r, costRight(r), 6);
-    p.text(1, 0.63, 'B(Ax) 비용 — (BA)x 는 151.0 으로 그래프 밖', { size: 11 });
+    p.text(1, 0.63, 'B(Ax) 비용 — (BA)x는 151.0으로 graph 밖', { size: 11 });
 
     out.set('left', costLeft(r));
     out.set('right', costRight(r));
@@ -1372,7 +1372,7 @@ WIDGETS.register('matmul-cost', function (root, ctx) {
   }
 
   WIDGETS.slider({
-    host: ctx.controls, label: '가운데 차원 r', min: 1, max: 64, step: 1, value: 8, digits: 0,
+    host: ctx.controls, label: '가운데 dimension r', min: 1, max: 64, step: 1, value: 8, digits: 0,
     onInput: function (v) { r = v; draw(); }
   });
   draw();

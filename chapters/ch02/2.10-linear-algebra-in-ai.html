@@ -61,30 +61,30 @@
 
     <!-- ===== 1. 다루는 항목 ===== -->
     <nav class="chips" aria-label="이 절에서 다루는 항목">
-      <a class="chip" href="#c-linear">신경망의 선형층</a>
-      <a class="chip" href="#c-embed">임베딩</a>
-      <a class="chip" href="#c-attn">Attention의 행렬 연산</a>
-      <a class="chip" href="#c-lora">저랭크 적응</a>
-      <a class="chip" href="#c-factor">행렬 분해 기반 압축</a>
-      <a class="chip" href="#c-graph">그래프 표현</a>
-      <a class="chip" href="#c-imgtensor">이미지 텐서</a>
-      <a class="chip" href="#c-seqtensor">시퀀스 텐서</a>
-      <a class="chip" href="#c-multimodal">멀티모달 표현</a>
+      <a class="chip" href="#c-linear">Linear Layer</a>
+      <a class="chip" href="#c-embed">Embedding</a>
+      <a class="chip" href="#c-attn">Attention as Matrix Ops</a>
+      <a class="chip" href="#c-lora">Low-Rank Adaptation</a>
+      <a class="chip" href="#c-factor">Factorization-Based Compression</a>
+      <a class="chip" href="#c-graph">Graph Representation</a>
+      <a class="chip" href="#c-imgtensor">Image Tensor</a>
+      <a class="chip" href="#c-seqtensor">Sequence Tensor</a>
+      <a class="chip" href="#c-multimodal">Multimodal Representation</a>
     </nav>
 
     <!-- ===== 2. 한 줄 요약 ===== -->
     <section class="sec" id="s-summary">
       <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
       <p class="tldr">
-        딥러닝 모델의 연산량 대부분은 <strong>행렬 곱 하나</strong>이고,
-        구조의 차이는 <strong>무엇을 무엇에 곱하는가</strong>와 <strong>어떤 shape 로 텐서를 배치하는가</strong>의 차이다.
+        deep learning(딥러닝) model(모델)의 연산량 대부분은 <strong>matrix multiplication(행렬 곱) 하나</strong>이고,
+        구조의 차이는 <strong>무엇을 무엇에 곱하는가</strong>와 <strong>어떤 shape로 tensor(텐서)를 배치하는가</strong>의 차이다.
       </p>
 
       <h3>학습 목표</h3>
       <ol class="goals">
-        <li>선형층 · 임베딩 · 어텐션을 각각 행렬 연산으로 쓰고 shape 와 연산량을 계산할 수 있다.</li>
-        <li>LoRA 의 파라미터 절감률을 rank 로 계산하고, 왜 저랭크가 통하는지 설명할 수 있다.</li>
-        <li>이미지 · 시퀀스 · 그래프 · 멀티모달 데이터가 각각 어떤 텐서 shape 로 표현되는지 말할 수 있다.</li>
+        <li>linear layer(선형층) · embedding(임베딩) · attention(어텐션)을 각각 matrix(행렬) 연산으로 쓰고 shape와 연산량을 계산할 수 있다.</li>
+        <li>LoRA의 parameter(파라미터) 절감률을 rank로 계산하고, 왜 low-rank(저랭크)이 통하는지 설명할 수 있다.</li>
+        <li>image(이미지) · sequence(시퀀스) · graph(그래프) · multimodal(멀티모달) data(데이터)가 각각 어떤 tensor shape로 표현되는지 말할 수 있다.</li>
       </ol>
     </section>
 
@@ -93,34 +93,34 @@
       <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
 
       <p>
-        큰 언어모델의 학습 로그를 열어 보면 시간의 90% 이상이 <strong>GEMM</strong>(general matrix multiply),
-        즉 행렬 곱에서 쓰인다. 활성화 함수 · 정규화 · 소프트맥스는 상대적으로 얇은 껍질이다.
+        큰 언어모델의 training(학습) 로그를 열어 보면 시간의 90% 이상이 <strong>GEMM</strong>(general matrix multiply),
+        즉 matrix multiplication에서 쓰인다. activation function(활성화 함수) · normalization(정규화) · softmax(소프트맥스)는 상대적으로 얇은 껍질이다.
       </p>
       <p>
-        그래서 모델 구조를 이해한다는 것은 대체로 <strong>"어떤 행렬을 어떤 순서로 곱하는가"</strong>를 이해하는 일이고,
-        모델을 가볍게 만든다는 것은 <strong>"그 곱을 더 작은 곱으로 바꾸는 일"</strong>이다.
-        2장에서 쌓아 온 것 — 선형결합 · rank · 저랭크 근사 · 직교 — 이 전부 여기서 쓰인다.
+        그래서 model 구조를 이해한다는 것은 대체로 <strong>"어떤 matrix를 어떤 순서로 곱하는가"</strong>를 이해하는 일이고,
+        model을 가볍게 만든다는 것은 <strong>"그 곱을 더 작은 곱으로 바꾸는 일"</strong>이다.
+        2장에서 쌓아 온 것 — linear combination(선형결합) · rank · low-rank approximation(저랭크 근사) · orthogonal(직교) — 이 전부 여기서 쓰인다.
       </p>
 
       <figure class="widget" data-widget="linear-layer">
-        <figcaption class="widget__bar">선형층 하나 — shape 와 연산량</figcaption>
+        <figcaption class="widget__bar">linear layer 하나 — shape와 연산량</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">출력의 각 성분은 <strong>입력 전체와의 내적 하나</strong>입니다. 뉴런 수만큼 내적을 반복하는 것이 행렬 곱입니다.</p>
+          <p class="watch">출력의 각 성분은 <strong>입력 전체와의 inner product(내적) 하나</strong>입니다. 뉴런 수만큼 inner product를 반복하는 것이 matrix multiplication입니다.</p>
         </div>
       </figure>
 
       <div class="note note--key">
         <span class="note__label">이 절의 지도</span>
         <p>
-          선형층 = <a href="2.4-matrix-operations.html">행렬 곱</a> ·
-          임베딩 = <a href="2.4-matrix-operations.html">원-핫 곱 = 행 선택</a> ·
-          어텐션 = <a href="2.3-inner-product.html">그람 행렬</a> ·
-          LoRA = <a href="2.8-svd.html">저랭크 근사</a> ·
-          그래프 = <a href="2.7-eigenvalues.html">인접행렬의 스펙트럼</a> ·
-          멀티모달 = <a href="2.3-inner-product.html">코사인 유사도</a>.
+          linear layer = <a href="2.4-matrix-operations.html">matrix multiplication</a> ·
+          embedding = <a href="2.4-matrix-operations.html">one-hot(원-핫) 곱 = 행 선택</a> ·
+          attention = <a href="2.3-inner-product.html">Gram matrix(그람 행렬)</a> ·
+          LoRA = <a href="2.8-svd.html">low-rank approximation</a> ·
+          graph = <a href="2.7-eigenvalues.html">adjacency matrix(인접행렬)의 spectrum(스펙트럼)</a> ·
+          multimodal = <a href="2.3-inner-product.html">cosine similarity(코사인 유사도)</a>.
         </p>
       </div>
     </section>
@@ -130,63 +130,63 @@
       <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
 
       <span class="anchor" id="c-linear"></span>
-      <h3>신경망의 선형층</h3>
+      <h3>Linear Layer 신경망의 선형층</h3>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{y} = \mathbf{W}\mathbf{x} + \mathbf{b}, \qquad \mathbf{W}\in\mathbb{R}^{d_{\text{out}}\times d_{\text{in}}},\ \ \mathbf{b}\in\mathbb{R}^{d_{\text{out}}} $$</div>
         <span class="eq__tag num">(1)</span>
       </div>
       <p>
-        배치로 처리할 때는 샘플을 <strong>행</strong>으로 쌓아 $\mathbf{Y} = \mathbf{X}\mathbf{W}^\top + \mathbf{1}\mathbf{b}^\top$ 로 쓴다
-        (PyTorch <code>nn.Linear</code> 의 규약). shape 는 $(N, d_{\text{in}})\times(d_{\text{in}}, d_{\text{out}}) \to (N, d_{\text{out}})$ 다.
+        batch(배치)로 처리할 때는 샘플을 <strong>행</strong>으로 쌓아 $\mathbf{Y} = \mathbf{X}\mathbf{W}^\top + \mathbf{1}\mathbf{b}^\top$ 로 쓴다
+        (PyTorch <code>nn.Linear</code>의 규약). shape는 $(N, d_{\text{in}})\times(d_{\text{in}}, d_{\text{out}}) \to (N, d_{\text{out}})$ 다.
       </p>
       <div class="tablewrap">
         <table>
           <thead><tr><th>항목</th><th>값</th><th>근거</th></tr></thead>
           <tbody>
-            <tr><td>파라미터 수</td><td>$d_{\text{in}}d_{\text{out}} + d_{\text{out}}$</td><td>가중치 + 편향</td></tr>
+            <tr><td>parameter 수</td><td>$d_{\text{in}}d_{\text{out}} + d_{\text{out}}$</td><td>weight(가중치) + bias(편향)</td></tr>
             <tr><td>샘플당 곱셈·덧셈</td><td>약 $2\,d_{\text{in}}d_{\text{out}}$</td><td>곱 하나마다 덧셈 하나 (FLOPs 관례)</td></tr>
-            <tr><td>출력의 자유도</td><td>$\operatorname{rank}(\mathbf{W}) \leq \min(d_{\text{in}}, d_{\text{out}})$</td><td><a href="2.5-linear-transformation.html">2.5</a></td></tr>
+            <tr><td>출력의 degrees of freedom(자유도)</td><td>$\operatorname{rank}(\mathbf{W}) \leq \min(d_{\text{in}}, d_{\text{out}})$</td><td><a href="2.5-linear-transformation.html">2.5</a></td></tr>
           </tbody>
         </table>
       </div>
       <p>
-        편향 때문에 이 층은 엄밀히 <strong>아핀 변환</strong>이고, 활성화 없이 쌓으면
+        bias 때문에 이 layer(층)는 엄밀히 <strong>affine transformation(아핀 변환)</strong>이고, activation(활성화) 없이 쌓으면
         <a href="2.5-linear-transformation.html">2.5</a>에서 본 대로 하나로 붕괴한다.
-        층 사이의 비선형이 깊이를 의미 있게 만든다.
+        layer 사이의 비선형이 깊이를 의미 있게 만든다.
       </p>
 
       <span class="anchor" id="c-embed"></span>
-      <h3>임베딩</h3>
+      <h3>Embedding 임베딩</h3>
       <p>
-        임베딩 층은 <strong>토큰 번호를 벡터로 바꾸는 표</strong>다. 수학적으로는
-        원-핫 벡터에 임베딩 행렬을 곱하는 것과 같다.
+        embedding layer는 <strong>token(토큰) 번호를 vector(벡터)로 바꾸는 표</strong>다. 수학적으로는
+        one-hot vector에 embedding matrix를 곱하는 것과 같다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{e}_t = \mathbf{E}^\top\mathbf{o}_t = \mathbf{E}[t,:]^\top, \qquad \mathbf{E}\in\mathbb{R}^{V\times d} $$</div>
         <span class="eq__tag num">(2)</span>
       </div>
       <p>
-        $\mathbf{o}_t$ 는 $t$ 번째만 1인 원-핫 벡터다. <strong>원-핫과의 곱 = 그 행을 꺼내는 것</strong>이므로
+        $\mathbf{o}_t$ 는 $t$ 번째만 1인 one-hot 벡터다. <strong>one-hot과의 곱 = 그 행을 꺼내는 것</strong>이므로
         실제 구현은 곱셈을 하지 않고 인덱싱만 한다 — 연산량이 $O(Vd)$ 에서 $O(d)$ 로 준다.
-        파라미터는 $Vd$ 개로, 어휘 5만 · 차원 768 이면 약 3,840만 개다.
+        parameter는 $Vd$ 개로, vocabulary(어휘) 5만 · dimension(차원) 768 이면 약 3,840만 개다.
       </p>
       <p>
-        임베딩 공간에서 <strong>의미의 유사성이 기하적 근접성으로</strong> 나타난다는 성질은
+        embedding space(임베딩 공간)에서 <strong>의미의 유사성이 기하적 근접성으로</strong> 나타난다는 성질은
         <a href="2.3-inner-product.html">2.3</a>에서 다뤘다. 학습된 결과이지 주어진 성질이 아니라는 점을 기억한다.
       </p>
 
       <figure class="widget" data-widget="embedding-lookup">
-        <figcaption class="widget__bar">임베딩 = 원-핫 곱 = 행 꺼내기</figcaption>
+        <figcaption class="widget__bar">embedding = one-hot 곱 = 행 꺼내기</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">원-핫 벡터와의 곱은 <strong>한 행만 남기고 나머지를 0으로 만드는 일</strong>입니다. 그래서 곱하지 않고 꺼내면 됩니다.</p>
+          <p class="watch">one-hot vector와의 곱은 <strong>한 행만 남기고 나머지를 0으로 만드는 일</strong>입니다. 그래서 곱하지 않고 꺼내면 됩니다.</p>
         </div>
       </figure>
 
       <span class="anchor" id="c-attn"></span>
-      <h3>Attention 의 행렬 연산</h3>
+      <h3>Attention as Matrix Ops Attention의 행렬 연산</h3>
       <div class="eq">
         <div class="eq__body">$$ \operatorname{Attention}(\mathbf{Q},\mathbf{K},\mathbf{V}) = \operatorname{softmax}\!\left(\frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_k}}\right)\mathbf{V} $$</div>
         <span class="eq__tag num">(3)</span>
@@ -194,8 +194,8 @@
       <p>
         $\mathbf{Q}\in\mathbb{R}^{L\times d_k}$, $\mathbf{K}\in\mathbb{R}^{L\times d_k}$,
         $\mathbf{V}\in\mathbb{R}^{L\times d_v}$ 이므로 $\mathbf{Q}\mathbf{K}^\top$ 은 $(L,L)$ 이다.
-        이것은 <a href="2.3-inner-product.html">2.3</a>에서 본 <strong>그람 행렬</strong> — 모든 위치 쌍의 내적 —
-        의 비대칭 판이다. $(i,j)$ 성분이 "$i$ 번째 토큰이 $j$ 번째 토큰을 얼마나 볼지"의 점수다.
+        이것은 <a href="2.3-inner-product.html">2.3</a>에서 본 <strong>Gram matrix</strong> — 모든 위치 쌍의 inner product —
+        의 비대칭 판이다. $(i,j)$ 성분이 "$i$ 번째 token이 $j$ 번째 token을 얼마나 볼지"의 점수다.
       </p>
       <div class="tablewrap">
         <table>
@@ -203,73 +203,73 @@
           <tbody>
             <tr><td>점수</td><td>$\mathbf{Q}\mathbf{K}^\top$</td><td>$(L,L)$</td><td>$O(L^2 d_k)$</td></tr>
             <tr><td>스케일</td><td>$\div\sqrt{d_k}$</td><td>$(L,L)$</td><td>$O(L^2)$</td></tr>
-            <tr><td>정규화</td><td>행별 softmax</td><td>$(L,L)$</td><td>$O(L^2)$</td></tr>
+            <tr><td>normalization</td><td>행별 softmax</td><td>$(L,L)$</td><td>$O(L^2)$</td></tr>
             <tr><td>혼합</td><td>$\cdot\,\mathbf{V}$</td><td>$(L,d_v)$</td><td>$O(L^2 d_v)$</td></tr>
           </tbody>
         </table>
       </div>
       <p>
-        $\sqrt{d_k}$ 로 나누는 이유는 <strong>차원이 커질수록 내적의 분산이 커지기</strong> 때문이다.
-        성분이 독립이고 분산 1이면 내적의 분산이 $d_k$ 가 되므로, $\sqrt{d_k}$ 로 나눠 되돌린다
-        — 그러지 않으면 softmax 가 한쪽으로 포화되어 기울기가 사라진다<a class="cite" href="#ref-vaswani2017-attention-is-all" data-ref="vaswani2017-attention-is-all">1</a>.
+        $\sqrt{d_k}$ 로 나누는 이유는 <strong>dimension이 커질수록 inner product의 variance(분산)가 커지기</strong> 때문이다.
+        성분이 독립이고 variance 1이면 inner product의 variance가 $d_k$ 가 되므로, $\sqrt{d_k}$ 로 나눠 되돌린다
+        — 그러지 않으면 softmax가 한쪽으로 포화되어 gradient(기울기)가 사라진다<a class="cite" href="#ref-vaswani2017-attention-is-all" data-ref="vaswani2017-attention-is-all">1</a>.
       </p>
       <p>
         마지막 곱 $\mathbf{P}\mathbf{V}$ 는 <a href="2.4-matrix-operations.html">2.4</a>의 관점 ③ 그대로다 —
-        <strong>결과의 각 행은 $\mathbf{V}$ 의 행들을 어텐션 가중치로 섞은 선형결합</strong>이다.
-        가중치가 음이 아니고 합이 1이므로 <em>볼록 결합</em>이며, 출력이 값 벡터들의 볼록껍질 안에 놓인다.
+        <strong>결과의 각 행은 $\mathbf{V}$ 의 행들을 attention weight로 섞은 linear combination</strong>이다.
+        weight가 음이 아니고 합이 1이므로 <em>convex combination(볼록 결합)</em>이며, 출력이 값 vector들의 볼록껍질 안에 놓인다.
       </p>
 
       <figure class="widget" data-widget="attention-flow">
-        <figcaption class="widget__bar">어텐션 한 번 — 단계별 행렬 연산</figcaption>
+        <figcaption class="widget__bar">attention 한 번 — 단계별 matrix 연산</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">softmax 뒤에는 각 <strong>행의 합이 1</strong>이 됩니다. 출력은 V 의 행들을 그 비율로 섞은 것입니다.</p>
+          <p class="watch">softmax 뒤에는 각 <strong>행의 합이 1</strong>이 됩니다. 출력은 V의 행들을 그 비율로 섞은 것입니다.</p>
         </div>
       </figure>
 
       <span class="anchor" id="c-lora"></span>
-      <h3>저랭크 적응 (LoRA)</h3>
+      <h3>Low-Rank Adaptation (LoRA) 저랭크 적응</h3>
       <p>
-        사전학습된 가중치 $\mathbf{W}_0$ 는 얼려 두고, <strong>변화량만 저랭크로</strong> 학습한다.
+        사전학습된 weight $\mathbf{W}_0$ 는 얼려 두고, <strong>변화량만 low-rank으로</strong> 학습한다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{W} = \mathbf{W}_0 + \Delta\mathbf{W} = \mathbf{W}_0 + \mathbf{B}\mathbf{A}, \qquad \mathbf{B}\in\mathbb{R}^{d\times r},\ \mathbf{A}\in\mathbb{R}^{r\times k},\ r \ll \min(d,k) $$</div>
         <span class="eq__tag num">(4)</span>
       </div>
       <p>
-        학습 파라미터가 $dk$ 에서 $r(d+k)$ 로 준다. $d=k=4096$, $r=8$ 이면
+        training parameter가 $dk$ 에서 $r(d+k)$ 로 준다. $d=k=4096$, $r=8$ 이면
         $16{,}777{,}216 \to 65{,}536$ 으로 <strong>0.39%</strong> 다.
         근거는 두 가지다 — 첫째, 적응에 필요한 변화량 $\Delta\mathbf{W}$ 의
-        <strong>유효 rank 가 낮다</strong>는 관찰<a class="cite" href="#ref-hu2021-lora-low-rank" data-ref="hu2021-lora-low-rank">2</a>.
+        <strong>유효 rank가 낮다</strong>는 관찰<a class="cite" href="#ref-hu2021-lora-low-rank" data-ref="hu2021-lora-low-rank">2</a>.
         둘째, <a href="2.4-matrix-operations.html">2.4</a>의 결합법칙 — $(\mathbf{B}\mathbf{A})\mathbf{x}$ 대신
         $\mathbf{B}(\mathbf{A}\mathbf{x})$ 로 계산하면 연산량도 $dk$ 에서 $r(d+k)$ 로 준다.
       </p>
       <div class="note note--tip">
-        <span class="note__label">추론 비용이 0인 이유</span>
+        <span class="note__label">inference(추론) 비용이 0인 이유</span>
         <p>
-          학습이 끝나면 $\mathbf{W}_0+\mathbf{BA}$ 를 <strong>미리 더해 하나의 행렬로 합칠 수 있다</strong>.
-          그래서 어댑터를 덧붙이는 다른 방식과 달리 추론 지연이 늘지 않는다.
+          training이 끝나면 $\mathbf{W}_0+\mathbf{BA}$ 를 <strong>미리 더해 하나의 matrix로 합칠 수 있다</strong>.
+          그래서 어댑터를 덧붙이는 다른 방식과 달리 inference 지연이 늘지 않는다.
           <a href="2.4-matrix-operations.html">2.4</a>의 "덧셈은 성분별"이라는 단순한 사실이 실용적 이점이 된 사례다.
         </p>
       </div>
 
       <figure class="widget" data-widget="lora-params">
-        <figcaption class="widget__bar">LoRA — rank 하나로 정해지는 파라미터 수</figcaption>
+        <figcaption class="widget__bar">LoRA — rank 하나로 정해지는 parameter 수</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">$r$ 이 $d/2$ 를 넘으면 이득이 사라집니다. 저랭크가 통하는 것은 필요한 변화가 실제로 저랭크일 때뿐입니다.</p>
+          <p class="watch">$r$ 이 $d/2$ 를 넘으면 이득이 사라집니다. low-rank이 통하는 것은 필요한 변화가 실제로 저랭크일 때뿐입니다.</p>
         </div>
       </figure>
 
       <span class="anchor" id="c-factor"></span>
-      <h3>행렬 분해 기반 압축</h3>
+      <h3>Factorization-Based Compression 행렬 분해 기반 압축</h3>
       <p>
-        학습이 끝난 가중치를 SVD 로 잘라 근사한다(<a href="2.8-svd.html">2.8</a>).
-        $\mathbf{W}\approx\mathbf{U}_k\boldsymbol{\Sigma}_k\mathbf{V}_k^\top$ 로 두면 층 하나가 두 개의 작은 층이 된다.
+        training이 끝난 weight를 SVD로 잘라 근사한다(<a href="2.8-svd.html">2.8</a>).
+        $\mathbf{W}\approx\mathbf{U}_k\boldsymbol{\Sigma}_k\mathbf{V}_k^\top$ 로 두면 layer 하나가 두 개의 작은 layer가 된다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \underbrace{dk}_{\text{원본}} \;\longrightarrow\; \underbrace{k(d+k_{\text{out}})}_{\text{분해 후}}, \qquad \text{오차} = \sqrt{\sum_{i>k}\sigma_i^2} $$</div>
@@ -277,14 +277,14 @@
       </div>
       <p>
         <strong>Eckart–Young 덕분에 오차를 미리 계산할 수 있다</strong>는 것이 이 방법의 장점이다.
-        다만 "가중치 행렬의 특이값이 실제로 빠르게 감소하는가"는 층마다 다르므로 반드시 확인해야 한다.
-        가지치기(pruning)·양자화와 함께 쓰이며, 22장에서 자세히 다룬다.
+        다만 "weight matrix의 singular value(특이값)가 실제로 빠르게 감소하는가"는 layer마다 다르므로 반드시 확인해야 한다.
+        pruning(가지치기)·quantization(양자화)과 함께 쓰이며, 22장에서 자세히 다룬다.
       </p>
 
       <span class="anchor" id="c-graph"></span>
-      <h3>그래프 표현</h3>
+      <h3>Graph Representation 그래프 표현</h3>
       <p>
-        그래프는 <strong>인접행렬</strong> $\mathbf{A}\in\{0,1\}^{n\times n}$ 로 표현한다.
+        graph는 <strong>adjacency matrix</strong> $\mathbf{A}\in\{0,1\}^{n\times n}$ 로 표현한다.
         $A_{ij}=1$ 이면 $i$ 와 $j$ 가 연결되어 있다는 뜻이다.
       </p>
       <div class="eq">
@@ -292,16 +292,16 @@
         <span class="eq__tag num">(6)</span>
       </div>
       <p>
-        <strong>인접행렬을 곱하는 것이 곧 "이웃의 정보를 모으는 것"</strong>이다.
-        $\hat{\mathbf{A}}$ 는 차수로 정규화한 버전($\mathbf{D}^{-1/2}(\mathbf{A}+\mathbf{I})\mathbf{D}^{-1/2}$)으로,
+        <strong>adjacency matrix를 곱하는 것이 곧 "이웃의 정보를 모으는 것"</strong>이다.
+        $\hat{\mathbf{A}}$ 는 차수로 normalize 한 버전($\mathbf{D}^{-1/2}(\mathbf{A}+\mathbf{I})\mathbf{D}^{-1/2}$)으로,
         차수가 큰 노드가 신호를 독점하지 않게 한다.
         $\mathbf{A}^k$ 의 $(i,j)$ 성분이 <strong>길이 $k$ 인 경로의 개수</strong>라는 사실도
-        <a href="2.4-matrix-operations.html">2.4</a>의 행렬 곱 정의에서 바로 나온다.
-        인접행렬은 대개 <strong>희소</strong>하므로 CSR 로 저장하고 희소 곱을 쓴다.
+        <a href="2.4-matrix-operations.html">2.4</a>의 matrix multiplication 정의에서 바로 나온다.
+        adjacency matrix는 대개 <strong>sparse(희소)</strong> 하므로 CSR로 저장하고 sparse 곱을 쓴다.
       </p>
 
       <figure class="widget" data-widget="graph-message">
-        <figcaption class="widget__bar">인접행렬 곱 = 이웃 정보 모으기</figcaption>
+        <figcaption class="widget__bar">adjacency matrix 곱 = 이웃 정보 모으기</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
@@ -311,40 +311,40 @@
       </figure>
 
       <span class="anchor" id="c-imgtensor"></span>
-      <h3>이미지 텐서</h3>
+      <h3>Image Tensor 이미지 텐서</h3>
       <p>
-        이미지는 $(N, C, H, W)$ 4축 텐서다 — 배치 · 채널 · 세로 · 가로
-        (PyTorch 규약. TensorFlow 는 $(N,H,W,C)$ 를 쓴다).
+        image는 $(N, C, H, W)$ 4축 텐서다 — batch · channel(채널) · 세로 · 가로
+        (PyTorch 규약. TensorFlow는 $(N,H,W,C)$ 를 쓴다).
       </p>
       <div class="eq">
         <div class="eq__body">$$ \text{im2col}: \ (N,C,H,W) \to (N\!\cdot\!H'W',\ C k^2) \quad\Longrightarrow\quad \text{합성곱} = \text{행렬 곱} $$</div>
         <span class="eq__tag num">(7)</span>
       </div>
       <p>
-        합성곱은 <strong>겹치는 패치를 행으로 펼친 뒤 커널 행렬과 곱하는 것</strong>으로 바꿀 수 있다.
-        이 변환 덕분에 고도로 최적화된 GEMM 커널을 그대로 쓸 수 있고,
-        "합성곱도 결국 행렬 곱"이라는 말이 성립한다<a class="cite" href="#ref-stanford-cs231n" data-ref="stanford-cs231n">3</a>.
+        convolution(합성곱)은 <strong>겹치는 패치를 행으로 펼친 뒤 kernel(커널) matrix와 곱하는 것</strong>으로 바꿀 수 있다.
+        이 변환 덕분에 고도로 optimize 된 GEMM kernel을 그대로 쓸 수 있고,
+        "convolution도 결국 matrix multiplication"이라는 말이 성립한다<a class="cite" href="#ref-stanford-cs231n" data-ref="stanford-cs231n">3</a>.
       </p>
 
       <span class="anchor" id="c-seqtensor"></span>
-      <h3>시퀀스 텐서</h3>
+      <h3>Sequence Tensor 시퀀스 텐서</h3>
       <p>
-        시퀀스는 $(N, L, d)$ 3축 텐서다 — 배치 · 길이 · 임베딩 차원.
-        여기에 멀티헤드 어텐션이 붙으면 축이 하나 더 생긴다.
+        sequence는 $(N, L, d)$ 3축 텐서다 — batch · 길이 · embedding dimension.
+        여기에 multi-head(멀티헤드) attention이 붙으면 축이 하나 더 생긴다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ (N, L, d) \ \to\ (N, h, L, d/h) \ \xrightarrow{\ \mathbf{Q}\mathbf{K}^\top\ } \ (N, h, L, L) \ \to\ (N, L, d) $$</div>
         <span class="eq__tag num">(8)</span>
       </div>
       <p>
-        중간의 $(N,h,L,L)$ 이 어텐션 맵이고, <strong>$L$ 에 대해 제곱으로 커지는 유일한 텐서</strong>다.
-        길이 4096 · 헤드 32 · 배치 8 이면 $8\times32\times4096^2 \approx 4.3\times10^{9}$ 개 —
+        중간의 $(N,h,L,L)$ 이 attention map(어텐션 맵)이고, <strong>$L$ 에 대해 제곱으로 커지는 유일한 tensor</strong>다.
+        길이 4096 · 헤드 32 · batch 8 이면 $8\times32\times4096^2 \approx 4.3\times10^{9}$ 개 —
         <span class="tex">float16</span> 으로도 8.6GB다. 긴 문맥이 어려운 이유가 이 한 줄에 있다.
-        헤드로 쪼개는 것은 <a href="2.4-matrix-operations.html">2.4</a>의 <strong>블록행렬</strong> 관점이다.
+        헤드로 쪼개는 것은 <a href="2.4-matrix-operations.html">2.4</a>의 <strong>block matrix(블록행렬)</strong> 관점이다.
       </p>
 
       <figure class="widget" data-widget="tensor-pipeline">
-        <figcaption class="widget__bar">텐서 shape 의 흐름 — 이미지 · 시퀀스 · 멀티모달</figcaption>
+        <figcaption class="widget__bar">tensor shape의 흐름 — image · sequence · multimodal</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
@@ -354,34 +354,34 @@
       </figure>
 
       <span class="anchor" id="c-multimodal"></span>
-      <h3>멀티모달 표현</h3>
+      <h3>Multimodal Representation 멀티모달 표현</h3>
       <p>
-        이미지와 텍스트처럼 서로 다른 모달리티를 <strong>같은 차원의 공간으로 사영</strong>한 뒤
-        코사인 유사도로 비교한다. CLIP 이 대표적이다.
+        image와 텍스트처럼 서로 다른 modality(모달리티)를 <strong>같은 dimension의 공간으로 projection(사영)</strong> 한 뒤
+        cosine similarity로 비교한다. CLIP이 대표적이다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{z}^{I}_i = \frac{\mathbf{W}_I f_I(\text{img}_i)}{\|\cdot\|}, \quad \mathbf{z}^{T}_j = \frac{\mathbf{W}_T f_T(\text{txt}_j)}{\|\cdot\|}, \quad \mathbf{S} = \frac{1}{\tau}\mathbf{Z}^{I}(\mathbf{Z}^{T})^\top $$</div>
         <span class="eq__tag num">(9)</span>
       </div>
       <p>
-        $\mathbf{S}\in\mathbb{R}^{N\times N}$ 은 배치 안 모든 (이미지, 텍스트) 쌍의 유사도 행렬이고,
-        학습은 <strong>대각선이 커지도록</strong> 시킨다(대조학습)<a class="cite" href="#ref-radford2021-learning-transferable-visual" data-ref="radford2021-learning-transferable-visual">4</a>.
-        정규화 후의 내적이 코사인 유사도라는 <a href="2.3-inner-product.html">2.3</a>의 사실이 그대로 쓰이고,
-        $\tau$ 는 softmax 의 날카로움을 조절하는 온도다.
+        $\mathbf{S}\in\mathbb{R}^{N\times N}$ 은 batch 안 모든 (image, 텍스트) 쌍의 similarity(유사도) matrix고,
+        training은 <strong>대각선이 커지도록</strong> 시킨다(contrastive learning(대조학습))<a class="cite" href="#ref-radford2021-learning-transferable-visual" data-ref="radford2021-learning-transferable-visual">4</a>.
+        normalization 후의 inner product가 cosine similarity라는 <a href="2.3-inner-product.html">2.3</a>의 사실이 그대로 쓰이고,
+        $\tau$ 는 softmax의 날카로움을 조절하는 온도다.
       </p>
       <p>
         여기서 선형대수적으로 중요한 점은 <strong>서로 다른 모달의 표현이 같은 공간에 놓여야 비교가 가능</strong>하다는 것이다.
-        $\mathbf{W}_I$ 와 $\mathbf{W}_T$ 는 각 모달의 표현을 <em>공통 좌표계</em>로 옮기는 선형사상이다
+        $\mathbf{W}_I$ 와 $\mathbf{W}_T$ 는 각 모달의 표현을 <em>공통 coordinate system(좌표계)</em>로 옮기는 linear map(선형사상)이다
         (<a href="2.5-linear-transformation.html">2.5</a>).
       </p>
 
       <figure class="widget" data-widget="clip-matrix">
-        <figcaption class="widget__bar">대조학습의 유사도 행렬 — 대각선을 키운다</figcaption>
+        <figcaption class="widget__bar">contrastive learning의 similarity matrix — 대각선을 키운다</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">학습이 진행될수록 대각선(맞는 쌍)만 진해집니다. 온도 $\tau$ 를 낮추면 대비가 강해집니다.</p>
+          <p class="watch">training이 진행될수록 대각선(맞는 쌍)만 진해집니다. 온도 $\tau$ 를 낮추면 대비가 강해집니다.</p>
         </div>
       </figure>
     </section>
@@ -390,17 +390,17 @@
     <section class="sec" id="s-math">
       <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
 
-      <p>구조별 shape 와 연산량을 한 표로 모으면 다음과 같다.</p>
+      <p>구조별 shape와 연산량을 한 표로 모으면 다음과 같다.</p>
       <div class="tablewrap">
         <table>
-          <thead><tr><th>구조</th><th>핵심 연산</th><th>파라미터</th><th>연산량(샘플당)</th></tr></thead>
+          <thead><tr><th>구조</th><th>핵심 연산</th><th>parameter</th><th>연산량(샘플당)</th></tr></thead>
           <tbody>
-            <tr><td>선형층</td><td>$\mathbf{Wx}+\mathbf{b}$</td><td>$d_{\text{in}}d_{\text{out}}$</td><td>$2d_{\text{in}}d_{\text{out}}$</td></tr>
-            <tr><td>임베딩</td><td>행 선택</td><td>$Vd$</td><td>$O(d)$</td></tr>
-            <tr><td>어텐션</td><td>$\operatorname{softmax}(\mathbf{QK}^\top/\sqrt{d_k})\mathbf{V}$</td><td>$4d^2$ (Q,K,V,O)</td><td>$O(L^2 d + L d^2)$</td></tr>
+            <tr><td>linear layer</td><td>$\mathbf{Wx}+\mathbf{b}$</td><td>$d_{\text{in}}d_{\text{out}}$</td><td>$2d_{\text{in}}d_{\text{out}}$</td></tr>
+            <tr><td>embedding</td><td>행 선택</td><td>$Vd$</td><td>$O(d)$</td></tr>
+            <tr><td>attention</td><td>$\operatorname{softmax}(\mathbf{QK}^\top/\sqrt{d_k})\mathbf{V}$</td><td>$4d^2$ (Q,K,V,O)</td><td>$O(L^2 d + L d^2)$</td></tr>
             <tr><td>LoRA</td><td>$\mathbf{W}_0 + \mathbf{BA}$</td><td>$r(d+k)$</td><td>$2r(d+k)$ (추가분)</td></tr>
-            <tr><td>GNN 층</td><td>$\hat{\mathbf{A}}\mathbf{H}\mathbf{W}$</td><td>$d_{\text{in}}d_{\text{out}}$</td><td>$O(|E|d + nd^2)$</td></tr>
-            <tr><td>합성곱</td><td>im2col + GEMM</td><td>$C_{\text{in}}C_{\text{out}}k^2$</td><td>$O(H'W'C_{\text{in}}C_{\text{out}}k^2)$</td></tr>
+            <tr><td>GNN layer</td><td>$\hat{\mathbf{A}}\mathbf{H}\mathbf{W}$</td><td>$d_{\text{in}}d_{\text{out}}$</td><td>$O(|E|d + nd^2)$</td></tr>
+            <tr><td>convolution</td><td>im2col + GEMM</td><td>$C_{\text{in}}C_{\text{out}}k^2$</td><td>$O(H'W'C_{\text{in}}C_{\text{out}}k^2)$</td></tr>
           </tbody>
         </table>
       </div>
@@ -412,25 +412,25 @@
             <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
           </thead>
           <tbody>
-            <tr><td>$N$</td><td>엔</td><td>배치 크기</td><td>정수</td><td>$\geq1$</td></tr>
-            <tr><td>$L$</td><td>엘</td><td>시퀀스 길이 (토큰 수)</td><td>정수</td><td>$\geq1$</td></tr>
-            <tr><td>$d$</td><td>디</td><td>표현(임베딩) 차원</td><td>정수</td><td>$\geq1$</td></tr>
-            <tr><td>$V$</td><td>브이</td><td>어휘 크기</td><td>정수</td><td>$\geq1$</td></tr>
-            <tr><td>$h$</td><td>에이치</td><td>어텐션 헤드 수</td><td>정수</td><td>$d/h$ 가 정수</td></tr>
-            <tr><td>$d_k, d_v$</td><td>디 케이 · 디 브이</td><td>키·값의 차원 (헤드당)</td><td>정수</td><td>보통 $d/h$</td></tr>
-            <tr><td>$\mathbf{E}$</td><td>볼드 이</td><td>임베딩 행렬 (행 = 토큰)</td><td>$(V,d)$</td><td>$\mathbb{R}$</td></tr>
-            <tr><td>$\mathbf{o}_t$</td><td>원-핫</td><td>$t$ 번째만 1인 벡터</td><td>$(V,)$</td><td>$\{0,1\}$</td></tr>
-            <tr><td>$\mathbf{Q},\mathbf{K},\mathbf{V}$</td><td>큐·케이·브이</td><td>질의·키·값 행렬</td><td>$(L,d_k)$ 등</td><td>$\mathbb{R}$</td></tr>
-            <tr><td>$\mathbf{P}$</td><td>어텐션 가중치</td><td>softmax 후 행렬</td><td>$(L,L)$</td><td>행 합 = 1</td></tr>
-            <tr><td>$r$</td><td>알</td><td>LoRA 의 rank</td><td>정수</td><td>$\ll\min(d,k)$</td></tr>
-            <tr><td>$\mathbf{A}$ (그래프)</td><td>인접행렬</td><td>$A_{ij}=1$ 이면 연결</td><td>$(n,n)$</td><td>$\{0,1\}$</td></tr>
-            <tr><td>$\hat{\mathbf{A}}$</td><td>에이 햇</td><td>차수 정규화된 인접행렬</td><td>$(n,n)$</td><td>—</td></tr>
-            <tr><td>$\mathbf{D}$</td><td>차수 행렬</td><td>대각에 각 노드의 차수</td><td>$(n,n)$</td><td>대각</td></tr>
-            <tr><td>$\mathcal{N}(i)$</td><td>이웃 집합</td><td>$i$ 와 연결된 노드들</td><td>집합</td><td>—</td></tr>
-            <tr><td>$\sigma(\cdot)$</td><td>시그마 · 활성화</td><td>비선형 함수 (ReLU 등)</td><td>함수</td><td>—</td></tr>
-            <tr><td>$\tau$</td><td>타우 · 온도</td><td>유사도의 날카로움 조절</td><td>스칼라</td><td>$>0$</td></tr>
-            <tr><td>$|E|$</td><td>엣지 수</td><td>그래프의 간선 개수</td><td>정수</td><td>$\geq0$</td></tr>
-            <tr><td>FLOPs</td><td>플롭스</td><td>부동소수점 연산 횟수</td><td>정수</td><td>—</td></tr>
+            <tr><td>$N$</td><td>n</td><td>batch 크기</td><td>정수</td><td>$\geq1$</td></tr>
+            <tr><td>$L$</td><td>L</td><td>sequence 길이 (token 수)</td><td>정수</td><td>$\geq1$</td></tr>
+            <tr><td>$d$</td><td>d</td><td>표현(embedding) dimension</td><td>정수</td><td>$\geq1$</td></tr>
+            <tr><td>$V$</td><td>v</td><td>vocabulary 크기</td><td>정수</td><td>$\geq1$</td></tr>
+            <tr><td>$h$</td><td>h</td><td>attention 헤드 수</td><td>정수</td><td>$d/h$ 가 정수</td></tr>
+            <tr><td>$d_k, d_v$</td><td>d k · d v</td><td>키·값의 dimension (헤드당)</td><td>정수</td><td>보통 $d/h$</td></tr>
+            <tr><td>$\mathbf{E}$</td><td>bold E</td><td>embedding matrix (행 = token)</td><td>$(V,d)$</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\mathbf{o}_t$</td><td>one-hot</td><td>$t$ 번째만 1인 vector</td><td>$(V,)$</td><td>$\{0,1\}$</td></tr>
+            <tr><td>$\mathbf{Q},\mathbf{K},\mathbf{V}$</td><td>Q·K·V</td><td>질의·키·값 matrix</td><td>$(L,d_k)$ 등</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\mathbf{P}$</td><td>attention weight</td><td>softmax 후 matrix</td><td>$(L,L)$</td><td>행 합 = 1</td></tr>
+            <tr><td>$r$</td><td>r</td><td>LoRA의 rank</td><td>정수</td><td>$\ll\min(d,k)$</td></tr>
+            <tr><td>$\mathbf{A}$ (graph)</td><td>adjacency matrix</td><td>$A_{ij}=1$ 이면 연결</td><td>$(n,n)$</td><td>$\{0,1\}$</td></tr>
+            <tr><td>$\hat{\mathbf{A}}$</td><td>A hat</td><td>차수 normalize 된 adjacency matrix</td><td>$(n,n)$</td><td>—</td></tr>
+            <tr><td>$\mathbf{D}$</td><td>degree matrix</td><td>대각에 각 노드의 차수</td><td>$(n,n)$</td><td>대각</td></tr>
+            <tr><td>$\mathcal{N}(i)$</td><td>neighborhood</td><td>$i$ 와 연결된 노드들</td><td>집합</td><td>—</td></tr>
+            <tr><td>$\sigma(\cdot)$</td><td>sigma · activation</td><td>비선형 함수 (ReLU 등)</td><td>함수</td><td>—</td></tr>
+            <tr><td>$\tau$</td><td>tau · temperature 타우</td><td>similarity의 날카로움 조절</td><td>scalar(스칼라)</td><td>$>0$</td></tr>
+            <tr><td>$|E|$</td><td>number of edges</td><td>graph의 간선 개수</td><td>정수</td><td>$\geq0$</td></tr>
+            <tr><td>FLOPs</td><td>FLOPs 플롭스</td><td>부동소수점 연산 횟수</td><td>정수</td><td>—</td></tr>
           </tbody>
         </table>
       </div>
@@ -444,7 +444,7 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ s = \mathbf{q}^\top\mathbf{k} = \sum_{i=1}^{d_k} q_i k_i $$</div>
-          <div class="derive__why">한 쌍의 점수. 성분들이 독립이고 평균 0, 분산 1이라 가정한다</div>
+          <div class="derive__why">한 쌍의 점수. 성분들이 독립이고 평균 0, variance 1이라 가정한다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbb{E}[s] = \sum_i \mathbb{E}[q_i]\mathbb{E}[k_i] = 0 $$</div>
@@ -452,18 +452,18 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \operatorname{Var}(s) = \sum_i \operatorname{Var}(q_i k_i) = \sum_i 1\cdot1 = d_k $$</div>
-          <div class="derive__why">독립인 항의 분산은 더해진다. <strong>차원에 비례해 커진다</strong></div>
+          <div class="derive__why">독립인 항의 variance는 더해진다. <strong>dimension에 비례해 커진다</strong></div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \operatorname{Var}\!\left(\frac{s}{\sqrt{d_k}}\right) = \frac{d_k}{d_k} = 1 $$</div>
-          <div class="derive__why">$\sqrt{d_k}$ 로 나누면 <strong>차원과 무관하게 분산 1</strong>로 고정된다</div>
+          <div class="derive__why">$\sqrt{d_k}$ 로 나누면 <strong>dimension과 무관하게 variance 1</strong>로 고정된다</div>
         </div>
       </div>
       <div class="note note--tip">
-        <span class="note__label">왜 분산이 중요한가</span>
+        <span class="note__label">왜 variance가 중요한가</span>
         <p>
-          점수의 크기가 커지면 softmax 가 <strong>거의 원-핫에 가까워진다</strong>.
-          그러면 최댓값 외의 항에서 기울기가 사실상 0이 되어 학습이 멈춘다.
+          점수의 크기가 커지면 softmax가 <strong>거의 one-hot에 가까워진다</strong>.
+          그러면 최댓값 외의 항에서 gradient가 사실상 0이 되어 training이 멈춘다.
           $d_k=64$ 면 표준편차가 8배 차이 나므로 무시할 수 없다.
         </p>
       </div>
@@ -492,7 +492,7 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ (\mathbf{A}^2)_{ij} = \sum_{m} A_{im}A_{mj} $$</div>
-          <div class="derive__why">행렬 곱의 정의 (<a href="2.4-matrix-operations.html">2.4</a>의 식 2)</div>
+          <div class="derive__why">matrix multiplication의 정의 (<a href="2.4-matrix-operations.html">2.4</a>의 식 2)</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ A_{im}A_{mj} = 1 \iff i\!-\!m \text{ 연결 그리고 } m\!-\!j \text{ 연결} $$</div>
@@ -504,18 +504,18 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ (\mathbf{A}^k)_{ij} = \#\{\text{길이 } k \text{ 경로}\} $$</div>
-          <div class="derive__why">귀납적으로 확장된다. <strong>GNN 을 $k$ 층 쌓으면 $k$ 홉 이웃까지 본다</strong>는 말의 근거</div>
+          <div class="derive__why">귀납적으로 확장된다. <strong>GNN을 $k$ layer 쌓으면 $k$ 홉 이웃까지 본다</strong>는 말의 근거</div>
         </div>
       </div>
       <details>
-        <summary>왜 $\hat{\mathbf{A}}=\mathbf{D}^{-1/2}(\mathbf{A}+\mathbf{I})\mathbf{D}^{-1/2}$ 로 정규화하는가</summary>
+        <summary>왜 $\hat{\mathbf{A}}=\mathbf{D}^{-1/2}(\mathbf{A}+\mathbf{I})\mathbf{D}^{-1/2}$ 로 normalize 하는가</summary>
         <p>
-          정규화하지 않으면 차수가 큰 노드일수록 $\mathbf{A}\mathbf{H}$ 의 크기가 커져 값의 스케일이 노드마다 달라진다.
-          층을 쌓으면 이 불균형이 거듭제곱으로 증폭된다 — <a href="2.7-eigenvalues.html">2.7</a>에서 본 반복 변환의 문제다.
+          normalize 하지 않으면 차수가 큰 노드일수록 $\mathbf{A}\mathbf{H}$ 의 크기가 커져 값의 스케일이 노드마다 달라진다.
+          layer를 쌓으면 이 불균형이 거듭제곱으로 증폭된다 — <a href="2.7-eigenvalues.html">2.7</a>에서 본 반복 변환의 문제다.
         </p>
         <p>
           $\mathbf{D}^{-1/2}$ 를 양쪽에서 곱하면 대칭성을 유지한 채 스케일이 맞춰지고,
-          정규화된 인접행렬의 고윳값이 $[-1, 1]$ 안에 들어와 <strong>스펙트럴 반지름이 1을 넘지 않는다</strong>.
+          normalize 된 adjacency matrix의 eigenvalue(고윳값)가 $[-1, 1]$ 안에 들어와 <strong>spectral radius(스펙트럴 반지름)가 1을 넘지 않는다</strong>.
           $+\mathbf{I}$ 는 자기 자신의 정보를 잃지 않게 하는 self-loop 다.
         </p>
       </details>
@@ -533,7 +533,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ y_1 = 1(1)+0(2)+(-1)(3) + 0.5 = 1-3+0.5 = -1.5 $$</div>
-          <div class="derive__why">첫 행과의 내적에 편향을 더했다</div>
+          <div class="derive__why">첫 행과의 inner product에 bias를 더했다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ y_2 = 2(1)+1(2)+0(3) - 1 = 2+2-1 = 3 $$</div>
@@ -541,7 +541,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \text{파라미터} = 3\times2 + 2 = 8, \qquad \text{FLOPs} \approx 2\times3\times2 = 12 $$</div>
-          <div class="derive__why">가중치 6 + 편향 2. 곱 6번 + 덧셈 6번</div>
+          <div class="derive__why">weight 6 + bias 2. 곱 6번 + 덧셈 6번</div>
         </div>
       </div>
 
@@ -549,7 +549,7 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{E} = \begin{bmatrix}0.1&0.2\\0.9&-0.3\\-0.5&0.7\end{bmatrix}, \qquad \mathbf{o}_2 = (0,1,0)^\top $$</div>
-          <div class="derive__why">어휘 3개, 차원 2. 두 번째 토큰의 원-핫</div>
+          <div class="derive__why">vocabulary 3개, dimension 2. 두 번째 token의 one-hot</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{E}^\top\mathbf{o}_2 = \begin{bmatrix}0.1(0)+0.9(1)+(-0.5)(0)\\ 0.2(0)+(-0.3)(1)+0.7(0)\end{bmatrix} = \begin{bmatrix}0.9\\-0.3\end{bmatrix} $$</div>
@@ -577,7 +577,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ e^{0.707}\approx2.028,\quad e^{0}=1 \;\Rightarrow\; \text{1행 합} = 2.028+1+2.028 = 5.056 $$</div>
-          <div class="derive__why">softmax 의 분모</div>
+          <div class="derive__why">softmax의 분모</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{P}_{1,:} = (0.401,\ 0.198,\ 0.401), \qquad \sum_j P_{1j} = 1 \ \checkmark $$</div>
@@ -585,7 +585,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{out}_1 = 0.401(1,0) + 0.198(0,1) + 0.401(0.5,0.5) $$</div>
-          <div class="derive__why">$\mathbf{V}$ 의 행들을 가중 평균 — <strong>볼록 결합</strong></div>
+          <div class="derive__why">$\mathbf{V}$ 의 행들을 가중 평균 — <strong>convex combination</strong></div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ = (0.401+0.2005,\ 0.198+0.2005) = (0.6015,\ 0.3985) $$</div>
@@ -593,7 +593,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ 0.6015+0.3985 = 1.0 \ \checkmark $$</div>
-          <div class="derive__why"><strong>검산</strong> — $\mathbf{V}$ 의 모든 행이 합 1이므로 볼록 결합의 합도 1</div>
+          <div class="derive__why"><strong>검산</strong> — $\mathbf{V}$ 의 모든 행이 합 1이므로 convex combination의 합도 1</div>
         </div>
       </div>
 
@@ -613,12 +613,12 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ r < \frac{4096}{2} = 2048 \ \text{ 이어야 이득} $$</div>
-          <div class="derive__why">유도 2의 조건. $r=2048$ 이면 파라미터가 원본과 같아진다</div>
+          <div class="derive__why">유도 2의 조건. $r=2048$ 이면 parameter가 원본과 같아진다</div>
         </div>
       </div>
 
       <h3>⑤ 그래프 — 인접행렬로 이웃 모으기</h3>
-      <p>노드 4개가 사슬로 이어진 그래프 $1-2-3-4$ 를 보자.</p>
+      <p>노드 4개가 사슬로 이어진 graph $1-2-3-4$ 를 보자.</p>
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{A} = \begin{bmatrix}0&1&0&0\\1&0&1&0\\0&1&0&1\\0&0&1&0\end{bmatrix}, \qquad \mathbf{h} = (1,0,0,0)^\top $$</div>
@@ -638,7 +638,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \deg = (1,2,2,1) \;\Rightarrow\; \mathbf{D}=\operatorname{diag}(1,2,2,1) $$</div>
-          <div class="derive__why">각 행의 합이 차수. 정규화에 쓰인다</div>
+          <div class="derive__why">각 행의 합이 차수. normalization에 쓰인다</div>
         </div>
       </div>
 
@@ -646,7 +646,7 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ N=8,\ h=32,\ L=4096 \;\Rightarrow\; 8\times32\times4096\times4096 $$</div>
-          <div class="derive__why">어텐션 맵 $(N,h,L,L)$ 의 원소 수</div>
+          <div class="derive__why">attention map $(N,h,L,L)$ 의 원소 수</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ 4096^2 = 16{,}777{,}216, \qquad 8\times32 = 256 $$</div>
@@ -672,8 +672,8 @@
       <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
 
       <p>
-        본문의 위젯들 — <strong>선형층</strong> · <strong>임베딩 룩업</strong> · <strong>어텐션 단계</strong> ·
-        <strong>LoRA</strong> · <strong>그래프 전파</strong> · <strong>텐서 shape</strong> · <strong>대조 유사도</strong> —
+        본문의 위젯들 — <strong>linear layer</strong> · <strong>embedding 룩업</strong> · <strong>attention 단계</strong> ·
+        <strong>LoRA</strong> · <strong>graph 전파</strong> · <strong>tensor shape</strong> · <strong>대조 similarity</strong> —
         을 만져 본 뒤, 아래에서 <strong>2장 전체를 한 장으로 되짚는다</strong>.
       </p>
 
@@ -682,7 +682,7 @@
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
-          <p class="watch">상자를 눌러 보세요. 2장에서 배운 개념이 딥러닝의 어느 부품으로 이어지는지 보여 줍니다.</p>
+          <p class="watch">상자를 눌러 보세요. 2장에서 배운 개념이 deep learning의 어느 부품으로 이어지는지 보여 줍니다.</p>
         </div>
       </figure>
     </section>
@@ -693,56 +693,56 @@
 
       <div class="note note--trap">
         <span class="note__label">오해 1</span>
-        <p>"임베딩 층은 원-핫 행렬 곱이므로 느리다."</p>
+        <p>"embedding layer는 one-hot matrix 곱이므로 느리다."</p>
         <p>
           <strong>실제로는</strong> 실제 구현이 곱셈을 하지 않는다.
-          원-핫과의 곱은 <strong>행 하나를 꺼내는 것</strong>과 같으므로 인덱싱으로 대체된다.
-          다만 <em>역전파</em>에서는 해당 행에만 기울기가 쌓이므로 희소 갱신이 되고,
-          그래서 임베딩 층에 특별한 옵티마이저 설정을 두는 경우가 있다.
+          one-hot과의 곱은 <strong>행 하나를 꺼내는 것</strong>과 같으므로 인덱싱으로 대체된다.
+          다만 <em>역전파</em>에서는 해당 행에만 gradient가 쌓이므로 sparse 갱신이 되고,
+          그래서 embedding layer에 특별한 옵티마이저 설정을 두는 경우가 있다.
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 2</span>
-        <p>"LoRA 는 성능 손실 없이 파라미터만 줄인다."</p>
+        <p>"LoRA는 성능 loss(손실) 없이 parameter만 줄인다."</p>
         <p>
           <strong>실제로는</strong> $\operatorname{rank}(\mathbf{BA})\leq r$ 이므로
-          <strong>표현할 수 있는 변화가 rank $r$ 부분공간으로 제한</strong>된다.
-          작업이 요구하는 변화가 그 안에 들어갈 때만 손실이 작다.
-          "왜 통하는가"는 경험적 관찰에 기반한 가설이며, $r$ 은 하이퍼파라미터로 조정해야 한다.
+          <strong>표현할 수 있는 변화가 rank $r$ subspace(부분공간)로 제한</strong>된다.
+          작업이 요구하는 변화가 그 안에 들어갈 때만 loss가 작다.
+          "왜 통하는가"는 경험적 관찰에 기반한 가설이며, $r$ 은 hyperparameter(하이퍼파라미터)로 조정해야 한다.
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 3</span>
-        <p>"어텐션의 계산량은 $L^2$ 이므로 파라미터도 $L^2$ 이다."</p>
+        <p>"attention의 계산량은 $L^2$ 이므로 parameter도 $L^2$ 이다."</p>
         <p>
-          <strong>실제로는</strong> 파라미터는 $\mathbf{W}_Q,\mathbf{W}_K,\mathbf{W}_V,\mathbf{W}_O$ 의
-          $4d^2$ 로 <strong>길이와 무관</strong>하다. $L^2$ 로 커지는 것은 <em>중간 활성값</em>(어텐션 맵)이다.
-          그래서 긴 문맥 문제는 <strong>메모리 문제</strong>이지 모델 크기 문제가 아니며,
+          <strong>실제로는</strong> parameter는 $\mathbf{W}_Q,\mathbf{W}_K,\mathbf{W}_V,\mathbf{W}_O$ 의
+          $4d^2$ 로 <strong>길이와 무관</strong>하다. $L^2$ 로 커지는 것은 <em>중간 활성값</em>(attention map)이다.
+          그래서 긴 문맥 문제는 <strong>메모리 문제</strong>이지 model 크기 문제가 아니며,
           FlashAttention 처럼 맵을 저장하지 않는 기법이 해법이 된다.
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 4</span>
-        <p>"$\mathbf{QK}^\top$ 은 대칭행렬이다."</p>
+        <p>"$\mathbf{QK}^\top$ 은 symmetric matrix(대칭행렬)다."</p>
         <p>
-          <strong>실제로는</strong> $\mathbf{Q}$ 와 $\mathbf{K}$ 가 서로 다른 가중치로 만들어지므로 대칭이 아니다.
+          <strong>실제로는</strong> $\mathbf{Q}$ 와 $\mathbf{K}$ 가 서로 다른 weight로 만들어지므로 대칭이 아니다.
           $\mathbf{Q}=\mathbf{K}$ 인 경우에만 대칭이 된다.
-          "$i$ 가 $j$ 를 보는 정도"와 "$j$ 가 $i$ 를 보는 정도"가 다를 수 있다는 것이 어텐션의 요점이다.
-          게다가 softmax 는 <strong>행별로</strong> 적용되므로 그 뒤에는 더더욱 비대칭이다.
+          "$i$ 가 $j$ 를 보는 정도"와 "$j$ 가 $i$ 를 보는 정도"가 다를 수 있다는 것이 attention의 요점이다.
+          게다가 softmax는 <strong>행별로</strong> 적용되므로 그 뒤에는 더더욱 비대칭이다.
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 5</span>
-        <p>"채널 순서 규약은 취향 문제다."</p>
+        <p>"channel 순서 규약은 취향 문제다."</p>
         <p>
           <strong>실제로는</strong> 성능에 직결된다. $(N,C,H,W)$ 와 $(N,H,W,C)$ 는
-          메모리 접근 패턴이 달라 커널 효율이 크게 달라지고,
+          메모리 접근 패턴이 달라 kernel 효율이 크게 달라지고,
           라이브러리마다 기본값이 달라서 <strong>변환을 빠뜨리면 조용히 틀린 결과</strong>가 나온다.
-          <a href="2.1-numbers-and-spaces.html">2.1</a>에서 본 shape 의 중요성이 여기서 실전 문제가 된다.
+          <a href="2.1-numbers-and-spaces.html">2.1</a>에서 본 shape의 중요성이 여기서 실전 문제가 된다.
         </p>
       </div>
     </section>
@@ -752,7 +752,7 @@
       <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
       <p>예제 ①–⑥을 검증한다.</p>
       <details>
-        <summary>NumPy — 선형층 · 임베딩 · 어텐션 · LoRA · 그래프 (20줄)</summary>
+        <summary>NumPy — linear layer · embedding · attention · LoRA · graph (20줄)</summary>
 <pre><code>import numpy as np
 
 W = np.array([[1., 0., -1.], [2., 1., 0.]]); b = np.array([0.5, -1.])
@@ -780,7 +780,7 @@ print((A @ A)[0, 2])                 # 1.0  <- 길이 2 경로 개수
 </code></pre>
         <p>
           <small>
-            softmax 를 이렇게 그대로 쓰면 큰 점수에서 <code>exp</code> 가 넘친다.
+            softmax를 이렇게 그대로 쓰면 큰 점수에서 <code>exp</code>가 넘친다.
             실제 구현은 행별 최댓값을 먼저 빼는 안정화(<code>S - S.max(axis=1, keepdims=True)</code>)를 쓴다.
           </small>
         </p>
@@ -794,22 +794,22 @@ print((A @ A)[0, 2])                 # 1.0  <- 길이 2 경로 개수
       <div class="quiz">
         <div class="q">
           <p class="q__stem"><span class="q__tag">계산</span>
-            $d_{\text{in}}=768$, $d_{\text{out}}=3072$ 인 선형층의 파라미터 수는(편향 포함)?</p>
+            $d_{\text{in}}=768$, $d_{\text{out}}=3072$ 인 linear layer의 parameter 수는(bias 포함)?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span class="num">2,362,368</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span class="num">3,840</span></button>
             <button class="opt" type="button"><span class="opt__mark">다</span><span class="num">2,359,296</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            $768\times3072 = 2{,}359{,}296$ 에 편향 $3072$ 를 더해 $2{,}362{,}368$.
-            다는 편향을 빠뜨린 값이고, 나는 두 차원을 더한 값이다.
-            트랜스포머의 FFN 첫 층이 대략 이 크기다.
+            $768\times3072 = 2{,}359{,}296$ 에 bias $3072$ 를 더해 $2{,}362{,}368$.
+            다는 bias를 빠뜨린 값이고, 나는 두 dimension을 더한 값이다.
+            트랜스포머의 FFN 첫 layer가 대략 이 크기다.
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">계산</span>
-            $d=k=1024$ 인 가중치에 $r=16$ LoRA 를 붙이면 학습 파라미터 비율은?</p>
+            $d=k=1024$ 인 weight에 $r=16$ LoRA를 붙이면 training parameter 비율은?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 <span class="num">3.1</span>%</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>약 <span class="num">1.6</span>%</span></button>
@@ -824,37 +824,37 @@ print((A @ A)[0, 2])                 # 1.0  <- 길이 2 경로 개수
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">개념</span>
-            시퀀스 길이를 2배로 늘리면 어텐션 맵의 메모리는?</p>
+            sequence 길이를 2배로 늘리면 attention map의 메모리는?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>4배</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>2배</span></button>
-            <button class="opt" type="button"><span class="opt__mark">다</span><span>변하지 않는다 (파라미터가 그대로이므로)</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>변하지 않는다 (parameter가 그대로이므로)</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            어텐션 맵은 $(N,h,L,L)$ 이라 $L^2$ 에 비례한다. $L\to2L$ 이면 4배다.
-            다는 <strong>파라미터와 활성값을 혼동</strong>한 것 — 파라미터는 정말 그대로지만
+            attention map은 $(N,h,L,L)$ 이라 $L^2$ 에 비례한다. $L\to2L$ 이면 4배다.
+            다는 <strong>parameter와 활성값을 혼동</strong>한 것 — parameter는 정말 그대로지만
             메모리를 잡아먹는 것은 중간 활성값이다(오해 3).
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">개념</span>
-            어텐션에서 $\sqrt{d_k}$ 로 나누지 않으면 생기는 문제는?</p>
+            attention에서 $\sqrt{d_k}$ 로 나누지 않으면 생기는 문제는?</p>
           <div class="opts">
-            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>점수의 분산이 $d_k$ 로 커져 softmax 가 포화되고 기울기가 사라진다</span></button>
-            <button class="opt" type="button"><span class="opt__mark">나</span><span>행렬 곱의 shape 가 맞지 않는다</span></button>
-            <button class="opt" type="button"><span class="opt__mark">다</span><span>어텐션 가중치의 합이 1이 되지 않는다</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>점수의 variance가 $d_k$ 로 커져 softmax가 포화되고 gradient가 사라진다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>matrix multiplication의 shape가 맞지 않는다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>attention weight의 합이 1이 되지 않는다</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
             유도 1에서 $\operatorname{Var}(s)=d_k$ 임을 보였다.
-            점수가 커지면 softmax 가 거의 원-핫이 되어 다른 항의 기울기가 0에 가까워진다.
-            shape 는 스케일과 무관하고, softmax 는 어떤 입력에도 합을 1로 만든다.
+            점수가 커지면 softmax가 거의 one-hot이 되어 다른 항의 gradient가 0에 가까워진다.
+            shape는 스케일과 무관하고, softmax는 어떤 입력에도 합을 1로 만든다.
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">계산</span>
-            사슬 그래프 $1-2-3-4$ 에서 $(\mathbf{A}^2)_{22}$ 의 값과 의미는?</p>
+            사슬 graph $1-2-3-4$ 에서 $(\mathbf{A}^2)_{22}$ 의 값과 의미는?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span><span class="num">2</span> — 2번에서 출발해 이웃을 거쳐 돌아오는 길이 2 경로가 2개</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span><span class="num">0</span> — 자기 자신과는 연결되어 있지 않으므로</span></button>
@@ -862,23 +862,23 @@ print((A @ A)[0, 2])                 # 1.0  <- 길이 2 경로 개수
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
             $(\mathbf{A}^2)_{22} = \sum_m A_{2m}A_{m2} = A_{21}A_{12} + A_{23}A_{32} = 1 + 1 = 2$.
-            2번의 차수가 2이므로 <strong>대각 성분이 곧 차수</strong>가 된다(단순 그래프에서).
+            2번의 차수가 2이므로 <strong>대각 성분이 곧 차수</strong>가 된다(단순 graph에서).
             나는 $\mathbf{A}$ 자체의 대각 성분과 혼동한 것이다.
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">함정</span>
-            CLIP 류 모델에서 이미지·텍스트 임베딩을 정규화하는 이유는?</p>
+            CLIP 류 model에서 image·텍스트 embedding을 normalize 하는 이유는?</p>
           <div class="opts">
-            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>내적이 곧 코사인 유사도가 되어 크기 차이가 순위를 흔들지 않게 하려고</span></button>
-            <button class="opt" type="button"><span class="opt__mark">나</span><span>정규화해야 행렬 곱이 정의되므로</span></button>
-            <button class="opt" type="button"><span class="opt__mark">다</span><span>정규화하면 정보가 늘어나므로</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>inner product가 곧 cosine similarity가 되어 크기 차이가 순위를 흔들지 않게 하려고</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>normalize 해야 matrix multiplication이 정의되므로</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>normalize 하면 정보가 늘어나므로</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
             <a href="2.3-inner-product.html">2.3</a>에서 본 대로 $\hat{\mathbf{x}}^\top\hat{\mathbf{y}}=\cos\theta$ 다.
-            정규화하지 않으면 노름이 큰 임베딩이 무조건 높은 점수를 받는 편향이 생긴다.
-            정규화는 <strong>크기 정보를 버리는</strong> 연산이므로 정보가 늘지는 않는다.
+            normalize 하지 않으면 norm(노름)이 큰 embedding이 무조건 높은 점수를 받는 bias가 생긴다.
+            normalization은 <strong>크기 정보를 버리는</strong> 연산이므로 정보가 늘지는 않는다.
           </div>
         </div>
       </div>
@@ -889,11 +889,11 @@ print((A @ A)[0, 2])                 # 1.0  <- 길이 2 경로 개수
       <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
 
       <ul>
-        <li><strong>3장 미적분과 최적화</strong> — 이 행렬 연산들의 기울기를 구하는 법(역전파).</li>
-        <li><strong>6장 딥러닝 기초</strong> — 선형층 + 활성화로 만드는 다층 신경망.</li>
-        <li><strong>12장 Transformer</strong> — 어텐션의 전체 구조와 변형들.</li>
-        <li><strong>9장 그래프 신경망</strong> — 인접행렬의 스펙트럼과 메시지 전달.</li>
-        <li><strong>22장 양자화</strong> — 행렬 분해·가지치기와 함께 쓰는 압축 기법.</li>
+        <li><strong>3장 미적분과 optimization(최적화)</strong> — 이 matrix 연산들의 gradient를 구하는 법(역전파).</li>
+        <li><strong>6장 deep learning 기초</strong> — linear layer + activation으로 만드는 다층 neural network(신경망).</li>
+        <li><strong>12장 Transformer</strong> — attention의 전체 구조와 변형들.</li>
+        <li><strong>9장 graph neural network</strong> — adjacency matrix의 spectrum과 메시지 전달.</li>
+        <li><strong>22장 quantization</strong> — matrix factorization(행렬 분해)·pruning과 함께 쓰는 압축 기법.</li>
       </ul>
 
       <h3>출처</h3>
@@ -901,37 +901,37 @@ print((A @ A)[0, 2])                 # 1.0  <- 길이 2 경로 개수
         <li class="ref" id="ref-vaswani2017-attention-is-all" data-ref="vaswani2017-attention-is-all">
           <span class="ref__type" data-type="paper">논문</span>
           <span class="ref__cite">Vaswani, A. et al. (2017). <em>Attention Is All You Need</em>. NeurIPS.</span>
-          <span class="ref__where">§3.2.1 Scaled Dot-Product Attention — 식 (3)의 정의와 $1/\sqrt{d_k}$ 스케일링의 근거(각주에서 내적의 분산이 $d_k$ 임을 지적). 유도 1과 예제 ③이 이 서술을 따른다</span>
+          <span class="ref__where">§3.2.1 Scaled Dot-Product Attention — 식 (3)의 정의와 $1/\sqrt{d_k}$ 스케일링의 근거(각주에서 inner product의 variance가 $d_k$ 임을 지적). 유도 1과 예제 ③이 이 서술을 따른다</span>
           <a class="ref__link" href="https://arxiv.org/abs/1706.03762">arXiv:1706.03762</a>
         </li>
         <li class="ref" id="ref-hu2021-lora-low-rank" data-ref="hu2021-lora-low-rank">
           <span class="ref__type" data-type="paper">논문</span>
           <span class="ref__cite">Hu, E. J. et al. (2021). <em>LoRA: Low-Rank Adaptation of Large Language Models</em>. ICLR 2022.</span>
-          <span class="ref__where">§4.1 (Low-Rank-Parametrized Update Matrices)와 §3 — $\mathbf{W}_0+\mathbf{BA}$ 형태, 적응에 필요한 변화량의 유효 rank 가 낮다는 가설, 병합해 추론 지연이 없다는 서술. 식 (4)와 예제 ④의 근거</span>
+          <span class="ref__where">§4.1 (Low-Rank-Parametrized Update Matrices)와 §3 — $\mathbf{W}_0+\mathbf{BA}$ 형태, 적응에 필요한 변화량의 유효 rank가 낮다는 가설, 병합해 inference 지연이 없다는 서술. 식 (4)와 예제 ④의 근거</span>
           <a class="ref__link" href="https://arxiv.org/abs/2106.09685">arXiv:2106.09685</a>
         </li>
         <li class="ref" id="ref-radford2021-learning-transferable-visual" data-ref="radford2021-learning-transferable-visual">
           <span class="ref__type" data-type="paper">논문</span>
           <span class="ref__cite">Radford, A. et al. (2021). <em>Learning Transferable Visual Models From Natural Language Supervision (CLIP)</em>. ICML.</span>
-          <span class="ref__where">§2.3과 Figure 3 의 의사코드 — 두 모달을 공통 공간으로 사영해 $L_2$ 정규화한 뒤 내적으로 $N\times N$ 유사도 행렬을 만들고 온도 $\tau$ 로 나누는 절차. 식 (9)와 '멀티모달 표현'의 근거</span>
+          <span class="ref__where">§2.3과 Figure 3의 의사코드 — 두 모달을 공통 공간으로 사영해 $L_2$ normalize 한 뒤 inner product로 $N\times N$ similarity matrix를 만들고 온도 $\tau$ 로 나누는 절차. 식 (9)와 'multimodal 표현'의 근거</span>
           <a class="ref__link" href="https://arxiv.org/abs/2103.00020">arXiv:2103.00020</a>
         </li>
         <li class="ref" id="ref-goodfellow2016-dl" data-ref="goodfellow2016-dl">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>. MIT Press.</span>
-          <span class="ref__where">6.1–6.3절 — 선형층 $\mathbf{Wx}+\mathbf{b}$ 와 활성화의 역할. 9장(Convolutional Networks) — 합성곱을 행렬 곱으로 보는 관점과 파라미터 공유. 본문 '선형층'·'이미지 텐서'의 근거</span>
+          <span class="ref__where">6.1–6.3절 — linear layer $\mathbf{Wx}+\mathbf{b}$ 와 activation의 역할. 9장(Convolutional Networks) — convolution을 matrix multiplication으로 보는 관점과 parameter 공유. 본문 'linear layer'·'image tensor'의 근거</span>
           <a class="ref__link" href="https://www.deeplearningbook.org/">deeplearningbook.org</a>
         </li>
         <li class="ref" id="ref-zhang2023-d2l" data-ref="zhang2023-d2l">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Zhang, A., Lipton, Z. C., Li, M. &amp; Smola, A. J. (2023). <em>Dive into Deep Learning</em>. Cambridge University Press.</span>
-          <span class="ref__where">11.3절(Attention Scoring Functions)과 11.5절(Multi-Head Attention) — shape 흐름 $(N,L,d)\to(N,h,L,d/h)$ 의 구현 설명. 식 (8)과 '시퀀스 텐서' 표의 대조 확인</span>
+          <span class="ref__where">11.3절(Attention Scoring Functions)과 11.5절(Multi-Head Attention) — shape 흐름 $(N,L,d)\to(N,h,L,d/h)$ 의 구현 설명. 식 (8)과 'sequence tensor' 표의 대조 확인</span>
           <a class="ref__link" href="https://d2l.ai/">d2l.ai</a>
         </li>
         <li class="ref" id="ref-stanford-cs231n" data-ref="stanford-cs231n">
           <span class="ref__type" data-type="course">강의</span>
           <span class="ref__cite">Stanford CS231n: <em>Deep Learning for Computer Vision</em>.</span>
-          <span class="ref__where">Convolutional Networks 강의노트의 "Implementation as Matrix Multiplication" 절 — im2col 로 패치를 행으로 펼쳐 합성곱을 GEMM 으로 바꾸는 방법. 식 (7)의 근거</span>
+          <span class="ref__where">Convolutional Networks 강의노트의 "Implementation as Matrix Multiplication" 절 — im2col로 패치를 행으로 펼쳐 convolution을 GEMM으로 바꾸는 방법. 식 (7)의 근거</span>
           <a class="ref__link" href="https://cs231n.stanford.edu/">cs231n.stanford.edu</a>
         </li>
       </ol>
@@ -1007,13 +1007,13 @@ WIDGETS.register('linear-layer', function (root, ctx) {
   var din = 768, dout = 3072;
 
   var VW = 480, VH = 150, cell = 34;
-  var svg = el('svg', { viewBox: '0 0 ' + VW + ' ' + VH, role: 'img', 'aria-label': '선형층의 행렬 연산' });
+  var svg = el('svg', { viewBox: '0 0 ' + VW + ' ' + VH, role: 'img', 'aria-label': 'linear layer의 matrix 연산' });
   ctx.stage.appendChild(svg);
 
   var out = WIDGETS.readout(ctx.readout, [
     { key: 'y', label: '출력 y' },
     { key: 'calc', label: '계산' },
-    { key: 'params', label: '실전 크기 파라미터' },
+    { key: 'params', label: '실전 크기 parameter' },
     { key: 'flops', label: '샘플당 FLOPs' }
   ]);
 
@@ -1050,11 +1050,11 @@ WIDGETS.register('linear-layer', function (root, ctx) {
   }
 
   WIDGETS.slider({
-    host: ctx.controls, label: '실전 층: 입력 차원 d_in', min: 128, max: 4096, step: 128, value: 768, digits: 0,
+    host: ctx.controls, label: '실전 layer: 입력 dimension d_in', min: 128, max: 4096, step: 128, value: 768, digits: 0,
     onInput: function (v) { din = v; draw(); }
   });
   WIDGETS.slider({
-    host: ctx.controls, label: '실전 층: 출력 차원 d_out', min: 128, max: 8192, step: 128, value: 3072, digits: 0,
+    host: ctx.controls, label: '실전 layer: 출력 dimension d_out', min: 128, max: 8192, step: 128, value: 3072, digits: 0,
     onInput: function (v) { dout = v; draw(); }
   });
   draw();
@@ -1076,12 +1076,12 @@ WIDGETS.register('embedding-lookup', function (root, ctx) {
   var t = 1;
 
   var VW = 480, VH = 240, cell = 34;
-  var svg = el('svg', { viewBox: '0 0 ' + VW + ' ' + VH, role: 'img', 'aria-label': '임베딩 룩업' });
+  var svg = el('svg', { viewBox: '0 0 ' + VW + ' ' + VH, role: 'img', 'aria-label': 'embedding 룩업' });
   ctx.stage.appendChild(svg);
 
   var out = WIDGETS.readout(ctx.readout, [
-    { key: 'tok', label: '선택한 토큰' },
-    { key: 'vec', label: '임베딩 벡터' },
+    { key: 'tok', label: '선택한 token' },
+    { key: 'vec', label: 'embedding vector' },
     { key: 'cost', label: '곱셈으로 하면' },
     { key: 'real', label: '실제 구현' }
   ]);
@@ -1116,7 +1116,7 @@ WIDGETS.register('embedding-lookup', function (root, ctx) {
   }
 
   WIDGETS.slider({
-    host: ctx.controls, label: '토큰 번호', min: 0, max: 4, step: 1, value: 1, digits: 0,
+    host: ctx.controls, label: 'token 번호', min: 0, max: 4, step: 1, value: 1, digits: 0,
     onInput: function (v) { t = v; draw(); }
   });
   draw();
@@ -1176,13 +1176,13 @@ WIDGETS.register('attention-flow', function (root, ctx) {
     var P = softmaxRows(Ss);
     var O = matmul(P, V);
 
-    var NAMES = ['① Q 와 K', '② QKᵀ — 모든 쌍의 내적', '③ ÷√d_k — 분산을 1로',
-                 '④ softmax — 행별 정규화', '⑤ ×V — 값의 볼록 결합'];
-    var NOTES = ['각 행이 한 토큰의 질의·키 벡터입니다',
-                 '(i,j) = i 가 j 를 보는 점수. 그람 행렬 형태입니다',
-                 'd_k 가 커질수록 점수가 커지는 것을 되돌립니다',
-                 '각 행의 합이 1인 확률 분포가 됩니다',
-                 '출력의 각 행은 V 의 행들을 그 비율로 섞은 것입니다'];
+    var NAMES = ['① Q와 K', '② QKᵀ — 모든 쌍의 inner product', '③ ÷√d_k — variance를 1로',
+                 '④ softmax — 행별 normalization', '⑤ ×V — 값의 convex combination'];
+    var NOTES = ['각 행이 한 token의 질의·키 vector입니다',
+                 '(i,j) = i가 j를 보는 점수. Gram matrix 형태입니다',
+                 'd_k가 커질수록 점수가 커지는 것을 되돌립니다',
+                 '각 행의 합이 1인 probability 분포가 됩니다',
+                 '출력의 각 행은 V의 행들을 그 비율로 섞은 것입니다'];
 
     if (step === 0) {
       host.appendChild(VIZ.heatmap({ data: Q, cell: 34, min: -1, max: 2, padL: 10, padT: 10 }));
@@ -1214,7 +1214,7 @@ WIDGETS.register('attention-flow', function (root, ctx) {
   }
 
   WIDGETS.player({
-    host: ctx.controls, steps: 5, fps: 0.6, label: '어텐션 단계',
+    host: ctx.controls, steps: 5, fps: 0.6, label: 'attention 단계',
     labels: ['① Q, K, V', '② QKᵀ', '③ 스케일', '④ softmax', '⑤ ×V'],
     onStep: draw
   });
@@ -1233,8 +1233,8 @@ WIDGETS.register('lora-params', function (root, ctx) {
   ctx.stage.appendChild(p.svg);
 
   var out = WIDGETS.readout(ctx.readout, [
-    { key: 'full', label: '원본 파라미터' },
-    { key: 'lora', label: 'LoRA 파라미터' },
+    { key: 'full', label: '원본 parameter' },
+    { key: 'lora', label: 'LoRA parameter' },
     { key: 'ratio', label: '비율' },
     { key: 'limit', label: '이득 한계 r' }
   ]);
@@ -1257,7 +1257,7 @@ WIDGETS.register('lora-params', function (root, ctx) {
     onInput: function (v) { r = v; draw(); }
   });
   WIDGETS.slider({
-    host: ctx.controls, label: '가중치 크기 d (= k)', min: 512, max: 8192, step: 512, value: 4096, digits: 0,
+    host: ctx.controls, label: 'weight 크기 d (= k)', min: 512, max: 8192, step: 512, value: 4096, digits: 0,
     onInput: function (v) { d = v; draw(); }
   });
   draw();
@@ -1278,7 +1278,7 @@ WIDGETS.register('graph-message', function (root, ctx) {
   var POS = [[0.1, 0.5], [0.32, 0.5], [0.55, 0.5], [0.78, 0.5], [0.32, 0.15]];
 
   var VW = 480, VH = 200;
-  var svg = el('svg', { viewBox: '0 0 ' + VW + ' ' + VH, role: 'img', 'aria-label': '그래프와 인접행렬 곱' });
+  var svg = el('svg', { viewBox: '0 0 ' + VW + ' ' + VH, role: 'img', 'aria-label': 'graph와 adjacency matrix 곱' });
   ctx.stage.appendChild(svg);
 
   var out = WIDGETS.readout(ctx.readout, [
@@ -1327,7 +1327,7 @@ WIDGETS.register('graph-message', function (root, ctx) {
 
     /* 인접행렬 */
     MATVIZ.grid(svg, 330, 40, A, 26, null, function (val) { return String(val); });
-    MATVIZ.label(svg, 330 + 2.5 * 26, 30, '인접행렬 A');
+    MATVIZ.label(svg, 330 + 2.5 * 26, 30, 'adjacency matrix A');
 
     var reach = [];
     h.forEach(function (val, i) { if (val > 0) reach.push(i + 1); });
@@ -1339,7 +1339,7 @@ WIDGETS.register('graph-message', function (root, ctx) {
   }
 
   WIDGETS.player({
-    host: ctx.controls, steps: 5, fps: 0.8, label: 'A 를 곱한 횟수',
+    host: ctx.controls, steps: 5, fps: 0.8, label: 'A를 곱한 횟수',
     labels: ['0회', '1회', '2회', '3회', '4회'], onStep: draw
   });
 });
@@ -1351,44 +1351,44 @@ WIDGETS.register('tensor-pipeline', function (root, ctx) {
   var el = VIZ.el;
   var FLOWS = {
     img: {
-      name: '이미지 (CNN)',
+      name: 'image (CNN)',
       steps: [
-        ['입력', '(32, 3, 224, 224)', '배치·채널·세로·가로'],
+        ['입력', '(32, 3, 224, 224)', 'batch·channel·세로·가로'],
         ['im2col', '(32·3136, 27)', '패치를 행으로 펼침 (3×3×3)'],
-        ['GEMM', '(32·3136, 64)', '커널 행렬과 곱'],
-        ['reshape', '(32, 64, 56, 56)', '다시 4축 텐서로']
+        ['GEMM', '(32·3136, 64)', 'kernel matrix와 곱'],
+        ['reshape', '(32, 64, 56, 56)', '다시 4축 tensor로']
       ]
     },
     seq: {
-      name: '시퀀스 (Transformer)',
+      name: 'sequence (Transformer)',
       steps: [
-        ['토큰', '(8, 512)', '배치·길이 (정수 ID)'],
-        ['임베딩', '(8, 512, 768)', '행 선택'],
-        ['헤드 분할', '(8, 12, 512, 64)', '블록행렬 관점'],
-        ['어텐션 맵', '(8, 12, 512, 512)', 'L² — 메모리 급증'],
+        ['token', '(8, 512)', 'batch·길이 (정수 ID)'],
+        ['embedding', '(8, 512, 768)', '행 선택'],
+        ['헤드 분할', '(8, 12, 512, 64)', 'block matrix 관점'],
+        ['attention map', '(8, 12, 512, 512)', 'L² — 메모리 급증'],
         ['출력', '(8, 512, 768)', '헤드 병합']
       ]
     },
     multi: {
-      name: '멀티모달 (CLIP)',
+      name: 'multimodal (CLIP)',
       steps: [
-        ['이미지', '(64, 3, 224, 224)', '이미지 인코더 입력'],
-        ['텍스트', '(64, 77)', '토큰 ID'],
-        ['각 임베딩', '(64, 512) 두 벌', '공통 차원으로 사영'],
-        ['정규화', '(64, 512)', 'L2 정규화 → 내적 = 코사인'],
-        ['유사도', '(64, 64)', '모든 쌍 — 대각선이 정답']
+        ['image', '(64, 3, 224, 224)', 'image 인코더 입력'],
+        ['텍스트', '(64, 77)', 'token ID'],
+        ['각 embedding', '(64, 512) 두 벌', '공통 dimension으로 projection'],
+        ['normalization', '(64, 512)', 'L2 normalization → inner product = 코사인'],
+        ['similarity', '(64, 64)', '모든 쌍 — 대각선이 정답']
       ]
     }
   };
   var cur = 'seq';
 
   var VW = 480, VH = 210;
-  var svg = el('svg', { viewBox: '0 0 ' + VW + ' ' + VH, role: 'img', 'aria-label': '텐서 shape 흐름' });
+  var svg = el('svg', { viewBox: '0 0 ' + VW + ' ' + VH, role: 'img', 'aria-label': 'tensor shape 흐름' });
   ctx.stage.appendChild(svg);
 
   var out = WIDGETS.readout(ctx.readout, [
     { key: 'flow', label: '흐름' },
-    { key: 'peak', label: '가장 큰 텐서' },
+    { key: 'peak', label: '가장 큰 tensor' },
     { key: 'why', label: '이유' },
     { key: 'tip', label: '실무 요령' }
   ]);
@@ -1417,9 +1417,9 @@ WIDGETS.register('tensor-pipeline', function (root, ctx) {
     });
 
     var PEAK = {
-      img: ['im2col 결과 (32·3136, 27)', '패치가 겹쳐 저장되어 원본보다 커진다', '메모리가 부족하면 직접 합성곱 커널을 쓴다'],
-      seq: ['어텐션 맵 (8,12,512,512)', 'L² 에 비례 — 길이가 2배면 4배', 'FlashAttention 은 이 맵을 저장하지 않는다'],
-      multi: ['유사도 행렬 (64,64)', '배치 크기의 제곱', '배치가 클수록 대조학습이 잘 되지만 메모리를 먹는다']
+      img: ['im2col 결과 (32·3136, 27)', '패치가 겹쳐 저장되어 원본보다 커진다', '메모리가 부족하면 직접 convolution kernel을 쓴다'],
+      seq: ['attention map (8,12,512,512)', 'L² 에 비례 — 길이가 2배면 4배', 'FlashAttention은 이 맵을 저장하지 않는다'],
+      multi: ['similarity matrix (64,64)', 'batch 크기의 제곱', 'batch가 클수록 contrastive learning이 잘 되지만 메모리를 먹는다']
     };
     out.setRaw('flow', F.name);
     out.setRaw('peak', PEAK[cur][0]);
@@ -1428,11 +1428,11 @@ WIDGETS.register('tensor-pipeline', function (root, ctx) {
   }
 
   WIDGETS.toggle({
-    host: ctx.controls, label: '데이터 종류',
+    host: ctx.controls, label: 'data 종류',
     options: [
-      { value: 'img', label: '이미지' },
-      { value: 'seq', label: '시퀀스' },
-      { value: 'multi', label: '멀티모달' }
+      { value: 'img', label: 'image' },
+      { value: 'seq', label: 'sequence' },
+      { value: 'multi', label: 'multimodal' }
     ],
     value: 'seq', onChange: function (v) { cur = v; draw(); }
   });
@@ -1468,7 +1468,7 @@ WIDGETS.register('clip-matrix', function (root, ctx) {
         S[i].push((base + noise) / tau);
       }
     }
-    /* 행별 softmax 로 확률화 */
+    /* 행별 softmax로 확률화 */
     var P = S.map(function (r) {
       var mx = Math.max.apply(null, r);
       var e = r.map(function (v) { return Math.exp(v - mx); });
@@ -1496,7 +1496,7 @@ WIDGETS.register('clip-matrix', function (root, ctx) {
   }
 
   WIDGETS.slider({
-    host: ctx.controls, label: '학습 정도 (맞는 쌍의 정렬)', min: 0.1, max: 1, step: 0.05, value: 0.5, digits: 2,
+    host: ctx.controls, label: 'training 정도 (맞는 쌍의 정렬)', min: 0.1, max: 1, step: 0.05, value: 0.5, digits: 2,
     onInput: function (v) { align = v; draw(); }
   });
   WIDGETS.slider({
@@ -1512,12 +1512,12 @@ WIDGETS.register('clip-matrix', function (root, ctx) {
 WIDGETS.register('chapter-map', function (root, ctx) {
   var el = VIZ.el;
   var ITEMS = [
-    { k: 'vec', t: '2.1–2.2 벡터', d: '스칼라·벡터·행렬·텐서와 선형결합. 딥러닝의 모든 데이터가 텐서이고, 뉴런 하나의 계산이 선형결합입니다.' },
-    { k: 'dot', t: '2.3 내적', d: '어텐션 점수 QKᵀ, 코사인 유사도, 임베딩 검색, 대조학습의 유사도 행렬이 전부 내적입니다.' },
-    { k: 'mat', t: '2.4–2.5 행렬·변환', d: '선형층 = 행렬 곱, 층 쌓기 = 합성, 표현력의 한계 = rank. 블록행렬은 멀티헤드와 타일링으로 이어집니다.' },
-    { k: 'sys', t: '2.6 연립방정식', d: '최소제곱은 가장 단순한 학습입니다. 정규방정식의 직교 조건이 회귀·PCA에 반복해서 나옵니다.' },
-    { k: 'eig', t: '2.7 고유값', d: '반복 곱의 안정성(기울기 소실·폭발), 그래프의 스펙트럼, 헤시안의 조건수를 정합니다.' },
-    { k: 'svd', t: '2.8–2.9 SVD·PCA', d: 'LoRA·행렬 분해 압축·차원 축소·잠재 공간이 모두 저랭크 근사의 응용입니다.' }
+    { k: 'vec', t: '2.1–2.2 vector', d: 'scalar·vector·matrix·tensor와 linear combination. deep learning의 모든 data가 tensor고, 뉴런 하나의 계산이 linear combination입니다.' },
+    { k: 'dot', t: '2.3 inner product', d: 'attention 점수 QKᵀ, cosine similarity, embedding 검색, contrastive learning의 similarity matrix가 전부 inner product입니다.' },
+    { k: 'mat', t: '2.4–2.5 matrix·변환', d: 'linear layer = matrix multiplication, layer 쌓기 = 합성, 표현력의 한계 = rank. block matrix는 multi-head와 타일링으로 이어집니다.' },
+    { k: 'sys', t: '2.6 system of equations', d: 'least squares는 가장 단순한 training입니다. normal equation의 orthogonal 조건이 회귀·PCA에 반복해서 나옵니다.' },
+    { k: 'eig', t: '2.7 eigenvalue', d: '반복 곱의 안정성(vanishing gradient·폭발), graph의 spectrum, Hessian의 condition number를 정합니다.' },
+    { k: 'svd', t: '2.8–2.9 SVD·PCA', d: 'LoRA·matrix factorization 압축·dimensionality reduction·latent space가 모두 low-rank approximation의 응용입니다.' }
   ];
   var cur = 'vec';
 

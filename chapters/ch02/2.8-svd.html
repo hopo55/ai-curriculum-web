@@ -61,29 +61,29 @@
 
     <!-- ===== 1. 다루는 항목 ===== -->
     <nav class="chips" aria-label="이 절에서 다루는 항목">
-      <a class="chip" href="#c-sigma">특이값</a>
-      <a class="chip" href="#c-uv">특이벡터</a>
+      <a class="chip" href="#c-sigma">Singular Value</a>
+      <a class="chip" href="#c-uv">Singular Vector</a>
       <a class="chip" href="#c-svd">SVD</a>
-      <a class="chip" href="#c-lowrank">저랭크 근사</a>
-      <a class="chip" href="#c-compress">행렬 압축</a>
-      <a class="chip" href="#c-denoise">노이즈 제거</a>
-      <a class="chip" href="#c-latent">잠재 공간</a>
-      <a class="chip" href="#c-completion">행렬 완성</a>
+      <a class="chip" href="#c-lowrank">Low-Rank Approximation</a>
+      <a class="chip" href="#c-compress">Matrix Compression</a>
+      <a class="chip" href="#c-denoise">Denoising</a>
+      <a class="chip" href="#c-latent">Latent Space</a>
+      <a class="chip" href="#c-completion">Matrix Completion</a>
     </nav>
 
     <!-- ===== 2. 한 줄 요약 ===== -->
     <section class="sec" id="s-summary">
       <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
       <p class="tldr">
-        <strong>모든</strong> 행렬은 <strong>회전 → 축별 확대 → 회전</strong>으로 쪼갤 수 있고,
-        확대 배율(특이값)이 큰 것부터 몇 개만 남기면 <strong>가장 좋은 근사</strong>가 된다.
+        <strong>모든</strong> matrix(행렬)는 <strong>rotation(회전) → 축별 확대 → rotation</strong>으로 쪼갤 수 있고,
+        확대 배율(singular value(특이값))이 큰 것부터 몇 개만 남기면 <strong>가장 좋은 근사</strong>가 된다.
       </p>
 
       <h3>학습 목표</h3>
       <ol class="goals">
         <li>$\mathbf{A}=\mathbf{U\Sigma V}^\top$ 의 각 인자가 기하적으로 무엇인지 설명하고 $2\times2$ 를 손으로 분해할 수 있다.</li>
-        <li>특이값이 $\mathbf{A}^\top\mathbf{A}$ 의 고윳값의 제곱근임을 유도할 수 있다.</li>
-        <li>Eckart–Young 정리로 저랭크 근사의 오차를 예측하고 압축률을 계산할 수 있다.</li>
+        <li>singular value가 $\mathbf{A}^\top\mathbf{A}$ 의 eigenvalue(고윳값)의 제곱근임을 유도할 수 있다.</li>
+        <li>Eckart–Young 정리로 low-rank approximation(저랭크 근사)의 오차를 예측하고 압축률을 계산할 수 있다.</li>
       </ol>
     </section>
 
@@ -92,18 +92,18 @@
       <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
 
       <p>
-        <a href="2.7-eigenvalues.html">2.7</a>의 고유분해에는 두 가지 결함이 있었다 —
-        정사각행렬에만 있고, 있어도 <strong>존재하지 않을 수 있으며</strong>, 고유벡터가 직교라는 보장도 없었다.
-        SVD 는 이 셋을 모두 고친다. <strong>어떤 모양의 행렬이든, 언제나, 직교 기저 두 벌로</strong> 분해된다.
+        <a href="2.7-eigenvalues.html">2.7</a>의 eigendecomposition(고유분해)에는 두 가지 결함이 있었다 —
+        square matrix(정사각행렬)에만 있고, 있어도 <strong>존재하지 않을 수 있으며</strong>, eigenvector(고유벡터)가 orthogonal(직교)라는 보장도 없었다.
+        SVD는 이 셋을 모두 고친다. <strong>어떤 모양의 matrix이든, 언제나, orthogonal basis(기저) 두 벌로</strong> 분해된다.
       </p>
       <p>
-        기하학적 그림이 특히 선명하다. 단위원 위의 모든 점에 행렬을 곱하면 <strong>반드시 타원이 나온다</strong>.
+        기하학적 그림이 특히 선명하다. unit circle(단위원) 위의 모든 점에 matrix를 곱하면 <strong>반드시 타원이 나온다</strong>.
         그 타원의 <em>가장 긴 반지름</em>이 $\sigma_1$, 그다음이 $\sigma_2$ 다.
         원에서 타원으로 가는 길을 <strong>돌리고 · 늘이고 · 다시 돌리는</strong> 세 단계로 나눈 것이 SVD 다.
       </p>
 
       <figure class="widget" data-widget="svd-ellipse">
-        <figcaption class="widget__bar">원이 타원이 되기까지 — Vᵀ 회전 · Σ 확대 · U 회전</figcaption>
+        <figcaption class="widget__bar">원이 타원이 되기까지 — Vᵀ rotation · Σ 확대 · U rotation</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
@@ -115,9 +115,9 @@
       <div class="note note--key">
         <span class="note__label">핵심</span>
         <p>
-          고유분해가 "이 변환을 단순하게 보는 <em>하나의</em> 좌표계"를 찾는다면,
-          SVD 는 "입력 쪽과 출력 쪽에 <em>각각</em> 좋은 좌표계"를 찾는다.
-          입력 기저 $\mathbf{v}_i$ 를 출력 기저 $\mathbf{u}_i$ 로 보내며 $\sigma_i$ 배 늘린다 —
+          eigendecomposition이 "이 변환을 단순하게 보는 <em>하나의</em> coordinate system(좌표계)"를 찾는다면,
+          SVD는 "입력 쪽과 출력 쪽에 <em>각각</em> 좋은 coordinate system"를 찾는다.
+          입력 basis $\mathbf{v}_i$ 를 출력 basis $\mathbf{u}_i$ 로 보내며 $\sigma_i$ 배 늘린다 —
           그게 전부다.
         </p>
       </div>
@@ -132,57 +132,57 @@
       <div class="note note--key">
         <span class="note__label">SVD 정리</span>
         <p>
-          rank $r$ 인 임의의 행렬 $\mathbf{A}\in\mathbb{R}^{m\times n}$ 에 대해 다음 분해가 <strong>항상 존재</strong>한다
+          rank $r$ 인 임의의 matrix $\mathbf{A}\in\mathbb{R}^{m\times n}$ 에 대해 다음 분해가 <strong>항상 존재</strong>한다
           <a class="cite" href="#ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">1</a>.
           $$ \mathbf{A} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^\top $$
-          $\mathbf{U}\in\mathbb{R}^{m\times m}$ 과 $\mathbf{V}\in\mathbb{R}^{n\times n}$ 은 직교행렬이고,
+          $\mathbf{U}\in\mathbb{R}^{m\times m}$ 과 $\mathbf{V}\in\mathbb{R}^{n\times n}$ 은 orthogonal matrix(직교행렬)고,
           $\boldsymbol{\Sigma}\in\mathbb{R}^{m\times n}$ 은 대각 위치에
-          $\sigma_1\geq\sigma_2\geq\cdots\geq\sigma_r>0$ 이 놓인 행렬이다.
+          $\sigma_1\geq\sigma_2\geq\cdots\geq\sigma_r>0$ 이 놓인 matrix다.
         </p>
       </div>
       <p>
-        "항상 존재"가 SVD 를 <strong>선형대수의 근본정리</strong>로 만든다.
-        정사각이 아니어도 되고, 특이해도 되고, 대각화가 안 되는 행렬이어도 된다.
+        "항상 존재"가 SVD를 <strong>linear algebra(선형대수)의 근본정리</strong>로 만든다.
+        정사각이 아니어도 되고, 특이해도 되고, diagonalization(대각화)이 안 되는 행렬이어도 된다.
       </p>
 
       <span class="anchor" id="c-sigma"></span>
-      <h3>특이값</h3>
+      <h3>Singular Value 특이값</h3>
       <div class="eq">
         <div class="eq__body">$$ \sigma_i = \sqrt{\lambda_i(\mathbf{A}^\top\mathbf{A})}, \qquad \sigma_i \geq 0 $$</div>
         <span class="eq__tag num">(1)</span>
       </div>
       <p>
         $\mathbf{A}^\top\mathbf{A}$ 는 대칭·준정부호이므로(<a href="2.4-matrix-operations.html">2.4</a>)
-        고윳값이 모두 0 이상이고, 그 제곱근이 특이값이다. 따라서 <strong>특이값은 절대 음수가 아니다</strong>.
+        eigenvalue가 모두 0 이상이고, 그 제곱근이 singular value다. 따라서 <strong>singular value는 절대 음수가 아니다</strong>.
         정보도 여럿 준다.
       </p>
       <ul>
-        <li>$\operatorname{rank}(\mathbf{A})$ = 0이 아닌 특이값의 개수</li>
-        <li>$\sigma_1 = \max_{\|\mathbf{x}\|=1}\|\mathbf{A}\mathbf{x}\|$ — 스펙트럴 노름 (<a href="#s-derivation">유도 2</a>)</li>
-        <li>정사각 가역행렬의 조건수 $\kappa_2(\mathbf{A}) = \sigma_1/\sigma_n$</li>
+        <li>$\operatorname{rank}(\mathbf{A})$ = 0이 아닌 singular value의 개수</li>
+        <li>$\sigma_1 = \max_{\|\mathbf{x}\|=1}\|\mathbf{A}\mathbf{x}\|$ — 스펙트럴 norm(노름) (<a href="#s-derivation">유도 2</a>)</li>
+        <li>정사각 가역행렬의 condition number(조건수) $\kappa_2(\mathbf{A}) = \sigma_1/\sigma_n$</li>
         <li>$|\det\mathbf{A}| = \prod_i\sigma_i$ (정사각일 때)</li>
       </ul>
 
       <span class="anchor" id="c-uv"></span>
-      <h3>특이벡터</h3>
+      <h3>Singular Vector 특이벡터</h3>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{A}\mathbf{v}_i = \sigma_i\,\mathbf{u}_i, \qquad \mathbf{A}^\top\mathbf{u}_i = \sigma_i\,\mathbf{v}_i $$</div>
         <span class="eq__tag num">(2)</span>
       </div>
       <p>
-        $\mathbf{v}_i$ 를 <strong>오른쪽 특이벡터</strong>(입력 쪽 기저, $\mathbf{A}^\top\mathbf{A}$ 의 고유벡터),
-        $\mathbf{u}_i$ 를 <strong>왼쪽 특이벡터</strong>(출력 쪽 기저, $\mathbf{A}\mathbf{A}^\top$ 의 고유벡터)라 한다.
-        식 (2)가 SVD 의 실질적인 의미다 — <strong>$\mathbf{v}_i$ 를 넣으면 $\sigma_i$ 배로 늘어난 $\mathbf{u}_i$ 가 나온다.</strong>
+        $\mathbf{v}_i$ 를 <strong>오른쪽 singular vector(특이벡터)</strong>(입력 쪽 basis, $\mathbf{A}^\top\mathbf{A}$ 의 eigenvector),
+        $\mathbf{u}_i$ 를 <strong>왼쪽 singular vector</strong>(출력 쪽 basis, $\mathbf{A}\mathbf{A}^\top$ 의 eigenvector)라 한다.
+        식 (2)가 SVD의 실질적인 의미다 — <strong>$\mathbf{v}_i$ 를 넣으면 $\sigma_i$ 배로 늘어난 $\mathbf{u}_i$ 가 나온다.</strong>
       </p>
       <p>
-        네 부분공간(<a href="2.5-linear-transformation.html">2.5</a>)과도 곧장 연결된다 —
-        $\mathbf{v}_1..\mathbf{v}_r$ 은 행공간의 기저, $\mathbf{v}_{r+1}..\mathbf{v}_n$ 은 영공간의 기저,
-        $\mathbf{u}_1..\mathbf{u}_r$ 은 열공간의 기저다.
+        네 subspace(부분공간)(<a href="2.5-linear-transformation.html">2.5</a>)과도 곧장 연결된다 —
+        $\mathbf{v}_1..\mathbf{v}_r$ 은 row space(행공간)의 basis, $\mathbf{v}_{r+1}..\mathbf{v}_n$ 은 null space(영공간)의 basis,
+        $\mathbf{u}_1..\mathbf{u}_r$ 은 column space(열공간)의 기저다.
       </p>
 
       <span class="anchor" id="c-lowrank"></span>
-      <h3>저랭크 근사</h3>
-      <p>SVD 를 <strong>랭크 1 조각의 합</strong>으로 다시 쓰면 근사의 길이 열린다.</p>
+      <h3>Low-Rank Approximation 저랭크 근사</h3>
+      <p>SVD를 <strong>랭크 1 조각의 합</strong>으로 다시 쓰면 근사의 길이 열린다.</p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{A} = \sum_{i=1}^{r} \sigma_i\,\mathbf{u}_i\mathbf{v}_i^\top, \qquad \mathbf{A}_k = \sum_{i=1}^{k} \sigma_i\,\mathbf{u}_i\mathbf{v}_i^\top \quad (k<r) $$</div>
         <span class="eq__tag num">(3)</span>
@@ -190,10 +190,10 @@
       <div class="note note--key">
         <span class="note__label">Eckart–Young 정리</span>
         <p>
-          랭크 $k$ 이하인 모든 행렬 $\mathbf{B}$ 중에서 $\mathbf{A}_k$ 가 $\mathbf{A}$ 에 가장 가깝다
+          랭크 $k$ 이하인 모든 matrix $\mathbf{B}$ 중에서 $\mathbf{A}_k$ 가 $\mathbf{A}$ 에 가장 가깝다
           <a class="cite" href="#ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">1</a>.
           $$ \mathbf{A}_k = \arg\min_{\operatorname{rank}(\mathbf{B})=k}\|\mathbf{A}-\mathbf{B}\|_2, \qquad \|\mathbf{A}-\mathbf{A}_k\|_2 = \sigma_{k+1} $$
-          프로베니우스 노름으로 재도 같은 $\mathbf{A}_k$ 가 최적이며, 이때 오차는
+          프로베니우스 norm으로 재도 같은 $\mathbf{A}_k$ 가 최적이며, 이때 오차는
           $\|\mathbf{A}-\mathbf{A}_k\|_F = \sqrt{\sum_{i>k}\sigma_i^2}$ 다.
         </p>
       </div>
@@ -203,7 +203,7 @@
       </p>
 
       <figure class="widget" data-widget="singular-spectrum">
-        <figcaption class="widget__bar">특이값 스펙트럼과 누적 에너지</figcaption>
+        <figcaption class="widget__bar">singular value spectrum(스펙트럼)과 누적 에너지</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
@@ -213,7 +213,7 @@
       </figure>
 
       <span class="anchor" id="c-compress"></span>
-      <h3>행렬 압축</h3>
+      <h3>Matrix Compression 행렬 압축</h3>
       <p>
         $\mathbf{A}_k$ 를 저장하려면 $\mathbf{u}_i$ ($m$ 개), $\mathbf{v}_i$ ($n$ 개), $\sigma_i$ (1개)씩
         $k$ 벌만 있으면 된다.
@@ -223,12 +223,12 @@
         <span class="eq__tag num">(4)</span>
       </div>
       <p>
-        $1000\times1000$ 행렬을 $k=50$ 으로 자르면 $50\times2001 = 100{,}050$ 으로 약 10%다.
+        $1000\times1000$ matrix를 $k=50$ 으로 자르면 $50\times2001 = 100{,}050$ 으로 약 10%다.
         <strong>$k$ 가 $\min(m,n)/2$ 를 넘으면 이득이 없다</strong>는 점도 식에서 바로 읽힌다.
       </p>
 
       <figure class="widget" data-widget="low-rank-image">
-        <figcaption class="widget__bar">저랭크 근사 — 그림을 몇 조각으로 복원할 수 있을까</figcaption>
+        <figcaption class="widget__bar">low-rank approximation — 그림을 몇 조각으로 복원할 수 있을까</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
@@ -238,10 +238,10 @@
       </figure>
 
       <span class="anchor" id="c-denoise"></span>
-      <h3>노이즈 제거</h3>
+      <h3>Denoising 노이즈 제거</h3>
       <p>
-        실제 데이터는 대개 <strong>낮은 랭크의 구조 + 잡음</strong>이다.
-        구조는 앞쪽 큰 특이값 몇 개에 모이고, 잡음은 뒤쪽 작은 특이값들에 얇게 퍼진다.
+        실제 data(데이터)는 대개 <strong>낮은 랭크의 구조 + 잡음</strong>이다.
+        구조는 앞쪽 큰 singular value 몇 개에 모이고, 잡음은 뒤쪽 작은 singular value들에 얇게 퍼진다.
         그래서 뒤쪽을 잘라내면 잡음이 함께 잘린다.
       </p>
       <div class="eq">
@@ -250,71 +250,71 @@
       </div>
       <p>
         중요한 것은 <strong>$k$ 를 어떻게 고르는가</strong>다. 너무 작으면 신호까지 버리고,
-        너무 크면 잡음을 도로 들인다. 스펙트럼이 꺾이는 지점(스크리)을 쓰거나, 검증 데이터로 고른다.
+        너무 크면 잡음을 도로 들인다. spectrum이 꺾이는 지점(스크리)을 쓰거나, validation data(검증 데이터)로 고른다.
       </p>
 
       <figure class="widget" data-widget="denoise-svd">
-        <figcaption class="widget__bar">잡음 제거 — 뒤쪽 특이값을 버리면</figcaption>
+        <figcaption class="widget__bar">잡음 제거 — 뒤쪽 singular value를 버리면</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">$k$ 를 신호의 진짜 rank 에 맞추면 복원 오차가 <strong>최소</strong>가 됩니다. 그보다 크게 잡으면 잡음까지 되살아납니다.</p>
+          <p class="watch">$k$ 를 신호의 진짜 rank에 맞추면 reconstruction error(복원 오차)가 <strong>최소</strong>가 됩니다. 그보다 크게 잡으면 잡음까지 되살아납니다.</p>
         </div>
       </figure>
 
       <span class="anchor" id="c-latent"></span>
-      <h3>잠재 공간</h3>
+      <h3>Latent Space 잠재 공간</h3>
       <p>
-        사용자×영화 평점 행렬을 생각하자. $\mathbf{A}\approx\mathbf{U}_k\boldsymbol{\Sigma}_k\mathbf{V}_k^\top$ 로 자르면
-        각 행(사용자)이 $k$ 차원 벡터로, 각 열(영화)도 $k$ 차원 벡터로 표현된다.
-        이 $k$ 차원 공간이 <strong>잠재 공간</strong>(latent space)이다.
+        사용자×영화 평점 matrix를 생각하자. $\mathbf{A}\approx\mathbf{U}_k\boldsymbol{\Sigma}_k\mathbf{V}_k^\top$ 로 자르면
+        각 행(사용자)이 $k$ dimension(차원) vector(벡터)로, 각 열(영화)도 $k$ dimension vector로 표현된다.
+        이 $k$ dimension 공간이 <strong>latent space(잠재 공간)</strong>이다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ a_{ij} \approx \sum_{t=1}^{k}\sigma_t\,u_{it}\,v_{jt} = \langle \tilde{\mathbf{u}}_i,\ \tilde{\mathbf{v}}_j\rangle $$</div>
         <span class="eq__tag num">(6)</span>
       </div>
       <p>
-        평점이 <strong>사용자 취향 벡터와 영화 특성 벡터의 내적</strong>으로 설명된다는 뜻이다.
+        평점이 <strong>사용자 취향 vector와 영화 특성 vector의 inner product(내적)</strong>으로 설명된다는 뜻이다.
         축 하나하나가 "액션 성향", "옛날 영화 선호" 같은 <em>이름 없는 요인</em>에 해당한다.
-        같은 아이디어가 문서–단어 행렬에서는 잠재 의미 분석(LSA)이 된다.
-        축의 이름은 알 수 없다는 점(<a href="2.1-numbers-and-spaces.html">2.1</a>의 기저 의존성)을 기억해 두자.
+        같은 아이디어가 문서–단어 matrix에서는 잠재 의미 분석(LSA)이 된다.
+        축의 이름은 알 수 없다는 점(<a href="2.1-numbers-and-spaces.html">2.1</a>의 basis 의존성)을 기억해 두자.
       </p>
 
       <figure class="widget" data-widget="latent-space">
-        <figcaption class="widget__bar">평점 행렬의 잠재 요인</figcaption>
+        <figcaption class="widget__bar">평점 matrix의 latent factor(잠재 요인)</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">잠재 요인 2개만으로도 평점 패턴이 거의 복원됩니다. 비슷한 취향의 사용자는 같은 방향에 모입니다.</p>
+          <p class="watch">latent factor 2개만으로도 평점 패턴이 거의 복원됩니다. 비슷한 취향의 사용자는 같은 방향에 모입니다.</p>
         </div>
       </figure>
 
       <span class="anchor" id="c-completion"></span>
-      <h3>행렬 완성</h3>
+      <h3>Matrix Completion 행렬 완성</h3>
       <p>
-        평점 행렬은 대부분이 비어 있다. <strong>관측된 일부만으로 나머지를 채우는 문제</strong>가 행렬 완성이다.
-        그냥은 불가능하지만, <strong>"원래 행렬이 저랭크다"</strong>라는 가정을 넣으면 풀린다.
+        평점 matrix는 대부분이 비어 있다. <strong>관측된 일부만으로 나머지를 채우는 문제</strong>가 matrix completion(행렬 완성)이다.
+        그냥은 불가능하지만, <strong>"원래 matrix가 저랭크다"</strong>라는 가정을 넣으면 풀린다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \min_{\mathbf{X}} \operatorname{rank}(\mathbf{X}) \quad\text{s.t.}\quad X_{ij}=A_{ij}\ \ ((i,j)\in\Omega) $$</div>
         <span class="eq__tag num">(7)</span>
       </div>
       <p>
-        rank 최소화는 계산이 매우 어렵기 때문에, 실제로는 <strong>핵 노름</strong>(nuclear norm, 특이값의 합)
+        rank 최소화는 계산이 매우 어렵기 때문에, 실제로는 <strong>nuclear norm(핵 노름)</strong>(nuclear norm, singular value의 합)
         $\|\mathbf{X}\|_* = \sum_i\sigma_i$ 를 대신 최소화한다.
-        Candès 와 Recht 는 관측이 충분히 많고 무작위이면 이 볼록 완화가
-        <strong>원래 행렬을 정확히 복원</strong>함을 증명했다<a class="cite" href="#ref-candes2008-exact-matrix-completion" data-ref="candes2008-exact-matrix-completion">2</a>.
+        Candès와 Recht는 관측이 충분히 많고 무작위이면 이 convex(볼록) 완화가
+        <strong>원래 matrix를 정확히 복원</strong>함을 증명했다<a class="cite" href="#ref-candes2008-exact-matrix-completion" data-ref="candes2008-exact-matrix-completion">2</a>.
       </p>
       <p>
-        직관적으로는 $\|\cdot\|_*$ 가 특이값 벡터의 $L_1$ 노름이라 <strong>희소한 스펙트럼</strong>,
-        즉 낮은 rank 를 유도한다 — <a href="2.2-vector-operations.html">2.2</a>에서 본 $L_1$ 의 희소성 유도가
-        벡터가 아니라 <em>특이값</em>에 적용된 것이다.
+        직관적으로는 $\|\cdot\|_*$ 가 singular value vector의 $L_1$ norm이라 <strong>희소한 spectrum</strong>,
+        즉 낮은 rank를 유도한다 — <a href="2.2-vector-operations.html">2.2</a>에서 본 $L_1$ 의 희소성 유도가
+        vector가 아니라 <em>singular value</em>에 적용된 것이다.
       </p>
 
       <figure class="widget" data-widget="matrix-completion">
-        <figcaption class="widget__bar">빈칸 채우기 — 저랭크 가정으로 복원</figcaption>
+        <figcaption class="widget__bar">빈칸 채우기 — low-rank(저랭크) 가정으로 복원</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
@@ -328,14 +328,14 @@
     <section class="sec" id="s-math">
       <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
 
-      <p>고유분해와 SVD 를 나란히 두면 차이가 분명해진다.</p>
+      <p>eigendecomposition과 SVD를 나란히 두면 차이가 분명해진다.</p>
       <div class="tablewrap">
         <table>
-          <thead><tr><th></th><th>고유분해 $\mathbf{A}=\mathbf{PDP}^{-1}$</th><th>SVD $\mathbf{A}=\mathbf{U\Sigma V}^\top$</th></tr></thead>
+          <thead><tr><th></th><th>eigendecomposition $\mathbf{A}=\mathbf{PDP}^{-1}$</th><th>SVD $\mathbf{A}=\mathbf{U\Sigma V}^\top$</th></tr></thead>
           <tbody>
-            <tr><td>대상</td><td>정사각행렬만</td><td><strong>모든</strong> $m\times n$</td></tr>
+            <tr><td>대상</td><td>square matrix만</td><td><strong>모든</strong> $m\times n$</td></tr>
             <tr><td>존재</td><td>없을 수 있음 (결손)</td><td><strong>항상</strong></td></tr>
-            <tr><td>기저</td><td>$\mathbf{P}$ 하나, 직교 보장 없음</td><td>$\mathbf{U},\mathbf{V}$ 둘, <strong>항상 직교</strong></td></tr>
+            <tr><td>basis</td><td>$\mathbf{P}$ 하나, orthogonal 보장 없음</td><td>$\mathbf{U},\mathbf{V}$ 둘, <strong>항상 orthogonal</strong></td></tr>
             <tr><td>값의 부호</td><td>$\lambda$ 는 음수·복소 가능</td><td>$\sigma \geq 0$ 항상 실수</td></tr>
             <tr><td>대칭 $\mathbf{A}$ 일 때</td><td colspan="2">$\sigma_i=|\lambda_i|$, 부호는 $\mathbf{u}_i=\pm\mathbf{v}_i$ 로 흡수</td></tr>
           </tbody>
@@ -349,20 +349,20 @@
             <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
           </thead>
           <tbody>
-            <tr><td>$\sigma_i$</td><td>시그마 아이</td><td>$i$ 번째 특이값 (내림차순)</td><td>스칼라</td><td>$\geq0$</td></tr>
-            <tr><td>$\boldsymbol{\Sigma}$</td><td>대문자 시그마</td><td>특이값 대각행렬</td><td>$(m,n)$</td><td>대각만 0 이상</td></tr>
-            <tr><td>$\mathbf{U}$</td><td>볼드 유</td><td>왼쪽 특이벡터 (출력 기저)</td><td>$(m,m)$</td><td>직교</td></tr>
-            <tr><td>$\mathbf{V}$</td><td>볼드 브이</td><td>오른쪽 특이벡터 (입력 기저)</td><td>$(n,n)$</td><td>직교</td></tr>
-            <tr><td>$\mathbf{u}_i,\mathbf{v}_i$</td><td>유 아이, 브이 아이</td><td>$i$ 번째 특이벡터</td><td>$(m,)$, $(n,)$</td><td>$\|\cdot\|=1$</td></tr>
-            <tr><td>$r$</td><td>알</td><td>rank — 0이 아닌 특이값 개수</td><td>정수</td><td>$\leq\min(m,n)$</td></tr>
-            <tr><td>$k$</td><td>케이</td><td>근사에 남길 조각 수</td><td>정수</td><td>$1\leq k\leq r$</td></tr>
-            <tr><td>$\mathbf{A}_k$</td><td>에이 케이</td><td>랭크 $k$ 최적 근사</td><td>$(m,n)$</td><td>—</td></tr>
-            <tr><td>$\|\cdot\|_2$</td><td>스펙트럴 노름</td><td>$\max\|\mathbf{Ax}\|/\|\mathbf{x}\| = \sigma_1$</td><td>스칼라</td><td>$\geq0$</td></tr>
-            <tr><td>$\|\cdot\|_F$</td><td>프로베니우스 노름</td><td>$\sqrt{\sum_{ij}a_{ij}^2} = \sqrt{\sum_i\sigma_i^2}$</td><td>스칼라</td><td>$\geq0$</td></tr>
-            <tr><td>$\|\cdot\|_*$</td><td>핵 노름</td><td>$\sum_i\sigma_i$ — rank 의 볼록 완화</td><td>스칼라</td><td>$\geq0$</td></tr>
-            <tr><td>$\kappa_2$</td><td>카파 투</td><td>조건수 $\sigma_1/\sigma_n$</td><td>스칼라</td><td>$\geq1$</td></tr>
-            <tr><td>$\Omega$</td><td>오메가</td><td>관측된 원소의 위치 집합</td><td>집합</td><td>—</td></tr>
-            <tr><td>$\mathbf{u}\mathbf{v}^\top$</td><td>외적</td><td>랭크 1 행렬</td><td>$(m,n)$</td><td>—</td></tr>
+            <tr><td>$\sigma_i$</td><td>sigma i</td><td>$i$ 번째 singular value (내림차순)</td><td>scalar(스칼라)</td><td>$\geq0$</td></tr>
+            <tr><td>$\boldsymbol{\Sigma}$</td><td>uppercase sigma 대문자 시그마</td><td>singular value diagonal matrix(대각행렬)</td><td>$(m,n)$</td><td>대각만 0 이상</td></tr>
+            <tr><td>$\mathbf{U}$</td><td>bold U</td><td>왼쪽 singular vector (출력 basis)</td><td>$(m,m)$</td><td>orthogonal</td></tr>
+            <tr><td>$\mathbf{V}$</td><td>bold v</td><td>오른쪽 singular vector (입력 basis)</td><td>$(n,n)$</td><td>orthogonal</td></tr>
+            <tr><td>$\mathbf{u}_i,\mathbf{v}_i$</td><td>u i, v i</td><td>$i$ 번째 singular vector</td><td>$(m,)$, $(n,)$</td><td>$\|\cdot\|=1$</td></tr>
+            <tr><td>$r$</td><td>r</td><td>rank — 0이 아닌 singular value 개수</td><td>정수</td><td>$\leq\min(m,n)$</td></tr>
+            <tr><td>$k$</td><td>k</td><td>근사에 남길 조각 수</td><td>정수</td><td>$1\leq k\leq r$</td></tr>
+            <tr><td>$\mathbf{A}_k$</td><td>A k</td><td>랭크 $k$ 최적 근사</td><td>$(m,n)$</td><td>—</td></tr>
+            <tr><td>$\|\cdot\|_2$</td><td>spectral norm</td><td>$\max\|\mathbf{Ax}\|/\|\mathbf{x}\| = \sigma_1$</td><td>scalar</td><td>$\geq0$</td></tr>
+            <tr><td>$\|\cdot\|_F$</td><td>Frobenius norm</td><td>$\sqrt{\sum_{ij}a_{ij}^2} = \sqrt{\sum_i\sigma_i^2}$</td><td>scalar</td><td>$\geq0$</td></tr>
+            <tr><td>$\|\cdot\|_*$</td><td>nuclear norm</td><td>$\sum_i\sigma_i$ — rank의 convex 완화</td><td>scalar</td><td>$\geq0$</td></tr>
+            <tr><td>$\kappa_2$</td><td>kappa two 카파</td><td>condition number $\sigma_1/\sigma_n$</td><td>scalar</td><td>$\geq1$</td></tr>
+            <tr><td>$\Omega$</td><td>omega 오메가</td><td>관측된 원소의 위치 집합</td><td>집합</td><td>—</td></tr>
+            <tr><td>$\mathbf{u}\mathbf{v}^\top$</td><td>outer product</td><td>랭크 1 matrix</td><td>$(m,n)$</td><td>—</td></tr>
           </tbody>
         </table>
       </div>
@@ -372,15 +372,15 @@
     <section class="sec" id="s-derivation">
       <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
 
-      <h3>유도 1 — SVD 는 $\mathbf{A}^\top\mathbf{A}$ 의 고유분해에서 나온다</h3>
+      <h3>유도 1 — SVD는 $\mathbf{A}^\top\mathbf{A}$ 의 고유분해에서 나온다</h3>
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{A}^\top\mathbf{A} \ \text{는 대칭·준정부호} $$</div>
-          <div class="derive__why"><a href="2.4-matrix-operations.html">2.4</a>의 유도 2. 따라서 <strong>직교 고유기저</strong>와 <strong>0 이상인 고윳값</strong>이 존재한다</div>
+          <div class="derive__why"><a href="2.4-matrix-operations.html">2.4</a>의 유도 2. 따라서 <strong>orthogonal 고유기저</strong>와 <strong>0 이상인 eigenvalue</strong>이 존재한다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{A}^\top\mathbf{A}\,\mathbf{v}_i = \lambda_i\mathbf{v}_i, \qquad \lambda_i \geq 0, \quad \mathbf{v}_i^\top\mathbf{v}_j = \delta_{ij} $$</div>
-          <div class="derive__why">스펙트럴 정리(<a href="2.7-eigenvalues.html">2.7</a>)를 적용했다</div>
+          <div class="derive__why">spectral theorem(스펙트럴 정리)(<a href="2.7-eigenvalues.html">2.7</a>)를 적용했다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \|\mathbf{A}\mathbf{v}_i\|^2 = \mathbf{v}_i^\top\mathbf{A}^\top\mathbf{A}\mathbf{v}_i = \lambda_i\|\mathbf{v}_i\|^2 = \lambda_i $$</div>
@@ -388,11 +388,11 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{u}_i := \frac{\mathbf{A}\mathbf{v}_i}{\sigma_i} \quad (\sigma_i>0) \;\Longrightarrow\; \|\mathbf{u}_i\|=1 $$</div>
-          <div class="derive__why">출력 쪽 기저를 이렇게 <em>정의</em>한다. 길이가 1이 되도록 나눴다</div>
+          <div class="derive__why">출력 쪽 basis를 이렇게 <em>정의</em>한다. 길이가 1이 되도록 나눴다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{u}_i^\top\mathbf{u}_j = \frac{\mathbf{v}_i^\top\mathbf{A}^\top\mathbf{A}\mathbf{v}_j}{\sigma_i\sigma_j} = \frac{\lambda_j\,\mathbf{v}_i^\top\mathbf{v}_j}{\sigma_i\sigma_j} = \delta_{ij} $$</div>
-          <div class="derive__why"><strong>$\mathbf{u}_i$ 들도 자동으로 직교</strong>가 된다 — 따로 요구하지 않았는데 따라 나온다</div>
+          <div class="derive__why"><strong>$\mathbf{u}_i$ 들도 자동으로 orthogonal</strong>가 된다 — 따로 요구하지 않았는데 따라 나온다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{A}\mathbf{v}_i = \sigma_i\mathbf{u}_i \;\Longrightarrow\; \mathbf{A}\mathbf{V} = \mathbf{U}\boldsymbol{\Sigma} \;\Longrightarrow\; \mathbf{A} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^\top $$</div>
@@ -404,7 +404,7 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{x} = \sum_i c_i\mathbf{v}_i, \qquad \|\mathbf{x}\|^2 = \sum_i c_i^2 = 1 $$</div>
-          <div class="derive__why">$\mathbf{v}_i$ 가 정규직교 기저이므로 임의의 단위벡터를 이렇게 쓸 수 있다</div>
+          <div class="derive__why">$\mathbf{v}_i$ 가 orthonormal(정규직교) 기저이므로 임의의 unit vector(단위벡터)를 이렇게 쓸 수 있다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{A}\mathbf{x} = \sum_i c_i\,\sigma_i\mathbf{u}_i \;\Longrightarrow\; \|\mathbf{A}\mathbf{x}\|^2 = \sum_i c_i^2\sigma_i^2 $$</div>
@@ -416,7 +416,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \max_{\|\mathbf{x}\|=1}\|\mathbf{A}\mathbf{x}\| = \sigma_1 \quad (\mathbf{x}=\mathbf{v}_1 \text{ 에서 달성}) $$</div>
-          <div class="derive__why">등호는 $c_1=1$, 나머지 0일 때. <strong>단위원의 상이 타원이고 긴 반지름이 $\sigma_1$</strong> 이라는 직관의 근거</div>
+          <div class="derive__why">등호는 $c_1=1$, 나머지 0일 때. <strong>unit circle의 상이 타원이고 긴 반지름이 $\sigma_1$</strong> 이라는 직관의 근거</div>
         </div>
       </div>
 
@@ -428,7 +428,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \|\mathbf{M}\|_F^2 = \operatorname{tr}(\mathbf{M}^\top\mathbf{M}) $$</div>
-          <div class="derive__why">프로베니우스 노름의 대각합 표현</div>
+          <div class="derive__why">프로베니우스 norm의 trace(대각합) 표현</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \operatorname{tr}\Bigl(\sum_{i,j>k}\sigma_i\sigma_j\,\mathbf{v}_i\mathbf{u}_i^\top\mathbf{u}_j\mathbf{v}_j^\top\Bigr) = \sum_{i>k}\sigma_i^2 $$</div>
@@ -436,27 +436,27 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \|\mathbf{A}-\mathbf{A}_k\|_F = \sqrt{\textstyle\sum_{i>k}\sigma_i^2} $$</div>
-          <div class="derive__why"><strong>버린 특이값들이 곧 오차</strong>다. 누적 에너지 그래프가 여기서 나온다</div>
+          <div class="derive__why"><strong>버린 singular value들이 곧 오차</strong>다. 누적 에너지 graph(그래프)가 여기서 나온다</div>
         </div>
       </div>
 
       <details>
-        <summary>Eckart–Young 을 왜 믿을 수 있는가 — 증명 스케치</summary>
+        <summary>Eckart–Young을 왜 믿을 수 있는가 — 증명 스케치</summary>
         <p>
-          스펙트럴 노름 버전만 스케치한다. rank $k$ 인 임의의 $\mathbf{B}$ 를 잡으면
-          $\operatorname{Null}(\mathbf{B})$ 의 차원이 $n-k$ 이상이다.
-          한편 $\operatorname{span}\{\mathbf{v}_1,\dots,\mathbf{v}_{k+1}\}$ 은 $(k+1)$ 차원이다.
+          스펙트럴 norm 버전만 스케치한다. rank $k$ 인 임의의 $\mathbf{B}$ 를 잡으면
+          $\operatorname{Null}(\mathbf{B})$ 의 dimension이 $n-k$ 이상이다.
+          한편 $\operatorname{span}\{\mathbf{v}_1,\dots,\mathbf{v}_{k+1}\}$ 은 $(k+1)$ dimension이다.
         </p>
         <p>
-          두 부분공간의 차원 합이 $n+1 > n$ 이므로 <strong>교집합에 0이 아닌 벡터 $\mathbf{w}$ 가 존재</strong>한다
-          (차원 정리). $\|\mathbf{w}\|=1$ 로 두면 $\mathbf{Bw}=\mathbf{0}$ 이고,
+          두 subspace의 dimension 합이 $n+1 > n$ 이므로 <strong>교집합에 0이 아닌 vector $\mathbf{w}$ 가 존재</strong>한다
+          (dimension 정리). $\|\mathbf{w}\|=1$ 로 두면 $\mathbf{Bw}=\mathbf{0}$ 이고,
           $\mathbf{w}$ 가 앞쪽 $k+1$ 개 $\mathbf{v}$ 의 결합이므로
           $\|\mathbf{Aw}\|^2 = \sum_{i\leq k+1}c_i^2\sigma_i^2 \geq \sigma_{k+1}^2$ 다.
         </p>
         <p>
           따라서 $\|\mathbf{A}-\mathbf{B}\|_2 \geq \|(\mathbf{A}-\mathbf{B})\mathbf{w}\| = \|\mathbf{Aw}\| \geq \sigma_{k+1}$.
           그런데 $\mathbf{A}_k$ 는 정확히 $\sigma_{k+1}$ 을 달성하므로 최적이다.
-          자세한 전개는 MML 4.6절 정리 4.25 를 참고한다<a class="cite" href="#ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">1</a>.
+          자세한 전개는 MML 4.6절 정리 4.25를 참고한다<a class="cite" href="#ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">1</a>.
         </p>
       </details>
     </section>
@@ -478,7 +478,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \operatorname{tr}=50,\ \det = 625-400 = 225 \;\Rightarrow\; \lambda^2-50\lambda+225=0 $$</div>
-          <div class="derive__why">특성방정식 (<a href="2.7-eigenvalues.html">2.7</a>의 식 2)</div>
+          <div class="derive__why">characteristic equation(특성방정식) (<a href="2.7-eigenvalues.html">2.7</a>의 식 2)</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \lambda = \frac{50\pm\sqrt{2500-900}}{2} = \frac{50\pm40}{2} = 45,\ 5 $$</div>
@@ -490,7 +490,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \sigma_1\sigma_2 = \sqrt{45}\sqrt5 = \sqrt{225} = 15 = |\det\mathbf{A}| = |3\cdot5-0\cdot4| \ \checkmark $$</div>
-          <div class="derive__why"><strong>검산</strong> — 특이값의 곱이 행렬식의 절댓값</div>
+          <div class="derive__why"><strong>검산</strong> — singular value의 곱이 determinant(행렬식)의 절댓값</div>
         </div>
       </div>
 
@@ -498,11 +498,11 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{A}^\top\mathbf{A}-45\mathbf{I} = \begin{bmatrix}-20&20\\20&-20\end{bmatrix} \;\Rightarrow\; v_1=v_2 \;\Rightarrow\; \mathbf{v}_1 = \tfrac{1}{\sqrt2}(1,1)^\top $$</div>
-          <div class="derive__why">$\lambda=45$ 의 고유벡터를 정규화했다</div>
+          <div class="derive__why">$\lambda=45$ 의 eigenvector를 normalize 했다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{v}_2 = \tfrac{1}{\sqrt2}(1,-1)^\top $$</div>
-          <div class="derive__why">$\lambda=5$ 쪽. 두 벡터는 직교한다</div>
+          <div class="derive__why">$\lambda=5$ 쪽. 두 vector는 orthogonal 한다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{A}\mathbf{v}_1 = \tfrac{1}{\sqrt2}\begin{bmatrix}3+0\\4+5\end{bmatrix} = \tfrac{1}{\sqrt2}\begin{bmatrix}3\\9\end{bmatrix} $$</div>
@@ -526,7 +526,7 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{u}_1\mathbf{v}_1^\top = \frac{1}{\sqrt{10}}\begin{bmatrix}1\\3\end{bmatrix}\cdot\frac{1}{\sqrt2}[1\ \ 1] = \frac{1}{\sqrt{20}}\begin{bmatrix}1&1\\3&3\end{bmatrix} $$</div>
-          <div class="derive__why">외적 — 랭크 1 행렬이 나온다</div>
+          <div class="derive__why">outer product(외적) — 랭크 1 matrix가 나온다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{A}_1 = \sigma_1\mathbf{u}_1\mathbf{v}_1^\top = \frac{3\sqrt5}{2\sqrt5}\begin{bmatrix}1&1\\3&3\end{bmatrix} = 1.5\begin{bmatrix}1&1\\3&3\end{bmatrix} = \begin{bmatrix}1.5&1.5\\4.5&4.5\end{bmatrix} $$</div>
@@ -538,11 +538,11 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \|\mathbf{A}-\mathbf{A}_1\|_F^2 = 2.25+2.25+0.25+0.25 = 5 = \sigma_2^2 \ \checkmark $$</div>
-          <div class="derive__why"><strong>유도 3 확인</strong> — 버린 특이값의 제곱이 정확히 오차다</div>
+          <div class="derive__why"><strong>유도 3 확인</strong> — 버린 singular value의 제곱이 정확히 오차다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \|\mathbf{A}\|_F^2 = 9+0+16+25 = 50 = \sigma_1^2+\sigma_2^2 = 45+5 \ \checkmark $$</div>
-          <div class="derive__why">전체 에너지도 특이값 제곱합과 같다</div>
+          <div class="derive__why">전체 에너지도 singular value 제곱합과 같다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \text{설명된 비율} = \frac{45}{50} = 90\% $$</div>
@@ -566,7 +566,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ k(m+n+1) < mn \;\Longrightarrow\; k < \frac{mn}{m+n+1} \approx 500 $$</div>
-          <div class="derive__why">$k$ 가 500 을 넘으면 <strong>오히려 커진다</strong>. 압축은 rank 가 낮을 때만 이득</div>
+          <div class="derive__why">$k$ 가 500을 넘으면 <strong>오히려 커진다</strong>. 압축은 rank가 낮을 때만 이득</div>
         </div>
       </div>
     </section>
@@ -576,8 +576,8 @@
       <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
 
       <p>
-        본문의 위젯 여섯 개 — <strong>원 → 타원</strong> · <strong>특이값 스펙트럼</strong> ·
-        <strong>저랭크 그림</strong> · <strong>잡음 제거</strong> · <strong>잠재 공간</strong> · <strong>행렬 완성</strong> —
+        본문의 위젯 여섯 개 — <strong>원 → 타원</strong> · <strong>singular value spectrum</strong> ·
+        <strong>low-rank 그림</strong> · <strong>잡음 제거</strong> · <strong>latent space</strong> · <strong>matrix completion</strong> —
         을 순서대로 만져 본 뒤, 아래에서 <strong>$2\times2$ 를 직접 분해</strong>해 보라.
       </p>
 
@@ -587,7 +587,7 @@
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">기본값이 예제의 행렬입니다. σ₁σ₂ 가 |det| 와 같은지, σ₁²+σ₂² 가 프로베니우스 제곱과 같은지 확인하세요.</p>
+          <p class="watch">기본값이 예제의 matrix입니다. σ₁σ₂ 가 |det| 와 같은지, σ₁²+σ₂² 가 프로베니우스 제곱과 같은지 확인하세요.</p>
         </div>
       </figure>
     </section>
@@ -598,53 +598,53 @@
 
       <div class="note note--trap">
         <span class="note__label">오해 1</span>
-        <p>"특이값은 고윳값과 같다."</p>
+        <p>"singular value는 eigenvalue와 같다."</p>
         <p>
-          <strong>실제로는</strong> 다르다. $\mathbf{A}=\begin{bmatrix}0&2\\0&0\end{bmatrix}$ 의 고윳값은 $0,0$ 이지만
-          특이값은 $2,0$ 이다. 둘이 일치하는 것은 <strong>대칭이고 준정부호</strong>일 때뿐이며,
-          대칭이지만 음의 고윳값이 있으면 $\sigma_i=|\lambda_i|$ 로 절댓값이 붙는다.
+          <strong>실제로는</strong> 다르다. $\mathbf{A}=\begin{bmatrix}0&2\\0&0\end{bmatrix}$ 의 eigenvalue는 $0,0$ 이지만
+          singular value는 $2,0$ 이다. 둘이 일치하는 것은 <strong>대칭이고 positive semi-definite(준정부호)</strong>일 때뿐이며,
+          대칭이지만 음의 eigenvalue가 있으면 $\sigma_i=|\lambda_i|$ 로 절댓값이 붙는다.
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 2</span>
-        <p>"SVD 는 유일하다."</p>
+        <p>"SVD는 유일하다."</p>
         <p>
-          <strong>실제로는</strong> 특이값 자체는 유일하지만 $\mathbf{U},\mathbf{V}$ 는 그렇지 않다.
+          <strong>실제로는</strong> singular value 자체는 유일하지만 $\mathbf{U},\mathbf{V}$ 는 그렇지 않다.
           $(\mathbf{u}_i,\mathbf{v}_i)$ 의 부호를 함께 뒤집어도 되고,
-          특이값이 같은(중복) 경우에는 해당 부분공간 안에서 자유롭게 회전할 수 있다.
-          그래서 NumPy 와 MATLAB 의 출력 부호가 달라도 <strong>둘 다 맞다</strong>.
+          singular value가 같은(중복) 경우에는 해당 subspace 안에서 자유롭게 회전할 수 있다.
+          그래서 NumPy와 MATLAB의 출력 부호가 달라도 <strong>둘 다 맞다</strong>.
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 3</span>
-        <p>"rank 는 $\sigma_i = 0$ 인지 세면 된다."</p>
+        <p>"rank는 $\sigma_i = 0$ 인지 세면 된다."</p>
         <p>
           <strong>실제로는</strong> 부동소수점에서 정확히 0이 나오는 일은 거의 없다.
           $10^{-16}$ 같은 값이 남는다. 실무에서는 <strong>수치 rank</strong>를 쓴다 —
           $\sigma_i > \varepsilon\cdot\sigma_1\cdot\max(m,n)$ 인 개수를 센다
-          (<code>np.linalg.matrix_rank</code> 의 기본 동작).
+          (<code>np.linalg.matrix_rank</code>의 기본 동작).
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 4</span>
-        <p>"저랭크 근사는 어떤 기준으로도 최적이다."</p>
+        <p>"low-rank approximation은 어떤 기준으로도 최적이다."</p>
         <p>
-          <strong>실제로는</strong> <em>스펙트럴 노름과 프로베니우스 노름 기준</em>으로 최적이다.
+          <strong>실제로는</strong> <em>스펙트럴 norm과 프로베니우스 norm 기준</em>으로 최적이다.
           $L_1$ 오차나 "관측된 위치에서만의 오차" 같은 다른 기준에서는 최적이 아니며,
-          그래서 행렬 완성에는 SVD 를 한 번 자르는 것으로 끝나지 않고 <strong>반복 알고리즘</strong>이 필요하다.
+          그래서 matrix completion에는 SVD를 한 번 자르는 것으로 끝나지 않고 <strong>반복 algorithm(알고리즘)</strong>이 필요하다.
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 5</span>
-        <p>"잠재 공간의 각 축은 해석 가능한 의미를 갖는다."</p>
+        <p>"latent space의 각 축은 해석 가능한 의미를 갖는다."</p>
         <p>
-          <strong>실제로는</strong> SVD 가 주는 것은 <em>분산이 큰 순서로 직교하는 방향</em>일 뿐,
+          <strong>실제로는</strong> SVD가 주는 것은 <em>variance(분산)가 큰 순서로 orthogonal 하는 방향</em>일 뿐,
           의미 있는 축이 아니다. 첫 축이 "장르"이고 둘째가 "제작 연도"라는 보장은 없다.
-          해석 가능한 요인을 원하면 회전(varimax)이나 비음수 제약(NMF) 같은
+          해석 가능한 요인을 원하면 rotation(varimax)이나 비음수 제약(NMF) 같은
           <strong>추가 조건</strong>을 걸어야 한다. <a href="2.1-numbers-and-spaces.html">2.1</a>의 오해 3과 같은 이야기다.
         </p>
       </div>
@@ -655,7 +655,7 @@
       <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
       <p>예제 ①–④를 검증한다.</p>
       <details>
-        <summary>NumPy — SVD · 저랭크 근사 · 오차 (19줄)</summary>
+        <summary>NumPy — SVD · low-rank approximation · 오차 (19줄)</summary>
 <pre><code>import numpy as np
 
 A = np.array([[3., 0.], [4., 5.]])
@@ -682,7 +682,7 @@ print(np.linalg.matrix_rank(C))   # 1   <- 임계값으로 판정
 </code></pre>
         <p>
           <small>
-            <code>np.linalg.svd</code> 는 $\mathbf{V}^\top$ 를 반환한다($\mathbf{V}$ 가 아니다).
+            <code>np.linalg.svd</code>는 $\mathbf{V}^\top$ 를 반환한다($\mathbf{V}$ 가 아니다).
             $\mathbf{v}_i$ 는 <code>Vt[i]</code> 로 꺼낸다 — 첨자를 헷갈리면 결과가 조용히 어긋난다.
           </small>
         </p>
@@ -696,22 +696,22 @@ print(np.linalg.matrix_rank(C))   # 1   <- 임계값으로 판정
       <div class="quiz">
         <div class="q">
           <p class="q__stem"><span class="q__tag">계산</span>
-            $\mathbf{A}\in\mathbb{R}^{5\times3}$ 의 특이값이 $6, 3, 0$ 일 때 $\operatorname{rank}(\mathbf{A})$ 와 $\|\mathbf{A}\|_F$ 는?</p>
+            $\mathbf{A}\in\mathbb{R}^{5\times3}$ 의 singular value가 $6, 3, 0$ 일 때 $\operatorname{rank}(\mathbf{A})$ 와 $\|\mathbf{A}\|_F$ 는?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>rank 2 · $\sqrt{45}\approx6.708$</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>rank 3 · $9$</span></button>
             <button class="opt" type="button"><span class="opt__mark">다</span><span>rank 2 · $9$</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            0이 아닌 특이값이 2개이므로 rank 2.
+            0이 아닌 singular value가 2개이므로 rank 2.
             $\|\mathbf{A}\|_F = \sqrt{\sum\sigma_i^2} = \sqrt{36+9+0} = \sqrt{45}$.
-            다는 특이값을 그냥 더한 값($6+3$)으로, 그것은 <strong>핵 노름</strong> $\|\mathbf{A}\|_*$ 다.
+            다는 singular value를 그냥 더한 값($6+3$)으로, 그것은 <strong>nuclear norm</strong> $\|\mathbf{A}\|_*$ 다.
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">계산</span>
-            특이값이 $10, 6, 3, 1$ 인 행렬을 랭크 2로 근사하면 $\|\mathbf{A}-\mathbf{A}_2\|_F$ 는?</p>
+            singular value가 $10, 6, 3, 1$ 인 matrix를 랭크 2로 근사하면 $\|\mathbf{A}-\mathbf{A}_2\|_F$ 는?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\sqrt{10}\approx3.162$</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>$3$</span></button>
@@ -720,29 +720,29 @@ print(np.linalg.matrix_rank(C))   # 1   <- 임계값으로 판정
           <div class="q__explain"><strong>풀이 ·</strong>
             버리는 것은 $\sigma_3=3$, $\sigma_4=1$ 이므로
             $\sqrt{3^2+1^2} = \sqrt{10}\approx3.162$.
-            나는 스펙트럴 노름 기준 오차 $\sigma_3=3$ 이고, 다는 단순히 더한 값이다.
+            나는 스펙트럴 norm 기준 오차 $\sigma_3=3$ 이고, 다는 단순히 더한 값이다.
             <strong>어느 노름인지 확인하는 습관</strong>이 필요하다.
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">개념</span>
-            SVD 가 고유분해보다 넓게 쓰이는 이유로 <strong>틀린</strong> 것은?</p>
+            SVD가 eigendecomposition보다 넓게 쓰이는 이유로 <strong>틀린</strong> 것은?</p>
           <div class="opts">
-            <button class="opt" type="button"><span class="opt__mark">가</span><span>직사각 행렬에도 존재한다</span></button>
-            <button class="opt" type="button"><span class="opt__mark">나</span><span>항상 존재하며 인자가 직교행렬이다</span></button>
-            <button class="opt" type="button" data-correct="true"><span class="opt__mark">다</span><span>계산이 고유분해보다 항상 빠르다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>직사각 matrix에도 존재한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>항상 존재하며 인자가 orthogonal matrix다</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">다</span><span>계산이 eigendecomposition보다 항상 빠르다</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            SVD 는 대체로 고유분해보다 <em>비싸다</em>. 장점은 속도가 아니라
+            SVD는 대체로 eigendecomposition보다 <em>비싸다</em>. 장점은 속도가 아니라
             <strong>보편성과 수치 안정성</strong>이다.
-            직교행렬은 오차를 증폭하지 않으므로(<a href="2.4-matrix-operations.html">2.4</a> 유도 3) 계산이 안정적이다.
+            orthogonal matrix는 오차를 증폭하지 않으므로(<a href="2.4-matrix-operations.html">2.4</a> 유도 3) 계산이 안정적이다.
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">계산</span>
-            $2000\times500$ 행렬을 랭크 $k$ 로 압축해 원본의 20% 크기로 만들려면 $k$ 는 최대 얼마?</p>
+            $2000\times500$ matrix를 랭크 $k$ 로 압축해 원본의 20% 크기로 만들려면 $k$ 는 최대 얼마?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 <span class="num">80</span></span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>약 <span class="num">100</span></span></button>
@@ -765,13 +765,13 @@ print(np.linalg.matrix_rank(C))   # 1   <- 임계값으로 판정
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
             $k=r$ 이면 $\mathbf{A}_k=\mathbf{A}_{\text{obs}}$ 로 <strong>관측값을 그대로 되돌린다</strong> — 잡음 포함이다.
-            반대로 너무 작으면 신호를 버린다. 그래서 스펙트럼이 꺾이는 지점을 찾는 것이 요령이다.
+            반대로 너무 작으면 신호를 버린다. 그래서 spectrum이 꺾이는 지점을 찾는 것이 요령이다.
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">함정</span>
-            <code>U, s, Vt = np.linalg.svd(A)</code> 로 첫 오른쪽 특이벡터를 얻으려면?</p>
+            <code>U, s, Vt = np.linalg.svd(A)</code>로 첫 오른쪽 singular vector를 얻으려면?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span><code>Vt[0]</code></span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span><code>Vt[:, 0]</code></span></button>
@@ -779,7 +779,7 @@ print(np.linalg.matrix_rank(C))   # 1   <- 임계값으로 판정
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
             반환값이 $\mathbf{V}$ 가 아니라 $\mathbf{V}^\top$ 이므로 $\mathbf{v}_1$ 은 <strong>첫 번째 행</strong>이다.
-            나는 $\mathbf{V}$ 를 받았을 때의 방식이고, 다는 왼쪽 특이벡터 $\mathbf{u}_1$ 이다.
+            나는 $\mathbf{V}$ 를 받았을 때의 방식이고, 다는 왼쪽 singular vector $\mathbf{u}_1$ 이다.
             부호가 뒤집혀 나올 수 있다는 점(오해 2)도 함께 기억할 것.
           </div>
         </div>
@@ -791,10 +791,10 @@ print(np.linalg.matrix_rank(C))   # 1   <- 임계값으로 판정
       <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
 
       <ul>
-        <li><strong><a href="2.9-dimensionality-reduction.html">2.9 차원 축소</a></strong> — 중심화한 데이터의 SVD 가 곧 PCA 다.</li>
-        <li><strong><a href="2.10-linear-algebra-in-ai.html">2.10 AI와 선형대수</a></strong> — LoRA·가지치기·양자화의 저랭크 아이디어.</li>
-        <li><strong><a href="2.6-linear-systems.html">2.6 연립방정식과 행렬 분해</a></strong> — rank 결손 최소제곱은 SVD 로 푼다.</li>
-        <li><strong><a href="2.5-linear-transformation.html">2.5 선형변환</a></strong> — 모든 선형변환이 회전·확대·회전으로 분해된다는 결론.</li>
+        <li><strong><a href="2.9-dimensionality-reduction.html">2.9 dimensionality reduction(차원 축소)</a></strong> — center 한 data의 SVD가 곧 PCA 다.</li>
+        <li><strong><a href="2.10-linear-algebra-in-ai.html">2.10 AI와 linear algebra</a></strong> — LoRA·pruning(가지치기)·quantization(양자화)의 low-rank 아이디어.</li>
+        <li><strong><a href="2.6-linear-systems.html">2.6 system of equations(연립방정식)와 matrix factorization(행렬 분해)</a></strong> — rank 결손 least squares(최소제곱)는 SVD로 푼다.</li>
+        <li><strong><a href="2.5-linear-transformation.html">2.5 linear transformation(선형변환)</a></strong> — 모든 linear transformation이 rotation·확대·rotation으로 분해된다는 결론.</li>
       </ul>
 
       <h3>출처</h3>
@@ -802,31 +802,31 @@ print(np.linalg.matrix_rank(C))   # 1   <- 임계값으로 판정
         <li class="ref" id="ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Deisenroth, M. P., Faisal, A. A. &amp; Ong, C. S. (2020). <em>Mathematics for Machine Learning</em>. Cambridge University Press.</span>
-          <span class="ref__where">4.5절 Theorem 4.22 (SVD Theorem) — 모든 행렬에 SVD 가 존재한다는 진술과 $\mathbf{A}^\top\mathbf{A}$ 를 경유하는 구성(유도 1). 4.6절 Theorem 4.25 (Eckart–Young) — 스펙트럴 노름에서 $\|\mathbf{A}-\mathbf{A}_k\|_2=\sigma_{k+1}$ (책 131쪽), 저랭크 근사의 최적성</span>
+          <span class="ref__where">4.5절 Theorem 4.22 (SVD Theorem) — 모든 matrix에 SVD가 존재한다는 진술과 $\mathbf{A}^\top\mathbf{A}$ 를 경유하는 구성(유도 1). 4.6절 Theorem 4.25 (Eckart–Young) — 스펙트럴 norm에서 $\|\mathbf{A}-\mathbf{A}_k\|_2=\sigma_{k+1}$ (책 131쪽), low-rank approximation의 최적성</span>
           <a class="ref__link" href="https://mml-book.github.io/">mml-book.github.io</a>
         </li>
         <li class="ref" id="ref-candes2008-exact-matrix-completion" data-ref="candes2008-exact-matrix-completion">
           <span class="ref__type" data-type="paper">논문</span>
           <span class="ref__cite">Candès, E. J. &amp; Recht, B. (2008). <em>Exact Matrix Completion via Convex Optimization</em>. Foundations of Computational Mathematics, 9, 717–772.</span>
-          <span class="ref__where">1절과 Theorem 1.3 — rank 최소화를 핵 노름 최소화로 완화하면 충분한 무작위 관측 아래 원래 저랭크 행렬을 정확히 복원한다는 결과. 본문 '행렬 완성'과 식 (7)의 근거</span>
+          <span class="ref__where">1절과 Theorem 1.3 — rank 최소화를 nuclear norm 최소화로 완화하면 충분한 무작위 관측 아래 원래 low-rank matrix를 정확히 복원한다는 결과. 본문 'matrix completion'과 식 (7)의 근거</span>
           <a class="ref__link" href="https://arxiv.org/abs/0805.4471">arXiv:0805.4471</a>
         </li>
         <li class="ref" id="ref-goodfellow2016-dl" data-ref="goodfellow2016-dl">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>. MIT Press.</span>
-          <span class="ref__where">2.8절(Singular Value Decomposition)과 2.9절(Pseudoinverse) — SVD 가 직사각 행렬에도 항상 존재한다는 점과 의사역행렬을 SVD 로 정의하는 방식. '고유분해 vs SVD' 비교표의 근거</span>
+          <span class="ref__where">2.8절(Singular Value Decomposition)과 2.9절(Pseudoinverse) — SVD가 직사각 matrix에도 항상 존재한다는 점과 pseudo-inverse(의사역행렬)를 SVD로 정의하는 방식. 'eigendecomposition vs SVD' 비교표의 근거</span>
           <a class="ref__link" href="https://www.deeplearningbook.org/">deeplearningbook.org</a>
         </li>
         <li class="ref" id="ref-mit-1806" data-ref="mit-1806">
           <span class="ref__type" data-type="course">강의</span>
           <span class="ref__cite">Strang, G. <em>MIT 18.06 Linear Algebra</em> (Spring 2010). MIT OpenCourseWare.</span>
-          <span class="ref__where">Lecture 29 (Singular value decomposition) — '행공간의 직교기저를 열공간의 직교기저로 보낸다'는 구성과 네 부분공간과의 대응. 예제 ①②의 계산 순서가 이 강의를 따른다</span>
+          <span class="ref__where">Lecture 29 (Singular value decomposition) — 'row space의 직교기저를 column space의 직교기저로 보낸다'는 구성과 네 subspace과의 대응. 예제 ①②의 계산 순서가 이 강의를 따른다</span>
           <a class="ref__link" href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/">ocw.mit.edu</a>
         </li>
         <li class="ref" id="ref-petersen2012-matrix-cookbook" data-ref="petersen2012-matrix-cookbook">
           <span class="ref__type" data-type="doc">문서</span>
           <span class="ref__cite">Petersen, K. B. &amp; Pedersen, M. S. (2012). <em>The Matrix Cookbook</em> (ver. 20121115). Technical University of Denmark.</span>
-          <span class="ref__where">3.3절(Singular Value Decomposition)과 10.4절 — 특이값과 $\mathbf{A}^\top\mathbf{A}$ 고윳값의 관계, 프로베니우스·스펙트럴·핵 노름의 정의를 한자리에서 대조 확인</span>
+          <span class="ref__where">3.3절(Singular Value Decomposition)과 10.4절 — singular value와 $\mathbf{A}^\top\mathbf{A}$ eigenvalue의 관계, 프로베니우스·스펙트럴·nuclear norm의 정의를 한자리에서 대조 확인</span>
           <a class="ref__link" href="https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf">matrixcookbook.pdf</a>
         </li>
       </ol>
@@ -880,7 +880,7 @@ var LINALG = (function () {
   function scale(v, c) { return v.map(function (x) { return x * c; }); }
   function clone(A) { return A.map(function (r) { return r.slice(); }); }
 
-  /* 상위 k 개의 (σ, u, v) 를 구한다 */
+  /* 상위 k 개의 (σ, u, v)를 구한다 */
   function svdTopK(A0, k, iters) {
     var A = clone(A0), m = A.length, n = A[0].length;
     var res = [];
@@ -928,7 +928,7 @@ var LINALG = (function () {
     return Math.sqrt(s);
   }
 
-  /* 2×2 전용 정확한 SVD (AᵀA 의 고유분해) */
+  /* 2×2 전용 정확한 SVD (AᵀA의 고유분해) */
   function svd2(A) {
     var a = A[0][0], b = A[0][1], c = A[1][0], d = A[1][1];
     var m11 = a * a + c * c, m12 = a * b + c * d, m22 = b * b + d * d;
@@ -993,9 +993,9 @@ WIDGETS.register('svd-ellipse', function (root, ctx) {
     p.vector(a1[0], a1[1], { stroke: 'var(--seal)', width: 3, label: 'σ₁ 방향' });
     p.vector(a2[0], a2[1], { stroke: 'var(--amber)', width: 2.5, label: 'σ₂ 방향', lx: 6, ly: 16 });
 
-    var NAMES = ['① 단위원 (아직 아무것도 안 함)', '② Vᵀ 적용 — 회전만',
-                 '③ Σ 적용 — 축별로 확대', '④ U 적용 — 다시 회전 → 최종 A'];
-    var NOTES = ['입력 쪽 기저 v₁, v₂ 를 봅니다', '모양은 그대로, 방향만 정렬됩니다',
+    var NAMES = ['① unit circle (아직 아무것도 안 함)', '② Vᵀ 적용 — rotation만',
+                 '③ Σ 적용 — 축별로 확대', '④ U 적용 — 다시 rotation → 최종 A'];
+    var NOTES = ['입력 쪽 basis v₁, v₂ 를 봅니다', '모양은 그대로, 방향만 정렬됩니다',
                  '여기서만 모양이 바뀝니다 (원 → 타원)', '타원을 제자리로 돌려놓습니다'];
     out.setRaw('stage', NAMES[step]);
     out.set('s1', S.s1);
@@ -1005,11 +1005,11 @@ WIDGETS.register('svd-ellipse', function (root, ctx) {
 
   WIDGETS.player({
     host: ctx.controls, steps: N, fps: 0.7, label: '분해 단계',
-    labels: ['① 원', '② Vᵀ 회전', '③ Σ 확대', '④ U 회전'],
+    labels: ['① 원', '② Vᵀ rotation', '③ Σ 확대', '④ U rotation'],
     onStep: draw
   });
   WIDGETS.matrix({
-    host: ctx.controls, rows: 2, cols: 2, values: A, step: 0.5, label: '행렬 A',
+    host: ctx.controls, rows: 2, cols: 2, values: A, step: 0.5, label: 'matrix A',
     onChange: function (v) { A = v; draw(3); }
   });
 });
@@ -1239,9 +1239,9 @@ WIDGETS.register('latent-space', function (root, ctx) {
   ctx.stage.appendChild(wrap);
 
   var out = WIDGETS.readout(ctx.readout, [
-    { key: 'k', label: '잠재 요인 수' },
-    { key: 'err', label: '복원 오차', digits: 3 },
-    { key: 'sig', label: '특이값' },
+    { key: 'k', label: 'latent factor 수' },
+    { key: 'err', label: 'reconstruction error', digits: 3 },
+    { key: 'sig', label: 'singular value' },
     { key: 'note', label: '해석' }
   ]);
 
@@ -1264,7 +1264,7 @@ WIDGETS.register('latent-space', function (root, ctx) {
   }
 
   WIDGETS.slider({
-    host: ctx.controls, label: '잠재 요인 수 k (왼쪽=원본 평점, 오른쪽=복원)',
+    host: ctx.controls, label: 'latent factor 수 k (왼쪽=원본 평점, 오른쪽=복원)',
     min: 1, max: 4, step: 1, value: 2, digits: 0,
     onInput: function (v) { k = v; draw(); }
   });
@@ -1372,7 +1372,7 @@ WIDGETS.register('svd-calculator', function (root, ctx) {
     { key: 'sig', label: 'σ₁, σ₂' },
     { key: 'chk1', label: 'σ₁σ₂ vs |det|' },
     { key: 'chk2', label: 'σ₁²+σ₂² vs ‖A‖²_F' },
-    { key: 'cond', label: '조건수 σ₁/σ₂', digits: 3 }
+    { key: 'cond', label: 'condition number σ₁/σ₂', digits: 3 }
   ]);
 
   function draw() {
@@ -1402,7 +1402,7 @@ WIDGETS.register('svd-calculator', function (root, ctx) {
   }
 
   WIDGETS.matrix({
-    host: ctx.controls, rows: 2, cols: 2, values: A, step: 0.5, label: '행렬 A',
+    host: ctx.controls, rows: 2, cols: 2, values: A, step: 0.5, label: 'matrix A',
     onChange: function (v) { A = v; draw(); }
   });
   draw();

@@ -60,32 +60,32 @@
     </header>
 
     <nav class="chips" aria-label="이 절에서 다루는 항목">
-      <a class="chip" href="#c-train">훈련 데이터</a>
-      <a class="chip" href="#c-valid">검증 데이터</a>
-      <a class="chip" href="#c-test">테스트 데이터</a>
-      <a class="chip" href="#c-cv">교차검증</a>
-      <a class="chip" href="#c-leakage">데이터 누출</a>
-      <a class="chip" href="#c-shift">분포 변화</a>
-      <a class="chip" href="#c-overfit">과적합</a>
-      <a class="chip" href="#c-underfit">과소적합</a>
-      <a class="chip" href="#c-generalize">일반화</a>
-      <a class="chip" href="#c-benchmark">벤치마크</a>
-      <a class="chip" href="#c-baseline">베이스라인</a>
-      <a class="chip" href="#c-repro">재현성</a>
+      <a class="chip" href="#c-train">Training Data</a>
+      <a class="chip" href="#c-valid">Validation Data</a>
+      <a class="chip" href="#c-test">Test Data</a>
+      <a class="chip" href="#c-cv">Cross-Validation</a>
+      <a class="chip" href="#c-leakage">Data Leakage</a>
+      <a class="chip" href="#c-shift">Distribution Shift</a>
+      <a class="chip" href="#c-overfit">Overfitting</a>
+      <a class="chip" href="#c-underfit">Underfitting</a>
+      <a class="chip" href="#c-generalize">Generalization</a>
+      <a class="chip" href="#c-benchmark">Benchmark</a>
+      <a class="chip" href="#c-baseline">Baseline</a>
+      <a class="chip" href="#c-repro">Reproducibility</a>
     </nav>
 
     <section class="sec" id="s-summary">
       <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
       <p class="tldr">
-        우리가 알고 싶은 것은 <strong>본 적 없는 데이터에서의 성능</strong>인데,
-        가진 것은 이미 본 데이터뿐이다. 데이터를 나누는 이유는 그 하나다 —
-        <strong>보지 않은 척할 데이터를 확보하기 위해서.</strong>
+        우리가 알고 싶은 것은 <strong>본 적 없는 data(데이터)에서의 성능</strong>인데,
+        가진 것은 이미 본 데이터뿐이다. data를 나누는 이유는 그 하나다 —
+        <strong>보지 않은 척할 data를 확보하기 위해서.</strong>
       </p>
       <h3>학습 목표</h3>
       <ol class="goals">
-        <li>훈련·검증·테스트의 역할을 구분하고, 왜 둘이 아니라 셋인지 설명할 수 있다.</li>
-        <li>다항식 차수를 올릴 때 훈련 오차와 검증 오차가 반대로 움직이는 것을 손으로 계산해 보일 수 있다.</li>
-        <li>데이터 누출이 일어나는 전형적 경로 셋을 짚고, 각각을 막는 방법을 말할 수 있다.</li>
+        <li>training(훈련)·validation(검증)·테스트의 역할을 구분하고, 왜 둘이 아니라 셋인지 설명할 수 있다.</li>
+        <li>다항식 차수를 올릴 때 training 오차와 validation 오차가 반대로 움직이는 것을 손으로 계산해 보일 수 있다.</li>
+        <li>data leakage(데이터 누출)가 일어나는 전형적 경로 셋을 짚고, 각각을 막는 방법을 말할 수 있다.</li>
       </ol>
     </section>
 
@@ -96,24 +96,24 @@
         이 학생이 시험을 잘 볼까? <strong>알 수 없다.</strong> 외운 것인지 이해한 것인지 구분할 방법이 없기 때문이다.
       </p>
       <p>
-        구분하려면 <em>풀어본 적 없는 문제</em>를 줘야 한다. 그래서 데이터를 나눈다.
+        구분하려면 <em>풀어본 적 없는 문제</em>를 줘야 한다. 그래서 data를 나눈다.
         그런데 여기서 한 걸음 더 나가야 한다.
       </p>
       <p>
         모의고사를 보고 공부법을 바꾸고, 다시 모의고사를 보고 또 바꾸기를 100번 반복하면
         <strong>모의고사 점수도 더 이상 실력을 반영하지 않는다.</strong>
-        모의고사에 맞춰 최적화한 결과이기 때문이다.
-        그래서 <em>진짜 시험</em>이 하나 더 필요하다 — 이것이 훈련·검증·테스트 셋으로 나누는 이유다.
+        모의고사에 맞춰 optimize 한 결과이기 때문이다.
+        그래서 <em>진짜 시험</em>이 하나 더 필요하다 — 이것이 training·validation·테스트 셋으로 나누는 이유다.
       </p>
 
       <div class="note note--key">
         <span class="note__label">셋으로 나누는 이유</span>
         <p>
-          <strong>훈련</strong>은 파라미터를 정하는 데,
-          <strong>검증</strong>은 하이퍼파라미터·모델을 고르는 데,
+          <strong>training</strong>은 parameter(파라미터)를 정하는 데,
+          <strong>validation</strong>은 hyperparameter(하이퍼파라미터)·model(모델)을 고르는 데,
           <strong>테스트</strong>는 최종 성능을 <em>한 번</em> 보고하는 데 쓴다.
-          검증 데이터는 선택에 반복해서 쓰이므로 점수가 낙관적으로 치우친다.
-          그 편향을 피하려면 손대지 않은 집합이 하나 더 있어야 한다.
+          validation data(검증 데이터)는 선택에 반복해서 쓰이므로 점수가 낙관적으로 치우친다.
+          그 bias(편향)를 피하려면 손대지 않은 집합이 하나 더 있어야 한다.
         </p>
       </div>
 
@@ -123,7 +123,7 @@
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">테스트 비율을 5%로 줄여 보세요. 측정값의 흔들림(표준오차)이 얼마나 커지는지 보세요.</p>
+          <p class="watch">테스트 비율을 5%로 줄여 보세요. 측정값의 흔들림(standard error(표준오차))이 얼마나 커지는지 보세요.</p>
         </div>
       </figure>
     </section>
@@ -134,7 +134,7 @@
       <span class="anchor" id="c-generalize"></span>
       <h3>일반화 — 우리가 정말 원하는 것</h3>
       <p>
-        데이터가 어떤 분포 $\mathcal{P}$ 에서 나온다고 하자. 진짜 목표는 <strong>기대 위험</strong>이다.
+        data가 어떤 분포 $\mathcal{P}$ 에서 나온다고 하자. 진짜 목표는 <strong>기대 위험</strong>이다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ R(\theta) = \mathbb{E}_{(x,y)\sim\mathcal{P}}\bigl[L(f_\theta(x),\, y)\bigr] $$</div>
@@ -148,23 +148,23 @@
         <span class="eq__tag num">(2)</span>
       </div>
       <p>
-        <strong>핵심은 이것이다.</strong> $\hat{R}_{\mathcal{S}}$ 가 $R$ 의 <em>편향 없는 추정치</em>가 되려면,
+        <strong>핵심은 이것이다.</strong> $\hat{R}_{\mathcal{S}}$ 가 $R$ 의 <em>bias 없는 추정치</em>가 되려면,
         $\mathcal{S}$ 가 $\theta$ 를 정하는 데 쓰이지 않았어야 한다.
-        훈련 데이터로 잰 오차가 늘 낙관적인 이유가 여기 있다 — $\theta$ 가 바로 그 데이터에 맞춰졌기 때문이다.
+        training data(훈련 데이터)로 잰 오차가 늘 낙관적인 이유가 여기 있다 — $\theta$ 가 바로 그 data에 맞춰졌기 때문이다.
       </p>
 
-      <h3>세 집합</h3>
+      <h3>Three Splits 세 집합</h3>
       <span class="anchor" id="c-train"></span>
-      <p><strong>훈련 데이터</strong> $\mathcal{S}_{\text{tr}}$ — 파라미터 $\theta$ 를 정한다. 여기서 잰 오차는 성능 추정에 쓸 수 없다.</p>
+      <p><strong>training data</strong> $\mathcal{S}_{\text{tr}}$ — parameter $\theta$ 를 정한다. 여기서 잰 오차는 성능 추정에 쓸 수 없다.</p>
       <span class="anchor" id="c-valid"></span>
-      <p><strong>검증 데이터</strong> $\mathcal{S}_{\text{val}}$ — 하이퍼파라미터, 모델 구조, 조기 종료 시점을 고른다. <em>여러 번</em> 쓴다.</p>
+      <p><strong>validation data</strong> $\mathcal{S}_{\text{val}}$ — hyperparameter, model 구조, 조기 종료 시점을 고른다. <em>여러 번</em> 쓴다.</p>
       <span class="anchor" id="c-test"></span>
-      <p><strong>테스트 데이터</strong> $\mathcal{S}_{\text{te}}$ — 모든 선택이 끝난 뒤 <em>한 번</em> 쓴다. 보고 나서 모델을 고치면 그 순간 검증 데이터가 된다.</p>
+      <p><strong>test data(테스트 데이터)</strong> $\mathcal{S}_{\text{te}}$ — 모든 선택이 끝난 뒤 <em>한 번</em> 쓴다. 보고 나서 model을 고치면 그 순간 validation data가 된다.</p>
 
       <span class="anchor" id="c-cv"></span>
-      <h3>교차검증</h3>
+      <h3>Cross-Validation 교차검증</h3>
       <p>
-        데이터가 적으면 검증용으로 떼어놓는 것이 아깝다. $k$-겹 교차검증은 데이터를 $k$ 조각으로 나눠,
+        data가 적으면 검증용으로 떼어놓는 것이 아깝다. $k$-겹 cross-validation(교차검증)은 data를 $k$ 조각으로 나눠,
         각 조각을 한 번씩 검증용으로 쓰고 나머지로 학습한다.
       </p>
       <div class="eq">
@@ -173,78 +173,78 @@
       </div>
       <p>
         $\theta^{(-j)}$ 는 $j$ 번째 조각을 <em>빼고</em> 학습한 파라미터다.
-        모든 표본이 정확히 한 번씩 검증에 쓰이므로 데이터를 낭비하지 않는다.
-        대가는 <strong>학습을 $k$ 번 해야 한다는 것</strong>이다.
+        모든 표본이 정확히 한 번씩 validation에 쓰이므로 data를 낭비하지 않는다.
+        대가는 <strong>training을 $k$ 번 해야 한다는 것</strong>이다.
       </p>
 
       <span class="anchor" id="c-overfit"></span>
       <span class="anchor" id="c-underfit"></span>
-      <h3>과적합과 과소적합</h3>
+      <h3>Overfitting and Underfitting 과적합과 과소적합</h3>
       <div class="tablewrap">
         <table>
-          <thead><tr><th></th><th>훈련 오차</th><th>검증 오차</th><th>원인</th><th>처방</th></tr></thead>
+          <thead><tr><th></th><th>training 오차</th><th>validation 오차</th><th>원인</th><th>처방</th></tr></thead>
           <tbody>
-            <tr><td><b>과소적합</b></td><td>높음</td><td>높음</td><td>모델이 너무 단순</td><td>표현력 키우기, 특성 추가</td></tr>
+            <tr><td><b>underfitting(과소적합)</b></td><td>높음</td><td>높음</td><td>model이 너무 단순</td><td>표현력 키우기, 특성 추가</td></tr>
             <tr><td><b>적절</b></td><td>낮음</td><td>낮음</td><td>—</td><td>—</td></tr>
-            <tr><td><b>과적합</b></td><td>매우 낮음</td><td>높음</td><td>모델이 잡음까지 외움</td><td>정규화, 데이터 추가, 단순화</td></tr>
+            <tr><td><b>overfitting(과적합)</b></td><td>매우 낮음</td><td>높음</td><td>model이 잡음까지 외움</td><td>normalization(정규화), data 추가, 단순화</td></tr>
           </tbody>
         </table>
       </div>
       <p>
         진단의 열쇠는 <strong>두 오차를 함께 보는 것</strong>이다.
-        훈련 오차만 보면 과적합을 성공으로 착각하고, 검증 오차만 보면 원인을 알 수 없다.
+        training 오차만 보면 overfitting을 성공으로 착각하고, validation 오차만 보면 원인을 알 수 없다.
       </p>
 
       <span class="anchor" id="c-leakage"></span>
-      <h3>데이터 누출</h3>
+      <h3>Data Leakage 데이터 누출</h3>
       <p>
-        테스트 시점에는 알 수 없는 정보가 학습에 새어 드는 것이다.
+        테스트 시점에는 알 수 없는 정보가 training에 새어 드는 것이다.
         성능이 <em>비현실적으로 좋게</em> 나오고, 배포하면 무너진다. 전형적 경로 셋:
       </p>
       <ul>
-        <li><strong>전처리 누출</strong> — 분할 <em>전에</em> 전체 데이터로 평균·표준편차를 계산. 테스트 정보가 스케일에 스며든다.</li>
+        <li><strong>preprocessing(전처리) 누출</strong> — 분할 <em>전에</em> 전체 data로 평균·표준편차를 계산. 테스트 정보가 스케일에 스며든다.</li>
         <li><strong>시간 누출</strong> — 시계열을 무작위로 섞어 분할. 미래를 보고 과거를 예측하게 된다.</li>
-        <li><strong>중복 누출</strong> — 같은 환자·같은 사용자의 기록이 훈련과 테스트에 나뉘어 들어감. 사실상 같은 표본을 본 것.</li>
+        <li><strong>중복 누출</strong> — 같은 환자·같은 사용자의 기록이 training과 테스트에 나뉘어 들어감. 사실상 같은 표본을 본 것.</li>
       </ul>
 
       <span class="anchor" id="c-shift"></span>
-      <h3>분포 변화</h3>
+      <h3>Distribution Shift 분포 변화</h3>
       <p>
-        식 (1)은 훈련과 테스트가 <strong>같은 분포 $\mathcal{P}$</strong> 에서 나온다고 가정한다.
+        식 (1)은 training과 테스트가 <strong>같은 분포 $\mathcal{P}$</strong> 에서 나온다고 가정한다.
         현실에서는 이 가정이 깨진다 — 계절이 바뀌고, 사용자층이 달라지고, 카메라가 교체된다.
         분포가 달라지면 아무리 잘 나눠도 테스트 점수가 실제 성능을 보장하지 못한다.
-        <a href="1.4-ml-system-structure.html#c-retrain">1.4절의 재학습</a>이 필요한 이유다.
+        <a href="1.4-ml-system-structure.html#c-retrain">1.4절의 retraining(재학습)</a>이 필요한 이유다.
       </p>
 
       <span class="anchor" id="c-benchmark"></span>
       <span class="anchor" id="c-baseline"></span>
-      <h3>벤치마크와 베이스라인</h3>
+      <h3>Benchmark and Baseline 벤치마크와 베이스라인</h3>
       <p>
-        <strong>벤치마크</strong>는 공통으로 쓰는 표준 데이터셋·과제다. 비교를 가능하게 만든다.
-        <strong>베이스라인</strong>은 비교 대상이 되는 단순한 방법이다 —
-        최빈값 예측, 선형 모델, 직전 값 반복 같은 것.
+        <strong>benchmark(벤치마크)</strong>는 공통으로 쓰는 표준 dataset(데이터셋)·과제다. 비교를 가능하게 만든다.
+        <strong>baseline(베이스라인)</strong>은 비교 대상이 되는 단순한 방법이다 —
+        최빈값 예측, 선형 model, 직전 값 반복 같은 것.
       </p>
       <div class="note note--key">
-        <span class="note__label">베이스라인이 먼저다</span>
+        <span class="note__label">baseline이 먼저다</span>
         <p>
           "정확도 92%"는 그 자체로 아무 뜻이 없다.
           클래스 비율이 92:8이면 <strong>전부 다수 클래스로 찍어도 92%</strong>다.
-          베이스라인을 먼저 만들어야 내 모델이 뭔가 배웠는지 알 수 있다.
+          baseline을 먼저 만들어야 내 model이 뭔가 배웠는지 알 수 있다.
         </p>
       </div>
       <p>
-        벤치마크에도 함정이 있다. 같은 테스트셋을 커뮤니티 전체가 수년간 반복해 쓰면
-        <em>집단적 과적합</em>이 일어난다. Recht 등은 CIFAR-10과 ImageNet의 테스트셋을
+        benchmark에도 함정이 있다. 같은 테스트셋을 커뮤니티 전체가 수년간 반복해 쓰면
+        <em>집단적 overfitting</em>이 일어난다. Recht 등은 CIFAR-10과 ImageNet의 테스트셋을
         원래 절차대로 새로 수집해 재평가했더니 정확도가 각각 <strong>3~15%p, 11~14%p 떨어졌다</strong>고
         보고했다<a class="cite" href="#ref-recht2019-do-imagenet-classifiers" data-ref="recht2019-do-imagenet-classifiers">1</a>.
       </p>
 
       <span class="anchor" id="c-repro"></span>
-      <h3>재현성</h3>
+      <h3>Reproducibility 재현성</h3>
       <p>
-        같은 코드와 데이터로 같은 결과가 나와야 한다. 무너뜨리는 요인은
-        무작위 시드, 데이터 분할 방식, 라이브러리 버전, 하드웨어 비결정성, 보고되지 않은 하이퍼파라미터 탐색량이다.
-        NeurIPS의 재현성 체크리스트는 이런 항목을 명시적으로 적게 만든다<a class="cite" href="#ref-pineau2020-improving-reproducibility-in" data-ref="pineau2020-improving-reproducibility-in">2</a>.
+        같은 코드와 data로 같은 결과가 나와야 한다. 무너뜨리는 요인은
+        무작위 시드, data 분할 방식, 라이브러리 버전, 하드웨어 비결정성, 보고되지 않은 hyperparameter 탐색량이다.
+        NeurIPS의 reproducibility(재현성) 체크리스트는 이런 항목을 명시적으로 적게 만든다<a class="cite" href="#ref-pineau2020-improving-reproducibility-in" data-ref="pineau2020-improving-reproducibility-in">2</a>.
       </p>
     </section>
 
@@ -253,7 +253,7 @@
 
       <p>
         테스트 정확도는 <em>추정치</em>이지 참값이 아니다. 얼마나 흔들리는지는 표본 개수로 정해진다.
-        정확도를 이항 비율로 보면 표준오차는 이렇다.
+        정확도를 이항 비율로 보면 standard error는 이렇다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathrm{SE} = \sqrt{\frac{\hat{p}\,(1-\hat{p})}{n}} $$</div>
@@ -264,16 +264,16 @@
         <table class="symtab">
           <thead><tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr></thead>
           <tbody>
-            <tr><td>$\mathcal{P}$</td><td>스크립트 피</td><td>데이터가 나오는 참 분포 (모른다)</td><td>확률분포</td><td>—</td></tr>
-            <tr><td>$R(\theta)$</td><td>알 오브 세타</td><td>기대 위험 — 진짜 목표</td><td>스칼라</td><td>$\geq 0$</td></tr>
-            <tr><td>$\hat{R}_{\mathcal{S}}$</td><td>알 햇</td><td>집합 $\mathcal{S}$ 에서 잰 경험적 위험</td><td>스칼라</td><td>$\geq 0$</td></tr>
-            <tr><td>$\mathcal{S}_{\text{tr}},\ \mathcal{S}_{\text{val}},\ \mathcal{S}_{\text{te}}$</td><td>에스 티알 · 발 · 티이</td><td>훈련 · 검증 · 테스트 집합</td><td>집합</td><td>서로소</td></tr>
-            <tr><td>$|\mathcal{S}|$</td><td>에스의 크기</td><td>집합의 원소 개수</td><td>정수</td><td>$\geq 1$</td></tr>
-            <tr><td>$k$</td><td>케이</td><td>교차검증의 겹 수</td><td>정수</td><td>$2 \leq k \leq n$</td></tr>
-            <tr><td>$\theta^{(-j)}$</td><td>세타 마이너스 제이</td><td>$j$ 번째 겹을 빼고 학습한 파라미터</td><td>벡터</td><td>—</td></tr>
-            <tr><td>$\hat{p}$</td><td>피 햇</td><td>측정된 정확도(비율)</td><td>스칼라</td><td>$[0,1]$</td></tr>
-            <tr><td>$n$</td><td>엔</td><td>테스트 표본 개수</td><td>정수</td><td>$\geq 1$</td></tr>
-            <tr><td>$\mathrm{SE}$</td><td>표준오차</td><td>추정치가 흔들리는 정도</td><td>스칼라</td><td>$\geq 0$</td></tr>
+            <tr><td>$\mathcal{P}$</td><td>script P</td><td>data가 나오는 참 분포 (모른다)</td><td>probability distribution(확률분포)</td><td>—</td></tr>
+            <tr><td>$R(\theta)$</td><td>R of theta</td><td>기대 위험 — 진짜 목표</td><td>scalar(스칼라)</td><td>$\geq 0$</td></tr>
+            <tr><td>$\hat{R}_{\mathcal{S}}$</td><td>r hat</td><td>집합 $\mathcal{S}$ 에서 잰 경험적 위험</td><td>scalar</td><td>$\geq 0$</td></tr>
+            <tr><td>$\mathcal{S}_{\text{tr}},\ \mathcal{S}_{\text{val}},\ \mathcal{S}_{\text{te}}$</td><td>str · val · test</td><td>training · validation · 테스트 집합</td><td>집합</td><td>서로소</td></tr>
+            <tr><td>$|\mathcal{S}|$</td><td>size of S</td><td>집합의 원소 개수</td><td>정수</td><td>$\geq 1$</td></tr>
+            <tr><td>$k$</td><td>k</td><td>cross-validation의 겹 수</td><td>정수</td><td>$2 \leq k \leq n$</td></tr>
+            <tr><td>$\theta^{(-j)}$</td><td>theta minus j</td><td>$j$ 번째 겹을 빼고 학습한 parameter</td><td>vector(벡터)</td><td>—</td></tr>
+            <tr><td>$\hat{p}$</td><td>p hat</td><td>측정된 정확도(비율)</td><td>scalar</td><td>$[0,1]$</td></tr>
+            <tr><td>$n$</td><td>n</td><td>테스트 표본 개수</td><td>정수</td><td>$\geq 1$</td></tr>
+            <tr><td>$\mathrm{SE}$</td><td>standard error</td><td>추정치가 흔들리는 정도</td><td>scalar</td><td>$\geq 0$</td></tr>
           </tbody>
         </table>
       </div>
@@ -290,12 +290,12 @@
     </section>
 
     <section class="sec" id="s-derivation">
-      <div class="sec__head"><span class="sec__n num">5</span><h2>유도 — 훈련 오차는 왜 항상 낙관적인가</h2></div>
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도 — training 오차는 왜 항상 낙관적인가</h2></div>
 
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \theta^{*} = \arg\min_{\theta}\; \hat{R}_{\mathcal{S}_{\text{tr}}}(\theta) $$</div>
-          <div class="derive__why">학습의 정의. 훈련 집합에서의 오차를 최소로 만드는 $\theta$ 를 고른다</div>
+          <div class="derive__why">training의 정의. training 집합에서의 오차를 최소로 만드는 $\theta$ 를 고른다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \hat{R}_{\mathcal{S}_{\text{tr}}}(\theta^{*}) \;\leq\; \hat{R}_{\mathcal{S}_{\text{tr}}}(\theta) \quad \forall\,\theta $$</div>
@@ -307,25 +307,25 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbb{E}\bigl[\hat{R}_{\mathcal{S}_{\text{te}}}(\theta^{*})\bigr] = R(\theta^{*}) $$</div>
-          <div class="derive__why">반면 $\mathcal{S}_{\text{te}}$ 는 $\theta^{*}$ 를 정하는 데 쓰이지 않았다. <strong>편향 없는 추정치</strong>가 된다</div>
+          <div class="derive__why">반면 $\mathcal{S}_{\text{te}}$ 는 $\theta^{*}$ 를 정하는 데 쓰이지 않았다. <strong>bias 없는 추정치</strong>가 된다</div>
         </div>
       </div>
 
       <div class="note note--key">
         <span class="note__label">이 유도의 결론</span>
         <p>
-          훈련 오차가 낮은 것은 <em>학습이 잘된 증거가 아니라 정의상 당연한 결과</em>다.
-          같은 논리로, <strong>검증 데이터로 선택을 반복하면 검증 오차도 낙관적으로 치우친다</strong> —
+          training 오차가 낮은 것은 <em>training이 잘된 증거가 아니라 정의상 당연한 결과</em>다.
+          같은 논리로, <strong>validation data로 선택을 반복하면 validation 오차도 낙관적으로 치우친다</strong> —
           선택 자체가 일종의 최적화이기 때문이다. 그래서 테스트 집합이 따로 필요하다.
         </p>
       </div>
     </section>
 
     <section class="sec" id="s-example">
-      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제 — 과적합을 정확히 계산하기</h2></div>
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제 — overfitting을 정확히 계산하기</h2></div>
 
       <p>
-        훈련 데이터 세 점과 검증 데이터 한 점이 있다.
+        training data 세 점과 validation data 한 점이 있다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathcal{S}_{\text{tr}} = \{(1,2),\, (2,3),\, (3,5)\}, \qquad \mathcal{S}_{\text{val}} = \{(4,6)\} $$</div>
@@ -340,7 +340,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ w = \frac{\sum (x_i-\bar{x})(y_i-\bar{y})}{\sum (x_i-\bar{x})^2} = \frac{(-1)(-\frac{4}{3}) + 0 + (1)(\frac{5}{3})}{1+0+1} = \frac{3}{2} $$</div>
-          <div class="derive__why">기울기. 분자 $= \frac{4}{3}+\frac{5}{3} = 3$, 분모 $=2$</div>
+          <div class="derive__why">gradient(기울기). 분자 $= \frac{4}{3}+\frac{5}{3} = 3$, 분모 $=2$</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ b = \bar{y} - w\bar{x} = \frac{10}{3} - 3 = \frac{1}{3} $$</div>
@@ -348,11 +348,11 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \text{잔차} = \tfrac{1}{6},\; -\tfrac{1}{3},\; \tfrac{1}{6} \;\Rightarrow\; \hat{R}_{\text{tr}} = \frac{1}{3}\left(\frac{1}{36}+\frac{4}{36}+\frac{1}{36}\right) = \frac{1}{18} $$</div>
-          <div class="derive__why">훈련 MSE $\approx 0.0556$. 예측값은 $\frac{11}{6}, \frac{10}{3}, \frac{29}{6}$</div>
+          <div class="derive__why">training MSE $\approx 0.0556$. 예측값은 $\frac{11}{6}, \frac{10}{3}, \frac{29}{6}$</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \hat{y}(4) = \frac{3}{2}\cdot4 + \frac{1}{3} = \frac{19}{3},\qquad \hat{R}_{\text{val}} = \left(\frac{19}{3}-6\right)^{2} = \frac{1}{9} $$</div>
-          <div class="derive__why">검증 MSE $\approx 0.111$</div>
+          <div class="derive__why">validation MSE $\approx 0.111$</div>
         </div>
       </div>
 
@@ -360,7 +360,7 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ a+b+c=2,\quad 4a+2b+c=3,\quad 9a+3b+c=5 $$</div>
-          <div class="derive__why">세 점을 정확히 지나게 하는 연립방정식. 미지수 3개, 식 3개 — 딱 맞는다</div>
+          <div class="derive__why">세 점을 정확히 지나게 하는 system of equations(연립방정식). 미지수 3개, 식 3개 — 딱 맞는다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ 3a+b=1,\qquad 5a+b=2 \;\Rightarrow\; 2a=1 $$</div>
@@ -372,20 +372,20 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \hat{R}_{\text{tr}} = 0 $$</div>
-          <div class="derive__why">세 점을 <strong>정확히</strong> 지난다. 훈련 오차가 0이 됐다</div>
+          <div class="derive__why">세 점을 <strong>정확히</strong> 지난다. training 오차가 0이 됐다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \hat{y}(4) = \tfrac{1}{2}(16) - \tfrac{1}{2}(4) + 2 = 8 - 2 + 2 = 8,\qquad \hat{R}_{\text{val}} = (8-6)^{2} = 4 $$</div>
-          <div class="derive__why">검증 MSE가 <strong>4</strong>. 1차 모델의 $\frac19 \approx 0.111$ 보다 <strong>36배</strong> 나쁘다</div>
+          <div class="derive__why">validation MSE가 <strong>4</strong>. 1차 model의 $\frac19 \approx 0.111$ 보다 <strong>36배</strong> 나쁘다</div>
         </div>
       </div>
 
       <div class="tablewrap">
         <table>
-          <thead><tr><th>모델</th><th>훈련 MSE</th><th>검증 MSE</th><th>판정</th></tr></thead>
+          <thead><tr><th>model</th><th>training MSE</th><th>validation MSE</th><th>판정</th></tr></thead>
           <tbody>
             <tr><td>1차 (직선)</td><td>$1/18 \approx 0.056$</td><td>$1/9 \approx 0.111$</td><td>균형</td></tr>
-            <tr><td>2차 (포물선)</td><td><b>0</b> ← 더 좋아짐</td><td><b>4</b> ← 36배 나빠짐</td><td><b>과적합</b></td></tr>
+            <tr><td>2차 (포물선)</td><td><b>0</b> ← 더 좋아짐</td><td><b>4</b> ← 36배 나빠짐</td><td><b>overfitting</b></td></tr>
           </tbody>
         </table>
       </div>
@@ -393,14 +393,14 @@
       <div class="note note--trap">
         <span class="note__label">여기서 배울 것</span>
         <p>
-          훈련 오차만 보면 2차 모델이 <strong>완벽하다</strong>. 오차가 0이니 더 좋을 수 없다.
-          그런데 검증 오차는 36배 나빠졌다.
-          <strong>훈련 오차가 내려가는데 검증 오차가 올라가는 것 — 이것이 과적합의 정의다.</strong>
+          training 오차만 보면 2차 model이 <strong>완벽하다</strong>. 오차가 0이니 더 좋을 수 없다.
+          그런데 validation 오차는 36배 나빠졌다.
+          <strong>training 오차가 내려가는데 validation 오차가 올라가는 것 — 이것이 overfitting의 정의다.</strong>
         </p>
         <p>
-          그리고 이것은 데이터가 부족해서 생긴 일이 아니다. 점 3개에 미지수 3개면
+          그리고 이것은 data가 부족해서 생긴 일이 아니다. 점 3개에 미지수 3개면
           <em>언제나</em> 정확히 지나는 2차 곡선이 존재한다.
-          모델의 자유도가 데이터 개수에 근접하면 과적합은 <strong>수학적으로 필연</strong>이다.
+          model의 degrees of freedom(자유도)이 data 개수에 근접하면 overfitting은 <strong>수학적으로 필연</strong>이다.
         </p>
       </div>
     </section>
@@ -415,7 +415,7 @@
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">차수를 올릴수록 훈련 오차는 계속 내려갑니다. 검증 오차가 <strong>어디서 돌아서는지</strong>가 최적 차수입니다.</p>
+          <p class="watch">차수를 올릴수록 training 오차는 계속 내려갑니다. validation 오차가 <strong>어디서 돌아서는지</strong>가 최적 차수입니다.</p>
         </div>
       </figure>
 
@@ -426,18 +426,18 @@
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">모든 표본이 정확히 한 번씩 검증에 쓰입니다. 대신 학습을 $k$ 번 해야 합니다.</p>
+          <p class="watch">모든 표본이 정확히 한 번씩 validation에 쓰입니다. 대신 training을 $k$ 번 해야 합니다.</p>
         </div>
       </figure>
 
       <h3>데이터 누출이 만드는 착시</h3>
       <figure class="widget" data-widget="leakage-demo">
-        <figcaption class="widget__bar">전처리를 언제 하느냐가 점수를 바꾼다</figcaption>
+        <figcaption class="widget__bar">preprocessing을 언제 하느냐가 점수를 바꾼다</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">'분할 전 정규화'를 고르면 테스트 점수가 올라갑니다. 실력이 아니라 <strong>누출</strong>입니다.</p>
+          <p class="watch">'분할 전 normalization'를 고르면 테스트 점수가 올라갑니다. 실력이 아니라 <strong>누출</strong>입니다.</p>
         </div>
       </figure>
     </section>
@@ -447,27 +447,27 @@
 
       <div class="note note--trap">
         <span class="note__label">오해 1</span>
-        <p>"훈련 정확도가 99%면 좋은 모델이다."</p>
+        <p>"training 정확도가 99%면 좋은 model이다."</p>
         <p>
-          <strong>실제로는</strong> 아무것도 알 수 없다. 위 유도에서 봤듯 훈련 오차가 낮은 것은
-          $\arg\min$ 의 정의상 당연한 결과다. 예제의 2차 모델은 훈련 오차가 <em>0</em>이었지만
-          검증 오차는 36배 나빴다. <strong>두 오차를 함께 봐야 한다.</strong>
+          <strong>실제로는</strong> 아무것도 알 수 없다. 위 유도에서 봤듯 training 오차가 낮은 것은
+          $\arg\min$ 의 정의상 당연한 결과다. 예제의 2차 model은 training 오차가 <em>0</em>이었지만
+          validation 오차는 36배 나빴다. <strong>두 오차를 함께 봐야 한다.</strong>
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 2</span>
-        <p>"검증과 테스트는 하나로 합쳐도 된다."</p>
+        <p>"validation과 테스트는 하나로 합쳐도 된다."</p>
         <p>
-          <strong>실제로는</strong> 검증 점수를 보고 100번 조정했다면 그 점수는 이미 낙관적이다.
+          <strong>실제로는</strong> validation 점수를 보고 100번 조정했다면 그 점수는 이미 낙관적이다.
           선택도 일종의 최적화이기 때문이다. 테스트 집합을 따로 두고
-          <strong>정말 마지막에 한 번만</strong> 열어야 편향 없는 숫자를 얻는다.
+          <strong>정말 마지막에 한 번만</strong> 열어야 bias 없는 숫자를 얻는다.
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 3</span>
-        <p>"데이터를 무작위로 섞어 나누면 안전하다."</p>
+        <p>"data를 무작위로 섞어 나누면 안전하다."</p>
         <p>
           <strong>실제로는</strong> 무작위 분할이 오히려 위험한 경우가 있다.
           <em>시계열</em>은 섞으면 미래로 과거를 예측하게 되고,
@@ -478,12 +478,12 @@
 
       <div class="note note--trap">
         <span class="note__label">오해 4</span>
-        <p>"벤치마크 1위면 실제로도 가장 좋다."</p>
+        <p>"benchmark 1위면 실제로도 가장 좋다."</p>
         <p>
           <strong>실제로는</strong> 두 가지를 조심해야 한다.
-          첫째, 커뮤니티가 같은 테스트셋을 수년간 반복해 쓰면 <em>집단적 과적합</em>이 생긴다 —
+          첫째, 커뮤니티가 같은 테스트셋을 수년간 반복해 쓰면 <em>집단적 overfitting</em>이 생긴다 —
           Recht 등의 재수집 실험에서 정확도가 크게 떨어진 것이 그 증거다.
-          둘째, 표본이 적으면 순위 차이가 <strong>표준오차 안</strong>에 있을 수 있다.
+          둘째, 표본이 적으면 순위 차이가 <strong>standard error 안</strong>에 있을 수 있다.
           식 (4)로 확인하지 않은 0.3%p 차이는 의미가 없을 가능성이 높다.
         </p>
       </div>
@@ -492,7 +492,7 @@
     <section class="sec" id="s-code">
       <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
       <details>
-        <summary>NumPy — 과적합과 표준오차 (17줄)</summary>
+        <summary>NumPy — overfitting과 standard error (17줄)</summary>
 <pre><code>import numpy as np
 
 xt, yt = np.array([1., 2., 3.]), np.array([2., 3., 5.])
@@ -520,7 +520,7 @@ for n in (100, 1000, 10000):
       <div class="quiz">
         <div class="q">
           <p class="q__stem"><span class="q__tag">계산</span>
-            테스트 표본 400개에서 정확도 80%를 얻었다. 표준오차는?</p>
+            테스트 표본 400개에서 정확도 80%를 얻었다. standard error는?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$0.02$ (2%p)</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>$0.04$ (4%p)</span></button>
@@ -535,7 +535,7 @@ for n in (100, 1000, 10000):
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">계산</span>
-            데이터 20개로 5-겹 교차검증을 하면, 한 번 학습에 쓰이는 표본 수와 총 학습 횟수는?</p>
+            data 20개로 5-겹 cross-validation을 하면, 한 번 training에 쓰이는 표본 수와 총 training 횟수는?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>16개, 5번</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>4개, 5번</span></button>
@@ -543,21 +543,21 @@ for n in (100, 1000, 10000):
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
             겹 하나가 $20/5 = 4$ 개이고, 그 겹을 빼면 $20-4 = 16$ 개로 학습한다.
-            이를 겹마다 반복하므로 학습은 5번. <strong>데이터를 아끼는 대가로 계산을 5배 쓴다.</strong>
+            이를 겹마다 반복하므로 training은 5번. <strong>data를 아끼는 대가로 계산을 5배 쓴다.</strong>
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">개념</span>
-            훈련 오차와 검증 오차가 <strong>둘 다 높다면</strong> 무엇인가?</p>
+            training 오차와 validation 오차가 <strong>둘 다 높다면</strong> 무엇인가?</p>
           <div class="opts">
-            <button class="opt" type="button"><span class="opt__mark">가</span><span>과적합</span></button>
-            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>과소적합</span></button>
-            <button class="opt" type="button"><span class="opt__mark">다</span><span>데이터 누출</span></button>
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>overfitting</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>underfitting</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>data leakage</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            모델이 훈련 데이터조차 맞히지 못하는 상황 — 표현력이 부족한 과소적합이다.
-            처방은 정규화를 <em>줄이거나</em> 모델을 키우는 것으로, 과적합과 반대다.
+            model이 training data조차 맞히지 못하는 상황 — 표현력이 부족한 underfitting이다.
+            처방은 normalization을 <em>줄이거나</em> model을 키우는 것으로, overfitting과 반대다.
             누출은 오히려 점수가 <em>비현실적으로 좋게</em> 나온다.
           </div>
         </div>
@@ -566,28 +566,28 @@ for n in (100, 1000, 10000):
           <p class="q__stem"><span class="q__tag">개념</span>
             클래스 비율이 95:5인 이진 분류에서 정확도 95%를 얻었다. 어떻게 판단해야 하는가?</p>
           <div class="opts">
-            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>다수 클래스로만 찍어도 95%다 — 베이스라인과 같다</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>다수 클래스로만 찍어도 95%다 — baseline과 같다</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>매우 우수하다</span></button>
-            <button class="opt" type="button"><span class="opt__mark">다</span><span>과적합이다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>overfitting이다</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
             아무것도 배우지 않고 전부 다수 클래스로 답해도 95%가 나온다.
-            <strong>베이스라인을 넘지 못했다.</strong> 이런 경우 정확도 대신
+            <strong>baseline을 넘지 못했다.</strong> 이런 경우 정확도 대신
             F1, PR-AUC 같은 소수 클래스에 민감한 지표를 봐야 한다(5.13절).
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">함정</span>
-            다음 중 <strong>데이터 누출이 아닌</strong> 것은?</p>
+            다음 중 <strong>data leakage가 아닌</strong> 것은?</p>
           <div class="opts">
-            <button class="opt" type="button"><span class="opt__mark">가</span><span>전체 데이터의 평균으로 정규화한 뒤 분할했다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>전체 data의 평균으로 normalize 한 뒤 분할했다</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>시계열을 무작위로 섞어 분할했다</span></button>
-            <button class="opt" type="button" data-correct="true"><span class="opt__mark">다</span><span>훈련 데이터의 평균으로 정규화한 뒤 같은 값을 테스트에도 적용했다</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">다</span><span>training data의 평균으로 normalize 한 뒤 같은 값을 테스트에도 적용했다</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            다가 <strong>올바른 절차</strong>다. 통계량은 훈련에서만 구하고, 그 값을 테스트에 <em>적용</em>하는 것은 맞다
-            (실제 배포에서도 그렇게 한다). 가는 전처리 누출, 나는 시간 누출이다.
+            다가 <strong>올바른 절차</strong>다. 통계량은 training에서만 구하고, 그 값을 테스트에 <em>적용</em>하는 것은 맞다
+            (실제 deployment(배포)에서도 그렇게 한다). 가는 preprocessing 누출, 나는 시간 누출이다.
           </div>
         </div>
       </div>
@@ -596,12 +596,12 @@ for n in (100, 1000, 10000):
     <section class="sec" id="s-links">
       <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
       <ul>
-        <li><strong>5.2 통계적 학습이론</strong> — 식 (1)·(2)의 간극을 이론으로 다룬다. 편향–분산 분해, 일반화 경계.</li>
-        <li><strong>5.13 모델 평가 · 5.14 모델 선택</strong> — 지표들과 중첩 교차검증.</li>
-        <li><strong>6.8 일반화 기법</strong> — 과적합을 막는 정규화·드롭아웃·데이터 증강.</li>
-        <li><strong>6.11 딥러닝 일반화</strong> — 파라미터가 데이터보다 많은데도 일반화되는 현상(이중 하강).</li>
-        <li><strong>19.2 분포 변화와 견고성</strong> — 훈련·테스트 분포가 다를 때.</li>
-        <li><strong><a href="1.6-research-structure.html">1.6 AI 연구의 기본 구조</a></strong> — 재현성과 비교 실험의 방법론.</li>
+        <li><strong>5.2 통계적 학습이론</strong> — 식 (1)·(2)의 간극을 이론으로 다룬다. bias–variance(분산) 분해, generalization(일반화) 경계.</li>
+        <li><strong>5.13 model evaluation(평가) · 5.14 model selection(모델 선택)</strong> — 지표들과 중첩 cross-validation.</li>
+        <li><strong>6.8 generalization 기법</strong> — overfitting을 막는 normalization·드롭아웃·data 증강.</li>
+        <li><strong>6.11 deep learning(딥러닝) generalization</strong> — parameter가 data보다 많은데도 generalize 되는 현상(이중 하강).</li>
+        <li><strong>19.2 distribution shift(분포 변화)와 견고성</strong> — training·테스트 분포가 다를 때.</li>
+        <li><strong><a href="1.6-research-structure.html">1.6 AI 연구의 기본 구조</a></strong> — reproducibility와 comparative experiment(비교 실험)의 방법론.</li>
       </ul>
 
       <h3>출처</h3>
@@ -609,37 +609,37 @@ for n in (100, 1000, 10000):
         <li class="ref" id="ref-recht2019-do-imagenet-classifiers" data-ref="recht2019-do-imagenet-classifiers">
           <span class="ref__type" data-type="paper">논문</span>
           <span class="ref__cite">Recht, B., Roelofs, R., Schmidt, L. &amp; Shankar, V. (2019). <em>Do ImageNet Classifiers Generalize to ImageNet?</em> ICML.</span>
-          <span class="ref__where">초록 — 테스트셋을 원 절차대로 새로 수집하자 CIFAR-10에서 3~15%p, ImageNet에서 11~14%p 정확도가 떨어졌고, 원인이 적응적 과적합이 아니라 조금 더 어려운 이미지에 대한 일반화 실패라는 결론. '벤치마크' 서술과 '오해 4'의 근거</span>
+          <span class="ref__where">초록 — 테스트셋을 원 절차대로 새로 수집하자 CIFAR-10에서 3~15%p, ImageNet에서 11~14%p 정확도가 떨어졌고, 원인이 적응적 overfitting이 아니라 조금 더 어려운 image(이미지)에 대한 generalization 실패라는 결론. 'benchmark' 서술과 '오해 4'의 근거</span>
           <a class="ref__link" href="https://arxiv.org/abs/1902.10811">arXiv:1902.10811</a>
         </li>
         <li class="ref" id="ref-pineau2020-improving-reproducibility-in" data-ref="pineau2020-improving-reproducibility-in">
           <span class="ref__type" data-type="paper">논문</span>
           <span class="ref__cite">Pineau, J. et al. (2020). <em>Improving Reproducibility in Machine Learning Research</em>. JMLR / NeurIPS 2019 Reproducibility Program.</span>
-          <span class="ref__where">재현성 체크리스트 항목 — 시드·분할 방식·하이퍼파라미터 탐색량·계산 자원을 명시하게 하는 규정. '재현성' 절의 근거</span>
+          <span class="ref__where">reproducibility 체크리스트 항목 — 시드·분할 방식·hyperparameter 탐색량·계산 자원을 명시하게 하는 규정. 'reproducibility' 절의 근거</span>
           <a class="ref__link" href="https://arxiv.org/abs/2003.12206">arXiv:2003.12206</a>
         </li>
         <li class="ref" id="ref-hastie2009-esl" data-ref="hastie2009-esl">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>. Springer.</span>
-          <span class="ref__where">7.2 · 7.10절 — 훈련 오차가 참 오차의 낙관적 추정치라는 논증과 $k$-겹 교차검증의 정의(식 3). '유도' 절의 근거</span>
+          <span class="ref__where">7.2 · 7.10절 — training 오차가 참 오차의 낙관적 추정치라는 논증과 $k$-겹 cross-validation의 정의(식 3). '유도' 절의 근거</span>
           <a class="ref__link" href="https://hastie.su.domains/ElemStatLearn/">hastie.su.domains</a>
         </li>
         <li class="ref" id="ref-murphy2022-pml" data-ref="murphy2022-pml">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Murphy, K. P. (2022). <em>Probabilistic Machine Learning: An Introduction</em>. MIT Press.</span>
-          <span class="ref__where">4.5절 — 과적합·과소적합의 정의와 모델 복잡도에 따른 훈련·검증 오차 곡선. 예제 구성의 근거</span>
+          <span class="ref__where">4.5절 — overfitting·underfitting의 정의와 model 복잡도에 따른 training·validation 오차 곡선. 예제 구성의 근거</span>
           <a class="ref__link" href="https://probml.github.io/pml-book/">probml.github.io</a>
         </li>
         <li class="ref" id="ref-stanford-cs231n" data-ref="stanford-cs231n">
           <span class="ref__type" data-type="course">강의</span>
           <span class="ref__cite">Stanford CS231n: <em>Deep Learning for Computer Vision</em>.</span>
-          <span class="ref__where">Lecture 3 · 강의노트 — 훈련/검증/테스트 분할 관행과 교차검증 사용 지침</span>
+          <span class="ref__where">Lecture 3 · 강의노트 — training/validation/테스트 분할 관행과 cross-validation 사용 지침</span>
           <a class="ref__link" href="https://cs231n.stanford.edu/">cs231n.stanford.edu</a>
         </li>
         <li class="ref" id="ref-google-rules-of-ml" data-ref="google-rules-of-ml">
           <span class="ref__type" data-type="web">웹문서</span>
           <span class="ref__cite">Zinkevich, M. <em>Rules of Machine Learning</em>. Google.</span>
-          <span class="ref__where">Rule 1 · 데이터 분할 항목 — 시간 기준 분할의 필요성과 단순 베이스라인을 먼저 세우라는 지침. '오해 3'과 '베이스라인' 서술의 근거</span>
+          <span class="ref__where">Rule 1 · data 분할 항목 — 시간 기준 분할의 필요성과 단순 baseline을 먼저 세우라는 지침. '오해 3'과 'baseline' 서술의 근거</span>
           <a class="ref__link" href="https://developers.google.com/machine-learning/guides/rules-of-ml">developers.google.com</a>
         </li>
       </ol>
@@ -679,14 +679,14 @@ WIDGETS.register('split-map', function (root, ctx) {
   ctx.stage.appendChild(stage);
   var out = WIDGETS.readout(ctx.readout, [
     { key: 'n', label: '테스트 표본 수' },
-    { key: 'se', label: '표준오차 (p̂=0.9)' },
+    { key: 'se', label: 'standard error (p̂=0.9)' },
     { key: 'ci', label: '95% 구간' }
   ]);
 
   function draw() {
     var trPct = Math.max(0, 100 - tePct - vaPct);
-    var svg = el('svg', { viewBox: '0 0 460 96', role: 'img', 'aria-label': '훈련·검증·테스트 분할 비율' });
-    var segs = [['훈련', trPct, 'var(--jade)'], ['검증', vaPct, 'var(--amber)'], ['테스트', tePct, 'var(--seal)']];
+    var svg = el('svg', { viewBox: '0 0 460 96', role: 'img', 'aria-label': 'training·validation·테스트 분할 비율' });
+    var segs = [['training', trPct, 'var(--jade)'], ['validation', vaPct, 'var(--amber)'], ['테스트', tePct, 'var(--seal)']];
     var x = 10;
     segs.forEach(function (s) {
       var w = s[1] / 100 * 440;
@@ -701,7 +701,7 @@ WIDGETS.register('split-map', function (root, ctx) {
     });
     svg.appendChild(el('text', { x: 230, y: 16, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 11, text: '전체 ' + N + '개' }));
     svg.appendChild(el('text', { x: 230, y: 84, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 10.5,
-      text: trPct < 40 ? '훈련 데이터가 부족합니다 — 학습 자체가 어려워집니다' : '' }));
+      text: trPct < 40 ? 'training data가 부족합니다 — training 자체가 어려워집니다' : '' }));
     stage.innerHTML = ''; stage.appendChild(svg);
 
     var n = Math.max(1, Math.round(N * tePct / 100));
@@ -711,7 +711,7 @@ WIDGETS.register('split-map', function (root, ctx) {
     out.setRaw('ci', '± ' + (1.96 * se * 100).toFixed(2) + ' %p');
   }
 
-  WIDGETS.slider({ host: ctx.controls, label: '검증 비율', min: 0, max: 40, step: 5, value: 20, unit: ' %', digits: 0,
+  WIDGETS.slider({ host: ctx.controls, label: 'validation 비율', min: 0, max: 40, step: 5, value: 20, unit: ' %', digits: 0,
     onInput: function (v) { vaPct = v; draw(); } });
   WIDGETS.slider({ host: ctx.controls, label: '테스트 비율', min: 5, max: 40, step: 5, value: 20, unit: ' %', digits: 0,
     onInput: function (v) { tePct = v; draw(); } });
@@ -720,7 +720,7 @@ WIDGETS.register('split-map', function (root, ctx) {
 
 /* 위젯 2 — 다항식 차수와 과적합 */
 WIDGETS.register('overfit-lab', function (root, ctx) {
-  /* 참함수 y = 0.5x + 1 에 고정 잡음. 훈련 6점, 검증 4점 */
+  /* 참함수 y = 0.5x + 1에 고정 잡음. 훈련 6점, 검증 4점 */
   var TR = [[0.5, 1.35], [1.2, 1.42], [2.0, 2.15], [3.1, 2.35], [4.0, 3.15], [4.8, 3.25]];
   var VA = [[0.9, 1.38], [2.5, 2.30], [3.6, 2.85], [4.4, 3.30]];
   var deg = 1;
@@ -728,8 +728,8 @@ WIDGETS.register('overfit-lab', function (root, ctx) {
   var p = VIZ.plot({ w: 460, h: 250, xmin: 0, xmax: 5.4, ymin: 0.2, ymax: 4.4, pad: { t: 16, r: 14, b: 28, l: 36 } });
   ctx.stage.appendChild(p.svg);
   var out = WIDGETS.readout(ctx.readout, [
-    { key: 'tr', label: '훈련 MSE', digits: 4 },
-    { key: 'va', label: '검증 MSE', digits: 4 },
+    { key: 'tr', label: 'training MSE', digits: 4 },
+    { key: 'va', label: 'validation MSE', digits: 4 },
     { key: 'st', label: '진단' }
   ]);
 
@@ -766,11 +766,11 @@ WIDGETS.register('overfit-lab', function (root, ctx) {
     VA.forEach(function (q) {
       p.add(VIZ.el('circle', { cx: p.X(q[0]), cy: p.Y(q[1]), r: 5, fill: 'none', stroke: 'var(--jade)', 'stroke-width': 2 }));
     });
-    p.text(0.15, 4.25, '● 훈련   ○ 검증', { size: 11 });
+    p.text(0.15, 4.25, '● training   ○ validation', { size: 11 });
 
     var tr = mse(co, TR), va = mse(co, VA);
     out.set('tr', tr); out.set('va', va);
-    out.setRaw('st', deg === 1 ? '단순 — 과소적합 쪽' : (va > tr * 3 ? '과적합 — 검증만 나빠짐' : '균형'));
+    out.setRaw('st', deg === 1 ? '단순 — underfitting 쪽' : (va > tr * 3 ? 'overfitting — validation만 나빠짐' : '균형'));
   }
 
   WIDGETS.slider({ host: ctx.controls, label: '다항식 차수', min: 1, max: 5, step: 1, value: 1, digits: 0,
@@ -786,12 +786,12 @@ WIDGETS.register('kfold-view', function (root, ctx) {
   var stage = document.createElement('div'); stage.style.width = '100%';
   ctx.stage.appendChild(stage);
   var out = WIDGETS.readout(ctx.readout, [
-    { key: 'tr', label: '학습에 쓰는 표본' }, { key: 'va', label: '검증에 쓰는 표본' }, { key: 'run', label: '총 학습 횟수' }
+    { key: 'tr', label: 'training에 쓰는 표본' }, { key: 'va', label: 'validation에 쓰는 표본' }, { key: 'run', label: '총 training 횟수' }
   ]);
 
   function draw() {
     var size = Math.floor(N / k);
-    var svg = el('svg', { viewBox: '0 0 460 ' + (30 + k * 26), role: 'img', 'aria-label': k + '겹 교차검증 배치' });
+    var svg = el('svg', { viewBox: '0 0 460 ' + (30 + k * 26), role: 'img', 'aria-label': k + '겹 cross-validation batch' });
     for (var r = 0; r < k; r++) {
       svg.appendChild(el('text', { x: 8, y: 30 + r * 26, class: 'viz-label', 'font-size': 10.5, text: '겹' + (r + 1) }));
       for (var i = 0; i < N; i++) {
@@ -823,7 +823,7 @@ WIDGETS.register('leakage-demo', function (root, ctx) {
   ctx.stage.appendChild(box);
   var out = WIDGETS.readout(ctx.readout, [
     { key: 'rep', label: '보고되는 테스트 점수' },
-    { key: 'real', label: '배포 후 실제 성능' },
+    { key: 'real', label: 'deployment 후 실제 성능' },
     { key: 'gap', label: '착시 크기' }
   ]);
 
@@ -837,8 +837,8 @@ WIDGETS.register('leakage-demo', function (root, ctx) {
         '<div class="note ' + (leak ? 'note--trap' : 'note--tip') + '" style="margin:0">' +
           '<span class="note__label">' + (leak ? '분할 전 정규화 — 누출' : '분할 후 정규화 — 올바름') + '</span>' +
           '<p style="margin:0">' + (leak
-            ? '전체 데이터로 평균·표준편차를 구한 뒤 나눴다. 테스트 표본의 값이 스케일 계산에 참여했으므로, 모델은 테스트에 대한 정보를 간접적으로 이미 봤다.'
-            : '훈련 데이터로만 평균·표준편차를 구하고, 그 값을 테스트에 적용했다. 실제 배포에서 일어나는 일과 같다.') + '</p>' +
+            ? '전체 data로 평균·표준편차를 구한 뒤 나눴다. 테스트 표본의 값이 스케일 계산에 참여했으므로, model은 테스트에 대한 정보를 간접적으로 이미 봤다.'
+            : 'training data로만 평균·표준편차를 구하고, 그 값을 테스트에 적용했다. 실제 deployment에서 일어나는 일과 같다.') + '</p>' +
         '</div>' +
         '<div style="font-family:var(--font-mono);font-size:var(--fs-xs);line-height:1.8;padding:.6rem .8rem;background:var(--paper-3);border-radius:3px">' +
           (leak
@@ -852,7 +852,7 @@ WIDGETS.register('leakage-demo', function (root, ctx) {
   }
 
   WIDGETS.toggle({
-    host: ctx.controls, label: '정규화를 언제 하는가',
+    host: ctx.controls, label: 'normalization을 언제 하는가',
     options: [{ value: 'after', label: '분할 후 (올바름)' }, { value: 'before', label: '분할 전 (누출)' }],
     value: 'after', onChange: function (v) { mode = v; draw(); }
   });

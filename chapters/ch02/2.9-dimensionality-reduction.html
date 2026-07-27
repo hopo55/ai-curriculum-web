@@ -62,28 +62,28 @@
     <!-- ===== 1. 다루는 항목 ===== -->
     <nav class="chips" aria-label="이 절에서 다루는 항목">
       <a class="chip" href="#c-pca">PCA</a>
-      <a class="chip" href="#c-pc">주성분</a>
-      <a class="chip" href="#c-evr">설명 분산</a>
-      <a class="chip" href="#c-cov">공분산 행렬</a>
+      <a class="chip" href="#c-pc">Principal Component</a>
+      <a class="chip" href="#c-evr">Explained Variance</a>
+      <a class="chip" href="#c-cov">Covariance Matrix</a>
       <a class="chip" href="#c-whiten">Whitening</a>
-      <a class="chip" href="#c-lowdim">저차원 표현</a>
-      <a class="chip" href="#c-loss">차원 축소의 정보 손실</a>
-      <a class="chip" href="#c-viz">시각화</a>
+      <a class="chip" href="#c-lowdim">Low-Dimensional Representation</a>
+      <a class="chip" href="#c-loss">Information Loss</a>
+      <a class="chip" href="#c-viz">Visualization</a>
     </nav>
 
     <!-- ===== 2. 한 줄 요약 ===== -->
     <section class="sec" id="s-summary">
       <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
       <p class="tldr">
-        차원을 줄인다는 것은 <strong>어느 방향을 버릴지 고르는 일</strong>이고,
-        PCA 는 <strong>분산이 가장 작은 방향부터 버린다</strong> — 그것이 곧 복원 오차를 가장 적게 하는 선택이다.
+        dimension(차원)을 줄인다는 것은 <strong>어느 방향을 버릴지 고르는 일</strong>이고,
+        PCA는 <strong>variance(분산)가 가장 작은 방향부터 버린다</strong> — 그것이 곧 reconstruction error(복원 오차)를 가장 적게 하는 선택이다.
       </p>
 
       <h3>학습 목표</h3>
       <ol class="goals">
-        <li>공분산 행렬을 손으로 계산하고 그 고유벡터가 주성분임을 설명할 수 있다.</li>
-        <li>"분산 최대화"와 "재구성 오차 최소화"가 같은 문제임을 유도할 수 있다.</li>
-        <li>설명 분산 비율로 버릴 차원을 정하고, 잃은 정보량을 수치로 말할 수 있다.</li>
+        <li>covariance matrix(공분산 행렬)를 손으로 계산하고 그 eigenvector(고유벡터)가 주성분임을 설명할 수 있다.</li>
+        <li>"variance 최대화"와 "reconstruction error 최소화"가 같은 문제임을 유도할 수 있다.</li>
+        <li>explained variance(설명 분산) 비율로 버릴 dimension을 정하고, 잃은 정보량을 수치로 말할 수 있다.</li>
       </ol>
     </section>
 
@@ -92,41 +92,41 @@
       <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
 
       <p>
-        길쭉한 데이터 구름에 손전등을 비춰 벽에 그림자를 만든다고 하자.
+        길쭉한 data(데이터) 구름에 손전등을 비춰 벽에 그림자를 만든다고 하자.
         <strong>어느 각도에서 비추느냐에 따라 그림자가 넓게 퍼지기도 하고 한 점으로 뭉치기도 한다.</strong>
         넓게 퍼진 그림자는 원래 점들을 구별할 수 있고, 뭉친 그림자는 구별할 수 없다.
       </p>
       <p>
-        PCA 는 <strong>그림자가 가장 넓게 퍼지는 방향</strong>을 고르는 일이다.
-        그리고 놀랍게도 그 방향이 <strong>원본과 그림자 사이의 거리(정보 손실)를 가장 작게</strong> 만드는 방향이기도 하다.
+        PCA는 <strong>그림자가 가장 넓게 퍼지는 방향</strong>을 고르는 일이다.
+        그리고 놀랍게도 그 방향이 <strong>원본과 그림자 사이의 거리(information loss(정보 손실))를 가장 작게</strong> 만드는 방향이기도 하다.
         두 목표가 같은 답을 준다는 것이 이 절의 핵심이다.
       </p>
 
       <figure class="widget" data-widget="pca-projection">
-        <figcaption class="widget__bar">사영 방향을 돌려 보기 — 분산과 오차는 한 몸</figcaption>
+        <figcaption class="widget__bar">projection(사영) 방향을 돌려 보기 — variance와 오차는 한 몸</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">각도를 돌리면 <strong>분산 + 오차 = 총분산</strong> 이 항상 일정합니다. 하나를 키우는 것이 곧 다른 하나를 줄이는 일입니다.</p>
+          <p class="watch">각도를 돌리면 <strong>variance + 오차 = 총분산</strong> 이 항상 일정합니다. 하나를 키우는 것이 곧 다른 하나를 줄이는 일입니다.</p>
         </div>
       </figure>
 
       <figure class="widget" data-widget="pca-2d">
-        <figcaption class="widget__bar">주성분 축 — 데이터 모양이 바뀌면 축도 따라 돈다</figcaption>
+        <figcaption class="widget__bar">principal component(주성분) 축 — data 모양이 바뀌면 축도 따라 돈다</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">상관이 강해질수록 첫 주성분이 데이터를 더 많이 설명합니다. 상관을 0 으로 만들면 축이 원래 좌표축과 같아집니다.</p>
+          <p class="watch">correlation(상관)이 강해질수록 첫 principal component가 data를 더 많이 설명합니다. correlation을 0으로 만들면 축이 원래 좌표축과 같아집니다.</p>
         </div>
       </figure>
 
       <div class="note note--key">
         <span class="note__label">핵심</span>
         <p>
-          PCA 는 <strong>공분산 행렬의 고유분해</strong>다.
-          고유벡터가 새 축(주성분), 고유값이 그 축에서의 분산이다.
+          PCA는 <strong>covariance matrix의 eigendecomposition(고유분해)</strong>다.
+          eigenvector가 새 축(principal component), eigenvalue(고유값)가 그 축에서의 variance다.
           <a href="2.7-eigenvalues.html">2.7</a>과 <a href="2.8-svd.html">2.8</a>에서 쌓은 것이 그대로 쓰인다.
         </p>
       </div>
@@ -137,36 +137,36 @@
       <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
 
       <span class="anchor" id="c-cov"></span>
-      <h3>공분산 행렬</h3>
+      <h3>Covariance Matrix 공분산 행렬</h3>
       <p>
-        데이터 행렬 $\mathbf{X}\in\mathbb{R}^{n\times d}$ 의 각 행이 하나의 샘플이라 하자.
-        <strong>먼저 평균을 뺀다</strong>(중심화). 이 단계를 빠뜨리면 PCA 전체가 어긋난다.
+        data matrix(행렬) $\mathbf{X}\in\mathbb{R}^{n\times d}$ 의 각 행이 하나의 샘플이라 하자.
+        <strong>먼저 평균을 뺀다</strong>(centering(중심화)). 이 단계를 빠뜨리면 PCA 전체가 어긋난다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \tilde{\mathbf{X}} = \mathbf{X} - \mathbf{1}\bar{\mathbf{x}}^\top, \qquad \mathbf{C} = \frac{1}{n-1}\tilde{\mathbf{X}}^\top\tilde{\mathbf{X}} \in \mathbb{R}^{d\times d} $$</div>
         <span class="eq__tag num">(1)</span>
       </div>
       <p>
-        $C_{jj}$ 는 $j$ 번째 특성의 분산, $C_{jk}$ 는 두 특성의 공분산이다.
+        $C_{jj}$ 는 $j$ 번째 특성의 variance, $C_{jk}$ 는 두 특성의 covariance(공분산)다.
         <a href="2.4-matrix-operations.html">2.4</a>에서 본 대로 $\tilde{\mathbf{X}}^\top\tilde{\mathbf{X}}$ 는
-        <strong>항상 대칭·준정부호</strong>이므로 고유값이 모두 0 이상이고 고유벡터를 직교로 고를 수 있다
-        (<a href="2.7-eigenvalues.html">2.7</a>의 스펙트럴 정리). PCA 가 성립하는 근거가 이것이다.
+        <strong>항상 대칭·positive semi-definite(준정부호)</strong>이므로 eigenvalue가 모두 0 이상이고 eigenvector를 orthogonal(직교)으로 고를 수 있다
+        (<a href="2.7-eigenvalues.html">2.7</a>의 spectral theorem(스펙트럴 정리)). PCA가 성립하는 근거가 이것이다.
       </p>
 
       <span class="anchor" id="c-pca"></span>
       <span class="anchor" id="c-pc"></span>
-      <h3>PCA 와 주성분</h3>
+      <h3>PCA and Principal Components PCA와 주성분</h3>
       <div class="note note--key">
         <span class="note__label">정의</span>
         <p>
-          $\mathbf{C}$ 의 고유쌍을 $\lambda_1\geq\lambda_2\geq\cdots\geq\lambda_d\geq0$,
-          $\mathbf{w}_1,\dots,\mathbf{w}_d$ 라 할 때, $\mathbf{w}_i$ 를 <strong>$i$ 번째 주성분</strong>(principal component),
-          $\lambda_i$ 를 그 방향의 분산이라 한다.
+          $\mathbf{C}$ 의 eigenpair(고유쌍)를 $\lambda_1\geq\lambda_2\geq\cdots\geq\lambda_d\geq0$,
+          $\mathbf{w}_1,\dots,\mathbf{w}_d$ 라 할 때, $\mathbf{w}_i$ 를 <strong>$i$ 번째 principal component</strong>,
+          $\lambda_i$ 를 그 방향의 variance라 한다.
         </p>
       </div>
       <p>
-        주성분은 <strong>서로 직교하고</strong>, <strong>분산이 큰 순서</strong>로 정렬되어 있다.
-        첫 주성분은 "데이터가 가장 길게 퍼진 방향", 둘째는 "그것과 직교하면서 가장 길게 퍼진 방향"이다.
+        principal component는 <strong>서로 orthogonal 하고</strong>, <strong>variance가 큰 순서</strong>로 정렬되어 있다.
+        첫 principal component는 "data가 가장 길게 퍼진 방향", 둘째는 "그것과 orthogonal 하면서 가장 길게 퍼진 방향"이다.
       </p>
       <p>
         SVD 와의 관계도 한 줄이다. $\tilde{\mathbf{X}} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^\top$ 라 하면
@@ -176,15 +176,15 @@
         <span class="eq__tag num">(2)</span>
       </div>
       <p>
-        <strong>중심화한 데이터의 SVD 가 곧 PCA</strong> 다. 실무에서는 공분산 행렬을 만들지 않고
-        $\tilde{\mathbf{X}}$ 에 바로 SVD 를 쓴다 — $\mathbf{C}$ 를 만들면 조건수가 제곱되기 때문이다
+        <strong>center 한 data의 SVD가 곧 PCA</strong> 다. 실무에서는 covariance matrix를 만들지 않고
+        $\tilde{\mathbf{X}}$ 에 바로 SVD를 쓴다 — $\mathbf{C}$ 를 만들면 condition number(조건수)가 제곱되기 때문이다
         (<a href="2.6-linear-systems.html">2.6</a>의 오해 3과 같은 이유).
       </p>
 
       <span class="anchor" id="c-lowdim"></span>
-      <h3>저차원 표현</h3>
+      <h3>Low-Dimensional Representation 저차원 표현</h3>
       <p>
-        앞의 $k$ 개 주성분을 열로 세운 $\mathbf{W}_k\in\mathbb{R}^{d\times k}$ 로 사영하면 $k$ 차원 표현이 된다.
+        앞의 $k$ 개 principal component를 열로 세운 $\mathbf{W}_k\in\mathbb{R}^{d\times k}$ 로 사영하면 $k$ dimension 표현이 된다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{z} = \mathbf{W}_k^\top\tilde{\mathbf{x}} \in \mathbb{R}^{k}, \qquad \hat{\mathbf{x}} = \mathbf{W}_k\mathbf{z} + \bar{\mathbf{x}} \in \mathbb{R}^{d} $$</div>
@@ -193,19 +193,19 @@
       <p>
         $\mathbf{z}$ 가 <strong>압축된 표현</strong>이고 $\hat{\mathbf{x}}$ 가 <strong>복원</strong>이다.
         복원할 때 <strong>평균을 다시 더해야</strong> 한다는 점을 자주 빠뜨린다.
-        $\mathbf{W}_k\mathbf{W}_k^\top$ 는 $k$ 차원 부분공간으로의 사영행렬이며,
-        <a href="2.3-inner-product.html">2.3</a>의 정사영을 여러 방향으로 확장한 것이다.
+        $\mathbf{W}_k\mathbf{W}_k^\top$ 는 $k$ dimension 부분공간으로의 사영행렬이며,
+        <a href="2.3-inner-product.html">2.3</a>의 orthogonal projection(정사영)을 여러 방향으로 확장한 것이다.
       </p>
 
       <span class="anchor" id="c-evr"></span>
-      <h3>설명 분산</h3>
+      <h3>Explained Variance 설명 분산</h3>
       <div class="eq">
         <div class="eq__body">$$ \text{EVR}_i = \frac{\lambda_i}{\sum_{j=1}^{d}\lambda_j}, \qquad \text{누적 EVR}(k) = \frac{\sum_{i\leq k}\lambda_i}{\sum_{j}\lambda_j} $$</div>
         <span class="eq__tag num">(4)</span>
       </div>
       <p>
-        분모의 $\sum_j\lambda_j = \operatorname{tr}(\mathbf{C})$ 는 <strong>총 분산</strong>이다.
-        "$k$ 개로 95% 를 설명한다"는 말은 누적 EVR 이 0.95 라는 뜻이고,
+        분모의 $\sum_j\lambda_j = \operatorname{tr}(\mathbf{C})$ 는 <strong>총 variance</strong>이다.
+        "$k$ 개로 95% 를 설명한다"는 말은 누적 EVR이 0.95 라는 뜻이고,
         동시에 <strong>버린 정보가 5%</strong>라는 뜻이다.
         $k$ 를 고를 때는 누적 EVR 곡선이 꺾이는 지점(스크리 플롯의 팔꿈치)을 흔히 쓴다.
       </p>
@@ -221,9 +221,9 @@
       </figure>
 
       <span class="anchor" id="c-loss"></span>
-      <h3>차원 축소의 정보 손실</h3>
+      <h3>Information Loss 차원 축소의 정보 손실</h3>
       <p>
-        $k$ 개만 남겼을 때의 평균 제곱 복원 오차는 <strong>버린 고유값의 합</strong>과 정확히 같다.
+        $k$ 개만 남겼을 때의 평균 제곱 reconstruction error는 <strong>버린 eigenvalue의 합</strong>과 정확히 같다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \frac{1}{n-1}\sum_{i=1}^{n}\|\tilde{\mathbf{x}}_i - \hat{\tilde{\mathbf{x}}}_i\|^2 = \sum_{j=k+1}^{d}\lambda_j $$</div>
@@ -231,61 +231,61 @@
       </div>
       <p>
         Eckart–Young 정리(<a href="2.8-svd.html">2.8</a>)의 PCA 판이다.
-        <strong>얼마나 잃었는지 미리 계산할 수 있다</strong>는 점이 PCA 의 큰 장점이다.
+        <strong>얼마나 잃었는지 미리 계산할 수 있다</strong>는 점이 PCA의 큰 장점이다.
       </p>
       <div class="note note--trap">
-        <span class="note__label">"분산 = 정보"는 가정이다</span>
+        <span class="note__label">"variance = 정보"는 가정이다</span>
         <p>
-          PCA 는 <strong>분산이 큰 방향이 중요하다</strong>고 전제한다. 늘 맞지는 않다.
-          분류에 결정적인 신호가 분산이 작은 방향에 있으면 PCA 가 그것을 지워 버린다.
+          PCA는 <strong>variance가 큰 방향이 중요하다</strong>고 전제한다. 늘 맞지는 않다.
+          분류에 결정적인 신호가 variance가 작은 방향에 있으면 PCA가 그것을 지워 버린다.
           라벨을 쓰는 LDA, 비선형 구조를 잡는 오토인코더가 대안이 되는 이유다.
-          또한 <strong>단위가 다르면 스케일이 큰 특성이 주성분을 독점</strong>하므로,
-          보통 표준화(각 특성을 표준편차로 나누기) 후에 PCA 를 적용한다.
+          또한 <strong>단위가 다르면 스케일이 큰 특성이 principal component를 독점</strong>하므로,
+          보통 standardization(표준화 — 각 특성을 표준편차로 나누기) 후에 PCA를 적용한다.
         </p>
       </div>
 
       <figure class="widget" data-widget="reconstruct-k">
-        <figcaption class="widget__bar">버린 만큼만 잃는다 — 복원 오차 확인</figcaption>
+        <figcaption class="widget__bar">버린 만큼만 잃는다 — reconstruction error 확인</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">최적 방향(첫 주성분)에서 벗어나면 같은 1차원인데도 오차가 커집니다. 최적일 때의 오차가 정확히 $\lambda_2$ 입니다.</p>
+          <p class="watch">최적 방향(첫 principal component)에서 벗어나면 같은 1차원인데도 오차가 커집니다. 최적일 때의 오차가 정확히 $\lambda_2$ 입니다.</p>
         </div>
       </figure>
 
       <span class="anchor" id="c-whiten"></span>
       <h3>Whitening</h3>
       <p>
-        주성분으로 회전한 뒤 <strong>각 축을 표준편차로 나누면</strong> 공분산이 단위행렬이 된다.
-        데이터 구름이 <strong>동그란 공</strong>이 되는 것이다.
+        principal component로 회전한 뒤 <strong>각 축을 표준편차로 나누면</strong> covariance가 identity matrix(단위행렬)가 된다.
+        data 구름이 <strong>동그란 공</strong>이 되는 것이다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{z}_{\text{white}} = \boldsymbol{\Lambda}^{-1/2}\mathbf{W}^\top\tilde{\mathbf{x}} \qquad\Longrightarrow\qquad \operatorname{Cov}(\mathbf{z}_{\text{white}}) = \mathbf{I} $$</div>
         <span class="eq__tag num">(6)</span>
       </div>
       <p>
-        모든 방향의 스케일이 같아지므로 경사하강법의 등고선이 원형이 되어 최적화가 쉬워진다.
+        모든 방향의 스케일이 같아지므로 gradient descent(경사하강법)의 등고선이 원형이 되어 optimization(최적화)이 쉬워진다.
         다만 <strong>작은 $\lambda_i$ 로 나누는 순간 그 방향의 잡음이 증폭</strong>되므로
         실무에서는 $\boldsymbol{\Lambda}+\varepsilon\mathbf{I}$ 로 안정화한다.
-        배치 정규화가 채널별로 하는 일도 이 단순화된 형태(축별 스케일 조정)다.
+        batch(배치) normalization(정규화)이 채널별로 하는 일도 이 단순화된 형태(축별 스케일 조정)다.
       </p>
 
       <figure class="widget" data-widget="whitening">
-        <figcaption class="widget__bar">중심화 → 회전 → 화이트닝</figcaption>
+        <figcaption class="widget__bar">centering → rotation(회전) → 화이트닝</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">세 단계를 거치며 타원이 원이 됩니다. 마지막 단계에서 두 축의 분산이 모두 1 이 되는지 보세요.</p>
+          <p class="watch">세 단계를 거치며 타원이 원이 됩니다. 마지막 단계에서 두 축의 variance가 모두 1이 되는지 보세요.</p>
         </div>
       </figure>
 
       <span class="anchor" id="c-viz"></span>
-      <h3>시각화</h3>
+      <h3>Visualization 시각화</h3>
       <p>
-        사람은 2~3차원까지만 볼 수 있으므로, 고차원 데이터를 보려면 반드시 줄여야 한다.
-        PCA 는 <strong>선형 사영</strong>이라 빠르고 해석이 쉽지만, 곡면 위에 놓인 구조는 잡지 못한다.
+        사람은 2~3차원까지만 볼 수 있으므로, high-dimensional(고차원) data를 보려면 반드시 줄여야 한다.
+        PCA는 <strong>선형 projection</strong>이라 빠르고 해석이 쉽지만, 곡면 위에 놓인 구조는 잡지 못한다.
       </p>
       <div class="tablewrap">
         <table>
@@ -293,23 +293,23 @@
           <tbody>
             <tr><td>PCA</td><td>선형 · 전역 구조 · 결정적</td><td>비선형 구조는 뭉갠다</td></tr>
             <tr><td>t-SNE</td><td>비선형 · 국소 이웃 보존</td><td>군집 사이 <em>거리</em>는 의미 없음<a class="cite" href="#ref-vandermaaten2008-tsne" data-ref="vandermaaten2008-tsne">1</a></td></tr>
-            <tr><td>UMAP</td><td>비선형 · 국소+일부 전역 · 빠름</td><td>하이퍼파라미터에 민감<a class="cite" href="#ref-mcinnes2018-umap-uniform-manifold" data-ref="mcinnes2018-umap-uniform-manifold">2</a></td></tr>
+            <tr><td>UMAP</td><td>비선형 · 국소+일부 전역 · 빠름</td><td>hyperparameter(하이퍼파라미터)에 민감<a class="cite" href="#ref-mcinnes2018-umap-uniform-manifold" data-ref="mcinnes2018-umap-uniform-manifold">2</a></td></tr>
           </tbody>
         </table>
       </div>
       <p>
-        t-SNE 와 UMAP 의 그림에서 <strong>군집 사이의 거리나 군집의 크기를 해석하면 안 된다</strong>.
+        t-SNE와 UMAP의 그림에서 <strong>군집 사이의 거리나 군집의 크기를 해석하면 안 된다</strong>.
         이웃 관계만 보존되도록 설계되었기 때문이다.
-        반면 PCA 는 축이 원래 특성의 선형결합이라 <em>무엇 때문에 갈렸는지</em>를 되짚을 수 있다.
+        반면 PCA는 축이 원래 특성의 linear combination(선형결합)이라 <em>무엇 때문에 갈렸는지</em>를 되짚을 수 있다.
       </p>
 
       <figure class="widget" data-widget="viz-2d">
-        <figcaption class="widget__bar">고차원을 2D 로 — 축을 잘 고르면 보인다</figcaption>
+        <figcaption class="widget__bar">high-dimensional을 2D로 — 축을 잘 고르면 보인다</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">원래 특성 두 개만 골라 그리면 군집이 겹쳐 보이지만, 주성분 두 개로 그리면 깔끔하게 갈립니다.</p>
+          <p class="watch">원래 특성 두 개만 골라 그리면 군집이 겹쳐 보이지만, principal component 두 개로 그리면 깔끔하게 갈립니다.</p>
         </div>
       </figure>
     </section>
@@ -318,16 +318,16 @@
     <section class="sec" id="s-math">
       <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
 
-      <p>PCA 의 전체 절차를 한자리에 정리하면 다음과 같다.</p>
+      <p>PCA의 전체 절차를 한자리에 정리하면 다음과 같다.</p>
       <div class="tablewrap">
         <table>
           <thead><tr><th>단계</th><th>식</th><th>빠뜨리면</th></tr></thead>
           <tbody>
-            <tr><td>1. 중심화</td><td>$\tilde{\mathbf{X}} = \mathbf{X}-\mathbf{1}\bar{\mathbf{x}}^\top$</td><td>첫 주성분이 평균 방향을 가리킨다</td></tr>
-            <tr><td>2. (선택) 표준화</td><td>각 열을 표준편차로 나눔</td><td>단위가 큰 특성이 축을 독점한다</td></tr>
-            <tr><td>3. 공분산 / SVD</td><td>$\mathbf{C}=\tilde{\mathbf{X}}^\top\tilde{\mathbf{X}}/(n-1)$</td><td>—</td></tr>
-            <tr><td>4. 고유분해</td><td>$\mathbf{C}=\mathbf{W}\boldsymbol{\Lambda}\mathbf{W}^\top$</td><td>—</td></tr>
-            <tr><td>5. 사영</td><td>$\mathbf{Z}=\tilde{\mathbf{X}}\mathbf{W}_k$</td><td>—</td></tr>
+            <tr><td>1. centering</td><td>$\tilde{\mathbf{X}} = \mathbf{X}-\mathbf{1}\bar{\mathbf{x}}^\top$</td><td>첫 principal component가 평균 방향을 가리킨다</td></tr>
+            <tr><td>2. (선택) standardization</td><td>각 열을 표준편차로 나눔</td><td>단위가 큰 특성이 축을 독점한다</td></tr>
+            <tr><td>3. covariance / SVD</td><td>$\mathbf{C}=\tilde{\mathbf{X}}^\top\tilde{\mathbf{X}}/(n-1)$</td><td>—</td></tr>
+            <tr><td>4. eigendecomposition</td><td>$\mathbf{C}=\mathbf{W}\boldsymbol{\Lambda}\mathbf{W}^\top$</td><td>—</td></tr>
+            <tr><td>5. projection</td><td>$\mathbf{Z}=\tilde{\mathbf{X}}\mathbf{W}_k$</td><td>—</td></tr>
             <tr><td>6. 복원</td><td>$\hat{\mathbf{X}}=\mathbf{Z}\mathbf{W}_k^\top + \mathbf{1}\bar{\mathbf{x}}^\top$</td><td>평균을 안 더하면 원점 근처로 쏠린다</td></tr>
           </tbody>
         </table>
@@ -340,21 +340,21 @@
             <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
           </thead>
           <tbody>
-            <tr><td>$\mathbf{X}$</td><td>볼드 엑스</td><td>데이터 행렬 (행 = 샘플)</td><td>$(n,d)$</td><td>$\mathbb{R}$</td></tr>
-            <tr><td>$\tilde{\mathbf{X}}$</td><td>엑스 틸데</td><td>중심화된 데이터</td><td>$(n,d)$</td><td>열평균 0</td></tr>
-            <tr><td>$\bar{\mathbf{x}}$</td><td>엑스 바</td><td>특성별 평균 벡터</td><td>$(d,)$</td><td>$\mathbb{R}^d$</td></tr>
-            <tr><td>$\mathbf{1}$</td><td>일 벡터</td><td>모든 성분이 1</td><td>$(n,)$</td><td>—</td></tr>
-            <tr><td>$\mathbf{C}$</td><td>볼드 씨</td><td>공분산 행렬</td><td>$(d,d)$</td><td>대칭·준정부호</td></tr>
-            <tr><td>$\lambda_i$</td><td>람다 아이</td><td>$i$ 번째 주성분의 분산</td><td>스칼라</td><td>$\geq0$</td></tr>
-            <tr><td>$\mathbf{w}_i$</td><td>더블유 아이</td><td>$i$ 번째 주성분 (방향)</td><td>$(d,)$</td><td>$\|\mathbf{w}_i\|=1$</td></tr>
-            <tr><td>$\mathbf{W}_k$</td><td>더블유 케이</td><td>앞 $k$ 개 주성분을 열로</td><td>$(d,k)$</td><td>$\mathbf{W}_k^\top\mathbf{W}_k=\mathbf{I}_k$</td></tr>
-            <tr><td>$\boldsymbol{\Lambda}$</td><td>대문자 람다</td><td>고유값 대각행렬</td><td>$(d,d)$</td><td>—</td></tr>
-            <tr><td>$\mathbf{z}$</td><td>볼드 지</td><td>저차원 표현 (점수, score)</td><td>$(k,)$</td><td>$\mathbb{R}^k$</td></tr>
-            <tr><td>$\hat{\mathbf{x}}$</td><td>엑스 햇</td><td>복원된 샘플</td><td>$(d,)$</td><td>$\mathbb{R}^d$</td></tr>
-            <tr><td>$\operatorname{tr}(\mathbf{C})$</td><td>트레이스</td><td>총 분산 $=\sum_j\lambda_j$</td><td>스칼라</td><td>$\geq0$</td></tr>
-            <tr><td>$\boldsymbol{\Lambda}^{-1/2}$</td><td>람다 마이너스 하프</td><td>$\operatorname{diag}(1/\sqrt{\lambda_i})$</td><td>$(d,d)$</td><td>$\lambda_i>0$</td></tr>
-            <tr><td>EVR</td><td>설명 분산 비율</td><td>explained variance ratio</td><td>스칼라</td><td>$[0,1]$</td></tr>
-            <tr><td>$\varepsilon$</td><td>엡실론</td><td>수치 안정화용 작은 상수</td><td>스칼라</td><td>$>0$</td></tr>
+            <tr><td>$\mathbf{X}$</td><td>bold x</td><td>data matrix (행 = 샘플)</td><td>$(n,d)$</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\tilde{\mathbf{X}}$</td><td>x tilde</td><td>center 된 data</td><td>$(n,d)$</td><td>열평균 0</td></tr>
+            <tr><td>$\bar{\mathbf{x}}$</td><td>x bar</td><td>특성별 평균 vector(벡터)</td><td>$(d,)$</td><td>$\mathbb{R}^d$</td></tr>
+            <tr><td>$\mathbf{1}$</td><td>ones vector</td><td>모든 성분이 1</td><td>$(n,)$</td><td>—</td></tr>
+            <tr><td>$\mathbf{C}$</td><td>bold C</td><td>covariance matrix</td><td>$(d,d)$</td><td>대칭·positive semi-definite</td></tr>
+            <tr><td>$\lambda_i$</td><td>lambda i</td><td>$i$ 번째 principal component의 variance</td><td>scalar(스칼라)</td><td>$\geq0$</td></tr>
+            <tr><td>$\mathbf{w}_i$</td><td>w i</td><td>$i$ 번째 principal component (방향)</td><td>$(d,)$</td><td>$\|\mathbf{w}_i\|=1$</td></tr>
+            <tr><td>$\mathbf{W}_k$</td><td>w k</td><td>앞 $k$ 개 principal component를 열로</td><td>$(d,k)$</td><td>$\mathbf{W}_k^\top\mathbf{W}_k=\mathbf{I}_k$</td></tr>
+            <tr><td>$\boldsymbol{\Lambda}$</td><td>uppercase lambda 대문자 람다</td><td>eigenvalue diagonal matrix(대각행렬)</td><td>$(d,d)$</td><td>—</td></tr>
+            <tr><td>$\mathbf{z}$</td><td>bold G</td><td>low-dimensional representation(저차원 표현) (점수, score)</td><td>$(k,)$</td><td>$\mathbb{R}^k$</td></tr>
+            <tr><td>$\hat{\mathbf{x}}$</td><td>x hat</td><td>복원된 샘플</td><td>$(d,)$</td><td>$\mathbb{R}^d$</td></tr>
+            <tr><td>$\operatorname{tr}(\mathbf{C})$</td><td>trace 트레이스</td><td>총 variance $=\sum_j\lambda_j$</td><td>scalar</td><td>$\geq0$</td></tr>
+            <tr><td>$\boldsymbol{\Lambda}^{-1/2}$</td><td>lambda to the minus half</td><td>$\operatorname{diag}(1/\sqrt{\lambda_i})$</td><td>$(d,d)$</td><td>$\lambda_i>0$</td></tr>
+            <tr><td>EVR</td><td>explained variance ratio</td><td>explained variance ratio</td><td>scalar</td><td>$[0,1]$</td></tr>
+            <tr><td>$\varepsilon$</td><td>epsilon 엡실론</td><td>수치 안정화용 작은 상수</td><td>scalar</td><td>$>0$</td></tr>
           </tbody>
         </table>
       </div>
@@ -368,19 +368,19 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ z_i = \mathbf{w}^\top\tilde{\mathbf{x}}_i, \qquad \|\mathbf{w}\|=1 $$</div>
-          <div class="derive__why">방향 $\mathbf{w}$ 로 사영한 값. 길이를 1로 고정하지 않으면 분산을 무한히 키울 수 있다</div>
+          <div class="derive__why">방향 $\mathbf{w}$ 로 사영한 값. 길이를 1로 고정하지 않으면 variance를 무한히 키울 수 있다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \operatorname{Var}(z) = \frac{1}{n-1}\sum_i (\mathbf{w}^\top\tilde{\mathbf{x}}_i)^2 = \mathbf{w}^\top\Bigl(\frac{\tilde{\mathbf{X}}^\top\tilde{\mathbf{X}}}{n-1}\Bigr)\mathbf{w} = \mathbf{w}^\top\mathbf{C}\mathbf{w} $$</div>
-          <div class="derive__why">중심화했으므로 $z$ 의 평균도 0이다. <strong>분산이 이차형식으로 정리된다</strong></div>
+          <div class="derive__why">center 했으므로 $z$ 의 평균도 0이다. <strong>variance가 quadratic form(이차형식)으로 정리된다</strong></div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{w} = \sum_j c_j\mathbf{w}_j, \qquad \sum_j c_j^2 = 1 $$</div>
-          <div class="derive__why">$\mathbf{C}$ 의 정규직교 고유기저로 $\mathbf{w}$ 를 폈다 (스펙트럴 정리)</div>
+          <div class="derive__why">$\mathbf{C}$ 의 orthonormal(정규직교) 고유기저로 $\mathbf{w}$ 를 폈다 (spectral theorem)</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{w}^\top\mathbf{C}\mathbf{w} = \sum_j \lambda_j c_j^2 \leq \lambda_1\sum_j c_j^2 = \lambda_1 $$</div>
-          <div class="derive__why">$\mathbf{C}\mathbf{w}_j=\lambda_j\mathbf{w}_j$ 와 직교성으로 교차항이 사라진다. $\lambda_1$ 이 최대이므로 위로 눌렀다</div>
+          <div class="derive__why">$\mathbf{C}\mathbf{w}_j=\lambda_j\mathbf{w}_j$ 와 orthogonality(직교성)로 교차항이 사라진다. $\lambda_1$ 이 최대이므로 위로 눌렀다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \boxed{\;\max_{\|\mathbf{w}\|=1}\operatorname{Var}(\mathbf{w}^\top\tilde{\mathbf{x}}) = \lambda_1,\ \ \mathbf{w}=\mathbf{w}_1 \text{ 에서 달성}\;} $$</div>
@@ -392,15 +392,15 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \hat{\tilde{\mathbf{x}}} = (\mathbf{w}^\top\tilde{\mathbf{x}})\,\mathbf{w} = \operatorname{proj}_{\mathbf{w}}(\tilde{\mathbf{x}}) $$</div>
-          <div class="derive__why">1차원으로 줄였다가 되돌린 것 — <a href="2.3-inner-product.html">2.3</a>의 정사영</div>
+          <div class="derive__why">1dimension으로 줄였다가 되돌린 것 — <a href="2.3-inner-product.html">2.3</a>의 orthogonal projection</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \|\tilde{\mathbf{x}}\|^2 = \|\hat{\tilde{\mathbf{x}}}\|^2 + \|\tilde{\mathbf{x}}-\hat{\tilde{\mathbf{x}}}\|^2 $$</div>
-          <div class="derive__why"><strong>피타고라스</strong> — 잔차가 사영과 직교하기 때문이다 (2.3절 예제 ②에서 검산한 성질)</div>
+          <div class="derive__why"><strong>피타고라스</strong> — residual(잔차)이 projection과 orthogonal 하기 때문이다 (2.3절 예제 ②에서 검산한 성질)</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \underbrace{\frac{1}{n-1}\sum_i\|\tilde{\mathbf{x}}_i\|^2}_{\text{총 분산 (상수)}} = \underbrace{\operatorname{Var}(z)}_{\text{살린 분산}} + \underbrace{\frac{1}{n-1}\sum_i\|\tilde{\mathbf{x}}_i-\hat{\tilde{\mathbf{x}}}_i\|^2}_{\text{잃은 정보}} $$</div>
-          <div class="derive__why">모든 샘플에 대해 평균했다. $\|\hat{\tilde{\mathbf{x}}}\|=|z|$ 이므로 첫 항이 사영의 분산</div>
+          <div class="derive__why">모든 샘플에 대해 평균했다. $\|\hat{\tilde{\mathbf{x}}}\|=|z|$ 이므로 첫 항이 projection의 variance</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \therefore\ \operatorname{Var}(z) \uparrow \;\Longleftrightarrow\; \text{오차} \downarrow $$</div>
@@ -408,7 +408,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ k \text{ 차원일 때 오차} = \sum_{j>k}\lambda_j $$</div>
-          <div class="derive__why">총 분산 $\sum_j\lambda_j$ 에서 살린 $\sum_{j\leq k}\lambda_j$ 를 뺀 것. <strong>식 (5)</strong></div>
+          <div class="derive__why">총 variance $\sum_j\lambda_j$ 에서 살린 $\sum_{j\leq k}\lambda_j$ 를 뺀 것. <strong>식 (5)</strong></div>
         </div>
       </div>
 
@@ -416,11 +416,11 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{z} = \boldsymbol{\Lambda}^{-1/2}\mathbf{W}^\top\tilde{\mathbf{x}} $$</div>
-          <div class="derive__why">회전($\mathbf{W}^\top$) 후 축별 스케일 조정($\boldsymbol{\Lambda}^{-1/2}$)</div>
+          <div class="derive__why">rotation($\mathbf{W}^\top$) 후 축별 스케일 조정($\boldsymbol{\Lambda}^{-1/2}$)</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \operatorname{Cov}(\mathbf{z}) = \boldsymbol{\Lambda}^{-1/2}\mathbf{W}^\top\,\mathbf{C}\,\mathbf{W}\boldsymbol{\Lambda}^{-1/2} $$</div>
-          <div class="derive__why">선형변환의 공분산 공식 $\operatorname{Cov}(\mathbf{Ax})=\mathbf{A}\operatorname{Cov}(\mathbf{x})\mathbf{A}^\top$</div>
+          <div class="derive__why">linear transformation(선형변환)의 covariance 공식 $\operatorname{Cov}(\mathbf{Ax})=\mathbf{A}\operatorname{Cov}(\mathbf{x})\mathbf{A}^\top$</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{W}^\top\mathbf{C}\mathbf{W} = \boldsymbol{\Lambda} $$</div>
@@ -428,7 +428,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \operatorname{Cov}(\mathbf{z}) = \boldsymbol{\Lambda}^{-1/2}\boldsymbol{\Lambda}\boldsymbol{\Lambda}^{-1/2} = \mathbf{I} $$</div>
-          <div class="derive__why">대각행렬끼리라 성분별 계산: $\lambda_i^{-1/2}\lambda_i\lambda_i^{-1/2}=1$. <strong>모든 방향의 분산이 1</strong></div>
+          <div class="derive__why">대각행렬끼리라 성분별 계산: $\lambda_i^{-1/2}\lambda_i\lambda_i^{-1/2}=1$. <strong>모든 방향의 variance가 1</strong></div>
         </div>
       </div>
     </section>
@@ -437,7 +437,7 @@
     <section class="sec" id="s-example">
       <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
 
-      <p>네 개의 점으로 PCA 전 과정을 손으로 돌린다. 이미 평균이 0이라 중심화 단계가 눈에 보인다.</p>
+      <p>네 개의 점으로 PCA 전 과정을 손으로 돌린다. 이미 평균이 0이라 centering 단계가 눈에 보인다.</p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{x}_1=(2,1),\quad \mathbf{x}_2=(1,2),\quad \mathbf{x}_3=(-2,-1),\quad \mathbf{x}_4=(-1,-2) $$</div>
         <span class="eq__tag num">(7)</span>
@@ -447,7 +447,7 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \bar{\mathbf{x}} = \tfrac14\bigl((2{+}1{-}2{-}1),\ (1{+}2{-}1{-}2)\bigr) = (0,\,0) $$</div>
-          <div class="derive__why">이미 중심화되어 있다. 실제 데이터라면 여기서 평균을 빼야 한다</div>
+          <div class="derive__why">이미 center 되어 있다. 실제 데이터라면 여기서 평균을 빼야 한다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \sum_i x_{i1}^2 = 4+1+4+1 = 10, \qquad \sum_i x_{i2}^2 = 1+4+1+4 = 10 $$</div>
@@ -455,11 +455,11 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \sum_i x_{i1}x_{i2} = 2(1)+1(2)+(-2)(-1)+(-1)(-2) = 2+2+2+2 = 8 $$</div>
-          <div class="derive__why">교차항. 모두 양수라 <strong>양의 상관</strong></div>
+          <div class="derive__why">교차항. 모두 양수라 <strong>양의 correlation</strong></div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{C} = \frac{1}{4-1}\begin{bmatrix}10&8\\8&10\end{bmatrix} = \begin{bmatrix}10/3 & 8/3\\ 8/3 & 10/3\end{bmatrix} $$</div>
-          <div class="derive__why">$n-1=3$ 으로 나눈다 (표본 공분산)</div>
+          <div class="derive__why">$n-1=3$ 으로 나눈다 (표본 covariance)</div>
         </div>
       </div>
 
@@ -467,7 +467,7 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \operatorname{tr}\mathbf{C} = \tfrac{20}{3}, \qquad \det\mathbf{C} = \tfrac{100}{9}-\tfrac{64}{9} = \tfrac{36}{9} = 4 $$</div>
-          <div class="derive__why">특성방정식에 필요한 값</div>
+          <div class="derive__why">characteristic equation(특성방정식)에 필요한 값</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \lambda^2 - \tfrac{20}{3}\lambda + 4 = 0 \;\Rightarrow\; \lambda = \frac{\tfrac{20}{3} \pm \sqrt{\tfrac{400}{9}-16}}{2} = \frac{\tfrac{20}{3}\pm\tfrac{16}{3}}{2} $$</div>
@@ -479,11 +479,11 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{C}-6\mathbf{I} = \begin{bmatrix}-8/3 & 8/3\\ 8/3 & -8/3\end{bmatrix} \;\Rightarrow\; w_1 = w_2 \;\Rightarrow\; \mathbf{w}_1 = \tfrac{1}{\sqrt2}(1,1)^\top $$</div>
-          <div class="derive__why">첫 주성분 — 데이터가 길게 뻗은 대각 방향</div>
+          <div class="derive__why">첫 principal component — data가 길게 뻗은 대각 방향</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{w}_2 = \tfrac{1}{\sqrt2}(1,-1)^\top, \qquad \mathbf{w}_1^\top\mathbf{w}_2 = 0 \ \checkmark $$</div>
-          <div class="derive__why">직교한다 — 대칭행렬이므로 보장된다</div>
+          <div class="derive__why">orthogonal 한다 — 대칭행렬이므로 보장된다</div>
         </div>
       </div>
 
@@ -491,7 +491,7 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \text{EVR}_1 = \frac{6}{6+\tfrac23} = \frac{6}{\tfrac{20}{3}} = \frac{18}{20} = 0.9 $$</div>
-          <div class="derive__why"><strong>첫 주성분 하나가 90% 를 설명</strong></div>
+          <div class="derive__why"><strong>첫 principal component 하나가 90% 를 설명</strong></div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \text{EVR}_2 = \frac{2/3}{20/3} = \frac{2}{20} = 0.1 $$</div>
@@ -503,11 +503,11 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ z_1 = \mathbf{w}_1^\top\mathbf{x}_1 = \tfrac{1}{\sqrt2}(2+1) = \tfrac{3}{\sqrt2} \approx 2.121 $$</div>
-          <div class="derive__why">첫 점의 1차원 좌표</div>
+          <div class="derive__why">첫 점의 1dimension coordinates(좌표)</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ z_2 = \tfrac{1}{\sqrt2}(1+2) = \tfrac{3}{\sqrt2}, \quad z_3 = -\tfrac{3}{\sqrt2}, \quad z_4 = -\tfrac{3}{\sqrt2} $$</div>
-          <div class="derive__why">$\mathbf{x}_1$ 과 $\mathbf{x}_2$ 가 <strong>같은 값으로 뭉친다</strong> — 이것이 정보 손실이다</div>
+          <div class="derive__why">$\mathbf{x}_1$ 과 $\mathbf{x}_2$ 가 <strong>같은 값으로 뭉친다</strong> — 이것이 information loss다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \operatorname{Var}(z) = \frac{4\times(9/2)}{3} = \frac{18}{3} = 6 = \lambda_1 \ \checkmark $$</div>
@@ -523,7 +523,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{x}_1 - \hat{\mathbf{x}}_1 = (2-1.5,\ 1-1.5) = (0.5,\ -0.5) $$</div>
-          <div class="derive__why">잔차. 크기의 제곱은 $0.25+0.25 = 0.5$</div>
+          <div class="derive__why">residual. 크기의 제곱은 $0.25+0.25 = 0.5$</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \sum_{i=1}^{4}\|\mathbf{x}_i-\hat{\mathbf{x}}_i\|^2 = 4\times0.5 = 2 $$</div>
@@ -531,11 +531,11 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \frac{2}{n-1} = \frac{2}{3} = \lambda_2 \ \checkmark $$</div>
-          <div class="derive__why"><strong>식 (5) 확인</strong> — 버린 고유값이 정확히 평균 복원 오차다</div>
+          <div class="derive__why"><strong>식 (5) 확인</strong> — 버린 eigenvalue가 정확히 평균 복원 오차다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \lambda_1 + \lambda_2 = 6 + \tfrac23 = \tfrac{20}{3} = \frac{\sum_i\|\mathbf{x}_i\|^2}{n-1} = \frac{5+5+5+5}{3} $$</div>
-          <div class="derive__why">유도 2의 "총 분산 = 살린 것 + 잃은 것"이 숫자로 확인된다</div>
+          <div class="derive__why">유도 2의 "총 variance = 살린 것 + 잃은 것"이 숫자로 확인된다</div>
         </div>
       </div>
 
@@ -543,15 +543,15 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{z} = \bigl(\tfrac{z_1}{\sqrt{\lambda_1}},\ \tfrac{z_2}{\sqrt{\lambda_2}}\bigr) $$</div>
-          <div class="derive__why">주성분 좌표를 각각 표준편차로 나눈다</div>
+          <div class="derive__why">principal component coordinates를 각각 표준편차로 나눈다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{x}_1: \quad \Bigl(\frac{3/\sqrt2}{\sqrt6},\ \frac{1/\sqrt2}{\sqrt{2/3}}\Bigr) = \Bigl(\frac{3}{\sqrt{12}},\ \frac{1}{\sqrt{4/3}}\Bigr) = (0.866,\ 0.866) $$</div>
-          <div class="derive__why">둘째 좌표 $\mathbf{w}_2^\top\mathbf{x}_1 = \tfrac{1}{\sqrt2}(2-1) = \tfrac{1}{\sqrt2}$</div>
+          <div class="derive__why">둘째 coordinates $\mathbf{w}_2^\top\mathbf{x}_1 = \tfrac{1}{\sqrt2}(2-1) = \tfrac{1}{\sqrt2}$</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \operatorname{Var}(z^{(1)}) = \frac{\lambda_1}{\lambda_1} = 1, \qquad \operatorname{Var}(z^{(2)}) = \frac{\lambda_2}{\lambda_2} = 1 $$</div>
-          <div class="derive__why"><strong>두 축의 분산이 모두 1</strong> — 유도 3의 결론</div>
+          <div class="derive__why"><strong>두 축의 variance가 모두 1</strong> — 유도 3의 결론</div>
         </div>
       </div>
     </section>
@@ -562,17 +562,17 @@
 
       <p>
         본문의 위젯 여섯 개를 순서대로 만져 본 뒤, 아래에서
-        <strong>중심화를 빠뜨리면 무슨 일이 생기는지</strong> 확인한다.
+        <strong>centering을 빠뜨리면 무슨 일이 생기는지</strong> 확인한다.
         가장 흔하면서 알아채기 어려운 실수다.
       </p>
 
       <figure class="widget" data-widget="centering-matters">
-        <figcaption class="widget__bar">중심화를 빠뜨리면 — 첫 주성분이 평균을 가리킨다</figcaption>
+        <figcaption class="widget__bar">centering을 빠뜨리면 — 첫 principal component가 평균을 가리킨다</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">데이터를 원점에서 멀리 옮겨 보세요. 중심화하지 않으면 첫 축이 <strong>데이터의 모양이 아니라 위치</strong>를 따라갑니다.</p>
+          <p class="watch">data를 원점에서 멀리 옮겨 보세요. center 하지 않으면 첫 축이 <strong>data의 모양이 아니라 위치</strong>를 따라갑니다.</p>
         </div>
       </figure>
     </section>
@@ -583,21 +583,21 @@
 
       <div class="note note--trap">
         <span class="note__label">오해 1</span>
-        <p>"PCA 는 특성을 골라내는(feature selection) 방법이다."</p>
+        <p>"PCA는 특성을 골라내는(feature selection) 방법이다."</p>
         <p>
           <strong>실제로는</strong> 특성을 <em>섞어 새로 만드는</em> 방법이다.
-          주성분은 원래 특성들의 <strong>선형결합</strong>이라 "키 0.6배 + 몸무게 0.8배" 같은 형태다.
+          principal component는 원래 특성들의 <strong>linear combination</strong>이라 "키 0.6배 + 몸무게 0.8배" 같은 형태다.
           원래 특성 몇 개만 남기고 싶으면 특성 선택 기법을 따로 써야 한다.
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 2</span>
-        <p>"중심화는 선택 사항이다."</p>
+        <p>"centering은 선택 사항이다."</p>
         <p>
-          <strong>실제로는</strong> 필수다. 중심화하지 않으면 $\tilde{\mathbf{X}}^\top\tilde{\mathbf{X}}$ 가 공분산이 아니라
-          <em>2차 적률</em>이 되고, 첫 주성분이 데이터의 <strong>평균 방향</strong>을 가리키는 쪽으로 끌려간다.
-          데이터가 원점에서 멀수록 이 왜곡이 커진다 — 위 위젯에서 직접 확인할 수 있다.
+          <strong>실제로는</strong> 필수다. center 하지 않으면 $\tilde{\mathbf{X}}^\top\tilde{\mathbf{X}}$ 가 covariance가 아니라
+          <em>2차 적률</em>이 되고, 첫 principal component가 data의 <strong>평균 방향</strong>을 가리키는 쪽으로 끌려간다.
+          data가 원점에서 멀수록 이 왜곡이 커진다 — 위 위젯에서 직접 확인할 수 있다.
         </p>
       </div>
 
@@ -606,8 +606,8 @@
         <p>"단위는 상관없다."</p>
         <p>
           <strong>실제로는</strong> 결정적이다. 키를 <span class="tex">m</span> 대신 <span class="tex">mm</span> 로 재면
-          그 특성의 분산이 $10^6$ 배가 되어 첫 주성분을 독점한다.
-          단위가 다른 특성을 섞을 때는 <strong>표준화 후 PCA</strong>(상관행렬 PCA)가 기본이다.
+          그 특성의 variance가 $10^6$ 배가 되어 첫 principal component를 독점한다.
+          단위가 다른 특성을 섞을 때는 <strong>standardization 후 PCA</strong>(상관행렬 PCA)가 기본이다.
         </p>
       </div>
 
@@ -616,20 +616,20 @@
         <p>"t-SNE 그림에서 두 군집이 멀면 실제로도 멀다."</p>
         <p>
           <strong>실제로는</strong> 군집 <em>사이</em>의 거리는 의미가 없다.
-          t-SNE 는 국소 이웃 관계를 보존하도록 설계되었고, 전역 거리는 보존 대상이 아니다<a class="cite" href="#ref-vandermaaten2008-tsne" data-ref="vandermaaten2008-tsne">1</a>.
+          t-SNE는 국소 이웃 관계를 보존하도록 설계되었고, 전역 거리는 보존 대상이 아니다<a class="cite" href="#ref-vandermaaten2008-tsne" data-ref="vandermaaten2008-tsne">1</a>.
           군집의 크기(퍼짐 정도)도 perplexity 설정에 따라 달라진다.
-          <strong>전역 구조를 보고 싶다면 PCA</strong> 를 함께 그리는 편이 안전하다.
+          <strong>전역 구조를 보고 싶다면 PCA</strong>를 함께 그리는 편이 안전하다.
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 5</span>
-        <p>"차원을 줄이면 항상 성능이 좋아진다."</p>
+        <p>"dimension을 줄이면 항상 성능이 좋아진다."</p>
         <p>
-          <strong>실제로는</strong> 분산이 작은 방향에 결정적 신호가 있으면 성능이 떨어진다.
-          PCA 는 라벨을 전혀 보지 않는 <strong>비지도</strong> 방법이라, 분류에 유용한 축을 알 도리가 없다.
-          차원 축소는 잡음 감소·계산 절약·시각화에 쓰고,
-          성능은 <strong>반드시 검증 데이터로 확인</strong>해야 한다.
+          <strong>실제로는</strong> variance가 작은 방향에 결정적 신호가 있으면 성능이 떨어진다.
+          PCA는 라벨을 전혀 보지 않는 <strong>비지도</strong> 방법이라, 분류에 유용한 축을 알 도리가 없다.
+          dimensionality reduction(차원 축소)은 잡음 감소·계산 절약·visualization(시각화)에 쓰고,
+          성능은 <strong>반드시 validation data(검증 데이터)로 확인</strong>해야 한다.
         </p>
       </div>
     </section>
@@ -639,7 +639,7 @@
       <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
       <p>예제 ①–⑥을 전부 검증한다.</p>
       <details>
-        <summary>NumPy — PCA 를 SVD 로 (19줄)</summary>
+        <summary>NumPy — PCA를 SVD로 (19줄)</summary>
 <pre><code>import numpy as np
 
 X = np.array([[2., 1.], [1., 2.], [-2., -1.], [-1., -2.]])
@@ -667,9 +667,9 @@ print(s ** 2 / (len(X) - 1))        # [6. 0.6667]  <- SVD 로도 같은 값
 </code></pre>
         <p>
           <small>
-            <code>eigh</code> 는 고유값을 <strong>오름차순</strong>으로 준다. 뒤집는 것을 잊으면
-            "첫 주성분"이 사실 가장 덜 중요한 방향이 된다 — 조용히 틀리는 대표적인 버그다.
-            <code>sklearn.decomposition.PCA</code> 는 내부에서 SVD 를 쓰고 정렬까지 처리한다.
+            <code>eigh</code>는 eigenvalue를 <strong>오름차순</strong>으로 준다. 뒤집는 것을 잊으면
+            "첫 principal component"이 사실 가장 덜 중요한 방향이 된다 — 조용히 틀리는 대표적인 버그다.
+            <code>sklearn.decomposition.PCA</code>는 내부에서 SVD를 쓰고 정렬까지 처리한다.
           </small>
         </p>
       </details>
@@ -682,74 +682,74 @@ print(s ** 2 / (len(X) - 1))        # [6. 0.6667]  <- SVD 로도 같은 값
       <div class="quiz">
         <div class="q">
           <p class="q__stem"><span class="q__tag">계산</span>
-            공분산 고유값이 $\lambda = (8, 3, 2, 1)$ 일 때 $k=2$ 의 누적 설명 분산은?</p>
+            covariance eigenvalue가 $\lambda = (8, 3, 2, 1)$ 일 때 $k=2$ 의 누적 explained variance는?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$11/14 \approx 78.6\%$</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>$8/14 \approx 57.1\%$</span></button>
             <button class="opt" type="button"><span class="opt__mark">다</span><span>$50\%$ (4개 중 2개)</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            총 분산 $8+3+2+1 = 14$, 앞의 두 개 $8+3=11$.
+            총 variance $8+3+2+1 = 14$, 앞의 두 개 $8+3=11$.
             $11/14 = 0.786$. 잃은 정보는 $3/14 = 21.4\%$ 다.
-            다처럼 <strong>개수 비율로 세면 안 된다</strong> — 축마다 담고 있는 분산이 다르다.
+            다처럼 <strong>개수 비율로 세면 안 된다</strong> — 축마다 담고 있는 variance가 다르다.
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">계산</span>
-            예제의 $\mathbf{C}=\begin{bmatrix}10/3&8/3\\8/3&10/3\end{bmatrix}$ 에서 총 분산은?</p>
+            예제의 $\mathbf{C}=\begin{bmatrix}10/3&8/3\\8/3&10/3\end{bmatrix}$ 에서 총 variance는?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$20/3 \approx 6.667$</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>$4$</span></button>
             <button class="opt" type="button"><span class="opt__mark">다</span><span>$6$</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            총 분산은 대각합 $\operatorname{tr}\mathbf{C} = 10/3+10/3 = 20/3$ 이고
-            고유값의 합 $6 + 2/3$ 과 같다.
-            나는 $\det$(고유값의 곱), 다는 첫 고유값만이다.
+            총 variance는 trace(대각합) $\operatorname{tr}\mathbf{C} = 10/3+10/3 = 20/3$ 이고
+            eigenvalue의 합 $6 + 2/3$ 과 같다.
+            나는 $\det$(eigenvalue의 곱), 다는 첫 고유값만이다.
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">개념</span>
-            PCA 에서 "분산 최대화"와 "재구성 오차 최소화"의 관계는?</p>
+            PCA에서 "variance 최대화"와 "reconstruction error 최소화"의 관계는?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>두 목표의 합이 상수라서 완전히 같은 문제다</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>보통 비슷하지만 다른 답을 줄 수 있다</span></button>
             <button class="opt" type="button"><span class="opt__mark">다</span><span>서로 반대 방향의 목표다</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            유도 2에서 총 분산 = 살린 분산 + 잃은 분산 임을 보였다.
-            총 분산은 방향 선택과 무관한 상수이므로, 한쪽을 최대화하는 것이 정확히 다른 쪽을 최소화한다.
-            잔차와 사영이 직교한다는 사실(피타고라스)이 그 뿌리다.
+            유도 2에서 총 variance = 살린 variance + 잃은 variance 임을 보였다.
+            총 variance는 방향 선택과 무관한 상수이므로, 한쪽을 최대화하는 것이 정확히 다른 쪽을 최소화한다.
+            residual과 projection이 orthogonal 한다는 사실(피타고라스)이 그 뿌리다.
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">개념</span>
-            키(<span class="tex">cm</span>)와 연봉(<span class="tex">원</span>)으로 PCA 를 돌렸더니 첫 주성분이 거의 연봉 축과 같았다. 이유는?</p>
+            키(<span class="tex">cm</span>)와 연봉(<span class="tex">원</span>)으로 PCA를 돌렸더니 첫 principal component가 거의 연봉 축과 같았다. 이유는?</p>
           <div class="opts">
-            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>단위 때문에 연봉의 분산이 압도적으로 커서 — 표준화가 필요하다</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>단위 때문에 연봉의 variance가 압도적으로 커서 — standardization이 필요하다</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>연봉이 실제로 더 중요한 정보라서</span></button>
             <button class="opt" type="button"><span class="opt__mark">다</span><span>PCA 구현에 버그가 있어서</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            연봉은 수천만 단위라 분산이 $10^{14}$ 규모, 키는 $10^2$ 규모다.
-            PCA 는 분산이 큰 방향을 고르므로 단위가 결과를 정해 버린다.
-            각 특성을 표준편차로 나눠 표준화한 뒤(상관행렬 PCA) 다시 돌려야 한다.
+            연봉은 수천만 단위라 variance가 $10^{14}$ 규모, 키는 $10^2$ 규모다.
+            PCA는 variance가 큰 방향을 고르므로 단위가 결과를 정해 버린다.
+            각 특성을 표준편차로 나눠 standardize 한 뒤(상관행렬 PCA) 다시 돌려야 한다.
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">계산</span>
-            예제 데이터를 $k=1$ 로 줄였을 때 네 점의 총 복원 오차 제곱합은?</p>
+            예제 data를 $k=1$ 로 줄였을 때 네 점의 총 reconstruction error 제곱합은?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$2$</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>$2/3$</span></button>
             <button class="opt" type="button"><span class="opt__mark">다</span><span>$0$</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            점마다 잔차가 $(\pm0.5,\mp0.5)$ 로 제곱크기 $0.5$, 네 점이면 $2$.
+            점마다 residual이 $(\pm0.5,\mp0.5)$ 로 제곱크기 $0.5$, 네 점이면 $2$.
             나는 이것을 $n-1=3$ 으로 나눈 값 $\lambda_2 = 2/3$ 이다 —
             <strong>합인지 평균인지</strong> 구분해야 한다.
           </div>
@@ -757,16 +757,16 @@ print(s ** 2 / (len(X) - 1))        # [6. 0.6667]  <- SVD 로도 같은 값
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">함정</span>
-            화이트닝 후 학습이 오히려 불안정해졌다. 가장 그럴듯한 원인은?</p>
+            화이트닝 후 training(학습)이 오히려 불안정해졌다. 가장 그럴듯한 원인은?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>매우 작은 $\lambda_i$ 로 나누면서 그 방향의 잡음이 증폭됐다</span></button>
-            <button class="opt" type="button"><span class="opt__mark">나</span><span>화이트닝은 공분산을 단위행렬로 만들 수 없다</span></button>
-            <button class="opt" type="button"><span class="opt__mark">다</span><span>화이트닝 후에는 데이터가 중심화되지 않는다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>화이트닝은 covariance를 identity matrix로 만들 수 없다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>화이트닝 후에는 data가 center 되지 않는다</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
             $\lambda_i \approx 0$ 인 방향은 거의 잡음뿐인데 $1/\sqrt{\lambda_i}$ 로 크게 증폭된다.
             그래서 $\boldsymbol{\Lambda}+\varepsilon\mathbf{I}$ 로 안정화하거나, 작은 성분을 아예 버린다.
-            유도 3에서 보았듯 공분산이 $\mathbf{I}$ 가 되는 것은 맞고, 중심화도 유지된다.
+            유도 3에서 보았듯 covariance가 $\mathbf{I}$ 가 되는 것은 맞고, centering도 유지된다.
           </div>
         </div>
       </div>
@@ -777,10 +777,10 @@ print(s ** 2 / (len(X) - 1))        # [6. 0.6667]  <- SVD 로도 같은 값
       <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
 
       <ul>
-        <li><strong><a href="2.10-linear-algebra-in-ai.html">2.10 AI와 선형대수</a></strong> — 임베딩 공간의 구조와 저랭크 압축.</li>
-        <li><strong><a href="2.8-svd.html">2.8 특이값 분해</a></strong> — PCA 는 중심화된 데이터의 SVD 다.</li>
-        <li><strong><a href="2.7-eigenvalues.html">2.7 고유값과 고유벡터</a></strong> — 공분산 행렬의 고유분해가 곧 주성분.</li>
-        <li><strong>4장 확률과 통계</strong> — 공분산·상관·다변량 정규분포의 기하.</li>
+        <li><strong><a href="2.10-linear-algebra-in-ai.html">2.10 AI와 linear algebra(선형대수)</a></strong> — embedding space(임베딩 공간)의 구조와 low-rank(저랭크) 압축.</li>
+        <li><strong><a href="2.8-svd.html">2.8 singular value decomposition(특이값 분해)</a></strong> — PCA는 center 된 data의 SVD 다.</li>
+        <li><strong><a href="2.7-eigenvalues.html">2.7 eigenvalue와 eigenvector</a></strong> — covariance matrix의 eigendecomposition이 곧 principal component.</li>
+        <li><strong>4장 probability(확률)와 통계</strong> — covariance·correlation·다변량 정규분포의 기하.</li>
       </ul>
 
       <h3>출처</h3>
@@ -788,31 +788,31 @@ print(s ** 2 / (len(X) - 1))        # [6. 0.6667]  <- SVD 로도 같은 값
         <li class="ref" id="ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Deisenroth, M. P., Faisal, A. A. &amp; Ong, C. S. (2020). <em>Mathematics for Machine Learning</em>. Cambridge University Press.</span>
-          <span class="ref__where">10.2절(Maximum Variance Perspective)과 10.3절(Projection Perspective) — 두 관점이 같은 해를 준다는 전개(유도 1·2의 뼈대). 10.4절 — 고유벡터 계산과 저랭크 근사, 10.6절 — 실무 절차(중심화·표준화) 표의 근거</span>
+          <span class="ref__where">10.2절(Maximum Variance Perspective)과 10.3절(Projection Perspective) — 두 관점이 같은 해를 준다는 전개(유도 1·2의 뼈대). 10.4절 — eigenvector 계산과 low-rank approximation(저랭크 근사), 10.6절 — 실무 절차(centering·standardization) 표의 근거</span>
           <a class="ref__link" href="https://mml-book.github.io/">mml-book.github.io</a>
         </li>
         <li class="ref" id="ref-bishop2006-prml" data-ref="bishop2006-prml">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Bishop, C. M. (2006). <em>Pattern Recognition and Machine Learning</em>. Springer.</span>
-          <span class="ref__where">12.1절(Principal Component Analysis)과 12.1.3 — 화이트닝의 정의 $\boldsymbol{\Lambda}^{-1/2}\mathbf{U}^\top\tilde{\mathbf{x}}$ 와 그 공분산이 단위행렬이 됨(유도 3). 12.1.1–12.1.2 의 최대분산·최소오차 유도와 대조 확인</span>
+          <span class="ref__where">12.1절(Principal Component Analysis)과 12.1.3 — 화이트닝의 정의 $\boldsymbol{\Lambda}^{-1/2}\mathbf{U}^\top\tilde{\mathbf{x}}$ 와 그 covariance가 identity matrix가 됨(유도 3). 12.1.1–12.1.2의 최대분산·최소오차 유도와 대조 확인</span>
           <a class="ref__link" href="https://www.microsoft.com/en-us/research/publication/pattern-recognition-machine-learning/">microsoft.com · PRML</a>
         </li>
         <li class="ref" id="ref-vandermaaten2008-tsne" data-ref="vandermaaten2008-tsne">
           <span class="ref__type" data-type="paper">논문</span>
           <span class="ref__cite">van der Maaten, L. &amp; Hinton, G. (2008). <em>Visualizing Data using t-SNE</em>. JMLR, 9, 2579–2605.</span>
-          <span class="ref__where">2–3절과 4절(Experiments) — 국소 이웃 구조를 보존하도록 목적함수를 설계했다는 서술. '시각화' 표와 오해 4(군집 사이 거리를 해석하면 안 되는 이유)의 근거</span>
+          <span class="ref__where">2–3절과 4절(Experiments) — 국소 이웃 구조를 보존하도록 objective function(목적함수)을 설계했다는 서술. 'visualization' 표와 오해 4(군집 사이 거리를 해석하면 안 되는 이유)의 근거</span>
           <a class="ref__link" href="https://www.jmlr.org/papers/v9/vandermaaten08a.html">jmlr.org</a>
         </li>
         <li class="ref" id="ref-mcinnes2018-umap-uniform-manifold" data-ref="mcinnes2018-umap-uniform-manifold">
           <span class="ref__type" data-type="paper">논문</span>
           <span class="ref__cite">McInnes, L., Healy, J. &amp; Melville, J. (2018). <em>UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction</em>.</span>
-          <span class="ref__where">3–4절과 5절(Implementation) — 국소 구조 보존과 하이퍼파라미터(n_neighbors, min_dist)의 영향. '시각화' 표에서 UMAP 항목의 근거</span>
+          <span class="ref__where">3–4절과 5절(Implementation) — 국소 구조 보존과 hyperparameter(n_neighbors, min_dist)의 영향. 'visualization' 표에서 UMAP 항목의 근거</span>
           <a class="ref__link" href="https://arxiv.org/abs/1802.03426">arXiv:1802.03426</a>
         </li>
         <li class="ref" id="ref-mit-1806" data-ref="mit-1806">
           <span class="ref__type" data-type="course">강의</span>
           <span class="ref__cite">Strang, G. <em>MIT 18.06 Linear Algebra</em> (Spring 2010). MIT OpenCourseWare.</span>
-          <span class="ref__where">Lecture 29 (Singular value decomposition)와 대칭행렬 강의(Lecture 25) — 공분산 행렬이 대칭·준정부호라 직교 고유기저를 갖는다는 사실. PCA 를 SVD 로 계산하는 관행(식 2)의 근거</span>
+          <span class="ref__where">Lecture 29 (Singular value decomposition)와 symmetric matrix(대칭행렬) 강의(Lecture 25) — covariance matrix가 대칭·준정부호라 orthogonal 고유기저를 갖는다는 사실. PCA를 SVD로 계산하는 관행(식 2)의 근거</span>
           <a class="ref__link" href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/">ocw.mit.edu</a>
         </li>
       </ol>
@@ -914,9 +914,9 @@ WIDGETS.register('pca-projection', function (root, ctx) {
   ctx.stage.appendChild(p.svg);
 
   var out = WIDGETS.readout(ctx.readout, [
-    { key: 'var', label: '사영의 분산', digits: 4 },
-    { key: 'err', label: '평균 복원 오차', digits: 4 },
-    { key: 'sum', label: '둘의 합 (총 분산)', digits: 4 },
+    { key: 'var', label: 'projection의 variance', digits: 4 },
+    { key: 'err', label: '평균 reconstruction error', digits: 4 },
+    { key: 'sum', label: '둘의 합 (총 variance)', digits: 4 },
     { key: 'best', label: '최적 각도와의 차이' }
   ]);
 
@@ -960,7 +960,7 @@ WIDGETS.register('pca-projection', function (root, ctx) {
   }
 
   WIDGETS.slider({
-    host: ctx.controls, label: '사영 방향 각도', min: 0, max: 179, step: 1, value: 20, unit: '°', digits: 0,
+    host: ctx.controls, label: 'projection 방향 각도', min: 0, max: 179, step: 1, value: 20, unit: '°', digits: 0,
     onInput: function (v) { ang = v; draw(); }
   });
   draw();
@@ -985,10 +985,10 @@ WIDGETS.register('pca-2d', function (root, ctx) {
   ctx.stage.appendChild(p.svg);
 
   var out = WIDGETS.readout(ctx.readout, [
-    { key: 'l1', label: 'λ₁ (첫 주성분 분산)', digits: 3 },
+    { key: 'l1', label: 'λ₁ (첫 principal component variance)', digits: 3 },
     { key: 'l2', label: 'λ₂', digits: 3 },
-    { key: 'evr', label: '첫 주성분 EVR' },
-    { key: 'w1', label: '첫 주성분 방향' }
+    { key: 'evr', label: '첫 principal component EVR' },
+    { key: 'w1', label: '첫 principal component 방향' }
   ]);
 
   function build() {
@@ -1020,7 +1020,7 @@ WIDGETS.register('pca-2d', function (root, ctx) {
   }
 
   WIDGETS.slider({
-    host: ctx.controls, label: '두 특성의 상관 ρ', min: -0.98, max: 0.98, step: 0.02, value: 0.85, digits: 2,
+    host: ctx.controls, label: '두 특성의 correlation ρ', min: -0.98, max: 0.98, step: 0.02, value: 0.85, digits: 2,
     onInput: function (v) { rho = v; draw(); }
   });
   WIDGETS.slider({
@@ -1048,7 +1048,7 @@ WIDGETS.register('scree-plot', function (root, ctx) {
     { key: 'evr', label: 'EVR_k', digits: 4 },
     { key: 'cum', label: '누적 EVR' },
     { key: 'loss', label: '잃는 정보' },
-    { key: 'dim', label: '차원' }
+    { key: 'dim', label: 'dimension' }
   ]);
 
   function draw() {
@@ -1081,7 +1081,7 @@ WIDGETS.register('scree-plot', function (root, ctx) {
   }
 
   WIDGETS.slider({
-    host: ctx.controls, label: '남길 주성분 수 k', min: 1, max: 8, step: 1, value: 3, digits: 0,
+    host: ctx.controls, label: '남길 principal component 수 k', min: 1, max: 8, step: 1, value: 3, digits: 0,
     onInput: function (v) { k = v; draw(); }
   });
   draw();
@@ -1097,7 +1097,7 @@ WIDGETS.register('reconstruct-k', function (root, ctx) {
   ctx.stage.appendChild(p.svg);
 
   var out = WIDGETS.readout(ctx.readout, [
-    { key: 'err', label: '평균 복원 오차', digits: 4 },
+    { key: 'err', label: '평균 reconstruction error', digits: 4 },
     { key: 'opt', label: '최적값 (= λ₂)', digits: 4 },
     { key: 'ratio', label: '최적 대비' },
     { key: 'note', label: '해석' }
@@ -1135,7 +1135,7 @@ WIDGETS.register('reconstruct-k', function (root, ctx) {
   }
 
   WIDGETS.slider({
-    host: ctx.controls, label: '첫 주성분에서 벗어난 각도', min: -90, max: 90, step: 1, value: 0, unit: '°', digits: 0,
+    host: ctx.controls, label: '첫 principal component에서 벗어난 각도', min: -90, max: 90, step: 1, value: 0, unit: '°', digits: 0,
     onInput: function (v) { offset = v; draw(); }
   });
   draw();
@@ -1159,9 +1159,9 @@ WIDGETS.register('whitening', function (root, ctx) {
   ctx.stage.appendChild(p.svg);
 
   var out = WIDGETS.readout(ctx.readout, [
-    { key: 'vx', label: '가로 축 분산', digits: 3 },
-    { key: 'vy', label: '세로 축 분산', digits: 3 },
-    { key: 'cxy', label: '공분산', digits: 3 },
+    { key: 'vx', label: '가로 축 variance', digits: 3 },
+    { key: 'vy', label: '세로 축 variance', digits: 3 },
+    { key: 'cxy', label: 'covariance', digits: 3 },
     { key: 'name', label: '단계' }
   ]);
 
@@ -1195,7 +1195,7 @@ WIDGETS.register('whitening', function (root, ctx) {
     Q.forEach(function (q) { STAT.dotIn(p, q[0], q[1], 3.5, 'viz-handle'); });
 
     var C = STAT.cov(Q, false);
-    var NAMES = ['① 원본', '② 중심화 (평균을 0으로)', '③ 회전 (주성분 축으로)', '④ 화이트닝 (각 축을 표준편차로 나눔)'];
+    var NAMES = ['① 원본', '② centering (평균을 0으로)', '③ rotation (principal component 축으로)', '④ 화이트닝 (각 축을 표준편차로 나눔)'];
     out.set('vx', C[0][0]);
     out.set('vy', C[1][1]);
     out.set('cxy', C[0][1]);
@@ -1204,7 +1204,7 @@ WIDGETS.register('whitening', function (root, ctx) {
 
   WIDGETS.player({
     host: ctx.controls, steps: 4, fps: 0.7, label: '단계',
-    labels: ['① 원본', '② 중심화', '③ 회전', '④ 화이트닝'], onStep: draw
+    labels: ['① 원본', '② centering', '③ rotation', '④ 화이트닝'], onStep: draw
   });
 });
 
@@ -1233,7 +1233,7 @@ WIDGETS.register('viz-2d', function (root, ctx) {
   var out = WIDGETS.readout(ctx.readout, [
     { key: 'axes', label: '사용한 축' },
     { key: 'sep', label: '군집 분리도', digits: 3 },
-    { key: 'evr', label: '설명 분산' },
+    { key: 'evr', label: 'explained variance' },
     { key: 'note', label: '해석' }
   ]);
 
@@ -1314,13 +1314,13 @@ WIDGETS.register('viz-2d', function (root, ctx) {
     out.set('sep', between / Math.max(1e-9, within));
     out.setRaw('evr', mode === 'pca'
       ? (100 * (PC.p1.l + PC.p2.l) / PC.tot).toFixed(1) + ' %' : '—');
-    out.setRaw('note', mode === 'pca' ? '분산이 큰 두 방향 — 군집이 갈린다' : '임의의 두 축 — 정보가 섞여 겹친다');
+    out.setRaw('note', mode === 'pca' ? 'variance가 큰 두 방향 — 군집이 갈린다' : '임의의 두 축 — 정보가 섞여 겹친다');
   }
 
   WIDGETS.toggle({
     host: ctx.controls, label: '어떤 두 축으로 그릴까',
     options: [
-      { value: 'pca', label: '주성분 두 개' },
+      { value: 'pca', label: 'principal component 두 개' },
       { value: 'raw', label: '원래 특성 두 개' }
     ],
     value: 'pca', onChange: function (v) { mode = v; draw(); }
@@ -1339,8 +1339,8 @@ WIDGETS.register('centering-matters', function (root, ctx) {
   ctx.stage.appendChild(p.svg);
 
   var out = WIDGETS.readout(ctx.readout, [
-    { key: 'ok', label: '중심화 후 PC1' },
-    { key: 'bad', label: '중심화 없이 얻은 축' },
+    { key: 'ok', label: 'centering 후 PC1' },
+    { key: 'bad', label: 'centering 없이 얻은 축' },
     { key: 'gap', label: '두 방향의 각도차' },
     { key: 'note', label: '해석' }
   ]);
@@ -1376,11 +1376,11 @@ WIDGETS.register('centering-matters', function (root, ctx) {
     out.setRaw('ok', '(' + good[0].toFixed(3) + ', ' + good[1].toFixed(3) + ')');
     out.setRaw('bad', '(' + bad[0].toFixed(3) + ', ' + bad[1].toFixed(3) + ')');
     out.setRaw('gap', (Math.acos(cos) * 180 / Math.PI).toFixed(1) + '°');
-    out.setRaw('note', shift < 0.4 ? '원점 근처라 차이가 거의 없다' : '데이터가 멀수록 잘못된 축이 평균 방향으로 끌려간다');
+    out.setRaw('note', shift < 0.4 ? '원점 근처라 차이가 거의 없다' : 'data가 멀수록 잘못된 축이 평균 방향으로 끌려간다');
   }
 
   WIDGETS.slider({
-    host: ctx.controls, label: '데이터를 원점에서 얼마나 멀리', min: 0, max: 4, step: 0.1, value: 2.5, digits: 1,
+    host: ctx.controls, label: 'data를 원점에서 얼마나 멀리', min: 0, max: 4, step: 0.1, value: 2.5, digits: 1,
     onInput: function (v) { shift = v; draw(); }
   });
   draw();

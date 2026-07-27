@@ -61,13 +61,13 @@
 
     <!-- ===== 1. 다루는 항목 ===== -->
     <nav class="chips" aria-label="이 절에서 다루는 항목">
-      <a class="chip" href="#c-linmap">선형사상</a>
-      <a class="chip" href="#c-rotate">회전</a>
-      <a class="chip" href="#c-scale">확대와 축소</a>
-      <a class="chip" href="#c-shear">전단</a>
-      <a class="chip" href="#c-coordchange">좌표 변환</a>
-      <a class="chip" href="#c-compose">합성 변환</a>
-      <a class="chip" href="#c-matrep">행렬 표현</a>
+      <a class="chip" href="#c-linmap">Linear Map</a>
+      <a class="chip" href="#c-rotate">Rotation</a>
+      <a class="chip" href="#c-scale">Scaling</a>
+      <a class="chip" href="#c-shear">Shear</a>
+      <a class="chip" href="#c-coordchange">Change of Basis</a>
+      <a class="chip" href="#c-compose">Composition</a>
+      <a class="chip" href="#c-matrep">Matrix Representation</a>
       <a class="chip" href="#c-rank">Rank</a>
       <a class="chip" href="#c-null">Null Space</a>
       <a class="chip" href="#c-col">Column Space</a>
@@ -78,15 +78,15 @@
     <section class="sec" id="s-summary">
       <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
       <p class="tldr">
-        행렬은 숫자표가 아니라 <strong>격자를 통째로 움직이는 함수</strong>이고,
-        그 함수가 무엇을 하는지는 <strong>기저 벡터를 어디로 보내는가</strong>만 보면 전부 알 수 있다.
+        matrix(행렬)는 숫자표가 아니라 <strong>격자를 통째로 움직이는 함수</strong>이고,
+        그 함수가 무엇을 하는지는 <strong>basis vector(기저 벡터)를 어디로 보내는가</strong>만 보면 전부 알 수 있다.
       </p>
 
       <h3>학습 목표</h3>
       <ol class="goals">
-        <li>선형사상의 두 조건을 확인하고, 행렬의 열이 $f(\mathbf{e}_j)$ 라는 사실을 유도할 수 있다.</li>
-        <li>회전 · 확대축소 · 전단 행렬을 쓰고, $\det$ 로 넓이 변화를 읽을 수 있다.</li>
-        <li>주어진 행렬의 rank · 영공간 · 열공간 · 행공간을 구하고 rank–nullity 정리로 검산할 수 있다.</li>
+        <li>linear map(선형사상)의 두 조건을 확인하고, matrix의 열이 $f(\mathbf{e}_j)$ 라는 사실을 유도할 수 있다.</li>
+        <li>rotation(회전) · 확대축소 · shear(전단) matrix를 쓰고, $\det$ 로 넓이 변화를 읽을 수 있다.</li>
+        <li>주어진 matrix의 rank · null space(영공간) · column space(열공간) · row space(행공간)를 구하고 rank–nullity 정리로 검산할 수 있다.</li>
       </ol>
     </section>
 
@@ -96,31 +96,31 @@
 
       <p>
         평면에 모눈종이를 깔고, 그 위의 <strong>모든 점</strong>을 한꺼번에 옮긴다고 하자.
-        옮기는 방식에 두 가지 규칙만 걸면 그것이 선형변환이다 —
+        옮기는 방식에 두 가지 규칙만 걸면 그것이 linear transformation(선형변환)이다 —
         <strong>격자선은 여전히 직선이고 서로 나란하며, 원점은 제자리에 있다.</strong>
       </p>
       <p>
-        이 규칙 아래에서는 놀랍게도 <strong>기저 벡터 두 개가 어디로 가는지만 알면 나머지가 전부 결정된다.</strong>
+        이 규칙 아래에서는 놀랍게도 <strong>basis vector 두 개가 어디로 가는지만 알면 나머지가 전부 결정된다.</strong>
         $\mathbf{e}_1 = (1,0)$ 이 어디로 가고 $\mathbf{e}_2 = (0,1)$ 이 어디로 가는지 — 숫자 네 개.
-        그 네 숫자를 열로 세운 것이 바로 행렬이다.
+        그 네 숫자를 열로 세운 것이 바로 matrix다.
       </p>
 
       <figure class="widget" data-widget="transform-grid">
-        <figcaption class="widget__bar">격자 변형 — 행렬이 평면에 하는 일</figcaption>
+        <figcaption class="widget__bar">격자 변형 — matrix가 평면에 하는 일</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">노란 정사각형(단위 정사각형)의 넓이가 $|\det|$ 로 변합니다. '사영'을 고르면 넓이가 0이 되며 평면이 직선으로 눌립니다.</p>
+          <p class="watch">노란 정사각형(unit square(단위 정사각형))의 넓이가 $|\det|$ 로 변합니다. 'projection(사영)'을 고르면 넓이가 0이 되며 평면이 직선으로 눌립니다.</p>
         </div>
       </figure>
 
       <div class="note note--key">
         <span class="note__label">핵심</span>
         <p>
-          <strong>행렬의 $j$ 번째 열 = $\mathbf{e}_j$ 가 도착한 곳.</strong>
-          이 한 문장이 이 절 전체를 요약한다. 행렬을 보면 격자가 어떻게 움직이는지 바로 읽을 수 있고,
-          반대로 원하는 움직임이 있으면 행렬을 바로 쓸 수 있다.
+          <strong>matrix의 $j$ 번째 열 = $\mathbf{e}_j$ 가 도착한 곳.</strong>
+          이 한 문장이 이 절 전체를 요약한다. matrix를 보면 격자가 어떻게 움직이는지 바로 읽을 수 있고,
+          반대로 원하는 움직임이 있으면 matrix를 바로 쓸 수 있다.
         </p>
       </div>
 
@@ -130,7 +130,7 @@
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">선형이면 $f(u{+}v)$ 와 $f(u){+}f(v)$ 가 <strong>정확히 같은 점</strong>에 찍힙니다. 아핀·비선형으로 바꾸면 두 점이 벌어집니다.</p>
+          <p class="watch">선형이면 $f(u{+}v)$ 와 $f(u){+}f(v)$ 가 <strong>정확히 같은 점</strong>에 찍힙니다. affine(아핀)·비선형으로 바꾸면 두 점이 벌어집니다.</p>
         </div>
       </figure>
     </section>
@@ -140,10 +140,10 @@
       <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
 
       <span class="anchor" id="c-linmap"></span>
-      <h3>선형사상</h3>
+      <h3>Linear Map 선형사상</h3>
       <p>
-        두 벡터 공간 $V, W$ 사이의 함수 $f : V \to W$ 가 다음 <strong>두 조건</strong>을 만족하면
-        선형사상(linear mapping, linear map)이라 한다.
+        두 vector space(벡터 공간) $V, W$ 사이의 함수 $f : V \to W$ 가 다음 <strong>두 조건</strong>을 만족하면
+        linear map(linear mapping, linear map)이라 한다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ f(\mathbf{u}+\mathbf{v}) = f(\mathbf{u}) + f(\mathbf{v}), \qquad f(c\,\mathbf{u}) = c\,f(\mathbf{u}) $$</div>
@@ -155,15 +155,15 @@
       </p>
       <p>
         즉시 따라오는 결과가 하나 있다. $c=0$ 을 넣으면 $f(\mathbf{0}) = \mathbf{0}$ —
-        <strong>선형사상은 반드시 원점을 원점으로 보낸다.</strong>
-        그래서 편향이 있는 $\mathbf{x}\mapsto\mathbf{Wx}+\mathbf{b}$ 는 (b가 0이 아니면) 선형이 아니라
-        <strong>아핀 변환</strong>(affine)이다. 딥러닝에서 "linear layer"라 부르는 층이 사실 아핀인 이유다.
+        <strong>linear map은 반드시 원점을 원점으로 보낸다.</strong>
+        그래서 bias(편향)가 있는 $\mathbf{x}\mapsto\mathbf{Wx}+\mathbf{b}$ 는 (b가 0이 아니면) 선형이 아니라
+        <strong>affine transformation(아핀 변환)</strong>(affine)이다. deep learning(딥러닝)에서 "linear layer"라 부르는 layer(층)가 사실 아핀인 이유다.
       </p>
 
       <span class="anchor" id="c-matrep"></span>
-      <h3>행렬 표현</h3>
+      <h3>Matrix Representation 행렬 표현</h3>
       <p>
-        기저를 정하면 <strong>모든 선형사상이 행렬 하나로 표현된다</strong>. 그 행렬은 이렇게 만든다.
+        basis(기저)를 정하면 <strong>모든 linear map이 matrix 하나로 표현된다</strong>. 그 matrix는 이렇게 만든다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{A} = \bigl[\,f(\mathbf{e}_1)\ \ f(\mathbf{e}_2)\ \cdots\ f(\mathbf{e}_n)\,\bigr] \in \mathbb{R}^{m\times n}, \qquad f(\mathbf{x}) = \mathbf{A}\mathbf{x} $$</div>
@@ -171,12 +171,12 @@
       </div>
       <p>
         <a href="#s-derivation">유도 1</a>에서 이 사실을 세 줄로 보인다.
-        <strong>행렬 ↔ 선형사상의 대응은 일대일</strong>이며, 이 대응 아래에서
-        행렬 곱은 함수 합성, 역행렬은 역함수, rank 는 상의 차원에 해당한다.
+        <strong>matrix ↔ linear map의 대응은 일대일</strong>이며, 이 대응 아래에서
+        matrix multiplication(행렬 곱)은 함수 합성, inverse matrix(역행렬)는 역함수, rank는 상의 dimension(차원)에 해당한다.
       </p>
 
       <span class="anchor" id="c-rotate"></span>
-      <h3>회전</h3>
+      <h3>Rotation 회전</h3>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{R}(\theta) = \begin{bmatrix}\cos\theta & -\sin\theta \\ \sin\theta & \cos\theta\end{bmatrix}, \qquad \det\mathbf{R} = \cos^2\theta+\sin^2\theta = 1 $$</div>
         <span class="eq__tag num">(3)</span>
@@ -184,23 +184,23 @@
       <p>
         첫 열은 $\mathbf{e}_1=(1,0)$ 이 가는 곳 $(\cos\theta, \sin\theta)$ 이고,
         둘째 열은 $\mathbf{e}_2=(0,1)$ 이 가는 곳 $(-\sin\theta, \cos\theta)$ 다 — 식 (2) 그대로다.
-        $\mathbf{R}^\top\mathbf{R}=\mathbf{I}$ 인 직교행렬이라 길이와 각도를 보존하고, $\det=1$ 이라 넓이도 방향도 그대로다.
+        $\mathbf{R}^\top\mathbf{R}=\mathbf{I}$ 인 orthogonal matrix(직교행렬)라 길이와 각도를 보존하고, $\det=1$ 이라 넓이도 방향도 그대로다.
       </p>
 
       <span class="anchor" id="c-scale"></span>
-      <h3>확대와 축소</h3>
+      <h3>Scaling 확대와 축소</h3>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{S} = \begin{bmatrix}s_1 & 0\\ 0 & s_2\end{bmatrix}, \qquad \det\mathbf{S} = s_1 s_2 $$</div>
         <span class="eq__tag num">(4)</span>
       </div>
       <p>
         축마다 다른 배율을 준다. $s_i<0$ 이면 그 축에 대해 뒤집히고, $s_i=0$ 이면 그 축이 <strong>완전히 눌려</strong>
-        차원이 하나 줄어든다(그때 $\det=0$, 되돌릴 수 없다).
-        정규화 층의 스케일, 학습률의 축별 조정이 모두 이 형태다.
+        dimension이 하나 줄어든다(그때 $\det=0$, 되돌릴 수 없다).
+        normalization(정규화) layer의 스케일, learning rate(학습률)의 축별 조정이 모두 이 형태다.
       </p>
 
       <span class="anchor" id="c-shear"></span>
-      <h3>전단</h3>
+      <h3>Shear 전단</h3>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{H}_k = \begin{bmatrix}1 & k\\ 0 & 1\end{bmatrix}, \qquad \det\mathbf{H}_k = 1 $$</div>
         <span class="eq__tag num">(5)</span>
@@ -212,9 +212,9 @@
       </p>
 
       <span class="anchor" id="c-compose"></span>
-      <h3>합성 변환</h3>
+      <h3>Composition 합성 변환</h3>
       <p>
-        변환을 이어서 적용하면 행렬을 곱한 것과 같다. <strong>오른쪽 행렬이 먼저 적용된다.</strong>
+        변환을 이어서 적용하면 matrix를 곱한 것과 같다. <strong>오른쪽 matrix가 먼저 적용된다.</strong>
       </p>
       <div class="eq">
         <div class="eq__body">$$ (g \circ f)(\mathbf{x}) = g(f(\mathbf{x})) = \mathbf{B}(\mathbf{A}\mathbf{x}) = (\mathbf{BA})\mathbf{x} $$</div>
@@ -223,52 +223,52 @@
       <p>
         <a href="2.4-matrix-operations.html">2.4</a>에서 본 $\mathbf{AB}\neq\mathbf{BA}$ 는
         여기서는 <strong>"먼저 돌리고 미는 것"과 "먼저 밀고 도는 것"이 다르다</strong>는 당연한 사실이 된다.
-        딥러닝의 층을 쌓는 것도 합성이지만, 중간에 비선형 활성화가 없으면 층 여러 개가
-        <strong>행렬 하나로 붕괴</strong>한다 — 깊이가 의미 없어진다.
+        deep learning의 layer를 쌓는 것도 합성이지만, 중간에 비선형 activation(활성화)이 없으면 layer 여러 개가
+        <strong>matrix 하나로 붕괴</strong>한다 — 깊이가 의미 없어진다.
       </p>
 
       <figure class="widget" data-widget="compose-order">
-        <figcaption class="widget__bar">합성의 순서 — 회전 후 전단 vs 전단 후 회전</figcaption>
+        <figcaption class="widget__bar">합성의 순서 — rotation 후 shear vs shear 후 rotation</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">같은 두 변환인데 순서를 바꾸면 도착한 F 모양이 다릅니다. 그래서 행렬 곱은 교환법칙이 없습니다.</p>
+          <p class="watch">같은 두 변환인데 순서를 바꾸면 도착한 F 모양이 다릅니다. 그래서 matrix multiplication은 교환법칙이 없습니다.</p>
         </div>
       </figure>
 
       <span class="anchor" id="c-coordchange"></span>
-      <h3>좌표 변환</h3>
+      <h3>Change of Basis 좌표 변환</h3>
       <p>
-        <a href="2.1-numbers-and-spaces.html">2.1</a>에서 같은 벡터가 기저에 따라 다른 좌표를 갖는 것을 보았다.
-        <strong>같은 선형변환도 기저에 따라 다른 행렬로 적힌다.</strong>
-        새 기저의 벡터들을 열로 세운 행렬을 $\mathbf{P}$ 라 하면 다음이 성립한다.
+        <a href="2.1-numbers-and-spaces.html">2.1</a>에서 같은 vector(벡터)가 basis에 따라 다른 coordinates(좌표)를 갖는 것을 보았다.
+        <strong>같은 linear transformation도 basis에 따라 다른 matrix로 적힌다.</strong>
+        새 basis의 vector들을 열로 세운 matrix를 $\mathbf{P}$ 라 하면 다음이 성립한다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{A}' = \mathbf{P}^{-1}\mathbf{A}\mathbf{P} $$</div>
         <span class="eq__tag num">(7)</span>
       </div>
       <p>
-        오른쪽부터 읽으면 뜻이 보인다 — $\mathbf{P}$ 로 새 좌표를 표준 좌표로 바꾸고,
-        $\mathbf{A}$ 로 변환하고, $\mathbf{P}^{-1}$ 로 다시 새 좌표로 되돌린다.
-        이 관계를 <strong>닮음</strong>(similarity)이라 하며, 닮은 행렬은
-        <strong>$\det$ · 대각합 · 고윳값 · rank 가 모두 같다</strong>.
-        "행렬은 달라도 하는 일은 같다"는 것을 이 불변량들이 증언한다
-        (<a href="2.7-eigenvalues.html">2.7</a>의 대각화가 바로 이 식이다).
+        오른쪽부터 읽으면 뜻이 보인다 — $\mathbf{P}$ 로 새 coordinates를 표준 coordinates로 바꾸고,
+        $\mathbf{A}$ 로 변환하고, $\mathbf{P}^{-1}$ 로 다시 새 coordinates로 되돌린다.
+        이 관계를 <strong>similarity(닮음)</strong>이라 하며, 닮은 matrix는
+        <strong>$\det$ · trace(대각합) · eigenvalue(고윳값) · rank가 모두 같다</strong>.
+        "matrix는 달라도 하는 일은 같다"는 것을 이 불변량들이 증언한다
+        (<a href="2.7-eigenvalues.html">2.7</a>의 diagonalization(대각화)이 바로 이 식이다).
       </p>
 
       <figure class="widget" data-widget="coord-change">
-        <figcaption class="widget__bar">같은 변환, 다른 기저 — P⁻¹AP</figcaption>
+        <figcaption class="widget__bar">같은 변환, 다른 basis — P⁻¹AP</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">기저를 바꾸면 행렬 성분이 전부 바뀌는데도 det 와 대각합은 꿈쩍하지 않습니다.</p>
+          <p class="watch">basis를 바꾸면 matrix 성분이 전부 바뀌는데도 det와 trace는 꿈쩍하지 않습니다.</p>
         </div>
       </figure>
 
       <span class="anchor" id="c-col"></span>
-      <h3>Column Space (열공간)</h3>
+      <h3>Column Space 열공간</h3>
       <p>
         $\mathbf{A}$ 의 열들이 Span 하는 공간, 즉 <strong>도달 가능한 출력 전부</strong>다.
       </p>
@@ -277,28 +277,28 @@
         <span class="eq__tag num">(8)</span>
       </div>
       <p>
-        연립방정식 $\mathbf{A}\mathbf{x}=\mathbf{b}$ 에 해가 있는지는 곧
-        <strong>$\mathbf{b}$ 가 열공간에 있는가</strong>의 문제다 (<a href="2.6-linear-systems.html">2.6</a>).
+        system of equations(연립방정식) $\mathbf{A}\mathbf{x}=\mathbf{b}$ 에 해가 있는지는 곧
+        <strong>$\mathbf{b}$ 가 column space에 있는가</strong>의 문제다 (<a href="2.6-linear-systems.html">2.6</a>).
       </p>
 
       <span class="anchor" id="c-null"></span>
-      <h3>Null Space (영공간)</h3>
+      <h3>Null Space 영공간</h3>
       <div class="eq">
         <div class="eq__body">$$ \operatorname{Null}(\mathbf{A}) = \{\mathbf{x}\in\mathbb{R}^n : \mathbf{A}\mathbf{x}=\mathbf{0}\} \subseteq \mathbb{R}^n $$</div>
         <span class="eq__tag num">(9)</span>
       </div>
       <p>
-        <strong>변환이 짓뭉개 버리는 방향들</strong>의 모임이다. 영공간이 $\{\mathbf{0}\}$ 보다 크면
+        <strong>변환이 짓뭉개 버리는 방향들</strong>의 모임이다. null space가 $\{\mathbf{0}\}$ 보다 크면
         서로 다른 입력이 같은 출력으로 가므로 <strong>되돌릴 수 없다</strong>.
-        영공간은 언제나 부분공간이다(<a href="#s-derivation">유도 2</a>).
+        null space는 언제나 subspace(부분공간)다(<a href="#s-derivation">유도 2</a>).
       </p>
 
       <span class="anchor" id="c-row"></span>
-      <h3>Row Space (행공간)</h3>
+      <h3>Row Space 행공간</h3>
       <p>
         행들이 Span 하는 공간이며, $\operatorname{Row}(\mathbf{A}) = \operatorname{Col}(\mathbf{A}^\top) \subseteq \mathbb{R}^n$ 이다.
-        영공간과는 <strong>직교 관계</strong>다 — $\mathbf{A}\mathbf{x}=\mathbf{0}$ 은 곧
-        "모든 행과 $\mathbf{x}$ 의 내적이 0"이라는 뜻이기 때문이다.
+        영공간과는 <strong>orthogonal(직교) 관계</strong>다 — $\mathbf{A}\mathbf{x}=\mathbf{0}$ 은 곧
+        "모든 행과 $\mathbf{x}$ 의 inner product(내적)가 0"이라는 뜻이기 때문이다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \operatorname{Row}(\mathbf{A}) \perp \operatorname{Null}(\mathbf{A}), \qquad \dim\operatorname{Row} + \dim\operatorname{Null} = n $$</div>
@@ -308,7 +308,7 @@
       <span class="anchor" id="c-rank"></span>
       <h3>Rank</h3>
       <p>
-        rank 는 <strong>열공간의 차원</strong>이며, 놀랍게도 <strong>행공간의 차원과 항상 같다</strong>.
+        rank는 <strong>column space의 dimension</strong>이며, 놀랍게도 <strong>row space의 dimension과 항상 같다</strong>.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \operatorname{rank}(\mathbf{A}) = \dim\operatorname{Col}(\mathbf{A}) = \dim\operatorname{Row}(\mathbf{A}) \leq \min(m, n) $$</div>
@@ -318,33 +318,33 @@
         <span class="note__label">Rank–Nullity 정리</span>
         <p>
           $$ \operatorname{rank}(\mathbf{A}) + \dim\operatorname{Null}(\mathbf{A}) = n \quad (\text{입력 차원}) $$
-          입력의 자유도 $n$ 이 <strong>살아남는 부분(rank)</strong>과 <strong>짓뭉개지는 부분(nullity)</strong>으로 정확히 갈린다.
-          정보가 사라지는 만큼만 차원이 준다.
+          입력의 degrees of freedom(자유도) $n$ 이 <strong>살아남는 부분(rank)</strong>과 <strong>짓뭉개지는 부분(nullity)</strong>으로 정확히 갈린다.
+          정보가 사라지는 만큼만 dimension이 준다.
         </p>
       </div>
       <p>
-        rank 가 $\min(m,n)$ 이면 <strong>full rank</strong>, 그보다 작으면 <strong>rank 결손</strong>이라 한다.
-        딥러닝에서 가중치 행렬의 유효 rank 가 낮다는 관찰이 LoRA 같은 저랭크 기법의 출발점이다
+        rank가 $\min(m,n)$ 이면 <strong>full rank</strong>, 그보다 작으면 <strong>rank 결손</strong>이라 한다.
+        deep learning에서 weight(가중치) matrix의 유효 rank가 낮다는 관찰이 LoRA 같은 low-rank(저랭크) 기법의 출발점이다
         (<a href="2.8-svd.html">2.8</a>, <a href="2.10-linear-algebra-in-ai.html">2.10</a>).
       </p>
 
       <figure class="widget" data-widget="rank-null">
-        <figcaption class="widget__bar">rank · 영공간 · 열공간을 한 화면에</figcaption>
+        <figcaption class="widget__bar">rank · null space · column space를 한 화면에</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">두 열이 나란해지는 순간 rank 가 1로 떨어지고, 영공간(빨간 직선)이 생겨납니다.</p>
+          <p class="watch">두 열이 나란해지는 순간 rank가 1로 떨어지고, null space가 생겨납니다.</p>
         </div>
       </figure>
 
       <figure class="widget" data-widget="four-subspaces">
-        <figcaption class="widget__bar">네 개의 근본 부분공간</figcaption>
+        <figcaption class="widget__bar">네 개의 근본 subspace</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">rank 를 바꾸면 네 상자의 차원이 함께 움직입니다. 왼쪽 두 개의 합은 항상 n, 오른쪽 두 개의 합은 항상 m 입니다.</p>
+          <p class="watch">rank를 바꾸면 네 상자의 dimension이 함께 움직입니다. 왼쪽 두 개의 합은 항상 n, 오른쪽 두 개의 합은 항상 m 입니다.</p>
         </div>
       </figure>
     </section>
@@ -356,20 +356,20 @@
       <p>기본 변환들을 한자리에 모으면 다음과 같다. 모두 $2\times2$ 로 적었다.</p>
       <div class="tablewrap">
         <table>
-          <thead><tr><th>변환</th><th>행렬</th><th>$\det$</th><th>기하적 효과</th></tr></thead>
+          <thead><tr><th>변환</th><th>matrix</th><th>$\det$</th><th>기하적 효과</th></tr></thead>
           <tbody>
             <tr><td>항등</td><td>$\begin{bmatrix}1&0\\0&1\end{bmatrix}$</td><td class="num">1</td><td>아무것도 안 함</td></tr>
-            <tr><td>회전 $\theta$</td><td>$\begin{bmatrix}\cos\theta&-\sin\theta\\\sin\theta&\cos\theta\end{bmatrix}$</td><td class="num">1</td><td>길이·각도·넓이 보존</td></tr>
+            <tr><td>rotation $\theta$</td><td>$\begin{bmatrix}\cos\theta&-\sin\theta\\\sin\theta&\cos\theta\end{bmatrix}$</td><td class="num">1</td><td>길이·각도·넓이 보존</td></tr>
             <tr><td>확대축소</td><td>$\begin{bmatrix}s_1&0\\0&s_2\end{bmatrix}$</td><td>$s_1s_2$</td><td>축별 배율</td></tr>
-            <tr><td>전단 $k$</td><td>$\begin{bmatrix}1&k\\0&1\end{bmatrix}$</td><td class="num">1</td><td>넓이는 보존, 모양은 일그러짐</td></tr>
-            <tr><td>$x$축 반사</td><td>$\begin{bmatrix}1&0\\0&-1\end{bmatrix}$</td><td class="num">−1</td><td>방향(향) 뒤집힘</td></tr>
-            <tr><td>$x$축 사영</td><td>$\begin{bmatrix}1&0\\0&0\end{bmatrix}$</td><td class="num">0</td><td>평면이 직선으로 눌림 — 비가역</td></tr>
+            <tr><td>shear $k$</td><td>$\begin{bmatrix}1&k\\0&1\end{bmatrix}$</td><td class="num">1</td><td>넓이는 보존, 모양은 일그러짐</td></tr>
+            <tr><td>$x$축 reflection(반사)</td><td>$\begin{bmatrix}1&0\\0&-1\end{bmatrix}$</td><td class="num">−1</td><td>방향(향) 뒤집힘</td></tr>
+            <tr><td>$x$축 projection</td><td>$\begin{bmatrix}1&0\\0&0\end{bmatrix}$</td><td class="num">0</td><td>평면이 직선으로 눌림 — non-invertible(비가역)</td></tr>
           </tbody>
         </table>
       </div>
       <p>
         $\det$ 의 <strong>부호</strong>는 방향(향, orientation)을, <strong>절댓값</strong>은 넓이 배율을 뜻한다.
-        $\det<0$ 이면 좌우가 뒤집힌 것이고, $\det=0$ 이면 차원이 줄어 되돌릴 수 없다.
+        $\det<0$ 이면 좌우가 뒤집힌 것이고, $\det=0$ 이면 dimension이 줄어 되돌릴 수 없다.
       </p>
 
       <h3>기호표</h3>
@@ -379,23 +379,23 @@
             <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
           </thead>
           <tbody>
-            <tr><td>$f, g$</td><td>에프, 지</td><td>선형사상</td><td>함수 $V\to W$</td><td>—</td></tr>
-            <tr><td>$\circ$</td><td>서클 · 합성</td><td>함수 합성. $(g\circ f)(x)=g(f(x))$</td><td>연산자</td><td>—</td></tr>
-            <tr><td>$\mathbf{e}_j$</td><td>이 제이</td><td>$j$ 번째 표준기저 벡터</td><td>벡터 $(n,)$</td><td>—</td></tr>
-            <tr><td>$\mathbf{A}$</td><td>볼드 에이</td><td>$f$ 의 행렬 표현</td><td>$(m,n)$</td><td>$\mathbb{R}$</td></tr>
-            <tr><td>$\mathbf{R}(\theta)$</td><td>알 세타</td><td>회전행렬</td><td>$(2,2)$</td><td>직교</td></tr>
-            <tr><td>$\theta$</td><td>세타</td><td>회전각 (반시계 방향이 양)</td><td>스칼라</td><td>$[0,2\pi)$</td></tr>
-            <tr><td>$s_1, s_2$</td><td>에스 원·투</td><td>축별 배율</td><td>스칼라</td><td>$\mathbb{R}$</td></tr>
-            <tr><td>$k$</td><td>케이</td><td>전단 계수</td><td>스칼라</td><td>$\mathbb{R}$</td></tr>
-            <tr><td>$\mathbf{P}$</td><td>볼드 피</td><td>기저 변환 행렬 (새 기저를 열로)</td><td>$(n,n)$</td><td>가역</td></tr>
-            <tr><td>$\mathbf{A}'$</td><td>에이 프라임</td><td>새 기저에서의 행렬 표현</td><td>$(n,n)$</td><td>$\mathbf{P}^{-1}\mathbf{AP}$</td></tr>
-            <tr><td>$\operatorname{Col}(\mathbf{A})$</td><td>칼럼 스페이스</td><td>열공간 — 도달 가능한 출력</td><td>부분공간</td><td>$\subseteq\mathbb{R}^m$</td></tr>
-            <tr><td>$\operatorname{Null}(\mathbf{A})$</td><td>널 스페이스</td><td>영공간 — 0으로 보내지는 입력</td><td>부분공간</td><td>$\subseteq\mathbb{R}^n$</td></tr>
-            <tr><td>$\operatorname{Row}(\mathbf{A})$</td><td>로 스페이스</td><td>행공간 $=\operatorname{Col}(\mathbf{A}^\top)$</td><td>부분공간</td><td>$\subseteq\mathbb{R}^n$</td></tr>
-            <tr><td>$\operatorname{rank}$</td><td>랭크</td><td>열공간(=행공간)의 차원</td><td>정수</td><td>$0\leq r\leq\min(m,n)$</td></tr>
-            <tr><td>$\dim$</td><td>딤</td><td>차원 — 기저의 크기</td><td>정수</td><td>$\geq0$</td></tr>
-            <tr><td>$\operatorname{tr}$</td><td>트레이스 · 대각합</td><td>대각 원소의 합</td><td>스칼라</td><td>$\mathbb{R}$</td></tr>
-            <tr><td>$\perp$</td><td>직교</td><td>"두 공간이 서로 직교한다"</td><td>관계</td><td>—</td></tr>
+            <tr><td>$f, g$</td><td>f, g</td><td>linear map</td><td>함수 $V\to W$</td><td>—</td></tr>
+            <tr><td>$\circ$</td><td>circle · composition</td><td>함수 합성. $(g\circ f)(x)=g(f(x))$</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$\mathbf{e}_j$</td><td>e j</td><td>$j$ 번째 standard basis(표준기저) vector</td><td>vector $(n,)$</td><td>—</td></tr>
+            <tr><td>$\mathbf{A}$</td><td>bold A</td><td>$f$ 의 matrix representation(행렬 표현)</td><td>$(m,n)$</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\mathbf{R}(\theta)$</td><td>R theta</td><td>rotation matrix(회전행렬)</td><td>$(2,2)$</td><td>orthogonal</td></tr>
+            <tr><td>$\theta$</td><td>theta 세타</td><td>회전각 (반시계 방향이 양)</td><td>scalar(스칼라)</td><td>$[0,2\pi)$</td></tr>
+            <tr><td>$s_1, s_2$</td><td>s one·two</td><td>축별 배율</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$k$</td><td>k</td><td>shear 계수</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\mathbf{P}$</td><td>bold P</td><td>basis 변환 matrix (새 basis를 열로)</td><td>$(n,n)$</td><td>invertible(가역)</td></tr>
+            <tr><td>$\mathbf{A}'$</td><td>A prime</td><td>새 basis에서의 matrix representation</td><td>$(n,n)$</td><td>$\mathbf{P}^{-1}\mathbf{AP}$</td></tr>
+            <tr><td>$\operatorname{Col}(\mathbf{A})$</td><td>column space</td><td>column space — 도달 가능한 출력</td><td>subspace</td><td>$\subseteq\mathbb{R}^m$</td></tr>
+            <tr><td>$\operatorname{Null}(\mathbf{A})$</td><td>null space</td><td>null space — 0으로 보내지는 입력</td><td>subspace</td><td>$\subseteq\mathbb{R}^n$</td></tr>
+            <tr><td>$\operatorname{Row}(\mathbf{A})$</td><td>row space</td><td>row space $=\operatorname{Col}(\mathbf{A}^\top)$</td><td>subspace</td><td>$\subseteq\mathbb{R}^n$</td></tr>
+            <tr><td>$\operatorname{rank}$</td><td>rank</td><td>column space(=row space)의 dimension</td><td>정수</td><td>$0\leq r\leq\min(m,n)$</td></tr>
+            <tr><td>$\dim$</td><td>dim 딤</td><td>dimension — basis의 크기</td><td>정수</td><td>$\geq0$</td></tr>
+            <tr><td>$\operatorname{tr}$</td><td>trace 트레이스</td><td>대각 원소의 합</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\perp$</td><td>orthogonal</td><td>"두 공간이 서로 orthogonal 한다"</td><td>관계</td><td>—</td></tr>
           </tbody>
         </table>
       </div>
@@ -409,25 +409,25 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{x} = x_1\mathbf{e}_1 + x_2\mathbf{e}_2 + \cdots + x_n\mathbf{e}_n $$</div>
-          <div class="derive__why">임의의 벡터를 표준기저로 분해했다 (<a href="2.1-numbers-and-spaces.html">2.1</a>의 좌표)</div>
+          <div class="derive__why">임의의 vector를 standard basis로 분해했다 (<a href="2.1-numbers-and-spaces.html">2.1</a>의 coordinates)</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ f(\mathbf{x}) = f\Bigl(\sum_{j=1}^{n} x_j\mathbf{e}_j\Bigr) = \sum_{j=1}^{n} x_j\, f(\mathbf{e}_j) $$</div>
-          <div class="derive__why">선형성 (1)을 $n$ 번 적용. <strong>여기가 전부다</strong> — 변환이 각 기저 벡터에 따로 작용한 뒤 같은 계수로 다시 섞인다</div>
+          <div class="derive__why">linearity(선형성) (1)을 $n$ 번 적용. <strong>여기가 전부다</strong> — 변환이 각 basis vector에 따로 작용한 뒤 같은 계수로 다시 섞인다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ = \bigl[\,f(\mathbf{e}_1)\ \cdots\ f(\mathbf{e}_n)\,\bigr]\begin{bmatrix}x_1\\\vdots\\x_n\end{bmatrix} = \mathbf{A}\mathbf{x} $$</div>
-          <div class="derive__why">"열들의 선형결합"은 곧 행렬 곱이다 (<a href="2.4-matrix-operations.html">2.4</a>의 관점 ②)</div>
+          <div class="derive__why">"열들의 linear combination(선형결합)"은 곧 matrix multiplication이다 (<a href="2.4-matrix-operations.html">2.4</a>의 관점 ②)</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \boxed{\;\mathbf{A}\mathbf{e}_j = \mathbf{a}_j = f(\mathbf{e}_j)\;} $$</div>
-          <div class="derive__why">확인: 단위벡터를 넣으면 그 열이 그대로 나온다</div>
+          <div class="derive__why">확인: unit vector(단위벡터)를 넣으면 그 열이 그대로 나온다</div>
         </div>
       </div>
       <div class="note note--tip">
         <span class="note__label">써먹는 법</span>
         <p>
-          "$90^\circ$ 회전행렬"을 외울 필요가 없다. $\mathbf{e}_1=(1,0)$ 은 $(0,1)$ 로,
+          "$90^\circ$ rotation matrix"을 외울 필요가 없다. $\mathbf{e}_1=(1,0)$ 은 $(0,1)$ 로,
           $\mathbf{e}_2=(0,1)$ 은 $(-1,0)$ 으로 간다. 그 둘을 열로 세우면
           $\begin{bmatrix}0&-1\\1&0\end{bmatrix}$ — 끝이다.
         </p>
@@ -441,55 +441,55 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{A}\mathbf{x}=\mathbf{0},\ \mathbf{A}\mathbf{y}=\mathbf{0} \;\Rightarrow\; \mathbf{A}(\mathbf{x}+\mathbf{y}) = \mathbf{0}+\mathbf{0} = \mathbf{0} $$</div>
-          <div class="derive__why">② 덧셈에 닫힘 — 선형성 (1)을 썼다</div>
+          <div class="derive__why">② 덧셈에 닫힘 — linearity (1)을 썼다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{A}(c\mathbf{x}) = c\,\mathbf{A}\mathbf{x} = c\,\mathbf{0} = \mathbf{0} $$</div>
-          <div class="derive__why">③ 실수배에 닫힘. 세 조건 통과 — <strong>부분공간</strong></div>
+          <div class="derive__why">③ 실수배에 닫힘. 세 조건 통과 — <strong>subspace</strong></div>
         </div>
       </div>
       <p>
-        열공간도 같은 방식으로 부분공간임을 보인다(사실 <a href="2.2-vector-operations.html">2.2</a>에서
-        Span 이 부분공간임을 이미 증명했고, 열공간은 열들의 Span 이다).
+        column space도 같은 방식으로 부분공간임을 보인다(사실 <a href="2.2-vector-operations.html">2.2</a>에서
+        Span 이 부분공간임을 이미 증명했고, column space는 열들의 Span 이다).
       </p>
 
       <h3>유도 3 — Rank–Nullity 정리 (스케치)</h3>
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \{\mathbf{u}_1,\dots,\mathbf{u}_k\} : \operatorname{Null}(\mathbf{A}) \text{ 의 기저}, \quad k=\dim\operatorname{Null} $$</div>
-          <div class="derive__why">짓뭉개지는 방향들의 기저를 먼저 잡는다</div>
+          <div class="derive__why">짓뭉개지는 방향들의 basis를 먼저 잡는다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \{\mathbf{u}_1,\dots,\mathbf{u}_k,\ \mathbf{w}_1,\dots,\mathbf{w}_{n-k}\} : \mathbb{R}^n \text{ 의 기저} $$</div>
-          <div class="derive__why">부족한 만큼 벡터를 보태 전체 공간의 기저로 확장했다 (기저 확장 정리)</div>
+          <div class="derive__why">부족한 만큼 vector를 보태 전체 공간의 basis로 확장했다 (basis 확장 정리)</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{A}\mathbf{x} = \sum_i \alpha_i \underbrace{\mathbf{A}\mathbf{u}_i}_{=\,\mathbf{0}} + \sum_j \beta_j \mathbf{A}\mathbf{w}_j = \sum_j \beta_j \mathbf{A}\mathbf{w}_j $$</div>
-          <div class="derive__why">영공간 쪽은 전부 사라진다. <strong>출력은 $\mathbf{Aw}_j$ 들이 만든다</strong></div>
+          <div class="derive__why">null space 쪽은 전부 사라진다. <strong>출력은 $\mathbf{Aw}_j$ 들이 만든다</strong></div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \{\mathbf{A}\mathbf{w}_1,\dots,\mathbf{A}\mathbf{w}_{n-k}\} \text{ 는 } \operatorname{Col}(\mathbf{A}) \text{ 의 기저} $$</div>
-          <div class="derive__why">생성함은 위에서 보았고, 독립임은 종속이라 가정하면 그 조합이 영공간에 들어가 모순이 나는 것으로 보인다</div>
+          <div class="derive__why">생성함은 위에서 보았고, 독립임은 종속이라 가정하면 그 조합이 null space에 들어가 모순이 나는 것으로 보인다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \boxed{\;\operatorname{rank}(\mathbf{A}) = n - k \;\Rightarrow\; \operatorname{rank} + \dim\operatorname{Null} = n\;} $$</div>
-          <div class="derive__why">기저의 크기를 세었다</div>
+          <div class="derive__why">basis의 크기를 세었다</div>
         </div>
       </div>
 
       <details>
-        <summary>좌표 변환 공식 $\mathbf{A}'=\mathbf{P}^{-1}\mathbf{AP}$ 는 어디서 나오는가</summary>
+        <summary>coordinates 변환 공식 $\mathbf{A}'=\mathbf{P}^{-1}\mathbf{AP}$ 는 어디서 나오는가</summary>
         <p>
-          새 기저 $B$ 에서의 좌표를 $[\mathbf{x}]_B$ 라 하자.
+          새 basis $B$ 에서의 coordinates를 $[\mathbf{x}]_B$ 라 하자.
           <a href="2.1-numbers-and-spaces.html">2.1</a>의 식에서 $\mathbf{x} = \mathbf{P}[\mathbf{x}]_B$ 다.
-          변환 결과의 새 좌표는 $[f(\mathbf{x})]_B = \mathbf{P}^{-1} f(\mathbf{x}) = \mathbf{P}^{-1}\mathbf{A}\mathbf{x}$ 이고,
+          변환 결과의 새 coordinates는 $[f(\mathbf{x})]_B = \mathbf{P}^{-1} f(\mathbf{x}) = \mathbf{P}^{-1}\mathbf{A}\mathbf{x}$ 이고,
           여기에 $\mathbf{x}=\mathbf{P}[\mathbf{x}]_B$ 를 넣으면
           $[f(\mathbf{x})]_B = \mathbf{P}^{-1}\mathbf{A}\mathbf{P}\,[\mathbf{x}]_B$ 가 된다.
-          즉 새 좌표계에서 이 변환을 대표하는 행렬이 $\mathbf{P}^{-1}\mathbf{AP}$ 다.
+          즉 새 coordinate system(좌표계)에서 이 변환을 대표하는 matrix가 $\mathbf{P}^{-1}\mathbf{AP}$ 다.
         </p>
         <p>
           불변량도 바로 나온다. $\det(\mathbf{P}^{-1}\mathbf{AP}) = \det(\mathbf{P})^{-1}\det(\mathbf{A})\det(\mathbf{P}) = \det(\mathbf{A})$ 이고,
-          대각합은 $\operatorname{tr}(\mathbf{XY})=\operatorname{tr}(\mathbf{YX})$ 성질로 보존된다.
+          trace는 $\operatorname{tr}(\mathbf{XY})=\operatorname{tr}(\mathbf{YX})$ 성질로 보존된다.
         </p>
       </details>
     </section>
@@ -510,24 +510,24 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \begin{bmatrix}1&1\\0&1\end{bmatrix}\begin{bmatrix}3\\1\end{bmatrix} = \begin{bmatrix}3+1\\1\end{bmatrix} = \begin{bmatrix}4\\1\end{bmatrix} $$</div>
-          <div class="derive__why">전단: 높이 $y=1$ 만큼 오른쪽으로 밀렸다. $\det=1$</div>
+          <div class="derive__why">shear: 높이 $y=1$ 만큼 오른쪽으로 밀렸다. $\det=1$</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \begin{bmatrix}1&0\\0&0\end{bmatrix}\begin{bmatrix}3\\1\end{bmatrix} = \begin{bmatrix}3\\0\end{bmatrix}, \qquad \det = 0 $$</div>
-          <div class="derive__why">$x$축 사영. $y$ 정보가 <strong>영영 사라졌다</strong> — 되돌릴 수 없다</div>
+          <div class="derive__why">$x$축 projection. $y$ 정보가 <strong>영영 사라졌다</strong> — 되돌릴 수 없다</div>
         </div>
       </div>
 
       <h3>② 합성은 순서에 따라 다르다</h3>
-      <p>$\mathbf{R} = \begin{bmatrix}0&-1\\1&0\end{bmatrix}$ (90° 회전), $\mathbf{H} = \begin{bmatrix}1&1\\0&1\end{bmatrix}$ (전단).</p>
+      <p>$\mathbf{R} = \begin{bmatrix}0&-1\\1&0\end{bmatrix}$ (90° rotation), $\mathbf{H} = \begin{bmatrix}1&1\\0&1\end{bmatrix}$ (shear).</p>
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{H}\mathbf{R} = \begin{bmatrix}1&1\\0&1\end{bmatrix}\begin{bmatrix}0&-1\\1&0\end{bmatrix} = \begin{bmatrix}0+1 & -1+0\\ 0+1 & 0+0\end{bmatrix} = \begin{bmatrix}1&-1\\1&0\end{bmatrix} $$</div>
-          <div class="derive__why"><strong>먼저 회전, 그다음 전단</strong> (오른쪽이 먼저)</div>
+          <div class="derive__why"><strong>먼저 rotation, 그다음 shear</strong> (오른쪽이 먼저)</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{R}\mathbf{H} = \begin{bmatrix}0&-1\\1&0\end{bmatrix}\begin{bmatrix}1&1\\0&1\end{bmatrix} = \begin{bmatrix}0-0 & 0-1\\ 1+0 & 1+0\end{bmatrix} = \begin{bmatrix}0&-1\\1&1\end{bmatrix} $$</div>
-          <div class="derive__why">먼저 전단, 그다음 회전. <strong>다른 행렬이다</strong></div>
+          <div class="derive__why">먼저 shear, 그다음 rotation. <strong>다른 matrix다</strong></div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{H}\mathbf{R}\begin{bmatrix}1\\0\end{bmatrix} = \begin{bmatrix}1\\1\end{bmatrix}, \qquad \mathbf{R}\mathbf{H}\begin{bmatrix}1\\0\end{bmatrix} = \begin{bmatrix}0\\1\end{bmatrix} $$</div>
@@ -543,7 +543,7 @@
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \det\mathbf{A} = 1\cdot4 - 2\cdot2 = 4-4 = 0 $$</div>
-          <div class="derive__why">특이행렬. 넓이 배율이 0이므로 평면이 눌린다</div>
+          <div class="derive__why">singular matrix(특이행렬). 넓이 배율이 0이므로 평면이 눌린다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \text{2열} = \begin{bmatrix}2\\4\end{bmatrix} = 2\begin{bmatrix}1\\2\end{bmatrix} = 2\times\text{1열} $$</div>
@@ -563,7 +563,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \operatorname{Row}(\mathbf{A}) = \operatorname{span}\left\{\begin{bmatrix}1\\2\end{bmatrix}\right\}, \qquad \begin{bmatrix}1\\2\end{bmatrix}^\top\begin{bmatrix}2\\-1\end{bmatrix} = 2-2 = 0 $$</div>
-          <div class="derive__why">행공간과 영공간이 <strong>직교</strong>한다 — 식 (10) 확인</div>
+          <div class="derive__why">row space와 null space가 <strong>orthogonal</strong> 한다 — 식 (10) 확인</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \operatorname{rank} + \dim\operatorname{Null} = 1 + 1 = 2 = n \ \checkmark $$</div>
@@ -573,13 +573,13 @@
 
       <h3>④ 좌표를 바꿔도 변하지 않는 것</h3>
       <p>
-        $\mathbf{A}=\begin{bmatrix}2&0\\0&3\end{bmatrix}$ 를 기저
+        $\mathbf{A}=\begin{bmatrix}2&0\\0&3\end{bmatrix}$ 를 basis
         $B=\{(1,1)^\top,(1,-1)^\top\}$ 에서 다시 적어 보자. $\mathbf{P}=\begin{bmatrix}1&1\\1&-1\end{bmatrix}$ 이다.
       </p>
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ \det\mathbf{P} = 1(-1)-1(1) = -2, \qquad \mathbf{P}^{-1} = \frac{1}{-2}\begin{bmatrix}-1&-1\\-1&1\end{bmatrix} = \begin{bmatrix}0.5&0.5\\0.5&-0.5\end{bmatrix} $$</div>
-          <div class="derive__why">$2\times2$ 역행렬 공식 (<a href="2.4-matrix-operations.html">2.4</a>의 식 5)</div>
+          <div class="derive__why">$2\times2$ inverse matrix 공식 (<a href="2.4-matrix-operations.html">2.4</a>의 식 5)</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \mathbf{A}\mathbf{P} = \begin{bmatrix}2&0\\0&3\end{bmatrix}\begin{bmatrix}1&1\\1&-1\end{bmatrix} = \begin{bmatrix}2&2\\3&-3\end{bmatrix} $$</div>
@@ -591,11 +591,11 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \operatorname{tr}\mathbf{A} = 2+3 = 5, \qquad \operatorname{tr}\mathbf{A}' = 2.5+2.5 = 5 \ \checkmark $$</div>
-          <div class="derive__why">대각합 보존</div>
+          <div class="derive__why">trace 보존</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \det\mathbf{A} = 6, \qquad \det\mathbf{A}' = 2.5^2 - (-0.5)^2 = 6.25-0.25 = 6 \ \checkmark $$</div>
-          <div class="derive__why">행렬식도 보존. <strong>성분은 전부 달라졌는데 하는 일은 같다</strong></div>
+          <div class="derive__why">determinant(행렬식)도 보존. <strong>성분은 전부 달라졌는데 하는 일은 같다</strong></div>
         </div>
       </div>
     </section>
@@ -606,19 +606,19 @@
 
       <p>
         위젯은 개념이 등장하는 자리마다 배치했다 —
-        <a href="#s-intuition">직관</a>의 <strong>격자 변형</strong>과 <strong>선형성 확인</strong>,
-        <a href="#s-definition">정의</a>의 <strong>합성 순서</strong> · <strong>좌표 변환</strong> ·
-        <strong>rank/영공간</strong> · <strong>네 부분공간</strong>.
-        마지막으로 아래에서 <strong>층을 쌓아도 선형이면 하나로 붕괴한다</strong>는 사실을 확인한다.
+        <a href="#s-intuition">직관</a>의 <strong>격자 변형</strong>과 <strong>linearity 확인</strong>,
+        <a href="#s-definition">정의</a>의 <strong>합성 순서</strong> · <strong>coordinates 변환</strong> ·
+        <strong>rank/null space</strong> · <strong>네 subspace</strong>.
+        마지막으로 아래에서 <strong>layer를 쌓아도 선형이면 하나로 붕괴한다</strong>는 사실을 확인한다.
       </p>
 
       <figure class="widget" data-widget="deep-linear">
-        <figcaption class="widget__bar">선형층을 아무리 쌓아도 — 하나로 붕괴</figcaption>
+        <figcaption class="widget__bar">linear layer(선형층)를 아무리 쌓아도 — 하나로 붕괴</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">층을 늘려도 최종 격자는 언제나 하나의 행렬로 표현됩니다. 비선형 활성화가 없으면 깊이가 표현력을 늘리지 못하는 이유입니다.</p>
+          <p class="watch">layer를 늘려도 최종 격자는 언제나 하나의 matrix로 표현됩니다. 비선형 activation이 없으면 깊이가 표현력을 늘리지 못하는 이유입니다.</p>
         </div>
       </figure>
     </section>
@@ -629,13 +629,13 @@
 
       <div class="note note--trap">
         <span class="note__label">오해 1</span>
-        <p>"딥러닝의 <code>Linear</code> 층은 선형사상이다."</p>
+        <p>"deep learning의 <code>Linear</code> layer는 linear map이다."</p>
         <p>
-          <strong>실제로는</strong> 편향 때문에 <strong>아핀 변환</strong>이다.
+          <strong>실제로는</strong> bias 때문에 <strong>affine transformation</strong>이다.
           $f(\mathbf{0}) = \mathbf{b} \neq \mathbf{0}$ 이므로 조건 (1)을 어긴다.
-          PyTorch 의 <code>nn.Linear</code> 도 기본값이 <code>bias=True</code> 다.
-          이 구분은 "층 여러 개가 하나로 붕괴하는가"를 따질 때 실제로 중요해진다
-          (아핀의 합성은 여전히 아핀이다).
+          PyTorch의 <code>nn.Linear</code>도 기본값이 <code>bias=True</code> 다.
+          이 구분은 "layer 여러 개가 하나로 붕괴하는가"를 따질 때 실제로 중요해진다
+          (affine의 합성은 여전히 affine이다).
         </p>
       </div>
 
@@ -643,19 +643,19 @@
         <span class="note__label">오해 2</span>
         <p>"$\det = 1$ 이면 변환이 도형을 그대로 둔다."</p>
         <p>
-          <strong>실제로는</strong> <em>넓이만</em> 보존한다. 전단 $\begin{bmatrix}1&5\\0&1\end{bmatrix}$ 은
-          $\det=1$ 이지만 정사각형을 아주 납작한 평행사변형으로 만든다.
-          형태까지 보존하려면 <strong>직교행렬</strong>이어야 한다($\mathbf{Q}^\top\mathbf{Q}=\mathbf{I}$, 2.4절).
+          <strong>실제로는</strong> <em>넓이만</em> 보존한다. shear $\begin{bmatrix}1&5\\0&1\end{bmatrix}$ 은
+          $\det=1$ 이지만 정사각형을 아주 납작한 parallelogram(평행사변형)으로 만든다.
+          형태까지 보존하려면 <strong>orthogonal matrix</strong>이어야 한다($\mathbf{Q}^\top\mathbf{Q}=\mathbf{I}$, 2.4절).
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 3</span>
-        <p>"rank 는 0이 아닌 행의 개수다."</p>
+        <p>"rank는 0이 아닌 행의 개수다."</p>
         <p>
           <strong>실제로는</strong> <em>선형독립인</em> 행(=열)의 최대 개수다.
-          $\begin{bmatrix}1&2\\2&4\end{bmatrix}$ 은 0인 행이 하나도 없지만 rank 가 1이다.
-          행 사다리꼴로 소거한 <em>뒤에</em> 0이 아닌 행을 세야 맞다 (<a href="2.6-linear-systems.html">2.6</a>).
+          $\begin{bmatrix}1&2\\2&4\end{bmatrix}$ 은 0인 행이 하나도 없지만 rank가 1이다.
+          행 echelon form(사다리꼴)으로 소거한 <em>뒤에</em> 0이 아닌 행을 세야 맞다 (<a href="2.6-linear-systems.html">2.6</a>).
         </p>
       </div>
 
@@ -663,21 +663,21 @@
         <span class="note__label">오해 4</span>
         <p>"수치적으로 $\det \neq 0$ 이면 가역이니 안심이다."</p>
         <p>
-          <strong>실제로는</strong> $\det$ 은 조건수(conditioning)를 알려 주지 못한다.
-          $10^{-8}\mathbf{I}_{10}$ 은 $\det = 10^{-80}$ 으로 거의 0이지만 완벽하게 잘 조건화된 행렬이고,
-          반대로 $\det=1$ 인데도 사실상 특이한 행렬을 만들 수 있다.
-          <strong>가역성 판단에는 $\det$ 대신 특이값</strong>을 본다 (<a href="2.8-svd.html">2.8</a>).
+          <strong>실제로는</strong> $\det$ 은 condition number(조건수, conditioning)를 알려 주지 못한다.
+          $10^{-8}\mathbf{I}_{10}$ 은 $\det = 10^{-80}$ 으로 거의 0이지만 완벽하게 잘 조건화된 matrix고,
+          반대로 $\det=1$ 인데도 사실상 특이한 matrix를 만들 수 있다.
+          <strong>가역성 판단에는 $\det$ 대신 singular value(특이값)</strong>을 본다 (<a href="2.8-svd.html">2.8</a>).
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 5</span>
-        <p>"층을 깊이 쌓으면 표현력이 늘어난다 — 선형층이라도."</p>
+        <p>"layer를 깊이 쌓으면 표현력이 늘어난다 — linear layer이라도."</p>
         <p>
-          <strong>실제로는</strong> 활성화 없이 $\mathbf{W}_3\mathbf{W}_2\mathbf{W}_1$ 은
-          <strong>단 하나의 행렬</strong>과 같다. 표현할 수 있는 함수의 집합이 전혀 넓어지지 않는다
-          (다만 <em>최적화 동역학</em>은 달라진다는 별개의 연구 주제가 있다).
-          비선형 활성화가 깊이를 의미 있게 만드는 유일한 장치다.
+          <strong>실제로는</strong> activation 없이 $\mathbf{W}_3\mathbf{W}_2\mathbf{W}_1$ 은
+          <strong>단 하나의 matrix</strong>과 같다. 표현할 수 있는 함수의 집합이 전혀 넓어지지 않는다
+          (다만 <em>optimization(최적화) 동역학</em>은 달라진다는 별개의 연구 주제가 있다).
+          비선형 activation이 깊이를 의미 있게 만드는 유일한 장치다.
         </p>
       </div>
     </section>
@@ -687,7 +687,7 @@
       <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
       <p>예제 ②–④를 검증한다.</p>
       <details>
-        <summary>NumPy — 합성 순서 · rank · 영공간 · 닮음 (20줄)</summary>
+        <summary>NumPy — 합성 순서 · rank · null space · similarity (20줄)</summary>
 <pre><code>import numpy as np
 
 R = np.array([[0., -1.], [1., 0.]])     # 90도 회전
@@ -702,7 +702,7 @@ A = np.array([[1., 2.], [2., 4.]])
 print(np.linalg.matrix_rank(A))          # 1
 print(np.linalg.det(A))                  # 0.0
 
-# 영공간: SVD 의 마지막 오른쪽 특이벡터가 영공간 방향
+# 영공간: SVD의 마지막 오른쪽 특이벡터가 영공간 방향
 U, s, Vt = np.linalg.svd(A)
 print(s)                                 # [5. 0.]
 print(Vt[-1])                            # [ 0.894 -0.447]  = (2,-1)/sqrt(5)
@@ -717,8 +717,8 @@ print(np.linalg.det(D), np.linalg.det(Ap))  # 6.0 6.0
 </code></pre>
         <p>
           <small>
-            영공간을 손으로 구할 때는 소거를 쓰지만, 코드에서는 SVD 를 쓰는 편이 수치적으로 안정적이다.
-            $\sigma_2 = 0$ 인 것이 rank 가 1이라는 증거다 (<a href="2.8-svd.html">2.8</a>).
+            null space를 손으로 구할 때는 소거를 쓰지만, 코드에서는 SVD를 쓰는 편이 수치적으로 안정적이다.
+            $\sigma_2 = 0$ 인 것이 rank가 1이라는 증거다 (<a href="2.8-svd.html">2.8</a>).
           </small>
         </p>
       </details>
@@ -731,7 +731,7 @@ print(np.linalg.det(D), np.linalg.det(Ap))  # 6.0 6.0
       <div class="quiz">
         <div class="q">
           <p class="q__stem"><span class="q__tag">계산</span>
-            $\mathbf{e}_1\mapsto(2,1)$, $\mathbf{e}_2\mapsto(0,3)$ 인 선형변환의 행렬은?</p>
+            $\mathbf{e}_1\mapsto(2,1)$, $\mathbf{e}_2\mapsto(0,3)$ 인 linear transformation의 matrix는?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\begin{bmatrix}2&0\\1&3\end{bmatrix}$</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>$\begin{bmatrix}2&1\\0&3\end{bmatrix}$</span></button>
@@ -745,15 +745,15 @@ print(np.linalg.det(D), np.linalg.det(Ap))  # 6.0 6.0
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">계산</span>
-            $\mathbf{A}=\begin{bmatrix}1&3\\2&6\end{bmatrix}$ 의 rank 와 $\dim\operatorname{Null}(\mathbf{A})$ 는?</p>
+            $\mathbf{A}=\begin{bmatrix}1&3\\2&6\end{bmatrix}$ 의 rank와 $\dim\operatorname{Null}(\mathbf{A})$ 는?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>rank 1 · nullity 1</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>rank 2 · nullity 0</span></button>
             <button class="opt" type="button"><span class="opt__mark">다</span><span>rank 1 · nullity 0</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            2열 $=3\times$1열 이므로 rank 1. Rank–Nullity 로 $1 + \text{nullity} = 2$, 즉 nullity 1.
-            영공간은 $x_1+3x_2=0$ 에서 $\operatorname{span}\{(3,-1)^\top\}$ 이다 (검산: $1(3)+3(-1)=0$).
+            2열 $=3\times$1열 이므로 rank 1. Rank–Nullity로 $1 + \text{nullity} = 2$, 즉 nullity 1.
+            null space는 $x_1+3x_2=0$ 에서 $\operatorname{span}\{(3,-1)^\top\}$ 이다 (검산: $1(3)+3(-1)=0$).
             다는 정리를 어기므로 애초에 불가능한 조합이다.
           </div>
         </div>
@@ -764,25 +764,25 @@ print(np.linalg.det(D), np.linalg.det(Ap))  # 6.0 6.0
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>넓이가 2배가 되고 방향(향)이 뒤집힌다</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>넓이가 −2배가 된다</span></button>
-            <button class="opt" type="button"><span class="opt__mark">다</span><span>비가역이다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>non-invertible이다</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            넓이 배율은 $|\det| = 2$ 이고, 음의 부호는 좌우가 뒤집혔다(반사가 포함됐다)는 뜻이다.
-            넓이는 음수가 될 수 없다. $\det\neq0$ 이므로 가역이다.
+            넓이 배율은 $|\det| = 2$ 이고, 음의 부호는 좌우가 뒤집혔다(reflection이 포함됐다)는 뜻이다.
+            넓이는 음수가 될 수 없다. $\det\neq0$ 이므로 invertible이다.
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">개념</span>
-            $f(\mathbf{x}) = \mathbf{W}\mathbf{x} + \mathbf{b}$ ($\mathbf{b}\neq\mathbf{0}$) 가 선형이 아닌 이유는?</p>
+            $f(\mathbf{x}) = \mathbf{W}\mathbf{x} + \mathbf{b}$ ($\mathbf{b}\neq\mathbf{0}$)가 선형이 아닌 이유는?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$f(\mathbf{0}) = \mathbf{b} \neq \mathbf{0}$ 이라 원점이 보존되지 않는다</span></button>
-            <button class="opt" type="button"><span class="opt__mark">나</span><span>행렬 곱이 비가환이라서</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>matrix multiplication이 비가환이라서</span></button>
             <button class="opt" type="button"><span class="opt__mark">다</span><span>$\mathbf{W}$ 가 정사각이 아니라서</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            선형성 조건 (1)에 $c=0$ 을 넣으면 $f(\mathbf{0})=\mathbf{0}$ 이 반드시 따라온다.
-            편향이 있으면 이것이 깨지므로 <strong>아핀 변환</strong>이라 부른다.
+            linearity 조건 (1)에 $c=0$ 을 넣으면 $f(\mathbf{0})=\mathbf{0}$ 이 반드시 따라온다.
+            bias가 있으면 이것이 깨지므로 <strong>affine transformation</strong>이라 부른다.
             실제로 $f(\mathbf{u}+\mathbf{v}) = \mathbf{W}(\mathbf{u}+\mathbf{v})+\mathbf{b}$ 인데
             $f(\mathbf{u})+f(\mathbf{v})$ 에는 $\mathbf{b}$ 가 두 번 들어간다.
           </div>
@@ -794,27 +794,27 @@ print(np.linalg.det(D), np.linalg.det(Ap))  # 6.0 6.0
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\dim\operatorname{Null}(\mathbf{A}) \geq 2$</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>$\operatorname{rank}(\mathbf{A}) = 5$</span></button>
-            <button class="opt" type="button"><span class="opt__mark">다</span><span>$\mathbf{A}$ 는 가역이다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$\mathbf{A}$ 는 invertible이다</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            $\operatorname{rank}\leq\min(3,5)=3$ 이고 Rank–Nullity 로 $\text{nullity} = 5-\operatorname{rank} \geq 5-3 = 2$.
-            입력 5차원을 3차원으로 보내니 <strong>적어도 2차원이 짓뭉개진다</strong>.
+            $\operatorname{rank}\leq\min(3,5)=3$ 이고 Rank–Nullity로 $\text{nullity} = 5-\operatorname{rank} \geq 5-3 = 2$.
+            입력 5dimension을 3dimension으로 보내니 <strong>적어도 2dimension이 짓뭉개진다</strong>.
             정사각이 아니므로 가역일 수 없다.
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">함정</span>
-            활성화 함수 없이 선형층 3개를 쌓았다. 표현할 수 있는 함수 집합은?</p>
+            activation function(활성화 함수) 없이 linear layer 3개를 쌓았다. 표현할 수 있는 함수 집합은?</p>
           <div class="opts">
-            <button class="opt" type="button"><span class="opt__mark">가</span><span>층 1개보다 3배 넓어진다</span></button>
-            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>층 1개와 같다 (아핀 변환 하나로 붕괴)</span></button>
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>layer 1개보다 3배 넓어진다</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>layer 1개와 같다 (affine transformation 하나로 붕괴)</span></button>
             <button class="opt" type="button"><span class="opt__mark">다</span><span>비선형 함수까지 표현할 수 있게 된다</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
             $\mathbf{W}_3(\mathbf{W}_2(\mathbf{W}_1\mathbf{x}+\mathbf{b}_1)+\mathbf{b}_2)+\mathbf{b}_3
-            = (\mathbf{W}_3\mathbf{W}_2\mathbf{W}_1)\mathbf{x} + \text{상수}$ 이므로 아핀 하나와 같다.
-            다만 <strong>가운데 층의 차원이 작으면</strong> 곱한 행렬의 rank 가 제한되어
+            = (\mathbf{W}_3\mathbf{W}_2\mathbf{W}_1)\mathbf{x} + \text{상수}$ 이므로 affine 하나와 같다.
+            다만 <strong>가운데 layer의 dimension이 작으면</strong> 곱한 matrix의 rank가 제한되어
             오히려 표현할 수 있는 집합이 <em>좁아진다</em>(병목).
           </div>
         </div>
@@ -826,11 +826,11 @@ print(np.linalg.det(D), np.linalg.det(Ap))  # 6.0 6.0
       <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
 
       <ul>
-        <li><strong><a href="2.6-linear-systems.html">2.6 연립방정식과 행렬 분해</a></strong> — 해의 존재는 열공간, 해의 개수는 영공간이 정한다.</li>
-        <li><strong><a href="2.7-eigenvalues.html">2.7 고유값과 고유벡터</a></strong> — 식 (7)의 좌표 변환으로 행렬을 대각행렬로 만드는 일.</li>
-        <li><strong><a href="2.8-svd.html">2.8 특이값 분해</a></strong> — 모든 선형변환은 회전 → 축별 확대 → 회전으로 분해된다.</li>
-        <li><strong><a href="2.9-dimensionality-reduction.html">2.9 차원 축소</a></strong> — 사영도 선형변환이고, 무엇을 버릴지 고르는 문제다.</li>
-        <li><strong><a href="2.10-linear-algebra-in-ai.html">2.10 AI와 선형대수</a></strong> — 선형층 · 저랭크 적응이 rank 의 언어로 설명된다.</li>
+        <li><strong><a href="2.6-linear-systems.html">2.6 system of equations와 matrix factorization(행렬 분해)</a></strong> — 해의 존재는 column space, 해의 개수는 null space가 정한다.</li>
+        <li><strong><a href="2.7-eigenvalues.html">2.7 eigenvalue와 eigenvector(고유벡터)</a></strong> — 식 (7)의 coordinates 변환으로 matrix를 diagonal matrix(대각행렬)로 만드는 일.</li>
+        <li><strong><a href="2.8-svd.html">2.8 singular value decomposition(특이값 분해)</a></strong> — 모든 linear transformation은 rotation → 축별 확대 → rotation으로 분해된다.</li>
+        <li><strong><a href="2.9-dimensionality-reduction.html">2.9 dimensionality reduction(차원 축소)</a></strong> — projection도 linear transformation이고, 무엇을 버릴지 고르는 문제다.</li>
+        <li><strong><a href="2.10-linear-algebra-in-ai.html">2.10 AI와 linear algebra(선형대수)</a></strong> — linear layer · low-rank adaptation(저랭크 적응)이 rank의 언어로 설명된다.</li>
       </ul>
 
       <h3>출처</h3>
@@ -838,25 +838,25 @@ print(np.linalg.det(D), np.linalg.det(Ap))  # 6.0 6.0
         <li class="ref" id="ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Deisenroth, M. P., Faisal, A. A. &amp; Ong, C. S. (2020). <em>Mathematics for Machine Learning</em>. Cambridge University Press.</span>
-          <span class="ref__where">2.7절(Linear Mappings) — 선형사상의 정의, 행렬 표현(2.7.1), 기저 변경 $\mathbf{A}'=\mathbf{P}^{-1}\mathbf{AP}$ 와 닮음(2.7.2), 상·핵(Image and Kernel, 2.7.3)과 rank–nullity 정리. 이 절의 정의와 유도 전반의 근거</span>
+          <span class="ref__where">2.7절(Linear Mappings) — linear map의 정의, matrix representation(2.7.1), basis 변경 $\mathbf{A}'=\mathbf{P}^{-1}\mathbf{AP}$ 와 similarity(2.7.2), 상·핵(Image and Kernel, 2.7.3)과 rank–nullity 정리. 이 절의 정의와 유도 전반의 근거</span>
           <a class="ref__link" href="https://mml-book.github.io/">mml-book.github.io</a>
         </li>
         <li class="ref" id="ref-goodfellow2016-dl" data-ref="goodfellow2016-dl">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>. MIT Press.</span>
-          <span class="ref__where">2.4절(Linear Dependence and Span)과 6.3절 도입부 — 활성화 없이 선형층을 쌓으면 하나의 선형변환으로 붕괴한다는 서술. 오해 5와 'deep-linear' 위젯의 근거</span>
+          <span class="ref__where">2.4절(Linear Dependence and Span)과 6.3절 도입부 — activation 없이 linear layer를 쌓으면 하나의 linear transformation으로 붕괴한다는 서술. 오해 5와 'deep-linear' 위젯의 근거</span>
           <a class="ref__link" href="https://www.deeplearningbook.org/">deeplearningbook.org</a>
         </li>
         <li class="ref" id="ref-mit-1806" data-ref="mit-1806">
           <span class="ref__type" data-type="course">강의</span>
           <span class="ref__cite">Strang, G. <em>MIT 18.06 Linear Algebra</em> (Spring 2010). MIT OpenCourseWare.</span>
-          <span class="ref__where">Lecture 10 (The four fundamental subspaces) — 열공간·영공간·행공간·좌영공간의 차원 관계와 직교 구조. '네 개의 근본 부분공간' 위젯의 구성이 이 강의의 그림을 따른다. Lecture 30–31 (Linear transformations and their matrices)</span>
+          <span class="ref__where">Lecture 10 (The four fundamental subspaces) — column space·null space·row space·left null space(좌영공간)의 dimension 관계와 orthogonal 구조. '네 개의 근본 subspace' 위젯의 구성이 이 강의의 그림을 따른다. Lecture 30–31 (Linear transformations and their matrices)</span>
           <a class="ref__link" href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/">ocw.mit.edu</a>
         </li>
         <li class="ref" id="ref-3blue1brown-linalg" data-ref="3blue1brown-linalg">
           <span class="ref__type" data-type="video">영상</span>
           <span class="ref__cite">3Blue1Brown. <em>Essence of Linear Algebra</em>, Ch.3 <em>Linear transformations and matrices</em> · Ch.7 <em>Inverse matrices, column space and null space</em>.</span>
-          <span class="ref__where">Ch.3 01:20–07:40 — '격자선은 평행하고 균등하며 원점은 고정' 이라는 선형변환의 시각적 기준과 '행렬의 열 = 기저 벡터가 가는 곳'. 이 절의 격자 변형 위젯이 여기에 기댄다. Ch.7 05:00–10:30 — 열공간·영공간</span>
+          <span class="ref__where">Ch.3 01:20–07:40 — '격자선은 평행하고 균등하며 원점은 고정' 이라는 linear transformation의 시각적 기준과 'matrix의 열 = basis vector가 가는 곳'. 이 절의 격자 변형 위젯이 여기에 기댄다. Ch.7 05:00–10:30 — column space·null space</span>
           <a class="ref__link" href="https://www.3blue1brown.com/topics/linear-algebra">3blue1brown.com</a>
         </li>
         <li class="ref" id="ref-petersen2012-matrix-cookbook" data-ref="petersen2012-matrix-cookbook">
@@ -929,11 +929,11 @@ function drawGrid(p, M, opts) {
    ============================================================ */
 WIDGETS.register('transform-grid', function (root, ctx) {
   var PRESET = {
-    rot:   { M: [[0, -1], [1, 0]],   name: '회전 90°' },
+    rot:   { M: [[0, -1], [1, 0]],   name: 'rotation 90°' },
     scale: { M: [[2, 0], [0, 0.5]],  name: '확대·축소 (2, 0.5)' },
-    shear: { M: [[1, 1], [0, 1]],    name: '전단 k=1' },
-    refl:  { M: [[1, 0], [0, -1]],   name: 'x축 반사' },
-    proj:  { M: [[1, 0], [0, 0]],    name: 'x축 사영 (rank 1)' }
+    shear: { M: [[1, 1], [0, 1]],    name: 'shear k=1' },
+    refl:  { M: [[1, 0], [0, -1]],   name: 'x축 reflection' },
+    proj:  { M: [[1, 0], [0, 0]],    name: 'x축 projection (rank 1)' }
   };
   var cur = 'rot', N = 21, step = 0;
 
@@ -941,7 +941,7 @@ WIDGETS.register('transform-grid', function (root, ctx) {
   ctx.stage.appendChild(p.svg);
 
   var out = WIDGETS.readout(ctx.readout, [
-    { key: 'mat', label: '현재 행렬' },
+    { key: 'mat', label: '현재 matrix' },
     { key: 'det', label: 'det (넓이 배율)', digits: 3 },
     { key: 'rank', label: 'rank' },
     { key: 'name', label: '변환' }
@@ -962,18 +962,18 @@ WIDGETS.register('transform-grid', function (root, ctx) {
     out.setRaw('mat', '[' + M[0][0].toFixed(2) + ' ' + M[0][1].toFixed(2) + ' ; ' +
                             M[1][0].toFixed(2) + ' ' + M[1][1].toFixed(2) + ']');
     out.set('det', det);
-    out.setRaw('rank', Math.abs(det) > 1e-6 ? '2 (가역)' : '1 이하 (비가역)');
+    out.setRaw('rank', Math.abs(det) > 1e-6 ? '2 (invertible)' : '1 이하 (non-invertible)');
     out.setRaw('name', PRESET[cur].name);
   }
 
   WIDGETS.toggle({
     host: ctx.controls, label: '변환 고르기',
     options: [
-      { value: 'rot', label: '회전' },
+      { value: 'rot', label: 'rotation' },
       { value: 'scale', label: '확대·축소' },
-      { value: 'shear', label: '전단' },
-      { value: 'refl', label: '반사' },
-      { value: 'proj', label: '사영' }
+      { value: 'shear', label: 'shear' },
+      { value: 'refl', label: 'reflection' },
+      { value: 'proj', label: 'projection' }
     ],
     value: 'rot', onChange: function (v) { cur = v; draw(step); }
   });
@@ -982,7 +982,7 @@ WIDGETS.register('transform-grid', function (root, ctx) {
 
 /* ============================================================
    위젯 2 — 선형성 확인
-   f(u+v) 와 f(u)+f(v) 가 같은 점인지 눈으로 본다.
+   f(u+v)와 f(u)+f(v)가 같은 점인지 눈으로 본다.
    ============================================================ */
 WIDGETS.register('linear-map-check', function (root, ctx) {
   var u = [1.4, 0.6], v = [0.5, 1.5];
@@ -1045,14 +1045,14 @@ WIDGETS.register('linear-map-check', function (root, ctx) {
       draw();
     };
   }
-  VIZ.draggable(hu, p, mover(u), { label: '벡터 u' });
-  VIZ.draggable(hv, p, mover(v), { label: '벡터 v' });
+  VIZ.draggable(hu, p, mover(u), { label: 'vector u' });
+  VIZ.draggable(hv, p, mover(v), { label: 'vector v' });
 
   WIDGETS.toggle({
     host: ctx.controls, label: '함수 종류',
     options: [
       { value: 'lin', label: '선형  f(x)=Ax' },
-      { value: 'aff', label: '아핀  f(x)=Ax+b' },
+      { value: 'aff', label: 'affine  f(x)=Ax+b' },
       { value: 'non', label: '비선형  f(x)=(x₁²/2, x₂)' }
     ],
     value: 'lin', onChange: function (k) { kind = k; draw(); }
@@ -1091,8 +1091,8 @@ WIDGETS.register('compose-order', function (root, ctx) {
 
   var out = WIDGETS.readout(ctx.readout, [
     { key: 'stage', label: '단계' },
-    { key: 'mat', label: '누적 행렬' },
-    { key: 'tip', label: 'F 의 꼭짓점 (0,2) 위치' },
+    { key: 'mat', label: '누적 matrix' },
+    { key: 'tip', label: 'F의 꼭짓점 (0,2) 위치' },
     { key: 'note', label: '순서' }
   ]);
 
@@ -1103,11 +1103,11 @@ WIDGETS.register('compose-order', function (root, ctx) {
     var M, stage;
     if (step <= half) {
       M = lerp(first, step / half);
-      stage = order === 'HR' ? '① 회전 적용 중' : '① 전단 적용 중';
+      stage = order === 'HR' ? '① rotation 적용 중' : '① shear 적용 중';
     } else {
       var t2 = (step - half) / (N - 1 - half);
       M = mul(lerp(second, t2), first);
-      stage = order === 'HR' ? '② 전단 적용 중' : '② 회전 적용 중';
+      stage = order === 'HR' ? '② shear 적용 중' : '② rotation 적용 중';
     }
 
     p.clear().grid(1, 1).axes('x', 'y').ticks(1, 1);
@@ -1123,14 +1123,14 @@ WIDGETS.register('compose-order', function (root, ctx) {
     out.setRaw('mat', '[' + M[0][0].toFixed(2) + ' ' + M[0][1].toFixed(2) + ' ; ' +
                             M[1][0].toFixed(2) + ' ' + M[1][1].toFixed(2) + ']');
     out.setRaw('tip', '(' + tip[0].toFixed(2) + ', ' + tip[1].toFixed(2) + ')');
-    out.setRaw('note', order === 'HR' ? 'HR — 회전 먼저' : 'RH — 전단 먼저');
+    out.setRaw('note', order === 'HR' ? 'HR — rotation 먼저' : 'RH — shear 먼저');
   }
 
   WIDGETS.toggle({
     host: ctx.controls, label: '적용 순서',
     options: [
-      { value: 'HR', label: '회전 → 전단  (HR)' },
-      { value: 'RH', label: '전단 → 회전  (RH)' }
+      { value: 'HR', label: 'rotation → shear  (HR)' },
+      { value: 'RH', label: 'shear → rotation  (RH)' }
     ],
     value: 'HR', onChange: function (v) { order = v; draw(N - 1); }
   });
@@ -1151,8 +1151,8 @@ WIDGETS.register('coord-change', function (root, ctx) {
   var out = WIDGETS.readout(ctx.readout, [
     { key: 'ap', label: "새 기저에서의 행렬 A'" },
     { key: 'det', label: 'det (둘 다)', digits: 3 },
-    { key: 'tr', label: '대각합 tr (둘 다)', digits: 3 },
-    { key: 'state', label: '기저' }
+    { key: 'tr', label: 'trace tr (둘 다)', digits: 3 },
+    { key: 'state', label: 'basis' }
   ]);
 
   function draw() {
@@ -1177,7 +1177,7 @@ WIDGETS.register('coord-change', function (root, ctx) {
     p.vector(A[0][0], A[1][0], { stroke: 'var(--seal)', width: 2.5, label: 'A e₁' });
     p.vector(A[0][1], A[1][1], { stroke: 'var(--amber)', width: 2.5, label: 'A e₂', lx: 6, ly: 14 });
 
-    if (!ok) { out.setRaw('ap', 'P 가 특이 — 기저가 아님'); out.setRaw('state', '✗'); return; }
+    if (!ok) { out.setRaw('ap', 'P가 특이 — basis가 아님'); out.setRaw('state', '✗'); return; }
 
     var Pinv = [[P[1][1] / dP, -P[0][1] / dP], [-P[1][0] / dP, P[0][0] / dP]];
     function mul(M, N) {
@@ -1196,7 +1196,7 @@ WIDGETS.register('coord-change', function (root, ctx) {
   }
 
   WIDGETS.matrix({
-    host: ctx.controls, rows: 2, cols: 2, values: P, step: 0.5, label: '새 기저 P (열이 기저 벡터)',
+    host: ctx.controls, rows: 2, cols: 2, values: P, step: 0.5, label: '새 basis P (열이 basis vector)',
     onChange: function (v) { P = v; draw(); }
   });
   draw();
@@ -1214,8 +1214,8 @@ WIDGETS.register('rank-null', function (root, ctx) {
 
   var out = WIDGETS.readout(ctx.readout, [
     { key: 'rank', label: 'rank' },
-    { key: 'null', label: '영공간' },
-    { key: 'col', label: '열공간' },
+    { key: 'null', label: 'null space' },
+    { key: 'col', label: 'column space' },
     { key: 'check', label: 'rank + nullity' }
   ]);
 
@@ -1248,13 +1248,13 @@ WIDGETS.register('rank-null', function (root, ctx) {
     p.vector(b, d, { stroke: 'var(--amber)', label: '2열', lx: 6, ly: 14 });
 
     out.setRaw('rank', String(rank));
-    out.setRaw('null', rank === 2 ? '{0} (0차원)' : (rank === 1 ? '직선 (1차원, 빨간 점선)' : '평면 전체 (2차원)'));
-    out.setRaw('col', rank === 2 ? '평면 R² (2차원)' : (rank === 1 ? '직선 (1차원)' : '{0}'));
+    out.setRaw('null', rank === 2 ? '{0} (0dimension)' : (rank === 1 ? '직선 (1dimension, 빨간 점선)' : '평면 전체 (2dimension)'));
+    out.setRaw('col', rank === 2 ? '평면 R² (2dimension)' : (rank === 1 ? '직선 (1dimension)' : '{0}'));
     out.setRaw('check', rank + ' + ' + (2 - rank) + ' = 2 ✓');
   }
 
   WIDGETS.matrix({
-    host: ctx.controls, rows: 2, cols: 2, values: M, step: 0.5, label: '행렬 A',
+    host: ctx.controls, rows: 2, cols: 2, values: M, step: 0.5, label: 'matrix A',
     onChange: function (v) { M = v; draw(); }
   });
   draw();
@@ -1262,21 +1262,21 @@ WIDGETS.register('rank-null', function (root, ctx) {
 
 /* ============================================================
    위젯 6 — 네 개의 근본 부분공간
-   rank 를 바꾸면 네 상자의 차원이 함께 움직인다.
+   rank를 바꾸면 네 상자의 차원이 함께 움직인다.
    ============================================================ */
 WIDGETS.register('four-subspaces', function (root, ctx) {
   var el = VIZ.el;
   var m = 3, n = 5, r = 2;
 
   var VW = 480, VH = 210;
-  var svg = el('svg', { viewBox: '0 0 ' + VW + ' ' + VH, role: 'img', 'aria-label': '네 개의 근본 부분공간' });
+  var svg = el('svg', { viewBox: '0 0 ' + VW + ' ' + VH, role: 'img', 'aria-label': '네 개의 근본 subspace' });
   ctx.stage.appendChild(svg);
 
   var out = WIDGETS.readout(ctx.readout, [
-    { key: 'row', label: '행공간 dim' },
-    { key: 'nul', label: '영공간 dim' },
-    { key: 'col', label: '열공간 dim' },
-    { key: 'lnul', label: '좌영공간 dim' }
+    { key: 'row', label: 'row space dim' },
+    { key: 'nul', label: 'null space dim' },
+    { key: 'col', label: 'column space dim' },
+    { key: 'lnul', label: 'left null space dim' }
   ]);
 
   function box(x, y, w, h, title, dim, tone) {
@@ -1298,21 +1298,21 @@ WIDGETS.register('four-subspaces', function (root, ctx) {
     while (svg.firstChild) svg.removeChild(svg.firstChild);
 
     svg.appendChild(el('text', { x: 100, y: 16, 'text-anchor': 'middle', class: 'viz-label',
-      'font-size': 12, 'font-weight': '700', text: '입력 공간 R^' + n }));
+      'font-size': 12, 'font-weight': '700', text: 'input space R^' + n }));
     svg.appendChild(el('text', { x: 372, y: 16, 'text-anchor': 'middle', class: 'viz-label',
-      'font-size': 12, 'font-weight': '700', text: '출력 공간 R^' + m }));
+      'font-size': 12, 'font-weight': '700', text: 'output space R^' + m }));
 
-    box(24, 30, 152, 56, '행공간 Row(A)', r, 'var(--jade)');
-    box(24, 120, 152, 56, '영공간 Null(A)', n - r, 'var(--seal)');
-    box(296, 30, 152, 56, '열공간 Col(A)', r, 'var(--jade)');
-    box(296, 120, 152, 56, '좌영공간 Null(Aᵀ)', m - r, 'var(--seal)');
+    box(24, 30, 152, 56, 'row space Row(A)', r, 'var(--jade)');
+    box(24, 120, 152, 56, 'null space Null(A)', n - r, 'var(--seal)');
+    box(296, 30, 152, 56, 'column space Col(A)', r, 'var(--jade)');
+    box(296, 120, 152, 56, 'left null space Null(Aᵀ)', m - r, 'var(--seal)');
 
     /* 화살표: 행공간 → 열공간 (일대일), 영공간 → 0 */
     svg.appendChild(el('path', { d: 'M182 58 L286 58', stroke: 'var(--jade)', 'stroke-width': 1.8 }));
     svg.appendChild(el('path', { d: 'M296 58 L287 54 L287 62 Z', fill: 'var(--jade)' }));
     svg.appendChild(el('path', { d: 'M182 148 L286 100', stroke: 'var(--seal)', 'stroke-width': 1.6, 'stroke-dasharray': '5 3' }));
     svg.appendChild(el('text', { x: 234, y: 50, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 11, text: '일대일' }));
-    svg.appendChild(el('text', { x: 238, y: 140, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 11, text: '전부 0 으로' }));
+    svg.appendChild(el('text', { x: 238, y: 140, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 11, text: '전부 0으로' }));
 
     out.setRaw('row', String(r));
     out.setRaw('nul', (n - r) + '   (합 = ' + n + ')');
@@ -1344,8 +1344,8 @@ WIDGETS.register('deep-linear', function (root, ctx) {
   ctx.stage.appendChild(p.svg);
 
   var out = WIDGETS.readout(ctx.readout, [
-    { key: 'count', label: '층 수' },
-    { key: 'mat', label: '합친 행렬 (단 하나)' },
+    { key: 'count', label: 'layer 수' },
+    { key: 'mat', label: '합친 matrix (단 하나)' },
     { key: 'det', label: 'det', digits: 3 },
     { key: 'note', label: '결론' }
   ]);
@@ -1364,15 +1364,15 @@ WIDGETS.register('deep-linear', function (root, ctx) {
     p.clear().axes('x', 'y');
     drawGrid(p, M, { k: 4 });
 
-    out.setRaw('count', L + ' 층');
+    out.setRaw('count', L + ' layer');
     out.setRaw('mat', '[' + M[0][0].toFixed(2) + ' ' + M[0][1].toFixed(2) + ' ; ' +
                             M[1][0].toFixed(2) + ' ' + M[1][1].toFixed(2) + ']');
     out.set('det', M[0][0] * M[1][1] - M[0][1] * M[1][0]);
-    out.setRaw('note', '층 ' + L + '개 = 행렬 1개와 완전히 동일');
+    out.setRaw('note', 'layer ' + L + '개 = matrix 1개와 완전히 동일');
   }
 
   WIDGETS.slider({
-    host: ctx.controls, label: '쌓은 선형층 수', min: 1, max: 4, step: 1, value: 2, digits: 0,
+    host: ctx.controls, label: '쌓은 linear layer 수', min: 1, max: 4, step: 1, value: 2, digits: 0,
     onInput: function (v) { L = v; draw(); }
   });
   draw();

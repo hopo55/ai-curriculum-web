@@ -59,30 +59,30 @@
     </header>
 
     <nav class="chips" aria-label="이 절에서 다루는 항목">
-      <a class="chip" href="#c-question">연구 문제</a>
-      <a class="chip" href="#c-related">관련 연구</a>
-      <a class="chip" href="#c-method">방법론</a>
-      <a class="chip" href="#c-design">실험 설계</a>
-      <a class="chip" href="#c-compare">비교 실험</a>
+      <a class="chip" href="#c-question">Research Question</a>
+      <a class="chip" href="#c-related">Related Work</a>
+      <a class="chip" href="#c-method">Methodology</a>
+      <a class="chip" href="#c-design">Experimental Design</a>
+      <a class="chip" href="#c-compare">Comparative Experiment</a>
       <a class="chip" href="#c-ablation">Ablation Study</a>
-      <a class="chip" href="#c-limits">한계</a>
-      <a class="chip" href="#c-repro">재현성</a>
-      <a class="chip" href="#c-ethics">윤리적 고려</a>
-      <a class="chip" href="#c-future">후속 연구</a>
+      <a class="chip" href="#c-limits">Limitations</a>
+      <a class="chip" href="#c-repro">Reproducibility</a>
+      <a class="chip" href="#c-ethics">Ethical Considerations</a>
+      <a class="chip" href="#c-future">Future Work</a>
     </nav>
 
     <section class="sec" id="s-summary">
       <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
       <p class="tldr">
-        논문의 구조는 형식이 아니라 <strong>주장을 검증 가능하게 만드는 장치</strong>다.
+        논문의 구조는 형식이 아니라 <strong>주장을 validation(검증) 가능하게 만드는 장치</strong>다.
         "무엇이 좋아졌는가"가 아니라 <strong>"무엇 때문에 좋아졌고, 그 차이가 잡음보다 큰가"</strong>에
         답할 수 있어야 연구다.
       </p>
       <h3>학습 목표</h3>
       <ol class="goals">
         <li>논문의 열 부분이 각각 어떤 반론을 막기 위한 것인지 설명할 수 있다.</li>
-        <li>Ablation 표에서 각 성분의 기여도를 계산하고, 시드 분산과 비교해 유의성을 판단할 수 있다.</li>
-        <li>표준오차 $s/\sqrt{m}$ 를 손으로 구해 "이 향상은 노이즈다"라고 말할 수 있다.</li>
+        <li>Ablation 표에서 각 성분의 기여도를 계산하고, 시드 variance(분산)와 비교해 유의성을 판단할 수 있다.</li>
+        <li>standard error(표준오차) $s/\sqrt{m}$ 를 손으로 구해 "이 향상은 노이즈다"라고 말할 수 있다.</li>
       </ol>
     </section>
 
@@ -93,12 +93,12 @@
         이 주장을 무너뜨릴 수 있는 반론은 무엇일까?
       </p>
       <ul>
-        <li>"애초에 왜 이 문제가 중요한가?" → <strong>연구 문제</strong>가 답한다</li>
-        <li>"이미 누가 한 것 아닌가?" → <strong>관련 연구</strong>가 답한다</li>
-        <li>"운이 좋았던 것 아닌가?" → <strong>여러 시드·신뢰구간</strong>이 답한다</li>
-        <li>"당신 방법 때문이 아니라 데이터를 더 써서 아닌가?" → <strong>공정한 비교 설계</strong>가 답한다</li>
+        <li>"애초에 왜 이 문제가 중요한가?" → <strong>research question(연구 문제)</strong>가 답한다</li>
+        <li>"이미 누가 한 것 아닌가?" → <strong>related work(관련 연구)</strong>가 답한다</li>
+        <li>"운이 좋았던 것 아닌가?" → <strong>여러 시드·confidence interval(신뢰구간)</strong>이 답한다</li>
+        <li>"당신 방법 때문이 아니라 data(데이터)를 더 써서 아닌가?" → <strong>공정한 비교 설계</strong>가 답한다</li>
         <li>"방법의 어느 부분이 효과를 냈는가?" → <strong>Ablation</strong>이 답한다</li>
-        <li>"우리 환경에서도 되는가?" → <strong>재현성 정보</strong>가 답한다</li>
+        <li>"우리 환경에서도 되는가?" → <strong>reproducibility(재현성) 정보</strong>가 답한다</li>
       </ul>
       <p>
         논문의 각 절은 <strong>예상되는 반론을 하나씩 차단하는 자리</strong>다.
@@ -120,39 +120,39 @@
 
       <span class="anchor" id="c-question"></span>
       <p>
-        <strong>연구 문제</strong> — 무엇을 모르고 있으며, 알면 무엇이 달라지는가.
-        좋은 연구 문제는 <em>틀릴 수 있게</em> 진술된다.
+        <strong>research question</strong> — 무엇을 모르고 있으며, 알면 무엇이 달라지는가.
+        좋은 research question은 <em>틀릴 수 있게</em> 진술된다.
         "성능을 높인다"는 반증 불가능하지만, "긴 문맥에서 성능이 떨어지는 원인이 위치 인코딩에 있다"는
         틀릴 수 있다.
       </p>
       <span class="anchor" id="c-related"></span>
       <p>
-        <strong>관련 연구</strong> — 이미 알려진 것과 이 연구의 경계를 긋는다.
+        <strong>related work</strong> — 이미 알려진 것과 이 연구의 경계를 긋는다.
         목록 나열이 아니라 <em>왜 기존 방법으로는 부족한가</em>를 보이는 자리다.
       </p>
       <span class="anchor" id="c-method"></span>
       <p>
         <strong>방법론</strong> — 무엇을 새로 했는지 재현 가능하게 적는다.
         <a href="1.1-ai-fundamentals.html#c-model-algo">1.1절의 구분</a>대로
-        모델 구조, 손실함수, 최적화 절차를 나눠 쓰면 무엇이 새로운지 분명해진다.
+        model(모델) 구조, loss function(손실함수), optimization(최적화) 절차를 나눠 쓰면 무엇이 새로운지 분명해진다.
       </p>
 
       <span class="anchor" id="c-design"></span>
-      <h3>실험 설계</h3>
+      <h3>Experimental Design 실험 설계</h3>
       <p>
         주장을 검증할 수 있는 실험을 구성한다. 최소 조건 셋:
       </p>
       <ul>
-        <li><strong>통제</strong> — 비교 대상과 <em>내 방법 외의 모든 것</em>을 같게 한다 (데이터, 학습량, 탐색 예산).</li>
+        <li><strong>통제</strong> — 비교 대상과 <em>내 방법 외의 모든 것</em>을 같게 한다 (data, 학습량, 탐색 예산).</li>
         <li><strong>반복</strong> — 시드를 여러 개 돌린다. 한 번 실행한 숫자는 표본 하나일 뿐이다.</li>
         <li><strong>사전 등록에 준하는 태도</strong> — 테스트 집합은 <a href="1.5-data-split-evaluation.html#c-test">마지막에 한 번</a>만 연다.</li>
       </ul>
 
       <span class="anchor" id="c-compare"></span>
-      <h3>비교 실험</h3>
+      <h3>Comparative Experiment 비교 실험</h3>
       <p>
         비교가 공정하려면 <strong>탐색 예산</strong>도 같아야 한다.
-        내 방법은 하이퍼파라미터를 100번 탐색하고 베이스라인은 기본값만 썼다면,
+        내 방법은 hyperparameter(하이퍼파라미터)를 100번 탐색하고 baseline(베이스라인)은 기본값만 썼다면,
         그 차이는 방법의 우수성이 아니라 <em>들인 노력의 차이</em>일 수 있다.
         Dodge 등은 이 문제를 지적하며 <strong>탐색 예산을 함께 보고</strong>할 것을 제안했다<a class="cite" href="#ref-dodge2019-show-your-work" data-ref="dodge2019-show-your-work">1</a>.
       </p>
@@ -168,7 +168,7 @@
       </div>
       <p>
         $\Delta_A$ 가 크면 성분 $A$ 가 중요하다는 뜻이다.
-        <strong>다만 이 값이 시드 분산보다 커야</strong> 의미가 있다. 아래에서 계산한다.
+        <strong>다만 이 값이 시드 variance보다 커야</strong> 의미가 있다. 아래에서 계산한다.
       </p>
 
       <span class="anchor" id="c-limits"></span>
@@ -184,21 +184,21 @@
 
       <span class="anchor" id="c-repro"></span>
       <p>
-        <strong>재현성</strong> — 코드·데이터·시드·하이퍼파라미터·계산 자원·탐색 횟수를 밝힌다.
-        NeurIPS 재현성 체크리스트가 요구하는 항목들이다<a class="cite" href="#ref-pineau2020-improving-reproducibility-in" data-ref="pineau2020-improving-reproducibility-in">3</a>.
+        <strong>reproducibility</strong> — 코드·data·시드·hyperparameter·계산 자원·탐색 횟수를 밝힌다.
+        NeurIPS reproducibility 체크리스트가 요구하는 항목들이다<a class="cite" href="#ref-pineau2020-improving-reproducibility-in" data-ref="pineau2020-improving-reproducibility-in">3</a>.
         <a href="1.5-data-split-evaluation.html#c-repro">1.5절</a>에서 본 대로, 밝히지 않은 탐색량은 결과를 낙관적으로 만든다.
       </p>
 
       <span class="anchor" id="c-ethics"></span>
       <p>
-        <strong>윤리적 고려</strong> — 데이터 출처와 동의, 개인정보, 편향과 그 영향, 오용 가능성, 환경 비용.
+        <strong>ethical consideration(윤리적 고려)</strong> — data 출처와 동의, 개인정보, bias(편향)와 그 영향, 오용 가능성, 환경 비용.
         주요 학회는 이제 이 항목을 심사 대상에 포함한다.
         <em>누가 이득을 보고 누가 위험을 지는가</em>를 묻는 자리다.
       </p>
 
       <span class="anchor" id="c-future"></span>
       <p>
-        <strong>후속 연구</strong> — 이 연구가 열어놓은 질문.
+        <strong>future work(후속 연구)</strong> — 이 연구가 열어놓은 질문.
         한계와 짝을 이룬다. "무엇을 못 했는가"가 곧 "다음에 무엇을 할 것인가"다.
       </p>
     </section>
@@ -220,15 +220,15 @@
         <table class="symtab">
           <thead><tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr></thead>
           <tbody>
-            <tr><td>$a_i$</td><td>에이 아이</td><td>$i$ 번째 시드의 성능</td><td>스칼라</td><td>보통 $[0,100]$</td></tr>
-            <tr><td>$m$</td><td>엠</td><td>반복 실행 횟수 (시드 개수)</td><td>정수</td><td>$\geq 2$</td></tr>
-            <tr><td>$\bar{a}$</td><td>에이 바</td><td>표본평균</td><td>스칼라</td><td>—</td></tr>
-            <tr><td>$s^{2}$</td><td>에스 제곱</td><td>표본분산 — $m-1$ 로 나눈다</td><td>스칼라</td><td>$\geq 0$</td></tr>
-            <tr><td>$s$</td><td>에스</td><td>표본표준편차</td><td>스칼라</td><td>$\geq 0$</td></tr>
-            <tr><td>$\mathrm{SE}$</td><td>표준오차</td><td>평균값 자체가 흔들리는 정도</td><td>스칼라</td><td>$\geq 0$</td></tr>
-            <tr><td>$\Delta_A$</td><td>델타 에이</td><td>성분 $A$ 의 기여도 (식 1)</td><td>스칼라</td><td>실수</td></tr>
-            <tr><td>$\setminus$</td><td>빼기 · 여집합</td><td>해당 성분을 제거한 구성</td><td>연산자</td><td>—</td></tr>
-            <tr><td>$t_{m-1}$</td><td>티 분포</td><td>자유도 $m-1$ 의 $t$ 값. $m=5$ 일 때 95%는 2.78</td><td>스칼라</td><td>—</td></tr>
+            <tr><td>$a_i$</td><td>a i</td><td>$i$ 번째 시드의 성능</td><td>scalar(스칼라)</td><td>보통 $[0,100]$</td></tr>
+            <tr><td>$m$</td><td>m</td><td>반복 실행 횟수 (시드 개수)</td><td>정수</td><td>$\geq 2$</td></tr>
+            <tr><td>$\bar{a}$</td><td>a bar</td><td>표본평균</td><td>scalar</td><td>—</td></tr>
+            <tr><td>$s^{2}$</td><td>s squared</td><td>표본분산 — $m-1$ 로 나눈다</td><td>scalar</td><td>$\geq 0$</td></tr>
+            <tr><td>$s$</td><td>s</td><td>표본표준편차</td><td>scalar</td><td>$\geq 0$</td></tr>
+            <tr><td>$\mathrm{SE}$</td><td>standard error</td><td>평균값 자체가 흔들리는 정도</td><td>scalar</td><td>$\geq 0$</td></tr>
+            <tr><td>$\Delta_A$</td><td>delta A</td><td>성분 $A$ 의 기여도 (식 1)</td><td>scalar</td><td>실수</td></tr>
+            <tr><td>$\setminus$</td><td>minus · set difference</td><td>해당 성분을 제거한 구성</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$t_{m-1}$</td><td>t-distribution</td><td>degrees of freedom(자유도) $m-1$ 의 $t$ 값. $m=5$ 일 때 95%는 2.78</td><td>scalar</td><td>—</td></tr>
           </tbody>
         </table>
       </div>
@@ -236,9 +236,9 @@
       <div class="note note--trap">
         <span class="note__label">$m$ 이 아니라 $m-1$ 인 이유</span>
         <p>
-          평균 $\bar{a}$ 자체를 데이터에서 추정했기 때문에 자유도가 하나 줄어든다.
-          $m$ 으로 나누면 분산을 <em>과소평가</em>하게 되어, 있지도 않은 유의성을 주장하게 된다.
-          자세한 것은 <span class="tex">4.5</span>절 추정량의 편향에서 다룬다.
+          평균 $\bar{a}$ 자체를 data에서 추정했기 때문에 degrees of freedom이 하나 줄어든다.
+          $m$ 으로 나누면 variance를 <em>과소평가</em>하게 되어, 있지도 않은 유의성을 주장하게 된다.
+          자세한 것은 <span class="tex">4.5</span>절 추정량의 bias에서 다룬다.
         </p>
       </div>
     </section>
@@ -248,7 +248,7 @@
 
       <p>
         두 방법의 차이 $d$ 를 "노이즈가 아니다"라고 말하려면,
-        차이가 신뢰구간 폭보다 커야 한다.
+        차이가 confidence interval 폭보다 커야 한다.
       </p>
 
       <div class="derive">
@@ -275,7 +275,7 @@
         <p>
           시드 표준편차 $s = 0.5$%p 인 실험에서 $d = 0.5$%p 향상을 주장하려면
           $m \gtrsim (2 \times 0.5 / 0.5)^2 = 4$ 번이면 되지만,
-          $d = 0.2$%p 를 주장하려면 $m \gtrsim 25$ 번을 돌려야 한다.
+          $d = 0.2$%p를 주장하려면 $m \gtrsim 25$ 번을 돌려야 한다.
           <strong>작은 향상일수록 훨씬 많은 실험이 필요하다.</strong>
           논문에서 시드 하나로 0.2%p 향상을 주장한다면 근거가 부족한 것이다.
         </p>
@@ -379,7 +379,7 @@
 
       <h3>공정한 비교인가 점검하기</h3>
       <figure class="widget" data-widget="fairness-check">
-        <figcaption class="widget__bar">비교 실험 점검표</figcaption>
+        <figcaption class="widget__bar">comparative experiment(비교 실험) 점검표</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
@@ -397,8 +397,8 @@
         <p>"숫자가 더 크면 더 좋은 방법이다."</p>
         <p>
           <strong>실제로는</strong> 오차 막대를 보기 전에는 알 수 없다.
-          위 예제에서 B의 0.5%p 는 시드 노이즈 ±0.65%p 안에 있었다.
-          <strong>평균만 있고 분산이 없는 표는 절반의 정보만 준다.</strong>
+          위 예제에서 B의 0.5%p는 시드 노이즈 ±0.65%p 안에 있었다.
+          <strong>평균만 있고 variance가 없는 표는 절반의 정보만 준다.</strong>
         </p>
       </div>
 
@@ -414,11 +414,11 @@
 
       <div class="note note--trap">
         <span class="note__label">오해 3</span>
-        <p>"베이스라인은 원 논문 수치를 인용하면 된다."</p>
+        <p>"baseline은 원 논문 수치를 인용하면 된다."</p>
         <p>
-          <strong>실제로는</strong> 데이터 전처리·평가 프로토콜·계산 예산이 다르면 비교가 성립하지 않는다.
+          <strong>실제로는</strong> data preprocessing(데이터 전처리)·evaluation(평가) 프로토콜·계산 예산이 다르면 비교가 성립하지 않는다.
           같은 조건에서 직접 재현한 수치를 함께 싣는 것이 원칙이다.
-          내 방법에만 하이퍼파라미터 탐색을 100번 하고 베이스라인은 기본값을 썼다면,
+          내 방법에만 hyperparameter 탐색을 100번 하고 baseline은 기본값을 썼다면,
           그 차이는 <em>방법의 차이가 아니라 노력의 차이</em>다.
         </p>
       </div>
@@ -438,14 +438,14 @@
     <section class="sec" id="s-code">
       <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
       <details>
-        <summary>NumPy — 시드 분산과 유의성 판정 (16줄)</summary>
+        <summary>NumPy — 시드 variance와 유의성 판정 (16줄)</summary>
 <pre><code>import numpy as np
 
 a = np.array([84.2, 85.1, 84.8, 85.4, 85.5])   # 전체 방법, 시드 5개
 m = len(a)
 
 mean = a.mean()
-s = a.std(ddof=1)              # ddof=1 → m-1 로 나눈다
+s = a.std(ddof=1)              # ddof=1 → m-1로 나눈다
 se = s / np.sqrt(m)
 print(mean, round(s, 3), round(se, 3))   # 85.0 0.524 0.235
 
@@ -473,7 +473,7 @@ for name, delta in [("A", 3.0), ("B", 0.5), ("C", 6.0)]:
           <div class="q__explain"><strong>풀이 ·</strong>
             평균 83, 편차 $(-3,-1,1,3)$, 제곱합 $9+1+1+9 = 20$.
             $s^2 = 20/(4-1) = 20/3 \approx 6.67$, $s \approx 2.58$.
-            나는 $m$ 으로 나눈 값($\sqrt{5}$)으로, 분산을 과소평가한다.
+            나는 $m$ 으로 나눈 값($\sqrt{5}$)으로, variance를 과소평가한다.
           </div>
         </div>
 
@@ -510,9 +510,9 @@ for name, delta in [("A", 3.0), ("B", 0.5), ("C", 6.0)]:
           <p class="q__stem"><span class="q__tag">개념</span>
             "우리 방법이 SOTA를 0.3%p 넘었다"는 주장을 검증하려면 먼저 무엇을 확인해야 하는가?</p>
           <div class="opts">
-            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>시드 분산과 하이퍼파라미터 탐색 예산이 같은지</span></button>
-            <button class="opt" type="button"><span class="opt__mark">나</span><span>모델 파라미터 수가 더 많은지</span></button>
-            <button class="opt" type="button"><span class="opt__mark">다</span><span>학습이 더 오래 걸렸는지</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>시드 variance와 hyperparameter 탐색 예산이 같은지</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>model parameter(파라미터) 수가 더 많은지</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>training(학습)이 더 오래 걸렸는지</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
             0.3%p는 대개 시드 노이즈 범위 안이다. 또 탐색 예산이 다르면
@@ -532,7 +532,7 @@ for name, delta in [("A", 3.0), ("B", 0.5), ("C", 6.0)]:
           <div class="q__explain"><strong>풀이 ·</strong>
             나가 틀렸다. 한계는 주장의 <em>적용 범위</em>를 정하는 장치이며,
             범위가 분명해질수록 그 안에서의 주장은 오히려 강해진다.
-            가는 성분 간 상호작용, 다는 자유도 보정이다.
+            가는 성분 간 상호작용, 다는 degrees of freedom 보정이다.
           </div>
         </div>
       </div>
@@ -542,10 +542,10 @@ for name, delta in [("A", 3.0), ("B", 0.5), ("C", 6.0)]:
       <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
       <ul>
         <li><strong>4.8 가설검정과 통계적 비교</strong> — 식 (2)의 이론적 배경. $p$-값, 검정력, 다중검정 보정.</li>
-        <li><strong>5.13~5.14 모델 평가와 선택</strong> — 지표 선택과 중첩 교차검증.</li>
-        <li><strong>13.9 LLM 평가</strong> — 벤치마크 오염과 LLM-as-a-Judge의 신뢰성.</li>
-        <li><strong>16.13 Foundation Model 거버넌스</strong> — 모델 카드와 위험 평가로 확장된 윤리적 고려.</li>
-        <li><strong>19.6 공정성과 편향</strong> — 윤리적 고려를 측정 가능한 기준으로 만드는 방법.</li>
+        <li><strong>5.13~5.14 model evaluation과 선택</strong> — 지표 선택과 중첩 cross-validation(교차검증).</li>
+        <li><strong>13.9 LLM evaluation</strong> — benchmark(벤치마크) 오염과 LLM-as-a-Judge의 신뢰성.</li>
+        <li><strong>16.13 Foundation Model 거버넌스</strong> — model 카드와 위험 evaluation으로 확장된 ethical consideration.</li>
+        <li><strong>19.6 공정성과 bias</strong> — ethical consideration을 측정 가능한 기준으로 만드는 방법.</li>
       </ul>
 
       <h3>출처</h3>
@@ -559,31 +559,31 @@ for name, delta in [("A", 3.0), ("B", 0.5), ("C", 6.0)]:
         <li class="ref" id="ref-dodge2019-show-your-work" data-ref="dodge2019-show-your-work">
           <span class="ref__type" data-type="paper">논문</span>
           <span class="ref__cite">Dodge, J. et al. (2019). <em>Show Your Work: Improved Reporting of Experimental Results</em>. EMNLP.</span>
-          <span class="ref__where">하이퍼파라미터 탐색 예산에 따라 보고 성능이 달라지므로 예산을 함께 보고해야 한다는 제안. '비교 실험'과 '오해 3'의 근거</span>
+          <span class="ref__where">hyperparameter 탐색 예산에 따라 보고 성능이 달라지므로 예산을 함께 보고해야 한다는 제안. 'comparative experiment'과 '오해 3'의 근거</span>
           <a class="ref__link" href="https://arxiv.org/abs/1909.03004">arXiv:1909.03004</a>
         </li>
         <li class="ref" id="ref-pineau2020-improving-reproducibility-in" data-ref="pineau2020-improving-reproducibility-in">
           <span class="ref__type" data-type="paper">논문</span>
           <span class="ref__cite">Pineau, J. et al. (2020). <em>Improving Reproducibility in Machine Learning Research</em>. NeurIPS Reproducibility Program.</span>
-          <span class="ref__where">체크리스트 항목 — 코드·데이터·시드·하이퍼파라미터·계산 자원·실행 횟수를 명시하도록 요구. '재현성' 절의 근거</span>
+          <span class="ref__where">체크리스트 항목 — 코드·data·시드·hyperparameter·계산 자원·실행 횟수를 명시하도록 요구. 'reproducibility' 절의 근거</span>
           <a class="ref__link" href="https://arxiv.org/abs/2003.12206">arXiv:2003.12206</a>
         </li>
         <li class="ref" id="ref-russell2021-aima" data-ref="russell2021-aima">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Russell, S. &amp; Norvig, P. (2021). <em>Artificial Intelligence: A Modern Approach</em> (4th ed.). Pearson.</span>
-          <span class="ref__where">27장 — AI 연구의 윤리적 고려 항목(편향, 프라이버시, 오용, 영향 평가)의 분류</span>
+          <span class="ref__where">27장 — AI 연구의 ethical consideration 항목(bias, 프라이버시, 오용, 영향 evaluation)의 분류</span>
           <a class="ref__link" href="https://aima.cs.berkeley.edu/">aima.cs.berkeley.edu</a>
         </li>
         <li class="ref" id="ref-hastie2009-esl" data-ref="hastie2009-esl">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>. Springer.</span>
-          <span class="ref__where">7.10절 — 반복 실행에서 표본표준편차와 표준오차를 구하는 절차. 식 (2)의 근거</span>
+          <span class="ref__where">7.10절 — 반복 실행에서 표본표준편차와 standard error를 구하는 절차. 식 (2)의 근거</span>
           <a class="ref__link" href="https://hastie.su.domains/ElemStatLearn/">hastie.su.domains</a>
         </li>
         <li class="ref" id="ref-mit-6s191" data-ref="mit-6s191">
           <span class="ref__type" data-type="course">강의</span>
           <span class="ref__cite">MIT 6.S191: <em>Introduction to Deep Learning</em> — 편향과 공정성 강의.</span>
-          <span class="ref__where">Lecture 8 — 데이터 편향의 출처와 완화 기법. '윤리적 고려' 절 참고</span>
+          <span class="ref__where">Lecture 8 — data bias의 출처와 완화 기법. 'ethical consideration' 절 참고</span>
           <a class="ref__link" href="https://introtodeeplearning.com/">introtodeeplearning.com</a>
         </li>
       </ol>
@@ -618,16 +618,16 @@ for name, delta in [("A", 3.0), ("B", 0.5), ("C", 6.0)]:
 WIDGETS.register('claim-defense', function (root, ctx) {
   var el = VIZ.el;
   var D = [
-    ['왜 이 문제가 중요한가?', '연구 문제', '문제를 반증 가능하게 진술한다. "성능을 높인다"가 아니라 "무엇이 왜 안 되는가"를 특정한다.'],
-    ['이미 누가 한 것 아닌가?', '관련 연구', '기존 방법이 어디까지 했고 왜 부족한지를 보여 경계를 긋는다. 목록 나열이 아니다.'],
-    ['정확히 무엇을 했는가?', '방법론', '모델 구조·손실·최적화를 나눠 적어 무엇이 새로운지 분명히 한다. 재현 가능해야 한다.'],
-    ['운이 좋았던 것 아닌가?', '실험 설계 · 반복', '시드를 여러 개 돌리고 평균과 표준오차를 함께 보고한다. 한 번 실행은 표본 하나다.'],
-    ['조건이 유리했던 것 아닌가?', '비교 실험', '데이터·학습량·하이퍼파라미터 탐색 예산을 같게 맞춘다. 예산 차이는 방법 차이가 아니다.'],
+    ['왜 이 문제가 중요한가?', 'research question', '문제를 반증 가능하게 진술한다. "성능을 높인다"가 아니라 "무엇이 왜 안 되는가"를 특정한다.'],
+    ['이미 누가 한 것 아닌가?', 'related work', '기존 방법이 어디까지 했고 왜 부족한지를 보여 경계를 긋는다. 목록 나열이 아니다.'],
+    ['정확히 무엇을 했는가?', '방법론', 'model 구조·loss·optimization을 나눠 적어 무엇이 새로운지 분명히 한다. 재현 가능해야 한다.'],
+    ['운이 좋았던 것 아닌가?', 'experimental design · 반복', '시드를 여러 개 돌리고 평균과 standard error를 함께 보고한다. 한 번 실행은 표본 하나다.'],
+    ['조건이 유리했던 것 아닌가?', 'comparative experiment', 'data·학습량·hyperparameter 탐색 예산을 같게 맞춘다. 예산 차이는 방법 차이가 아니다.'],
     ['어느 부분이 효과를 냈는가?', 'Ablation Study', '성분을 하나씩 제거해 기여도를 잰다. 단, 오차 막대와 비교해야 의미가 있다.'],
     ['어디까지 믿을 수 있는가?', '한계', '주장의 적용 범위를 명시한다. 숨기면 범위 밖 반례 하나로 전체가 흔들린다.'],
-    ['우리 환경에서도 되는가?', '재현성', '코드·시드·하이퍼파라미터·계산 자원·탐색 횟수를 밝힌다.'],
-    ['누가 피해를 보는가?', '윤리적 고려', '데이터 출처와 동의, 편향, 오용 가능성, 환경 비용을 검토한다.'],
-    ['그래서 다음은?', '후속 연구', '한계와 짝을 이룬다. 못 한 것이 곧 다음 질문이다.']
+    ['우리 환경에서도 되는가?', 'reproducibility', '코드·시드·hyperparameter·계산 자원·탐색 횟수를 밝힌다.'],
+    ['누가 피해를 보는가?', 'ethical consideration', 'data 출처와 동의, bias, 오용 가능성, 환경 비용을 검토한다.'],
+    ['그래서 다음은?', 'future work', '한계와 짝을 이룬다. 못 한 것이 곧 다음 질문이다.']
   ];
 
   var svg = el('svg', { viewBox: '0 0 480 260', role: 'img', 'aria-label': '예상 반론과 그것을 막는 논문의 각 절' });
@@ -666,7 +666,7 @@ WIDGETS.register('ablation-lab', function (root, ctx) {
                11: 2.23, 12: 2.20, 13: 2.18, 14: 2.16, 15: 2.14, 16: 2.13, 17: 2.12, 18: 2.11, 19: 2.10, 20: 2.09 };
   var m = 5, comp = [['A', 3.0], ['B', 0.5], ['C', 6.0]];
 
-  /* xmin 을 0 으로 두어 y축이 왼쪽 끝에 서게 하고, 막대는 0.5 씩 밀어
+  /* xmin을 0으로 두어 y축이 왼쪽 끝에 서게 하고, 막대는 0.5 씩 밀어
      눈금 숫자(축 왼쪽 6px)와 막대 위 값 라벨이 겹치지 않게 한다. */
   var p = VIZ.plot({ w: 460, h: 230, xmin: 0, xmax: 3, ymin: 0, ymax: 7.2, pad: { t: 18, r: 14, b: 30, l: 40 } });
   ctx.stage.appendChild(p.svg);
@@ -677,7 +677,7 @@ WIDGETS.register('ablation-lab', function (root, ctx) {
   ]);
 
   function draw() {
-    /* 시드를 늘리면 같은 분포에서 더 뽑았다고 보고, s 는 유지하되 SE 만 줄어든다 */
+    /* 시드를 늘리면 같은 분포에서 더 뽑았다고 보고, s는 유지하되 SE만 줄어든다 */
     var mean = BASE.reduce(function (a, b) { return a + b; }, 0) / BASE.length;
     var ss = BASE.reduce(function (a, b) { return a + (b - mean) * (b - mean); }, 0);
     var s = Math.sqrt(ss / (BASE.length - 1));
@@ -713,7 +713,7 @@ WIDGETS.register('ablation-lab', function (root, ctx) {
 
   WIDGETS.slider({ host: ctx.controls, label: '시드 개수 m', min: 2, max: 20, step: 1, value: 5, digits: 0,
     onInput: function (v) { m = v; draw(); } });
-  WIDGETS.slider({ host: ctx.controls, label: '성분 B 의 기여도 Δ', min: 0, max: 3, step: .1, value: .5, digits: 1,
+  WIDGETS.slider({ host: ctx.controls, label: '성분 B의 기여도 Δ', min: 0, max: 3, step: .1, value: .5, digits: 1,
     onInput: function (v) { comp[1][1] = v; draw(); } });
   draw();
 });
@@ -752,11 +752,11 @@ WIDGETS.register('sample-size', function (root, ctx) {
 /* 위젯 4 — 공정한 비교 점검표 */
 WIDGETS.register('fairness-check', function (root, ctx) {
   var ITEMS = [
-    ['같은 데이터·같은 분할', true, '데이터가 다르면 방법이 아니라 데이터를 비교한 것이 된다.'],
-    ['같은 학습 예산 (스텝·에폭)', true, '더 오래 학습한 쪽이 유리하다. 계산량을 맞춰야 한다.'],
-    ['같은 하이퍼파라미터 탐색 예산', true, '내 방법만 100번 탐색했다면 그것은 노력의 차이다.'],
-    ['여러 시드로 반복', true, '한 번 실행은 표본 하나. 평균과 표준오차가 필요하다.'],
-    ['같은 평가 프로토콜', true, '전처리·지표·후처리가 다르면 숫자를 나란히 놓을 수 없다.'],
+    ['같은 data·같은 분할', true, 'data가 다르면 방법이 아니라 data를 비교한 것이 된다.'],
+    ['같은 training 예산 (스텝·에폭)', true, '더 오래 학습한 쪽이 유리하다. 계산량을 맞춰야 한다.'],
+    ['같은 hyperparameter 탐색 예산', true, '내 방법만 100번 탐색했다면 그것은 노력의 차이다.'],
+    ['여러 시드로 반복', true, '한 번 실행은 표본 하나. 평균과 standard error가 필요하다.'],
+    ['같은 evaluation 프로토콜', true, 'preprocessing·지표·후처리가 다르면 숫자를 나란히 놓을 수 없다.'],
     ['테스트셋을 마지막에 한 번만', true, '보고 고치면 검증셋이 되어 점수가 낙관적으로 치우친다.']
   ];
   var state = ITEMS.map(function () { return true; });

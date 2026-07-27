@@ -59,54 +59,54 @@
     </header>
 
     <nav class="chips" aria-label="이 절에서 다루는 항목">
-      <a class="chip" href="#c-collect">데이터 수집</a>
-      <a class="chip" href="#c-preprocess">데이터 전처리</a>
-      <a class="chip" href="#c-feature">특성 표현</a>
-      <a class="chip" href="#c-select">모델 선택</a>
-      <a class="chip" href="#c-train">학습</a>
-      <a class="chip" href="#c-validate">검증</a>
-      <a class="chip" href="#c-evaluate">평가</a>
-      <a class="chip" href="#c-infer">추론</a>
-      <a class="chip" href="#c-deploy">배포</a>
-      <a class="chip" href="#c-monitor">모니터링</a>
-      <a class="chip" href="#c-retrain">재학습</a>
+      <a class="chip" href="#c-collect">Data Collection</a>
+      <a class="chip" href="#c-preprocess">Data Preprocessing</a>
+      <a class="chip" href="#c-feature">Feature Representation</a>
+      <a class="chip" href="#c-select">Model Selection</a>
+      <a class="chip" href="#c-train">Training</a>
+      <a class="chip" href="#c-validate">Validation</a>
+      <a class="chip" href="#c-evaluate">Evaluation</a>
+      <a class="chip" href="#c-infer">Inference</a>
+      <a class="chip" href="#c-deploy">Deployment</a>
+      <a class="chip" href="#c-monitor">Monitoring</a>
+      <a class="chip" href="#c-retrain">Retraining</a>
     </nav>
 
     <section class="sec" id="s-summary">
       <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
       <p class="tldr">
-        모델 학습은 이 열한 단계 중 <strong>하나</strong>일 뿐이다.
-        그리고 이 파이프라인은 한 번 흐르고 끝나는 직선이 아니라,
-        모니터링 → 재학습으로 <strong>되돌아오는 고리</strong>다.
+        model(모델) training(학습)은 이 열한 단계 중 <strong>하나</strong>일 뿐이다.
+        그리고 이 pipeline(파이프라인)은 한 번 흐르고 끝나는 직선이 아니라,
+        monitoring(모니터링) → retraining(재학습)으로 <strong>되돌아오는 고리</strong>다.
       </p>
       <h3>학습 목표</h3>
       <ol class="goals">
         <li>열한 단계를 순서대로 나열하고, 각 단계가 무엇을 입력받아 무엇을 내놓는지 말할 수 있다.</li>
-        <li>검증과 평가를 구분하고, 왜 둘을 분리해야 하는지 설명할 수 있다.</li>
-        <li>재학습 주기 $T^{*} = \sqrt{2C/(k\delta)}$ 를 유도하고 실제 숫자를 넣어 계산할 수 있다.</li>
+        <li>validation(검증)과 evaluation(평가)을 구분하고, 왜 둘을 분리해야 하는지 설명할 수 있다.</li>
+        <li>retraining 주기 $T^{*} = \sqrt{2C/(k\delta)}$ 를 유도하고 실제 숫자를 넣어 계산할 수 있다.</li>
       </ol>
     </section>
 
     <section class="sec" id="s-intuition">
       <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
       <p>
-        입문자가 흔히 그리는 그림은 이렇다 — <em>데이터를 넣고, 모델을 학습시키고, 끝.</em>
-        실제로 돌아가는 시스템에서 모델 학습 코드가 차지하는 비중은 아주 작다.
+        입문자가 흔히 그리는 그림은 이렇다 — <em>data(데이터)를 넣고, model을 학습시키고, 끝.</em>
+        실제로 돌아가는 시스템에서 model training 코드가 차지하는 비중은 아주 작다.
         Sculley 등은 이를 두고 <strong>"ML 코드는 전체 시스템의 작은 상자 하나에 불과하다"</strong>고
         지적했다<a class="cite" href="#ref-sculley2015-tech-debt" data-ref="sculley2015-tech-debt">1</a>.
-        나머지는 데이터 수집·검증·서빙·모니터링 같은 주변 인프라다.
+        나머지는 data collection(데이터 수집)·validation·서빙·monitoring 같은 주변 인프라다.
       </p>
       <p>
-        더 중요한 차이가 하나 있다. 이 파이프라인은 <strong>끝나지 않는다.</strong>
-        세상이 변하면 모델이 낡는다. 그래서 모니터링이 재학습을 부르고, 고리가 다시 돈다.
+        더 중요한 차이가 하나 있다. 이 pipeline은 <strong>끝나지 않는다.</strong>
+        세상이 변하면 model이 낡는다. 그래서 monitoring이 retraining을 부르고, 고리가 다시 돈다.
       </p>
 
       <figure class="widget" data-widget="pipeline-map">
-        <figcaption class="widget__bar">열한 단계 파이프라인 — 각 단계를 눌러보세요</figcaption>
+        <figcaption class="widget__bar">열한 단계 pipeline — 각 단계를 눌러보세요</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
-          <p class="watch">모니터링에서 재학습으로 돌아오는 화살표가 이 그림의 핵심입니다. 직선이 아니라 고리입니다.</p>
+          <p class="watch">monitoring에서 retraining으로 돌아오는 화살표가 이 그림의 핵심입니다. 직선이 아니라 고리입니다.</p>
         </div>
       </figure>
     </section>
@@ -115,94 +115,94 @@
       <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
 
       <p>
-        파이프라인은 <strong>함수 합성</strong>으로 쓸 수 있다.
-        <a href="1.1-ai-fundamentals.html#c-dl">1.1절의 딥러닝 정의</a>와 같은 형식이다.
+        pipeline은 <strong>함수 합성</strong>으로 쓸 수 있다.
+        <a href="1.1-ai-fundamentals.html#c-dl">1.1절의 deep learning(딥러닝) 정의</a>와 같은 형식이다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \hat{y} \;=\; \bigl(h_{\theta^{*}} \circ \phi \circ \rho\bigr)(x_{\text{raw}}) $$</div>
         <span class="eq__tag num">(1)</span>
       </div>
       <p>
-        원자료 $x_{\text{raw}}$ 가 전처리 $\rho$, 특성 표현 $\phi$, 학습된 모델 $h_{\theta^{*}}$ 를 차례로 통과한다.
+        원자료 $x_{\text{raw}}$ 가 preprocessing(전처리) $\rho$, feature representation(특성 표현) $\phi$, 학습된 model $h_{\theta^{*}}$ 를 차례로 통과한다.
         <strong>학습할 때와 추론할 때 이 합성이 정확히 같아야 한다</strong> — 이것이 지켜지지 않는 것이 실무의 가장 흔한 버그다.
       </p>
 
-      <h3>준비 단계</h3>
+      <h3>Preparation Stage 준비 단계</h3>
       <span class="anchor" id="c-collect"></span>
       <p>
-        <strong>데이터 수집</strong> — 무엇을 모을지가 곧 무엇을 배울지를 정한다.
-        수집 과정의 편향은 나중에 어떤 알고리즘으로도 지울 수 없다.
+        <strong>data collection</strong> — 무엇을 모을지가 곧 무엇을 배울지를 정한다.
+        collection(수집) 과정의 bias(편향)는 나중에 어떤 algorithm(알고리즘)으로도 지울 수 없다.
         "어떤 표본이 빠졌는가"를 묻는 것이 이 단계의 핵심이다.
       </p>
       <span class="anchor" id="c-preprocess"></span>
       <p>
-        <strong>데이터 전처리</strong> $\rho$ — 결측 처리, 이상치 제거, 중복 제거, 스케일 조정.
-        여기서 쓰는 통계량(평균·표준편차 등)은 <strong>반드시 훈련 데이터에서만</strong> 계산해야 한다.
-        검증·테스트 데이터를 포함해 계산하면 정보가 새어 든다(<a href="1.5-data-split-evaluation.html#c-leakage">1.5절 데이터 누출</a>).
+        <strong>data preprocessing(데이터 전처리)</strong> $\rho$ — 결측 처리, 이상치 제거, 중복 제거, 스케일 조정.
+        여기서 쓰는 통계량(평균·표준편차 등)은 <strong>반드시 training data(훈련 데이터)에서만</strong> 계산해야 한다.
+        validation·test data(테스트 데이터)를 포함해 계산하면 정보가 새어 든다(<a href="1.5-data-split-evaluation.html#c-leakage">1.5절 data leakage(데이터 누출)</a>).
       </p>
       <span class="anchor" id="c-feature"></span>
       <p>
-        <strong>특성 표현</strong> $\phi$ — 원자료를 모델이 다룰 수 있는 벡터로 바꾼다.
+        <strong>feature representation</strong> $\phi$ — 원자료를 model이 다룰 수 있는 vector(벡터)로 바꾼다.
         전통적으로는 사람이 설계했고(feature engineering),
-        딥러닝은 이 단계를 <a href="1.2-ml-paradigms.html#c-selfsup">학습으로 대체</a>한다.
-        그래도 완전히 사라지지는 않는다 — 토큰화, 정규화, 창 나누기는 여전히 사람이 정한다.
+        deep learning은 이 단계를 <a href="1.2-ml-paradigms.html#c-selfsup">training으로 대체</a>한다.
+        그래도 완전히 사라지지는 않는다 — 토큰화, normalization(정규화), 창 나누기는 여전히 사람이 정한다.
       </p>
       <span class="anchor" id="c-select"></span>
       <p>
-        <strong>모델 선택</strong> — 가설 공간을 고르는 일이다.
-        <a href="1.1-ai-fundamentals.html#c-model-algo">1.1절에서 구분한 대로</a> 모델은 <em>무엇을 표현할 수 있는가</em>를 정한다.
-        하이퍼파라미터 탐색도 여기에 속하며, <strong>검증 데이터로 판단</strong>한다.
+        <strong>model selection(모델 선택)</strong> — hypothesis space(가설 공간)를 고르는 일이다.
+        <a href="1.1-ai-fundamentals.html#c-model-algo">1.1절에서 구분한 대로</a> model은 <em>무엇을 표현할 수 있는가</em>를 정한다.
+        hyperparameter(하이퍼파라미터) 탐색도 여기에 속하며, <strong>validation data(검증 데이터)로 판단</strong>한다.
       </p>
 
-      <h3>학습과 검증</h3>
+      <h3>Training and Validation 학습과 검증</h3>
       <span class="anchor" id="c-train"></span>
       <p>
-        <strong>학습</strong> — $\theta^{*} = \arg\min_\theta \frac{1}{n}\sum L$.
-        훈련 데이터만 쓴다.
+        <strong>training</strong> — $\theta^{*} = \arg\min_\theta \frac{1}{n}\sum L$.
+        training data만 쓴다.
       </p>
       <span class="anchor" id="c-validate"></span>
       <p>
-        <strong>검증</strong> — 학습 중에 <em>선택</em>을 하기 위해 쓴다.
-        어느 하이퍼파라미터가 나은가, 언제 멈출까(early stopping), 어느 모델을 채택할까.
-        검증 데이터는 <strong>여러 번 본다.</strong>
+        <strong>validation</strong> — training 중에 <em>선택</em>을 하기 위해 쓴다.
+        어느 hyperparameter가 나은가, 언제 멈출까(early stopping), 어느 model을 채택할까.
+        validation data는 <strong>여러 번 본다.</strong>
       </p>
       <span class="anchor" id="c-evaluate"></span>
       <p>
-        <strong>평가</strong> — 모든 선택이 끝난 뒤 <em>단 한 번</em> 성능을 재기 위해 쓴다.
-        테스트 데이터를 보고 모델을 고치면, 그 순간 테스트 데이터는 검증 데이터가 되어 버린다.
+        <strong>evaluation</strong> — 모든 선택이 끝난 뒤 <em>단 한 번</em> 성능을 재기 위해 쓴다.
+        test data를 보고 model을 고치면, 그 순간 test data는 validation data가 되어 버린다.
       </p>
       <div class="note note--key">
-        <span class="note__label">검증과 평가의 차이</span>
+        <span class="note__label">validation과 evaluation의 차이</span>
         <p>
           같은 "성능 측정"처럼 보이지만 목적이 다르다.
-          <strong>검증은 고르기 위해, 평가는 보고하기 위해</strong> 잰다.
-          검증 점수는 여러 번 최적화의 대상이 되므로 낙관적으로 치우친다.
-          그래서 편향 없는 추정치를 얻으려면 손대지 않은 테스트 집합이 따로 필요하다.
+          <strong>validation은 고르기 위해, evaluation은 보고하기 위해</strong> 잰다.
+          validation 점수는 여러 번 optimization(최적화)의 대상이 되므로 낙관적으로 치우친다.
+          그래서 bias 없는 추정치를 얻으려면 손대지 않은 테스트 집합이 따로 필요하다.
         </p>
       </div>
 
-      <h3>운영 단계</h3>
+      <h3>Operation Stage 운영 단계</h3>
       <span class="anchor" id="c-infer"></span>
       <p>
-        <strong>추론</strong> — 학습된 $\theta^{*}$ 로 새 입력에 답한다.
-        학습과 달리 <em>지연시간·처리량·비용</em>이 제약이 된다.
-        같은 모델도 배치 추론이냐 실시간이냐에 따라 설계가 달라진다.
+        <strong>inference(추론)</strong> — 학습된 $\theta^{*}$ 로 새 입력에 답한다.
+        training과 달리 <em>지연시간·처리량·비용</em>이 제약이 된다.
+        같은 model도 batch(배치) 추론이냐 실시간이냐에 따라 설계가 달라진다.
       </p>
       <span class="anchor" id="c-deploy"></span>
       <p>
-        <strong>배포</strong> — 모델을 실제 서비스에 올린다.
+        <strong>deployment(배포)</strong> — model을 실제 서비스에 올린다.
         버전 관리, 점진적 롤아웃, 문제 시 되돌리기(rollback)가 필요하다.
-        <strong>학습 때의 전처리 $\rho, \phi$ 를 그대로 재현</strong>하는 것이 핵심 과제다.
+        <strong>training 때의 preprocessing $\rho, \phi$ 를 그대로 재현</strong>하는 것이 핵심 과제다.
       </p>
       <span class="anchor" id="c-monitor"></span>
       <p>
-        <strong>모니터링</strong> — 예측 품질, 입력 분포, 지연시간, 오류율을 지켜본다.
+        <strong>monitoring</strong> — 예측 품질, 입력 분포, 지연시간, 오류율을 지켜본다.
         정답이 늦게 오거나 아예 안 오는 경우가 많아, 정답 없이도 이상을 감지하는 장치가 필요하다
-        (입력 분포 변화 감시 등).
+        (입력 distribution shift(분포 변화) 감시 등).
       </p>
       <span class="anchor" id="c-retrain"></span>
       <p>
-        <strong>재학습</strong> — 성능이 떨어지면 새 데이터로 다시 학습해 배포한다.
+        <strong>retraining</strong> — 성능이 떨어지면 새 data로 다시 학습해 배포한다.
         <em>얼마나 자주</em> 할지는 감이 아니라 계산으로 정할 수 있다. 아래에서 유도한다.
       </p>
     </section>
@@ -211,8 +211,8 @@
       <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
 
       <p>
-        재학습 주기를 정하는 문제를 세운다. 모델은 배포 직후가 가장 좋고, 시간이 지나면 성능이 떨어진다.
-        <strong>자주 재학습하면 비용이 들고, 드물게 하면 성능 손실이 쌓인다.</strong>
+        retraining 주기를 정하는 문제를 세운다. model은 deployment 직후가 가장 좋고, 시간이 지나면 성능이 떨어진다.
+        <strong>자주 재학습하면 비용이 들고, 드물게 하면 성능 loss(손실)가 쌓인다.</strong>
       </p>
       <div class="eq">
         <div class="eq__body">$$ \text{일일 총비용}\quad J(T) \;=\; \underbrace{\frac{C}{T}}_{\text{재학습 비용}} \;+\; \underbrace{\frac{k\,\delta\,T}{2}}_{\text{성능 손실 비용}} $$</div>
@@ -228,23 +228,23 @@
         <table class="symtab">
           <thead><tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr></thead>
           <tbody>
-            <tr><td>$x_{\text{raw}}$</td><td>엑스 로우</td><td>가공하지 않은 원자료</td><td>—</td><td>—</td></tr>
-            <tr><td>$\rho$</td><td>로</td><td>전처리 함수</td><td>함수</td><td>—</td></tr>
-            <tr><td>$\phi$</td><td>파이</td><td>특성 표현 함수</td><td>함수 → $\mathbb{R}^{d}$</td><td>—</td></tr>
-            <tr><td>$h_{\theta^{*}}$</td><td>에이치 세타 스타</td><td>학습이 끝난 모델</td><td>함수</td><td>—</td></tr>
-            <tr><td>$T$</td><td>티</td><td>재학습 주기 (일)</td><td>스칼라</td><td>$T > 0$</td></tr>
-            <tr><td>$C$</td><td>씨</td><td>재학습 1회 비용</td><td>스칼라</td><td>$C > 0$</td></tr>
-            <tr><td>$\delta$</td><td>델타</td><td>하루당 성능 저하량 (예: %p/일)</td><td>스칼라</td><td>$\delta > 0$</td></tr>
-            <tr><td>$k$</td><td>케이</td><td>성능 저하 1단위의 비용</td><td>스칼라</td><td>$k > 0$</td></tr>
-            <tr><td>$J(T)$</td><td>제이 오브 티</td><td>주기 $T$ 일 때의 일일 총비용</td><td>스칼라</td><td>$> 0$</td></tr>
-            <tr><td>$T^{*}$</td><td>티 스타</td><td>총비용을 최소로 하는 주기</td><td>스칼라</td><td>$> 0$</td></tr>
+            <tr><td>$x_{\text{raw}}$</td><td>x row</td><td>가공하지 않은 원자료</td><td>—</td><td>—</td></tr>
+            <tr><td>$\rho$</td><td>rho 로</td><td>preprocessing 함수</td><td>함수</td><td>—</td></tr>
+            <tr><td>$\phi$</td><td>pi 파이</td><td>feature representation 함수</td><td>함수 → $\mathbb{R}^{d}$</td><td>—</td></tr>
+            <tr><td>$h_{\theta^{*}}$</td><td>h theta star</td><td>training이 끝난 model</td><td>함수</td><td>—</td></tr>
+            <tr><td>$T$</td><td>t</td><td>retraining 주기 (일)</td><td>scalar(스칼라)</td><td>$T > 0$</td></tr>
+            <tr><td>$C$</td><td>c</td><td>retraining 1회 비용</td><td>scalar</td><td>$C > 0$</td></tr>
+            <tr><td>$\delta$</td><td>delta 델타</td><td>하루당 성능 저하량 (예: %p/일)</td><td>scalar</td><td>$\delta > 0$</td></tr>
+            <tr><td>$k$</td><td>k</td><td>성능 저하 1단위의 비용</td><td>scalar</td><td>$k > 0$</td></tr>
+            <tr><td>$J(T)$</td><td>J of t</td><td>주기 $T$ 일 때의 일일 총비용</td><td>scalar</td><td>$> 0$</td></tr>
+            <tr><td>$T^{*}$</td><td>T star</td><td>총비용을 최소로 하는 주기</td><td>scalar</td><td>$> 0$</td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
     <section class="sec" id="s-derivation">
-      <div class="sec__head"><span class="sec__n num">5</span><h2>유도 — 최적 재학습 주기</h2></div>
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도 — 최적 retraining 주기</h2></div>
 
       <div class="derive">
         <div class="derive__row">
@@ -272,8 +272,8 @@
       <div class="note note--tip">
         <span class="note__label">이 식이 말해주는 것</span>
         <p>
-          <strong>제곱근</strong>이 핵심이다. 재학습 비용 $C$ 가 4배가 되어도 주기는 2배만 길어진다.
-          비용이 비싸다고 재학습을 무한정 미루는 것이 최적이 아니라는 뜻이다.
+          <strong>제곱근</strong>이 핵심이다. retraining 비용 $C$ 가 4배가 되어도 주기는 2배만 길어진다.
+          비용이 비싸다고 retraining을 무한정 미루는 것이 최적이 아니라는 뜻이다.
           반대로 성능이 빨리 낡는 영역($\delta$ 가 큰 곳 — 예: 추천, 이상탐지)에서는
           주기가 $1/\sqrt{\delta}$ 로 짧아진다.
         </p>
@@ -283,8 +283,8 @@
         <summary>정말 최솟값인가 — 2계 도함수</summary>
         <p>
           $\dfrac{d^2J}{dT^2} = \dfrac{2C}{T^{3}} > 0$ ($T>0$, $C>0$).
-          2계 도함수가 양수이므로 $J$ 는 아래로 볼록이고, $T^{*}$ 는 유일한 전역 최솟값이다.
-          <a href="1.1-ai-fundamentals.html#s-derivation">1.1절의 최소제곱 유도</a>와 같은 논법이다.
+          2계 도함수가 양수이므로 $J$ 는 아래로 convex(볼록)고, $T^{*}$ 는 유일한 전역 최솟값이다.
+          <a href="1.1-ai-fundamentals.html#s-derivation">1.1절의 least squares(최소제곱) 유도</a>와 같은 논법이다.
         </p>
       </details>
     </section>
@@ -292,17 +292,17 @@
     <section class="sec" id="s-example">
       <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
 
-      <p>추천 모델을 운영한다고 하자. 관측된 값은 이렇다.</p>
+      <p>추천 model을 운영한다고 하자. 관측된 값은 이렇다.</p>
       <ul>
-        <li>재학습 1회 비용 $C = 100$ (만원) — GPU 시간과 검증 인건비</li>
+        <li>retraining 1회 비용 $C = 100$ (만원) — GPU 시간과 validation 인건비</li>
         <li>정확도가 하루에 $\delta = 0.1$ %p 씩 떨어진다</li>
-        <li>정확도 1%p 하락은 하루 $k = 2$ (만원)의 매출 손실</li>
+        <li>정확도 1%p 하락은 하루 $k = 2$ (만원)의 매출 loss</li>
       </ul>
 
       <div class="derive">
         <div class="derive__row">
           <div class="derive__math">$$ k\delta = 2 \times 0.1 = 0.2 $$</div>
-          <div class="derive__why">하루 늦출 때마다 추가로 생기는 손실의 기울기</div>
+          <div class="derive__why">하루 늦출 때마다 추가로 생기는 loss의 gradient(기울기)</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \frac{2C}{k\delta} = \frac{2 \times 100}{0.2} = \frac{200}{0.2} = 1000 $$</div>
@@ -321,7 +321,7 @@
       <p>다른 주기와 비교하면 최적점의 의미가 분명해진다.</p>
       <div class="tablewrap">
         <table>
-          <thead><tr><th>주기 $T$</th><th>재학습 비용 $C/T$</th><th>성능 손실 $k\delta T/2$</th><th>일일 총비용 $J(T)$</th></tr></thead>
+          <thead><tr><th>주기 $T$</th><th>retraining 비용 $C/T$</th><th>성능 loss $k\delta T/2$</th><th>일일 총비용 $J(T)$</th></tr></thead>
           <tbody>
             <tr><td>10일</td><td>10.00</td><td>1.00</td><td>11.00</td></tr>
             <tr><td>20일</td><td>5.00</td><td>2.00</td><td>7.00</td></tr>
@@ -337,11 +337,11 @@
         <p>
           성능이 <strong>선형으로</strong> 떨어진다고 가정했다. 실제로는 계단식으로 떨어지거나
           (제품 개편, 계절 변화), 한동안 멀쩡하다가 급락하기도 한다.
-          또 $\delta$ 를 미리 안다고 가정했지만, 현실에서는 모니터링으로 <em>추정</em>해야 한다.
+          또 $\delta$ 를 미리 안다고 가정했지만, 현실에서는 monitoring으로 <em>추정</em>해야 한다.
         </p>
         <p>
           그래도 이 식은 쓸모가 있다. <strong>주기를 정하는 근거를 숫자로 만들고</strong>,
-          "재학습 비용을 절반으로 줄이면 주기가 $\sqrt{2}$ 배 짧아진다" 같은 판단을 가능하게 한다.
+          "retraining 비용을 절반으로 줄이면 주기가 $\sqrt{2}$ 배 짧아진다" 같은 판단을 가능하게 한다.
           모형이 틀렸다는 것과 쓸모없다는 것은 다르다.
         </p>
       </div>
@@ -357,22 +357,22 @@
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">재학습 비용 $C$ 를 4배로 올려 보세요. 최적 주기는 4배가 아니라 <strong>2배</strong>만 길어집니다.</p>
+          <p class="watch">retraining 비용 $C$ 를 4배로 올려 보세요. 최적 주기는 4배가 아니라 <strong>2배</strong>만 길어집니다.</p>
         </div>
       </figure>
 
       <h3>학습·서빙 왜곡 — 가장 흔한 배포 버그</h3>
       <p>
-        학습 때 쓴 전처리와 서빙 때 쓴 전처리가 어긋나면, 모델은 그대로인데 성능만 떨어진다.
+        training 때 쓴 preprocessing과 서빙 때 쓴 preprocessing이 어긋나면, model은 그대로인데 성능만 떨어진다.
         원인을 찾기 어려워 실무에서 악명 높다.
       </p>
       <figure class="widget" data-widget="skew-demo">
-        <figcaption class="widget__bar">전처리가 어긋나면 무슨 일이 일어나는가</figcaption>
+        <figcaption class="widget__bar">preprocessing이 어긋나면 무슨 일이 일어나는가</figcaption>
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">서빙 쪽 평균·표준편차를 바꿔 보세요. 모델은 손대지 않았는데 정확도가 무너집니다.</p>
+          <p class="watch">서빙 쪽 평균·표준편차를 바꿔 보세요. model은 손대지 않았는데 정확도가 무너집니다.</p>
         </div>
       </figure>
 
@@ -382,7 +382,7 @@
         <div class="widget__body">
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
-          <p class="watch">'모델 학습'이 차지하는 칸의 크기를 보세요. 입문 과정에서 배우는 부분입니다.</p>
+          <p class="watch">'model training'이 차지하는 칸의 크기를 보세요. 입문 과정에서 배우는 부분입니다.</p>
         </div>
       </figure>
     </section>
@@ -392,31 +392,31 @@
 
       <div class="note note--trap">
         <span class="note__label">오해 1</span>
-        <p>"파이프라인은 한 번 흐르면 끝이다."</p>
+        <p>"pipeline은 한 번 흐르면 끝이다."</p>
         <p>
-          <strong>실제로는</strong> 고리다. 세상이 변하면 데이터 분포가 변하고, 모델은 가만히 있어도 낡는다.
-          모니터링 → 재학습 → 배포로 되돌아오는 화살표가 없으면
+          <strong>실제로는</strong> 고리다. 세상이 변하면 data 분포가 변하고, model은 가만히 있어도 낡는다.
+          monitoring → retraining → deployment로 되돌아오는 화살표가 없으면
           그것은 <em>실험</em>이지 <em>시스템</em>이 아니다.
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 2</span>
-        <p>"검증 데이터와 테스트 데이터는 사실상 같다."</p>
+        <p>"validation data와 test data는 사실상 같다."</p>
         <p>
-          <strong>실제로는</strong> 역할이 다르다. 검증은 <em>고르기 위해</em>, 평가는 <em>보고하기 위해</em> 쓴다.
-          검증 점수를 보고 하이퍼파라미터를 100번 조정했다면 그 점수는 이미 낙관적으로 편향돼 있다.
-          테스트 점수를 보고 모델을 고치는 순간, 테스트 집합도 같은 운명이 된다.
+          <strong>실제로는</strong> 역할이 다르다. validation은 <em>고르기 위해</em>, evaluation은 <em>보고하기 위해</em> 쓴다.
+          validation 점수를 보고 hyperparameter를 100번 조정했다면 그 점수는 이미 낙관적으로 편향돼 있다.
+          테스트 점수를 보고 model을 고치는 순간, 테스트 집합도 같은 운명이 된다.
         </p>
       </div>
 
       <div class="note note--trap">
         <span class="note__label">오해 3</span>
-        <p>"전처리는 사소한 준비 작업이다."</p>
+        <p>"preprocessing은 사소한 준비 작업이다."</p>
         <p>
-          <strong>실제로는</strong> 식 (1)의 $\rho, \phi$ 는 <strong>모델의 일부</strong>다.
-          학습 때와 서빙 때 이 함수가 다르면 모델이 아무리 좋아도 결과가 무너진다(학습·서빙 왜곡).
-          그래서 전처리를 코드로 한 곳에 묶어 학습·서빙이 같은 경로를 쓰게 만드는 것이 표준 관행이다.
+          <strong>실제로는</strong> 식 (1)의 $\rho, \phi$ 는 <strong>model의 일부</strong>다.
+          training 때와 서빙 때 이 함수가 다르면 model이 아무리 좋아도 결과가 무너진다(training·서빙 왜곡).
+          그래서 preprocessing을 코드로 한 곳에 묶어 training·서빙이 같은 경로를 쓰게 만드는 것이 표준 관행이다.
         </p>
       </div>
 
@@ -425,9 +425,9 @@
         <p>"성능이 떨어지면 무조건 재학습하면 된다."</p>
         <p>
           <strong>실제로는</strong> 원인을 먼저 나눠야 한다.
-          <em>입력 분포가 변한 것</em>(covariate shift)이라면 새 데이터 재학습이 맞지만,
-          <em>데이터 파이프라인이 깨진 것</em>이라면 재학습은 오염된 데이터를 학습하는 셈이 되어 더 나빠진다.
-          모니터링이 "성능"만이 아니라 <strong>입력 분포와 데이터 품질</strong>을 함께 봐야 하는 이유다.
+          <em>입력 분포가 변한 것</em>(covariate shift)이라면 새 data retraining이 맞지만,
+          <em>data pipeline이 깨진 것</em>이라면 retraining은 오염된 data를 학습하는 셈이 되어 더 나빠진다.
+          monitoring이 "성능"만이 아니라 <strong>입력 분포와 data 품질</strong>을 함께 봐야 하는 이유다.
         </p>
       </div>
     </section>
@@ -435,7 +435,7 @@
     <section class="sec" id="s-code">
       <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
       <details>
-        <summary>NumPy — 최적 재학습 주기 (12줄)</summary>
+        <summary>NumPy — 최적 retraining 주기 (12줄)</summary>
 <pre><code>import numpy as np
 
 C, delta, k = 100.0, 0.1, 2.0          # 비용, 일일 저하, 저하 단가
@@ -475,7 +475,7 @@ print(C / T_star, k * delta * T_star / 2)   # 3.162... 3.162...
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">계산</span>
-            재학습 비용 $C$ 만 9배로 늘면 최적 주기는 몇 배가 되는가?</p>
+            retraining 비용 $C$ 만 9배로 늘면 최적 주기는 몇 배가 되는가?</p>
           <div class="opts">
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>3배</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>9배</span></button>
@@ -489,30 +489,30 @@ print(C / T_star, k * delta * T_star / 2)   # 3.162... 3.162...
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">개념</span>
-            전처리에 쓸 평균과 표준편차는 어느 데이터에서 계산해야 하는가?</p>
+            preprocessing에 쓸 평균과 표준편차는 어느 data에서 계산해야 하는가?</p>
           <div class="opts">
-            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>훈련 데이터에서만</span></button>
-            <button class="opt" type="button"><span class="opt__mark">나</span><span>전체 데이터에서</span></button>
-            <button class="opt" type="button"><span class="opt__mark">다</span><span>테스트 데이터에서</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>training data에서만</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>전체 data에서</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>test data에서</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            전체에서 계산하면 검증·테스트의 정보가 훈련 과정에 새어 든다(데이터 누출).
-            테스트 성능이 실제보다 좋아 보이게 되어, 배포 후에 성능이 떨어진다.
+            전체에서 계산하면 validation·테스트의 정보가 training 과정에 새어 든다(data leakage).
+            테스트 성능이 실제보다 좋아 보이게 되어, deployment 후에 성능이 떨어진다.
           </div>
         </div>
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">개념</span>
-            식 (1)에서 배포 시 가장 자주 깨지는 부분은?</p>
+            식 (1)에서 deployment 시 가장 자주 깨지는 부분은?</p>
           <div class="opts">
-            <button class="opt" type="button"><span class="opt__mark">가</span><span>$h_{\theta^{*}}$ — 모델 가중치</span></button>
-            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>$\rho, \phi$ — 전처리와 특성 표현</span></button>
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>$h_{\theta^{*}}$ — model weight(가중치)</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>$\rho, \phi$ — preprocessing과 feature representation</span></button>
             <button class="opt" type="button"><span class="opt__mark">다</span><span>$x_{\text{raw}}$ — 원자료</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            가중치는 파일로 그대로 옮겨지지만, 전처리는 학습 코드(예: 파이썬 노트북)와
+            weight는 파일로 그대로 옮겨지지만, preprocessing은 training 코드(예: 파이썬 노트북)와
             서빙 코드(예: 자바 서비스)에 <em>따로 구현되기 쉽다</em>.
-            이 둘이 어긋나는 것이 학습·서빙 왜곡이다.
+            이 둘이 어긋나는 것이 training·서빙 왜곡이다.
           </div>
         </div>
 
@@ -520,14 +520,14 @@ print(C / T_star, k * delta * T_star / 2)   # 3.162... 3.162...
           <p class="q__stem"><span class="q__tag">함정</span>
             다음 중 <strong>틀린</strong> 진술은?</p>
           <div class="opts">
-            <button class="opt" type="button"><span class="opt__mark">가</span><span>최적 주기에서는 재학습 비용과 성능 손실 비용이 같다</span></button>
-            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>성능이 떨어지면 언제나 재학습이 해법이다</span></button>
-            <button class="opt" type="button"><span class="opt__mark">다</span><span>검증 데이터는 여러 번, 테스트 데이터는 한 번 쓴다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>최적 주기에서는 retraining 비용과 성능 loss 비용이 같다</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>성능이 떨어지면 언제나 retraining이 해법이다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>validation data는 여러 번, test data는 한 번 쓴다</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            나가 틀렸다. 데이터 파이프라인이 깨져서 성능이 떨어진 경우,
-            재학습은 오염된 데이터를 학습하게 되어 오히려 악화된다.
-            가는 유도 3단계에서 확인했고(예제에서 3.16 = 3.16), 다는 검증과 평가의 정의다.
+            나가 틀렸다. data pipeline이 깨져서 성능이 떨어진 경우,
+            retraining은 오염된 data를 학습하게 되어 오히려 악화된다.
+            가는 유도 3단계에서 확인했고(예제에서 3.16 = 3.16), 다는 validation과 evaluation의 정의다.
           </div>
         </div>
       </div>
@@ -536,11 +536,11 @@ print(C / T_star, k * delta * T_star / 2)   # 3.162... 3.162...
     <section class="sec" id="s-links">
       <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
       <ul>
-        <li><strong><a href="1.5-data-split-evaluation.html">1.5 데이터 분할과 평가</a></strong> — 검증·평가 단계의 상세와 데이터 누출.</li>
-        <li><strong>5.14 모델 선택</strong> — 하이퍼파라미터 탐색과 중첩 교차검증.</li>
-        <li><strong>16.12 Foundation Model 운영</strong> — 대규모 학습 파이프라인.</li>
-        <li><strong>19.2 분포 변화와 견고성</strong> — 재학습을 부르는 분포 이동의 종류.</li>
-        <li><strong>23.34 배포 파이프라인</strong> — On-device 환경에서의 변환·검증·배포.</li>
+        <li><strong><a href="1.5-data-split-evaluation.html">1.5 data 분할과 evaluation</a></strong> — validation·evaluation 단계의 상세와 data leakage.</li>
+        <li><strong>5.14 model selection</strong> — hyperparameter 탐색과 중첩 cross-validation(교차검증).</li>
+        <li><strong>16.12 Foundation Model 운영</strong> — 대규모 training pipeline.</li>
+        <li><strong>19.2 distribution shift와 견고성</strong> — retraining을 부르는 분포 이동의 종류.</li>
+        <li><strong>23.34 deployment pipeline</strong> — On-device 환경에서의 변환·validation·deployment.</li>
       </ul>
 
       <h3>출처</h3>
@@ -554,25 +554,25 @@ print(C / T_star, k * delta * T_star / 2)   # 3.162... 3.162...
         <li class="ref" id="ref-google-rules-of-ml" data-ref="google-rules-of-ml">
           <span class="ref__type" data-type="web">웹문서</span>
           <span class="ref__cite">Zinkevich, M. <em>Rules of Machine Learning: Best Practices for ML Engineering</em>. Google.</span>
-          <span class="ref__where">Rule 29 · 32 — 학습·서빙 왜곡을 막으려면 전처리 코드를 공유하고 서빙 시점 특성을 로그로 남기라는 지침. '오해 3'과 왜곡 위젯의 근거</span>
+          <span class="ref__where">Rule 29 · 32 — training·서빙 왜곡을 막으려면 preprocessing 코드를 공유하고 서빙 시점 특성을 로그로 남기라는 지침. '오해 3'과 왜곡 위젯의 근거</span>
           <a class="ref__link" href="https://developers.google.com/machine-learning/guides/rules-of-ml">developers.google.com</a>
         </li>
         <li class="ref" id="ref-hastie2009-esl" data-ref="hastie2009-esl">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>. Springer.</span>
-          <span class="ref__where">7.2절 — 검증(모델 선택)과 평가(성능 추정)를 구분해야 하는 이유. '검증과 평가의 차이' 콜아웃의 근거</span>
+          <span class="ref__where">7.2절 — validation(model selection)과 evaluation을 구분해야 하는 이유. 'validation과 evaluation의 차이' 콜아웃의 근거</span>
           <a class="ref__link" href="https://hastie.su.domains/ElemStatLearn/">hastie.su.domains</a>
         </li>
         <li class="ref" id="ref-goodfellow2016-dl" data-ref="goodfellow2016-dl">
           <span class="ref__type" data-type="book">교재</span>
           <span class="ref__cite">Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>. MIT Press.</span>
-          <span class="ref__where">11장 Practical Methodology — 파이프라인 구성 순서와 무엇을 먼저 고칠지 판단하는 절차</span>
+          <span class="ref__where">11장 Practical Methodology — pipeline 구성 순서와 무엇을 먼저 고칠지 판단하는 절차</span>
           <a class="ref__link" href="https://www.deeplearningbook.org/">deeplearningbook.org</a>
         </li>
         <li class="ref" id="ref-hf-courses" data-ref="hf-courses">
           <span class="ref__type" data-type="course">강의</span>
           <span class="ref__cite">Hugging Face. <em>NLP Course</em> — 전처리·학습·배포 파이프라인.</span>
-          <span class="ref__where">토크나이저를 모델과 함께 저장·복원해 학습·서빙 경로를 일치시키는 실습 부분</span>
+          <span class="ref__where">토크나이저를 model과 함께 저장·복원해 training·서빙 경로를 일치시키는 실습 부분</span>
           <a class="ref__link" href="https://huggingface.co/learn">huggingface.co/learn</a>
         </li>
       </ol>
@@ -607,20 +607,20 @@ print(C / T_star, k * delta * T_star / 2)   # 3.162... 3.162...
 WIDGETS.register('pipeline-map', function (root, ctx) {
   var el = VIZ.el;
   var S = [
-    ['수집', '무엇을 모을지가 무엇을 배울지를 정한다. 수집 편향은 나중에 어떤 알고리즘으로도 지울 수 없다.'],
-    ['전처리', '결측·이상치·중복 처리와 스케일 조정. 통계량은 반드시 훈련 데이터에서만 계산한다.'],
-    ['특성 표현', '원자료를 벡터로. 딥러닝은 이 단계를 학습으로 대체하지만 토큰화·정규화는 여전히 사람이 정한다.'],
-    ['모델 선택', '가설 공간을 고른다. 하이퍼파라미터 탐색 포함. 판단 근거는 검증 데이터다.'],
-    ['학습', 'θ* = argmin (1/n)ΣL. 훈련 데이터만 쓴다.'],
-    ['검증', '고르기 위해 잰다 — 하이퍼파라미터, 조기 종료, 모델 채택. 여러 번 본다.'],
-    ['평가', '보고하기 위해 잰다. 모든 선택이 끝난 뒤 단 한 번. 보고 나서 고치면 검증이 되어버린다.'],
-    ['추론', '학습된 θ* 로 새 입력에 답한다. 지연시간·처리량·비용이 제약이 된다.'],
-    ['배포', '서비스에 올린다. 버전 관리·롤아웃·롤백. 학습 때의 전처리를 그대로 재현하는 것이 핵심.'],
-    ['모니터링', '예측 품질·입력 분포·지연시간·오류율. 정답이 늦게 오므로 분포 감시가 중요하다.'],
-    ['재학습', '성능이 떨어지면 새 데이터로 다시 학습. 주기는 T* = √(2C/kδ) 로 정할 수 있다.']
+    ['collection', '무엇을 모을지가 무엇을 배울지를 정한다. collection bias는 나중에 어떤 algorithm으로도 지울 수 없다.'],
+    ['preprocess', '결측·이상치·중복 처리와 스케일 조정. 통계량은 반드시 training data에서만 계산한다.'],
+    ['features', '원자료를 vector로. deep learning은 이 단계를 training으로 대체하지만 토큰화·normalization은 여전히 사람이 정한다.'],
+    ['model sel.', 'hypothesis space를 고른다. hyperparameter 탐색 포함. 판단 근거는 validation 데이터다.'],
+    ['training', 'θ* = argmin (1/n)ΣL. training data만 쓴다.'],
+    ['validation', '고르기 위해 잰다 — hyperparameter, 조기 종료, model 채택. 여러 번 본다.'],
+    ['evaluation', '보고하기 위해 잰다. 모든 선택이 끝난 뒤 단 한 번. 보고 나서 고치면 validation이 되어버린다.'],
+    ['inference', '학습된 θ* 로 새 입력에 답한다. 지연시간·처리량·비용이 제약이 된다.'],
+    ['deployment', '서비스에 올린다. 버전 관리·롤아웃·롤백. training 때의 preprocessing을 그대로 재현하는 것이 핵심.'],
+    ['monitoring', '예측 품질·입력 분포·지연시간·오류율. 정답이 늦게 오므로 분포 감시가 중요하다.'],
+    ['retraining', '성능이 떨어지면 새 data로 다시 training. 주기는 T* = √(2C/kδ)로 정할 수 있다.']
   ];
 
-  var svg = el('svg', { viewBox: '0 0 480 200', role: 'img', 'aria-label': '머신러닝 시스템 11단계 파이프라인과 되먹임 고리' });
+  var svg = el('svg', { viewBox: '0 0 480 200', role: 'img', 'aria-label': 'machine learning 시스템 11단계 pipeline과 되먹임 고리' });
   var W = 88, H = 34, PER = 4, GX = 18, GY = 14, X0 = 14, Y0 = 20;
   var shapes = {};
 
@@ -650,7 +650,7 @@ WIDGETS.register('pipeline-map', function (root, ctx) {
   /* 되먹임: 재학습(11) → 학습(5) */
   /* 재학습(마지막 칸, 3행 3열) 바닥에서 나와 왼쪽 여백으로 돌아
      학습(2행 1열)의 왼쪽 면으로 들어간다.
-     예전에는 x=49 로 곧장 올라가 '배포' 칸을 관통했고, 시작점도 박스에서 떠 있었다. */
+     예전에는 x=49로 곧장 올라가 'deployment' 칸을 관통했고, 시작점도 박스에서 떠 있었다. */
   var fbFromX = X0 + 2 * (W + GX) + W / 2;   /* 재학습 칸 중앙 */
   var fbBottom = Y0 + 2 * (H + GY) + H;      /* 3행 바닥 = 138 */
   var fbLane = 4;                            /* 박스(x=12~)보다 왼쪽 통로 */
@@ -713,9 +713,9 @@ WIDGETS.register('retrain-cost', function (root, ctx) {
     out.setRaw('eq', (C / Ts).toFixed(2) + ' = ' + (kd * Ts / 2).toFixed(2));
   }
 
-  WIDGETS.slider({ host: ctx.controls, label: '재학습 1회 비용 C', min: 20, max: 800, step: 10, value: 100, digits: 0,
+  WIDGETS.slider({ host: ctx.controls, label: 'retraining 1회 비용 C', min: 20, max: 800, step: 10, value: 100, digits: 0,
     onInput: function (v) { C = v; draw(); } });
-  WIDGETS.slider({ host: ctx.controls, label: '일일 손실 기울기 kδ', min: .05, max: 1.5, step: .05, value: .2, digits: 2,
+  WIDGETS.slider({ host: ctx.controls, label: '일일 loss gradient kδ', min: .05, max: 1.5, step: .05, value: .2, digits: 2,
     onInput: function (v) { kd = v; draw(); } });
   draw();
 });
@@ -737,14 +737,14 @@ WIDGETS.register('skew-demo', function (root, ctx) {
   ]);
 
   function draw() {
-    /* 모델은 학습 시 정규화 기준으로 z=0 에서 자르도록 배웠다 */
+    /* 모델은 학습 시 정규화 기준으로 z=0에서 자르도록 배웠다 */
     var pts = RAW.map(function (v, i) { return { z: (v - serveMu) / serveSd, y: LAB[i] }; });
     var hit = pts.filter(function (q) { return ((q.z > 0) ? 1 : 0) === q.y; }).length;
     var acc = hit / pts.length;
 
-    p.clear().grid(1, .5).axes('정규화된 입력 z', '라벨').ticks(1, 1);
+    p.clear().grid(1, .5).axes('normalize 된 입력 z', '라벨').ticks(1, 1);
     p.add(VIZ.el('line', { x1: p.X(0), y1: p.Y(-0.6), x2: p.X(0), y2: p.Y(1.6), stroke: 'var(--seal)', 'stroke-width': 2, 'stroke-dasharray': '5 3' }));
-    p.text(0, 1.45, ' 모델의 결정 경계 z=0', { dx: 4, fill: 'var(--seal)', size: 11 });
+    p.text(0, 1.45, ' model의 결정 경계 z=0', { dx: 4, fill: 'var(--seal)', size: 11 });
     pts.forEach(function (q) {
       p.add(VIZ.el('circle', { cx: p.X(Math.max(-3.9, Math.min(3.9, q.z))), cy: p.Y(q.y), r: 4.5,
         fill: q.y ? 'var(--jade)' : 'var(--amber)', 'fill-opacity': .85 }));
@@ -752,7 +752,7 @@ WIDGETS.register('skew-demo', function (root, ctx) {
 
     out.setRaw('acc', (acc * 100).toFixed(0) + ' %');
     var ok = Math.abs(serveMu - TRAIN_MU) < 0.01 && Math.abs(serveSd - TRAIN_SD) < 0.01;
-    out.setRaw('note', ok ? '학습과 일치 — 정상' : '왜곡 발생 — 모델은 그대로인데 성능만 하락');
+    out.setRaw('note', ok ? 'training과 일치 — 정상' : '왜곡 발생 — model은 그대로인데 성능만 하락');
   }
 
   WIDGETS.slider({ host: ctx.controls, label: '서빙 쪽 평균 μ (학습값 50)', min: 30, max: 70, step: 1, value: 50, digits: 0,
@@ -766,12 +766,12 @@ WIDGETS.register('skew-demo', function (root, ctx) {
 WIDGETS.register('effort-split', function (root, ctx) {
   var el = VIZ.el;
   var VIEW = {
-    real: { t: '실제 시스템', d: '데이터를 모으고 정리하고 지켜보는 일이 대부분이다. 모델 학습 코드는 전체의 작은 조각이다.',
-      seg: [['데이터 수집·정리', 38, 'var(--jade)'], ['특성·전처리', 17, 'var(--jade)'], ['모델 학습', 8, 'var(--seal)'],
-            ['검증·평가', 12, 'var(--amber)'], ['배포·서빙', 12, 'var(--ink-3)'], ['모니터링·재학습', 13, 'var(--ink-3)']] },
-    course: { t: '입문 강의에서 배우는 비중', d: '강의는 모델과 학습에 집중한다. 배울 때는 효율적이지만, 실제 시스템을 만들 때 무엇이 기다리는지는 알려주지 않는다.',
-      seg: [['데이터 수집·정리', 8, 'var(--jade)'], ['특성·전처리', 10, 'var(--jade)'], ['모델 학습', 55, 'var(--seal)'],
-            ['검증·평가', 20, 'var(--amber)'], ['배포·서빙', 4, 'var(--ink-3)'], ['모니터링·재학습', 3, 'var(--ink-3)']] }
+    real: { t: '실제 시스템', d: 'data를 모으고 정리하고 지켜보는 일이 대부분이다. model training 코드는 전체의 작은 조각이다.',
+      seg: [['data collection·정리', 38, 'var(--jade)'], ['특성·preprocessing', 17, 'var(--jade)'], ['model training', 8, 'var(--seal)'],
+            ['validation·evaluation', 12, 'var(--amber)'], ['deployment·서빙', 12, 'var(--ink-3)'], ['monitoring·retraining', 13, 'var(--ink-3)']] },
+    course: { t: '입문 강의에서 배우는 비중', d: '강의는 model과 training에 집중한다. 배울 때는 효율적이지만, 실제 시스템을 만들 때 무엇이 기다리는지는 알려주지 않는다.',
+      seg: [['data collection·정리', 8, 'var(--jade)'], ['특성·preprocessing', 10, 'var(--jade)'], ['model training', 55, 'var(--seal)'],
+            ['validation·evaluation', 20, 'var(--amber)'], ['deployment·서빙', 4, 'var(--ink-3)'], ['monitoring·retraining', 3, 'var(--ink-3)']] }
   };
   var cur = 'real';
 

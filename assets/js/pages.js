@@ -76,6 +76,108 @@ window.PAGES = {
       "significance", "seed variance", "시드 분산", "표준오차", "신뢰구간",
       "hyperparameter budget", "ethics", "윤리적 고려", "후속 연구"
     ]
+  },
+
+  "2.1": {
+    href: "chapters/ch02/2.1-numbers-and-spaces.html",
+    updated: "2026-07-28",
+    summary: "스칼라·벡터·행렬·텐서는 축의 개수만 다른 같은 물건이고, 기저를 정해야 비로소 숫자로 적힌다.",
+    tags: [
+      "scalar", "vector", "matrix", "tensor", "shape", "ndim", "axis",
+      "basis", "coordinate", "vector space", "subspace",
+      "표준기저", "좌표계", "row-major", "broadcasting", "affine"
+    ]
+  },
+  "2.2": {
+    href: "chapters/ch02/2.2-vector-operations.html",
+    updated: "2026-07-28",
+    summary: "벡터로 할 수 있는 일은 더하기와 상수배뿐이고, 그 둘을 섞은 선형결합이 선형대수 전체의 씨앗이다.",
+    tags: [
+      "vector addition", "scalar multiplication", "linear combination", "span",
+      "linear independence", "linear dependence", "norm", "L1", "L2", "L-infinity",
+      "unit vector", "distance", "angle", "cosine", "determinant", "평행사변형", "단위공"
+    ]
+  },
+  "2.3": {
+    href: "chapters/ch02/2.3-inner-product.html",
+    updated: "2026-07-28",
+    summary: "두 벡터가 얼마나 같은 방향인지를 하나의 수로 요약하는 연산 — 길이·각도·거리·유사도가 모두 여기서 나온다.",
+    tags: [
+      "dot product", "inner product", "orthogonality", "projection",
+      "cosine similarity", "euclidean distance", "manhattan distance",
+      "metric space", "triangle inequality", "normalization", "embedding",
+      "Cauchy-Schwarz", "코시 슈바르츠", "그람 행렬", "잔차", "직교"
+    ]
+  },
+  "2.4": {
+    href: "chapters/ch02/2.4-matrix-operations.html",
+    updated: "2026-07-28",
+    summary: "행렬 곱은 여러 선형결합을 한꺼번에 처리하는 장치이고, 나머지 연산은 그 곱을 다루기 쉽게 만드는 도구다.",
+    tags: [
+      "matrix multiplication", "transpose", "identity", "inverse", "determinant",
+      "symmetric", "diagonal", "orthogonal", "block matrix", "sparse", "CSR",
+      "outer product", "외적", "비가환", "정규직교", "그람"
+    ]
+  },
+  "2.5": {
+    href: "chapters/ch02/2.5-linear-transformation.html",
+    updated: "2026-07-28",
+    summary: "행렬은 격자를 통째로 움직이는 함수이고, 그 함수는 기저 벡터가 어디로 가는지만으로 전부 결정된다.",
+    tags: [
+      "linear map", "affine", "rotation", "scaling", "shear", "reflection",
+      "composition", "change of basis", "similarity", "rank", "null space",
+      "column space", "row space", "rank-nullity", "선형사상", "전단", "닮음", "영공간"
+    ]
+  },
+  "2.6": {
+    href: "chapters/ch02/2.6-linear-systems.html",
+    updated: "2026-07-28",
+    summary: "Ax=b 는 b 를 A 의 열로 만드는 배합을 찾는 일이고, 만들 수 없으면 가장 가까운 것으로 대신한다.",
+    tags: [
+      "gaussian elimination", "LU", "QR", "Gram-Schmidt", "normal equation",
+      "least squares", "pseudoinverse", "overdetermined", "underdetermined",
+      "condition number", "pivot", "자유변수", "후진대입", "최소노름해", "조건수"
+    ]
+  },
+  "2.7": {
+    href: "chapters/ch02/2.7-eigenvalues.html",
+    updated: "2026-07-28",
+    summary: "변환해도 방향이 바뀌지 않는 축을 찾으면, 복잡한 행렬이 대각행렬 하나로 단순해진다.",
+    tags: [
+      "eigenvalue", "eigenvector", "characteristic polynomial", "diagonalization",
+      "eigenspace", "spectral decomposition", "power iteration", "spectral radius",
+      "PageRank", "defective", "결손행렬", "중복도", "기울기 소실", "기울기 폭발"
+    ]
+  },
+  "2.8": {
+    href: "chapters/ch02/2.8-svd.html",
+    updated: "2026-07-28",
+    summary: "모든 행렬은 회전 → 축별 확대 → 회전으로 쪼개진다. 큰 특이값 몇 개만 남기면 최적의 근사가 된다.",
+    tags: [
+      "SVD", "singular value", "singular vector", "low-rank approximation",
+      "Eckart-Young", "compression", "denoising", "latent space", "matrix completion",
+      "nuclear norm", "Frobenius", "spectral norm", "핵 노름", "저랭크", "잠재 요인"
+    ]
+  },
+  "2.9": {
+    href: "chapters/ch02/2.9-dimensionality-reduction.html",
+    updated: "2026-07-28",
+    summary: "차원 축소는 어느 방향을 버릴지 고르는 일이고, PCA 는 분산이 가장 작은 방향부터 버린다.",
+    tags: [
+      "PCA", "principal component", "explained variance", "covariance",
+      "whitening", "scree plot", "reconstruction error", "t-SNE", "UMAP",
+      "표준화", "중심화", "설명 분산", "주성분", "시각화", "정보 손실"
+    ]
+  },
+  "2.10": {
+    href: "chapters/ch02/2.10-linear-algebra-in-ai.html",
+    updated: "2026-07-28",
+    summary: "딥러닝 연산의 대부분은 행렬 곱 하나이고, 구조의 차이는 무엇을 무엇에 곱하는가의 차이다.",
+    tags: [
+      "linear layer", "embedding", "attention", "QK^T", "softmax", "LoRA",
+      "low-rank adaptation", "matrix factorization", "pruning", "graph", "adjacency",
+      "GNN", "im2col", "GEMM", "CLIP", "multimodal", "FLOPs", "어텐션 맵", "저랭크 적응"
+    ]
   }
 
   // 새 절을 만들면 이 형태로 추가한다 (등록해야 목차·검색에 나타난다):

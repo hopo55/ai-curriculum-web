@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.3 내적과 유사도 — AI 이론 학습</title>
+<meta name="description" content="내적은 '얼마나 같은 방향인가'를 하나의 수로 요약한다. 직교·정사영·코사인 유사도·거리 공간·임베딩 공간까지 손계산과 드래그로 확인한다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="2.3">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">2.3</span>
+        <span>2장 · 선형대수</span>
+      </div>
+      <h1>내적과 유사도</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 50분</span>
+        <span><b>난이도</b>★★☆☆☆</span>
+        <span><b>선수지식</b>
+          <a href="2.2-vector-operations.html">2.2 벡터 연산</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-dot">내적</a>
+      <a class="chip" href="#c-ortho">직교성</a>
+      <a class="chip" href="#c-proj">정사영</a>
+      <a class="chip" href="#c-cos">코사인 유사도</a>
+      <a class="chip" href="#c-euclid">유클리드 거리</a>
+      <a class="chip" href="#c-manhattan">맨해튼 거리</a>
+      <a class="chip" href="#c-metric">거리 공간</a>
+      <a class="chip" href="#c-simspace">유사도 공간</a>
+      <a class="chip" href="#c-normalize">정규화</a>
+      <a class="chip" href="#c-embed">임베딩 공간</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        내적은 두 벡터가 <strong>얼마나 같은 방향을 보는가</strong>를 숫자 하나로 요약하며,
+        길이 · 각도 · 거리 · 유사도가 전부 이 하나의 연산에서 파생된다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>$\mathbf{x}^\top\mathbf{y} = \|\mathbf{x}\|\|\mathbf{y}\|\cos\theta$ 를 쓰고, 부호가 무엇을 뜻하는지 설명할 수 있다.</li>
+        <li>정사영 $\operatorname{proj}_{\mathbf{u}}(\mathbf{v})$ 를 유도하고 잔차가 직교함을 검산할 수 있다.</li>
+        <li>코사인 유사도와 유클리드 거리가 언제 같은 결론을 주고 언제 갈라지는지 판단할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        두 사람이 같은 방향으로 밀면 힘이 보태지고, 직각으로 밀면 서로 보태지 않고,
+        반대로 밀면 상쇄된다. 내적은 정확히 <strong>이 "보탬의 정도"</strong>를 재는 수다.
+        같은 방향이면 양수, 직각이면 0, 반대 방향이면 음수다.
+      </p>
+
+      <figure class="widget" data-widget="dot-drag">
+        <figcaption class="widget__bar">내적의 부호 — 같은 방향인가, 직각인가, 반대인가</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">한 벡터를 다른 벡터 주위로 돌려 보세요. 90°를 지나는 순간 내적의 부호가 바뀝니다.</p>
+        </div>
+      </figure>
+
+      <p>
+        다른 그림으로도 볼 수 있다. $\mathbf{v}$ 에서 $\mathbf{u}$ 방향으로 <em>그림자</em>를 내리면
+        그 그림자의 길이가 $\|\mathbf{v}\|\cos\theta$ 다. 여기에 $\|\mathbf{u}\|$ 를 곱한 것이 내적이다.
+        <strong>내적 = (그림자 길이) × (기준 벡터의 길이)</strong>.
+      </p>
+
+      <figure class="widget" data-widget="projection">
+        <figcaption class="widget__bar">정사영 — v 가 u 위에 드리우는 그림자</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">잔차(빨간 점선)가 항상 u 와 직각을 이룹니다. 그 조건이 정사영 공식을 결정합니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          내적 하나에서 <strong>길이</strong>($\|\mathbf{x}\|=\sqrt{\mathbf{x}^\top\mathbf{x}}$),
+          <strong>각도</strong>($\cos\theta$), <strong>거리</strong>($\|\mathbf{x}-\mathbf{y}\|$),
+          <strong>직교</strong>($\mathbf{x}^\top\mathbf{y}=0$)가 모두 나온다.
+          기하가 필요한 곳에는 언제나 내적이 먼저 있다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-dot"></span>
+      <h3>내적</h3>
+      <p>
+        $\mathbb{R}^n$ 에서 가장 흔히 쓰는 내적은 <strong>점곱</strong>(dot product)이다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \langle \mathbf{x}, \mathbf{y}\rangle = \mathbf{x}^\top\mathbf{y} = \sum_{i=1}^{n} x_i y_i $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        더 일반적으로, 내적은 다음 세 조건을 만족하는 함수
+        $\langle\cdot,\cdot\rangle : V\times V \to \mathbb{R}$ 를 말한다<a class="cite" href="#ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">1</a>.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>조건</th><th>식</th><th>뜻</th></tr></thead>
+          <tbody>
+            <tr><td>대칭성</td><td>$\langle\mathbf{x},\mathbf{y}\rangle = \langle\mathbf{y},\mathbf{x}\rangle$</td><td>누가 기준이든 같다</td></tr>
+            <tr><td>이중선형성</td><td>$\langle a\mathbf{x}+b\mathbf{z},\mathbf{y}\rangle = a\langle\mathbf{x},\mathbf{y}\rangle + b\langle\mathbf{z},\mathbf{y}\rangle$</td><td>각 변수에 대해 선형</td></tr>
+            <tr><td>양의 정부호</td><td>$\langle\mathbf{x},\mathbf{x}\rangle \geq 0$, &nbsp; $=0 \Leftrightarrow \mathbf{x}=\mathbf{0}$</td><td>자기 자신과의 내적이 길이의 제곱</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        마지막 조건 덕분에 <strong>내적이 노름을 낳는다</strong>: $\|\mathbf{x}\| = \sqrt{\langle\mathbf{x},\mathbf{x}\rangle}$.
+        식 (1)에서 $\mathbf{y}=\mathbf{x}$ 로 두면 $\sum_i x_i^2$ 이고, 제곱근을 씌우면
+        <a href="2.2-vector-operations.html">2.2</a>의 $L_2$ 노름이 그대로 나온다.
+      </p>
+      <p>기하적 의미는 다음 한 줄로 요약된다.</p>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbf{x}^\top\mathbf{y} = \|\mathbf{x}\|\,\|\mathbf{y}\|\cos\theta $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+
+      <span class="anchor" id="c-ortho"></span>
+      <h3>직교성</h3>
+      <p>
+        $\mathbf{x}^\top\mathbf{y} = 0$ 이면 두 벡터는 <strong>직교</strong>(orthogonal)한다고 하고 $\mathbf{x}\perp\mathbf{y}$ 로 쓴다.
+        식 (2)에서 $\cos\theta = 0$, 즉 $\theta = 90^\circ$ 인 경우다.
+        영벡터는 모든 벡터와 직교한다(관례).
+      </p>
+      <div class="note note--key">
+        <span class="note__label">직교의 세 가지 얼굴</span>
+        <p>
+          ① <strong>기하</strong> — 직각이다.<br>
+          ② <strong>대수</strong> — 성분곱의 합이 0이다.<br>
+          ③ <strong>정보</strong> — 한쪽이 다른 쪽에 대해 아무 정보도 주지 않는다(그림자 길이가 0).<br>
+          영이 아닌 직교 벡터들은 <strong>반드시 선형독립</strong>이다 — <a href="#s-derivation">유도 3</a>에서 보인다.
+        </p>
+      </div>
+
+      <span class="anchor" id="c-proj"></span>
+      <h3>정사영</h3>
+      <p>
+        $\mathbf{v}$ 를 $\mathbf{u}$ 가 만드는 직선 위로 <strong>수직으로 내린 그림자</strong>가 정사영(orthogonal projection)이다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \operatorname{proj}_{\mathbf{u}}(\mathbf{v}) = \frac{\mathbf{u}^\top\mathbf{v}}{\mathbf{u}^\top\mathbf{u}}\,\mathbf{u} = \frac{\mathbf{u}^\top\mathbf{v}}{\|\mathbf{u}\|^2}\,\mathbf{u} $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        분수 부분이 스칼라(얼마나 갈지)이고, $\mathbf{u}$ 가 방향이다.
+        $\mathbf{u}$ 가 단위벡터면 분모가 1이라 $\operatorname{proj}_{\hat{\mathbf{u}}}(\mathbf{v}) = (\hat{\mathbf{u}}^\top\mathbf{v})\,\hat{\mathbf{u}}$ 로 단순해진다.
+        정사영은 최소제곱법 · PCA · 어텐션의 값 혼합까지 계속 등장한다.
+      </p>
+
+      <span class="anchor" id="c-cos"></span>
+      <h3>코사인 유사도</h3>
+      <p>
+        식 (2)를 $\cos\theta$ 에 대해 풀면 <strong>코사인 유사도</strong>(cosine similarity)가 된다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \operatorname{cossim}(\mathbf{x},\mathbf{y}) = \frac{\mathbf{x}^\top\mathbf{y}}{\|\mathbf{x}\|\,\|\mathbf{y}\|} \in [-1,\,1] $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        <strong>크기를 나눠 버렸으므로 방향만 본다.</strong> 문서 길이가 10배 차이 나도,
+        단어 빈도의 절대량이 달라도 방향이 같으면 1이다. 검색 · 추천 · 임베딩 비교에서
+        기본값처럼 쓰이는 이유가 이 크기 불변성이다.
+      </p>
+
+      <span class="anchor" id="c-euclid"></span>
+      <span class="anchor" id="c-manhattan"></span>
+      <h3>유클리드 거리와 맨해튼 거리</h3>
+      <div class="eq">
+        <div class="eq__body">$$ d_2(\mathbf{x},\mathbf{y}) = \sqrt{\sum_i (x_i-y_i)^2}, \qquad d_1(\mathbf{x},\mathbf{y}) = \sum_i |x_i - y_i| $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        유클리드 거리는 <strong>자로 잰 직선거리</strong>, 맨해튼 거리는
+        <strong>격자 도로를 따라 간 거리</strong>다(맨해튼의 바둑판 도로에서 이름이 왔다).
+        항상 $d_2 \leq d_1$ 이고, 두 점이 축에 나란할 때만 같아진다.
+        고차원 희소 데이터에서는 $d_1$ 이 더 안정적일 때가 많다.
+      </p>
+
+      <span class="anchor" id="c-metric"></span>
+      <h3>거리 공간</h3>
+      <p>
+        아무 함수나 "거리"라 부를 수는 없다. 집합 $X$ 위의 함수
+        $d: X\times X \to \mathbb{R}$ 가 <strong>네 조건</strong>을 만족할 때 $(X, d)$ 를 거리 공간(metric space)이라 한다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>#</th><th>조건</th><th>식</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td>비음수성</td><td>$d(\mathbf{x},\mathbf{y}) \geq 0$</td></tr>
+            <tr><td class="num">2</td><td>동일성</td><td>$d(\mathbf{x},\mathbf{y}) = 0 \iff \mathbf{x}=\mathbf{y}$</td></tr>
+            <tr><td class="num">3</td><td>대칭성</td><td>$d(\mathbf{x},\mathbf{y}) = d(\mathbf{y},\mathbf{x})$</td></tr>
+            <tr><td class="num">4</td><td>삼각부등식</td><td>$d(\mathbf{x},\mathbf{z}) \leq d(\mathbf{x},\mathbf{y}) + d(\mathbf{y},\mathbf{z})$</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        조건 4가 실무에서 가장 중요하다. 이것이 성립해야 <strong>"A와 B가 가깝고 B와 C가 가까우면 A와 C도 아주 멀지는 않다"</strong>가
+        보장되고, 그 위에서 삼각부등식을 이용한 <em>가지치기</em>(예: 근사 최근접 이웃 탐색의 인덱스)가 정당해진다.
+        $d_1, d_2, d_\infty$ 는 모두 이 네 조건을 만족한다.
+      </p>
+
+      <span class="anchor" id="c-simspace"></span>
+      <h3>유사도 공간</h3>
+      <p>
+        유사도(similarity)는 거리와 방향이 반대다 — 가까울수록 <em>크다</em>.
+        내적과 코사인 유사도가 대표적이다. 여기서 자주 저지르는 실수가 있다.
+      </p>
+      <div class="note note--trap">
+        <span class="note__label">코사인 "거리"는 거리 공간이 아니다</span>
+        <p>
+          $d_{\cos}(\mathbf{x},\mathbf{y}) = 1 - \operatorname{cossim}(\mathbf{x},\mathbf{y})$ 는 삼각부등식을 어긴다.
+          $\mathbf{a}=(1,0)$, $\mathbf{b}=(1,1)/\sqrt2$, $\mathbf{c}=(0,1)$ 로 두면
+          $d_{\cos}(\mathbf{a},\mathbf{b}) = 1-\tfrac{1}{\sqrt2} \approx 0.293$,
+          $d_{\cos}(\mathbf{b},\mathbf{c}) \approx 0.293$ 인데
+          $d_{\cos}(\mathbf{a},\mathbf{c}) = 1 - 0 = 1$ 이다.
+          $0.293+0.293 = 0.586 < 1$ 이므로 조건 4가 깨진다.
+        </p>
+        <p>
+          대신 <strong>$\sqrt{2-2\cos\theta}$ 는 거리다</strong> — 이것은 정규화한 두 벡터의 유클리드 거리와 정확히 같다.
+          삼각부등식이 필요한 알고리즘에는 이쪽을 쓴다.
+        </p>
+      </div>
+
+      <span class="anchor" id="c-normalize"></span>
+      <h3>정규화</h3>
+      <p>
+        $L_2$ 정규화는 벡터를 단위구 위로 올린다: $\hat{\mathbf{x}} = \mathbf{x}/\|\mathbf{x}\|$.
+        정규화하고 나면 <strong>내적과 코사인 유사도가 같은 값</strong>이 되고,
+        <strong>유클리드 거리와 코사인 유사도가 같은 순위</strong>를 준다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \|\hat{\mathbf{x}}-\hat{\mathbf{y}}\|^2 = \hat{\mathbf{x}}^\top\hat{\mathbf{x}} - 2\hat{\mathbf{x}}^\top\hat{\mathbf{y}} + \hat{\mathbf{y}}^\top\hat{\mathbf{y}} = 2 - 2\cos\theta $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        $\cos\theta$ 가 커질수록 거리가 단조 감소하므로, 정규화된 공간에서는
+        "코사인으로 정렬한 순서"와 "유클리드로 정렬한 순서"가 완전히 일치한다.
+        벡터 검색 엔진이 내적만 계산하고도 코사인 검색을 지원하는 근거가 이것이다.
+      </p>
+
+      <span class="anchor" id="c-embed"></span>
+      <h3>임베딩 공간</h3>
+      <p>
+        임베딩(embedding)은 이산적인 대상(단어 · 사용자 · 상품)을 벡터로 옮겨,
+        <strong>의미의 유사성을 기하적 근접성으로 바꾸는 것</strong>이다.
+        word2vec 은 이 공간에서 벡터 덧셈이 의미의 합성처럼 동작함을 보였고,
+        유사도 측정에 코사인을 사용했다<a class="cite" href="#ref-mikolov2013-efficient-estimation-of" data-ref="mikolov2013-efficient-estimation-of">2</a>.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \text{vec}(\text{king}) - \text{vec}(\text{man}) + \text{vec}(\text{woman}) \;\approx\; \text{vec}(\text{queen}) $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        중요한 것은 이 성질이 <em>주어진 것</em>이 아니라 <strong>학습의 결과</strong>라는 점이다.
+        임베딩 공간에서 무엇을 "가깝다"고 볼지는 학습에 쓰인 목적함수가 정한다.
+      </p>
+
+      <figure class="widget" data-widget="embedding-heatmap">
+        <figcaption class="widget__bar">작은 임베딩 공간 — 위치와 코사인 유사도</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">히트맵 칸에 마우스를 올리면 값이 보입니다. 원점에서 같은 방향이면 거리가 멀어도 유사도가 1에 가깝습니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>
+        내적을 벡터 여러 개에 한꺼번에 적용하면 행렬 곱이 된다.
+        데이터 행렬 $\mathbf{X} \in \mathbb{R}^{n\times d}$ 의 행이 각 샘플일 때,
+        모든 쌍의 내적은 한 번의 곱으로 나온다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbf{G} = \mathbf{X}\mathbf{X}^\top \in \mathbb{R}^{n\times n}, \qquad G_{ij} = \mathbf{x}_i^\top\mathbf{x}_j $$</div>
+        <span class="eq__tag num">(8)</span>
+      </div>
+      <p>
+        이 $\mathbf{G}$ 를 그람 행렬(Gram matrix)이라 한다. 어텐션의 $\mathbf{Q}\mathbf{K}^\top$ 도,
+        커널 방법의 커널 행렬도, 대조학습의 유사도 행렬도 모두 이 형태다
+        (<a href="2.10-linear-algebra-in-ai.html">2.10</a>).
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$\langle\mathbf{x},\mathbf{y}\rangle$</td><td>인너 프로덕트</td><td>내적 (일반 표기)</td><td>스칼라</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\mathbf{x}^\top\mathbf{y}$</td><td>엑스 트랜스포즈 와이</td><td>점곱 — 성분곱의 합</td><td>스칼라</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\perp$</td><td>퍼펜디큘러 · 직교</td><td>"직교한다"</td><td>관계</td><td>—</td></tr>
+            <tr><td>$\theta$</td><td>세타</td><td>두 벡터의 사잇각</td><td>스칼라</td><td>$[0,\pi]$</td></tr>
+            <tr><td>$\|\mathbf{x}\|$</td><td>노름</td><td>$\sqrt{\mathbf{x}^\top\mathbf{x}}$ — 유클리드 길이</td><td>스칼라</td><td>$\geq0$</td></tr>
+            <tr><td>$\hat{\mathbf{x}}$</td><td>엑스 햇</td><td>정규화된 벡터 $\mathbf{x}/\|\mathbf{x}\|$</td><td>벡터 $(n,)$</td><td>$\|\hat{\mathbf{x}}\|=1$</td></tr>
+            <tr><td>$\operatorname{proj}_{\mathbf{u}}(\mathbf{v})$</td><td>프로젝션</td><td>$\mathbf{v}$ 를 $\mathbf{u}$ 방향으로 내린 정사영</td><td>벡터 $(n,)$</td><td>$\in\operatorname{span}\{\mathbf{u}\}$</td></tr>
+            <tr><td>$\mathbf{r}$</td><td>알 · 잔차</td><td>$\mathbf{v} - \operatorname{proj}_{\mathbf{u}}(\mathbf{v})$</td><td>벡터 $(n,)$</td><td>$\mathbf{r}\perp\mathbf{u}$</td></tr>
+            <tr><td>$\operatorname{cossim}$</td><td>코사인 유사도</td><td>정규화된 내적</td><td>스칼라</td><td>$[-1,1]$</td></tr>
+            <tr><td>$d_1, d_2, d_\infty$</td><td>디 원·투·인피니티</td><td>맨해튼 · 유클리드 · 최대 거리</td><td>스칼라</td><td>$\geq0$</td></tr>
+            <tr><td>$\mathbf{G}$</td><td>볼드 지</td><td>그람 행렬 — 모든 쌍의 내적</td><td>행렬 $(n,n)$</td><td>대칭·준정부호</td></tr>
+            <tr><td>$\mathbf{X}$</td><td>볼드 엑스</td><td>데이터 행렬 (행 = 샘플)</td><td>행렬 $(n,d)$</td><td>—</td></tr>
+            <tr><td>$\iff$</td><td>이프 앤 온리 이프</td><td>"…일 때 그리고 그때만"</td><td>논리 기호</td><td>—</td></tr>
+            <tr><td>$|c|$</td><td>절댓값</td><td>부호를 뗀 크기</td><td>스칼라</td><td>$\geq0$</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — 정사영 공식은 "잔차가 직교한다"에서 나온다</h3>
+      <p>
+        $\mathbf{v}$ 의 그림자를 $\alpha\mathbf{u}$ 라 두고, 남은 부분(잔차)이 $\mathbf{u}$ 와 직교하도록 $\alpha$ 를 정한다.
+      </p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{r} = \mathbf{v} - \alpha\mathbf{u} $$</div>
+          <div class="derive__why">잔차의 정의. $\alpha$ 는 아직 모른다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{u}^\top\mathbf{r} = 0 $$</div>
+          <div class="derive__why"><strong>수직으로 내린다</strong>는 요구조건을 식으로 쓴 것</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{u}^\top(\mathbf{v} - \alpha\mathbf{u}) = \mathbf{u}^\top\mathbf{v} - \alpha\,\mathbf{u}^\top\mathbf{u} = 0 $$</div>
+          <div class="derive__why">내적의 이중선형성으로 분배했다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \alpha = \frac{\mathbf{u}^\top\mathbf{v}}{\mathbf{u}^\top\mathbf{u}} $$</div>
+          <div class="derive__why">$\mathbf{u}\neq\mathbf{0}$ 이면 $\mathbf{u}^\top\mathbf{u} > 0$ 이므로 나눌 수 있다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \boxed{\;\operatorname{proj}_{\mathbf{u}}(\mathbf{v}) = \frac{\mathbf{u}^\top\mathbf{v}}{\|\mathbf{u}\|^2}\mathbf{u}\;} $$</div>
+          <div class="derive__why">$\alpha$ 를 되돌려 넣었다. 식 (3)</div>
+        </div>
+      </div>
+      <div class="note note--tip">
+        <span class="note__label">여기서 눈여겨볼 것</span>
+        <p>
+          "직교 조건 → 계수 결정"이라는 이 논법이 <strong>정규방정식</strong>(<a href="2.6-linear-systems.html">2.6</a>)과
+          <strong>PCA</strong>(<a href="2.9-dimensionality-reduction.html">2.9</a>)에서 그대로 반복된다.
+          최소제곱해가 "잔차가 열공간에 직교하는 점"인 것도 같은 이야기다.
+        </p>
+      </div>
+
+      <h3>유도 2 — 코시–슈바르츠 부등식</h3>
+      <p>
+        식 (4)의 코사인 유사도가 $[-1,1]$ 을 벗어나지 않는다는 보장이 필요하다.
+      </p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ f(t) = \|\mathbf{x} - t\mathbf{y}\|^2 \geq 0 \quad \forall t\in\mathbb{R} $$</div>
+          <div class="derive__why">노름의 제곱은 음수가 될 수 없다 (양의 정부호)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f(t) = \|\mathbf{y}\|^2 t^2 - 2(\mathbf{x}^\top\mathbf{y})\,t + \|\mathbf{x}\|^2 $$</div>
+          <div class="derive__why">전개했다. $t$ 에 대한 <strong>2차식</strong>이다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ D/4 = (\mathbf{x}^\top\mathbf{y})^2 - \|\mathbf{x}\|^2\|\mathbf{y}\|^2 \leq 0 $$</div>
+          <div class="derive__why">항상 0 이상인 2차식은 실근을 최대 하나 가지므로 판별식이 0 이하</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ |\mathbf{x}^\top\mathbf{y}| \leq \|\mathbf{x}\|\,\|\mathbf{y}\| $$</div>
+          <div class="derive__why">양변에 제곱근. <strong>코시–슈바르츠 부등식</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \left|\frac{\mathbf{x}^\top\mathbf{y}}{\|\mathbf{x}\|\|\mathbf{y}\|}\right| \leq 1 \;\Rightarrow\; \cos\theta \in [-1,1] $$</div>
+          <div class="derive__why">각도 $\theta = \arccos(\cdot)$ 가 <strong>잘 정의된다</strong></div>
+        </div>
+      </div>
+      <p>
+        등호는 $f(t)=0$ 인 $t$ 가 존재할 때, 즉 $\mathbf{x} = t\mathbf{y}$ 일 때만 성립한다 —
+        <strong>두 벡터가 같은 직선 위에 있을 때</strong>다. 이때 $\cos\theta = \pm1$ 이다.
+      </p>
+
+      <h3>유도 3 — 직교하면 독립이다</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \lambda_1\mathbf{v}_1 + \cdots + \lambda_k\mathbf{v}_k = \mathbf{0} $$</div>
+          <div class="derive__why">독립을 보이려면 계수가 모두 0임을 보이면 된다. $\mathbf{v}_i$ 는 서로 직교하고 $\mathbf{v}_i\neq\mathbf{0}$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{v}_j^\top\Bigl(\sum_i \lambda_i\mathbf{v}_i\Bigr) = \mathbf{v}_j^\top\mathbf{0} = 0 $$</div>
+          <div class="derive__why">양변에 $\mathbf{v}_j$ 를 내적했다 — <strong>이것이 이 증명의 요령</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sum_i \lambda_i (\mathbf{v}_j^\top\mathbf{v}_i) = \lambda_j\|\mathbf{v}_j\|^2 = 0 $$</div>
+          <div class="derive__why">$i\neq j$ 인 항은 직교라서 전부 0으로 사라진다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \|\mathbf{v}_j\|^2 > 0 \;\Rightarrow\; \lambda_j = 0 \quad (\forall j) $$</div>
+          <div class="derive__why">모든 계수가 0. <strong>따라서 선형독립</strong></div>
+        </div>
+      </div>
+      <details>
+        <summary>역은 성립하지 않는다 — 반례</summary>
+        <p>
+          $\mathbf{u}=(3,1)$, $\mathbf{v}=(1,2)$ 는 $\det = 5\neq0$ 이라 독립이지만
+          $\mathbf{u}^\top\mathbf{v} = 5 \neq 0$ 이라 직교가 아니다.
+          <strong>직교 ⟹ 독립</strong>이고 그 역은 거짓이다.
+          독립인 집합을 직교 집합으로 바꾸는 절차가 그람–슈미트 과정이며
+          <a href="2.6-linear-systems.html">2.6</a>의 QR 분해로 이어진다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <div class="eq">
+        <div class="eq__body">$$ \mathbf{u} = \begin{bmatrix}3\\1\end{bmatrix}, \qquad \mathbf{v} = \begin{bmatrix}1\\2\end{bmatrix} $$</div>
+        <span class="eq__tag num">(9)</span>
+      </div>
+
+      <h3>① 내적과 각도</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{u}^\top\mathbf{v} = 3\cdot1 + 1\cdot2 = 3+2 = 5 $$</div>
+          <div class="derive__why">성분곱을 더한다. 양수이므로 예각</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \|\mathbf{u}\| = \sqrt{10},\quad \|\mathbf{v}\| = \sqrt{5},\quad \|\mathbf{u}\|\|\mathbf{v}\| = \sqrt{50} = 5\sqrt2 $$</div>
+          <div class="derive__why">$\sqrt{10}\cdot\sqrt5 = \sqrt{50}$, $\sqrt{50}=\sqrt{25\cdot2}=5\sqrt2$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \cos\theta = \frac{5}{5\sqrt2} = \frac{1}{\sqrt2} \approx 0.7071 \;\Rightarrow\; \theta = 45^\circ $$</div>
+          <div class="derive__why">코사인 유사도이자 사잇각</div>
+        </div>
+      </div>
+
+      <h3>② 정사영과 잔차</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{u}^\top\mathbf{u} = 3^2+1^2 = 10 $$</div>
+          <div class="derive__why">분모. $\|\mathbf{u}\|^2$ 과 같다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \alpha = \frac{\mathbf{u}^\top\mathbf{v}}{\mathbf{u}^\top\mathbf{u}} = \frac{5}{10} = \frac12 $$</div>
+          <div class="derive__why">그림자의 배율</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \operatorname{proj}_{\mathbf{u}}(\mathbf{v}) = \tfrac12\begin{bmatrix}3\\1\end{bmatrix} = \begin{bmatrix}1.5\\0.5\end{bmatrix} $$</div>
+          <div class="derive__why">방향은 $\mathbf{u}$, 길이는 절반</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{r} = \mathbf{v} - \operatorname{proj}_{\mathbf{u}}(\mathbf{v}) = \begin{bmatrix}1-1.5\\2-0.5\end{bmatrix} = \begin{bmatrix}-0.5\\1.5\end{bmatrix} $$</div>
+          <div class="derive__why">잔차 — $\mathbf{v}$ 에서 그림자를 뺀 나머지</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{u}^\top\mathbf{r} = 3(-0.5) + 1(1.5) = -1.5 + 1.5 = 0 \ \checkmark $$</div>
+          <div class="derive__why"><strong>검산.</strong> 잔차가 정확히 직교한다 — 유도 1의 요구조건 그대로</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \|\operatorname{proj}\|^2 + \|\mathbf{r}\|^2 = (2.25+0.25) + (0.25+2.25) = 2.5+2.5 = 5 = \|\mathbf{v}\|^2 $$</div>
+          <div class="derive__why"><strong>피타고라스</strong>도 성립한다. 그림자와 잔차가 직각삼각형의 두 변</div>
+        </div>
+      </div>
+
+      <h3>③ 거리 세 가지</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{u}-\mathbf{v} = \begin{bmatrix}2\\-1\end{bmatrix} $$</div>
+          <div class="derive__why">차이 벡터부터</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ d_2 = \sqrt{4+1} = \sqrt5 \approx 2.236, \quad d_1 = 2+1 = 3, \quad d_\infty = \max(2,1) = 2 $$</div>
+          <div class="derive__why">$d_\infty \leq d_2 \leq d_1$ 이 확인된다</div>
+        </div>
+      </div>
+
+      <h3>④ 정규화하면 무엇이 같아지는가</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat{\mathbf{u}} = \tfrac{1}{\sqrt{10}}(3,1)^\top \approx (0.9487,\,0.3162)^\top $$</div>
+          <div class="derive__why">각 성분을 $\sqrt{10}\approx3.1623$ 으로 나눴다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat{\mathbf{v}} = \tfrac{1}{\sqrt{5}}(1,2)^\top \approx (0.4472,\,0.8944)^\top $$</div>
+          <div class="derive__why">$\sqrt5\approx2.2361$ 로 나눴다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat{\mathbf{u}}^\top\hat{\mathbf{v}} \approx 0.9487(0.4472) + 0.3162(0.8944) = 0.4243+0.2828 = 0.7071 $$</div>
+          <div class="derive__why"><strong>정규화 후의 내적 = 코사인 유사도.</strong> ①의 $1/\sqrt2$ 와 같다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \|\hat{\mathbf{u}}-\hat{\mathbf{v}}\|^2 = 2 - 2(0.7071) = 0.5858 \;\Rightarrow\; \|\hat{\mathbf{u}}-\hat{\mathbf{v}}\| \approx 0.7654 $$</div>
+          <div class="derive__why">식 (6). 코사인이 커지면 이 거리는 반드시 줄어든다</div>
+        </div>
+      </div>
+
+      <h3>⑤ 크기를 키우면 무엇이 달라지는가</h3>
+      <p>$\mathbf{w} = 10\mathbf{u} = (30,10)^\top$ 과 $\mathbf{u}$ 를 비교해 보자.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \operatorname{cossim}(\mathbf{u},\mathbf{w}) = \frac{10\,\mathbf{u}^\top\mathbf{u}}{\|\mathbf{u}\|\cdot 10\|\mathbf{u}\|} = 1 $$</div>
+          <div class="derive__why">방향이 같으므로 유사도는 최대값</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ d_2(\mathbf{u},\mathbf{w}) = \|(27,9)^\top\| = \sqrt{729+81} = \sqrt{810} \approx 28.46 $$</div>
+          <div class="derive__why"><strong>유클리드로는 아주 멀다.</strong> 두 척도가 정반대의 결론을 준다</div>
+        </div>
+      </div>
+      <div class="note note--key">
+        <span class="note__label">이 예제의 요점</span>
+        <p>
+          "가깝다"의 정의가 두 개다. <strong>크기가 의미를 갖는가</strong>로 고르면 된다.
+          문서 길이 · 재생 횟수처럼 크기가 신호이면 유클리드, 방향만 문제라면 코사인이다.
+          정규화를 먼저 하면 둘의 순위가 일치하므로 논쟁이 사라진다(식 6).
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <h3>코사인이냐 유클리드냐</h3>
+      <p>
+        같은 방향이지만 길이가 다른 두 벡터를 만들어 보라. 코사인 유사도는 1에 붙어 있는데
+        유클리드 거리는 계속 커진다. 예제 ⑤의 상황을 직접 재현하는 위젯이다.
+      </p>
+
+      <figure class="widget" data-widget="cos-vs-dist">
+        <figcaption class="widget__bar">두 척도의 충돌 — 길이를 바꿔 보기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">길이 배수만 키우면 코사인은 그대로, 거리만 커집니다. 각도를 돌리면 둘 다 움직입니다.</p>
+        </div>
+      </figure>
+
+      <h3>거리 세 가지를 눈으로 비교</h3>
+      <p>
+        같은 두 점 사이인데 <strong>가는 길</strong>이 다르다. 유클리드는 대각선,
+        맨해튼은 계단, $L_\infty$ 는 가장 긴 한 축만 본다.
+      </p>
+
+      <figure class="widget" data-widget="metric-compare">
+        <figcaption class="widget__bar">유클리드 · 맨해튼 · 최대거리</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">두 점을 같은 가로줄에 놓아 보세요. 세 거리가 모두 같아지는 순간이 있습니다.</p>
+        </div>
+      </figure>
+
+      <h3>정규화 — 모두 단위원 위로</h3>
+      <p>
+        점들이 원점에서 뻗은 방향은 유지한 채 <strong>단위원 위로 끌려 올라간다</strong>.
+        크기 정보가 사라지는 장면을 한 프레임씩 보라.
+      </p>
+
+      <figure class="widget" data-widget="normalize-sphere">
+        <figcaption class="widget__bar">L₂ 정규화 애니메이션</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">방향이 같던 두 점(같은 반직선 위)은 정규화 후 <strong>완전히 겹칩니다</strong>. 구별할 수 없게 된 것입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"파이썬에서 <code>u * v</code> 가 내적이다."</p>
+        <p>
+          <strong>실제로는</strong> NumPy 의 <code>*</code> 는 <em>원소별 곱</em>(아다마르 곱)이고,
+          내적은 <code>u @ v</code> 또는 <code>np.dot(u, v)</code> 다.
+          <code>(u * v).sum()</code> 이 내적과 같은 값을 준다.
+          모양이 맞으면 예외도 나지 않아서 조용히 틀린다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"코사인 유사도가 높으면 두 점이 가깝다."</p>
+        <p>
+          <strong>실제로는</strong> 정규화하지 않은 공간에서는 무관할 수 있다.
+          예제 ⑤에서 $\operatorname{cossim}=1$ 인 두 벡터의 유클리드 거리가 28을 넘었다.
+          <strong>먼저 정규화했는지</strong>를 항상 확인해야 한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"1 − 코사인 유사도는 거리다."</p>
+        <p>
+          <strong>실제로는</strong> 삼각부등식을 어기므로 거리 공간의 거리가 아니다
+          (위의 $(1,0), (1,1)/\sqrt2, (0,1)$ 반례).
+          삼각부등식에 기대는 인덱스 구조에 이 값을 그대로 넣으면 결과가 틀릴 수 있다.
+          거리가 필요하면 $\sqrt{2-2\cos\theta}$ 를 쓴다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"고차원에서도 무작위 두 벡터의 코사인은 고르게 퍼진다."</p>
+        <p>
+          <strong>실제로는</strong> 차원이 커질수록 <strong>거의 모든 쌍이 직교에 가까워진다</strong>.
+          $d$ 차원 단위구에서 무작위로 뽑은 두 벡터의 코사인은 평균 0, 표준편차 약 $1/\sqrt{d}$ 로
+          0 주변에 몰린다. $d=768$ 이면 표준편차가 약 0.036 이다.
+          그래서 임베딩 유사도 0.3 은 "조금 비슷한" 정도가 아니라 <strong>매우 큰</strong> 값일 수 있다 —
+          절대값보다 <em>같은 분포 안에서의 상대 순위</em>를 봐야 한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"내적이 0이면 두 변수는 서로 무관하다."</p>
+        <p>
+          <strong>실제로는</strong> 직교와 통계적 독립은 다르다.
+          평균을 뺀(중심화한) 데이터 벡터에서는 코사인 유사도가 <em>상관계수</em>와 같아지지만,
+          상관이 0이라고 독립인 것은 아니다.
+          중심화하지 않은 벡터의 직교는 상관과도 무관하다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–⑤와 오해 3의 반례를 그대로 검증한다.</p>
+      <details>
+        <summary>NumPy — 내적 · 정사영 · 코사인 · 반례 (19줄)</summary>
+<pre><code>import numpy as np
+
+u = np.array([3.0, 1.0]); v = np.array([1.0, 2.0])
+
+print(u @ v, (u * v).sum())          # 5.0 5.0   <- '*' 는 원소별 곱
+alpha = (u @ v) / (u @ u)            # 0.5
+proj = alpha * u                     # [1.5 0.5]
+r = v - proj                         # [-0.5  1.5]
+print(u @ r)                         # 0.0  <- 잔차는 직교
+
+cos = (u @ v) / (np.linalg.norm(u) * np.linalg.norm(v))
+print(cos, np.degrees(np.arccos(cos)))       # 0.7071 45.0
+
+uh, vh = u / np.linalg.norm(u), v / np.linalg.norm(v)
+print(uh @ vh)                               # 0.7071  = cos
+print(np.linalg.norm(uh - vh) ** 2)          # 0.5858  = 2 - 2cos
+
+a = np.array([1.0, 0.0]); b = np.array([1, 1]) / np.sqrt(2); c = np.array([0.0, 1.0])
+dc = lambda p, q: 1 - p @ q                  # 두 벡터는 이미 단위벡터
+print(dc(a, b) + dc(b, c), dc(a, c))         # 0.5858 1.0  <- 삼각부등식 위반
+</code></pre>
+        <p>
+          <small>
+            마지막 두 값이 오해 3의 근거다. $0.586 &lt; 1$ 이므로
+            <code>1 - cos</code> 은 거리 공간의 거리가 아니다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\mathbf{a}=(2,-1)^\top$ 위로 $\mathbf{b}=(3,4)^\top$ 를 정사영하면?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$(0.8,\ -0.4)^\top$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$(2,\ -1)^\top$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$(1.2,\ 1.6)^\top$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\mathbf{a}^\top\mathbf{b} = 6-4 = 2$, $\mathbf{a}^\top\mathbf{a} = 4+1 = 5$,
+            $\alpha = 2/5 = 0.4$. 따라서 $0.4\cdot(2,-1) = (0.8,-0.4)$.
+            다는 방향을 반대로($\mathbf{b}$ 위로 $\mathbf{a}$ 를) 정사영한 값이다 — 정사영은 대칭이 아니다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            단위벡터 두 개의 코사인 유사도가 $0.5$ 라면 둘 사이의 유클리드 거리는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$1$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$0.5$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$\sqrt{2}$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            식 (6): $\|\hat{\mathbf{x}}-\hat{\mathbf{y}}\|^2 = 2-2(0.5) = 1$, 제곱근을 취하면 1이다.
+            참고로 코사인이 0(직교)이면 거리는 $\sqrt2$ 이고, 이것이 다 선택지다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            $\mathbf{x}^\top\mathbf{y} &lt; 0$ 일 때 확실히 말할 수 있는 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>두 벡터의 길이가 다르다</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>사잇각이 $90^\circ$ 보다 크다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>두 벡터가 선형종속이다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            식 (2)에서 $\|\mathbf{x}\|\|\mathbf{y}\| > 0$ 이므로 부호는 온전히 $\cos\theta$ 가 정한다.
+            음수라는 것은 $\cos\theta<0$, 즉 $\theta \in (90^\circ, 180^\circ]$ 라는 뜻이다.
+            길이나 종속 여부는 부호와 무관하다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            벡터 검색 시스템이 <strong>내적만</strong> 계산하는데도 코사인 검색을 지원한다. 어떻게 가능한가?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>색인 시점에 모든 벡터를 $L_2$ 정규화해 두면 내적이 곧 코사인이다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>내적과 코사인은 원래 같은 값이다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>코사인은 내적의 근사이므로 오차를 감수하는 것이다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\hat{\mathbf{x}}^\top\hat{\mathbf{y}} = \cos\theta$ 이므로,
+            미리 정규화해 저장하면 내적 한 번으로 코사인이 나온다(예제 ④).
+            정규화하지 않으면 크기가 큰 벡터가 무조건 유리해지는 편향이 생긴다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            768차원 임베딩에서 두 문장의 코사인 유사도가 $0.35$ 로 나왔다. 옳은 해석은?</p>
+          <div class="opts">
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>35% 만 비슷하므로 관련이 거의 없다</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>무작위 쌍의 분포(평균 0, 표준편차 $\approx1/\sqrt{768}$)와 비교해야 판단할 수 있다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0.35 는 음수가 아니므로 항상 매우 유사하다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            고차원에서 무작위 두 벡터는 거의 직교하므로 코사인이 0 근처에 몰린다.
+            $1/\sqrt{768}\approx0.036$ 이니 0.35 는 표준편차의 약 10배 — 매우 강한 신호다.
+            <strong>절대값이 아니라 분포 안에서의 위치</strong>로 읽어야 한다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\mathbf{u}=(3,1)^\top$, $\mathbf{v}=(1,2)^\top$ 에서 잔차 $\mathbf{r}=\mathbf{v}-\operatorname{proj}_{\mathbf{u}}(\mathbf{v})$ 의 길이는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\sqrt{2.5} \approx 1.581$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$\sqrt{5} \approx 2.236$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$0$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            예제 ②에서 $\mathbf{r} = (-0.5, 1.5)$, 따라서 $\|\mathbf{r}\|^2 = 0.25+2.25 = 2.5$.
+            나는 $\|\mathbf{v}\|$ 이고, 피타고라스 $\|\mathbf{v}\|^2 = \|\text{proj}\|^2+\|\mathbf{r}\|^2 = 2.5+2.5 = 5$ 로 서로 연결된다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="2.4-matrix-operations.html">2.4 행렬 연산</a></strong> — 행렬 곱의 각 원소가 곧 내적이다. 직교행렬은 열들이 서로 직교하는 행렬.</li>
+        <li><strong><a href="2.6-linear-systems.html">2.6 연립방정식과 행렬 분해</a></strong> — 최소제곱의 정규방정식은 "잔차가 열공간에 직교"라는 조건이다.</li>
+        <li><strong><a href="2.9-dimensionality-reduction.html">2.9 차원 축소</a></strong> — PCA 는 정사영으로 잃는 정보를 최소화하는 방향을 찾는다.</li>
+        <li><strong><a href="2.10-linear-algebra-in-ai.html">2.10 AI와 선형대수</a></strong> — 어텐션 점수 $\mathbf{Q}\mathbf{K}^\top$ 은 그람 행렬 형태의 내적 모음이다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Deisenroth, M. P., Faisal, A. A. &amp; Ong, C. S. (2020). <em>Mathematics for Machine Learning</em>. Cambridge University Press.</span>
+          <span class="ref__where">3.2절(Inner Products) — 내적의 세 조건. 3.3–3.4절 — 길이·거리·각도·직교의 정의와 코시–슈바르츠. 3.8절(Orthogonal Projections) — 식 (3)의 정사영 유도와 잔차 직교 조건</span>
+          <a class="ref__link" href="https://mml-book.github.io/">mml-book.github.io</a>
+        </li>
+        <li class="ref" id="ref-mikolov2013-efficient-estimation-of" data-ref="mikolov2013-efficient-estimation-of">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Mikolov, T., Chen, K., Corrado, G. &amp; Dean, J. (2013). <em>Efficient Estimation of Word Representations in Vector Space</em>. ICLR Workshop.</span>
+          <span class="ref__where">4절(Results)과 4.1 — 단어 벡터의 덧셈·뺄셈으로 유추를 푸는 실험과, 후보를 고를 때 <em>코사인 유사도</em>를 쓴다는 서술. 본문 '임베딩 공간'과 식 (7)의 근거</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1301.3781">arXiv:1301.3781</a>
+        </li>
+        <li class="ref" id="ref-mit-1806" data-ref="mit-1806">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Strang, G. <em>MIT 18.06 Linear Algebra</em> (Spring 2010). MIT OpenCourseWare.</span>
+          <span class="ref__where">Lecture 14–15 (Orthogonal vectors and subspaces / Projections onto subspaces) — 정사영을 '잔차가 직교하도록 계수를 정하는 문제'로 세우는 구성. 유도 1의 뼈대</span>
+          <a class="ref__link" href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/">ocw.mit.edu</a>
+        </li>
+        <li class="ref" id="ref-3blue1brown-linalg" data-ref="3blue1brown-linalg">
+          <span class="ref__type" data-type="video">영상</span>
+          <span class="ref__cite">3Blue1Brown. <em>Essence of Linear Algebra</em>, Ch.9 <em>Dot products and duality</em>.</span>
+          <span class="ref__where">01:30–07:00 — 내적을 '투영 길이 × 기준 길이'로 보는 시각과, 순서를 바꿔도 값이 같은 이유. '정사영' 위젯과 직관 절의 그림자 설명의 원형</span>
+          <a class="ref__link" href="https://www.3blue1brown.com/topics/linear-algebra">3blue1brown.com</a>
+        </li>
+        <li class="ref" id="ref-zhang2023-d2l" data-ref="zhang2023-d2l">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Zhang, A., Lipton, Z. C., Li, M. &amp; Smola, A. J. (2023). <em>Dive into Deep Learning</em>. Cambridge University Press.</span>
+          <span class="ref__where">2.3절 Linear Algebra — <code>dot</code> 과 원소별 곱(<code>*</code>)의 구분. 오해 1의 코드 근거</span>
+          <a class="ref__link" href="https://d2l.ai/">d2l.ai</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+/* ============================================================
+   위젯 1 — 내적의 부호
+   u 는 고정, v 를 각도 슬라이더로 돌린다. 90°를 지나면 부호가 바뀐다.
+   ============================================================ */
+WIDGETS.register('dot-drag', function (root, ctx) {
+  var u = [3, 0];
+  var ang = 45, len = 2.2;
+
+  var p = VIZ.plot({ w: 460, h: 300, xmin: -4, xmax: 4, ymin: -2.6, ymax: 2.6 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'dot', label: 'uᵀv', digits: 3 },
+    { key: 'cos', label: 'cos θ', digits: 3 },
+    { key: 'deg', label: '각도' },
+    { key: 'sign', label: '해석' }
+  ]);
+
+  function draw() {
+    var t = ang * Math.PI / 180;
+    var v = [len * Math.cos(t), len * Math.sin(t)];
+    var dot = u[0] * v[0] + u[1] * v[1];
+    var cos = Math.cos(t);
+
+    p.clear().grid(1, 1).axes('x', 'y').ticks(1, 1);
+
+    /* 부호를 색으로: 양수면 청자, 음수면 주묵 */
+    var col = dot > 0.01 ? 'var(--jade)' : (dot < -0.01 ? 'var(--seal)' : 'var(--amber)');
+
+    /* v 가 u 위에 드리우는 그림자 */
+    var s = (dot) / (u[0] * u[0] + u[1] * u[1]);
+    p.line([[v[0], v[1]], [s * u[0], s * u[1]]], { dash: '3 3' });
+    p.add(VIZ.el('line', {
+      x1: p.X(0), y1: p.Y(0), x2: p.X(s * u[0]), y2: p.Y(s * u[1]),
+      stroke: col, 'stroke-width': 7, 'stroke-opacity': 0.35, 'stroke-linecap': 'round'
+    }));
+
+    p.vector(u[0], u[1], { label: 'u' });
+    p.vector(v[0], v[1], { stroke: col, width: 3, label: 'v' });
+
+    out.set('dot', dot);
+    out.set('cos', cos);
+    out.setRaw('deg', ang.toFixed(0) + '°');
+    out.setRaw('sign', dot > 0.01 ? '같은 쪽 (예각)' : (dot < -0.01 ? '반대 쪽 (둔각)' : '직교 — 서로 정보 없음'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'v 의 각도', min: 0, max: 180, step: 1, value: 45, unit: '°', digits: 0,
+    onInput: function (x) { ang = x; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'v 의 길이', min: 0.4, max: 2.4, step: 0.05, value: 2.2, digits: 2,
+    onInput: function (x) { len = x; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — 정사영
+   v 를 끌면 u 위의 그림자와 잔차가 갱신된다. 잔차는 항상 u 와 직교.
+   ============================================================ */
+WIDGETS.register('projection', function (root, ctx) {
+  var u = [3, 1], v = [1, 2];
+
+  var p = VIZ.plot({ w: 460, h: 300, xmin: -4, xmax: 4, ymin: -2.6, ymax: 2.6 });
+  ctx.stage.appendChild(p.svg);
+
+  var hu = VIZ.el('circle', { r: 7, class: 'viz-handle' });
+  var hv = VIZ.el('circle', { r: 7, class: 'viz-handle' });
+  p.svg.appendChild(hu); p.svg.appendChild(hv);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'a', label: '계수 α = uᵀv/uᵀu', digits: 3 },
+    { key: 'proj', label: '정사영' },
+    { key: 'res', label: '잔차 r' },
+    { key: 'check', label: '검산 uᵀr', digits: 6 }
+  ]);
+
+  function draw() {
+    var uu = u[0] * u[0] + u[1] * u[1];
+    var a = uu < 1e-9 ? 0 : (u[0] * v[0] + u[1] * v[1]) / uu;
+    var pr = [a * u[0], a * u[1]];
+    var r = [v[0] - pr[0], v[1] - pr[1]];
+
+    p.clear().grid(1, 1).axes('x', 'y').ticks(1, 1);
+
+    /* u 가 만드는 직선 */
+    var k = 4 / Math.max(1e-6, Math.sqrt(uu));
+    p.line([[-k * u[0], -k * u[1]], [k * u[0], k * u[1]]], { dash: '3 6' });
+
+    /* 잔차 = v 에서 그림자로 내리는 수선 */
+    p.line([[v[0], v[1]], [pr[0], pr[1]]], { alt: true, dash: '4 3', width: 2 });
+
+    p.vector(u[0], u[1], { label: 'u' });
+    p.vector(v[0], v[1], { stroke: 'var(--amber)', label: 'v' });
+    p.vector(pr[0], pr[1], { stroke: 'var(--seal)', width: 3, label: 'proj' });
+
+    hu.setAttribute('cx', p.X(u[0])); hu.setAttribute('cy', p.Y(u[1]));
+    hv.setAttribute('cx', p.X(v[0])); hv.setAttribute('cy', p.Y(v[1]));
+
+    out.set('a', a);
+    out.setRaw('proj', '(' + pr[0].toFixed(2) + ', ' + pr[1].toFixed(2) + ')');
+    out.setRaw('res', '(' + r[0].toFixed(2) + ', ' + r[1].toFixed(2) + ')');
+    out.set('check', u[0] * r[0] + u[1] * r[1]);
+  }
+
+  function mover(a) {
+    return function (x, y, dx, dy) {
+      if (x === null) { a[0] += dx; a[1] += dy; } else { a[0] = x; a[1] = y; }
+      a[0] = Math.max(-3.8, Math.min(3.8, a[0]));
+      a[1] = Math.max(-2.4, Math.min(2.4, a[1]));
+      draw();
+    };
+  }
+  VIZ.draggable(hu, p, mover(u), { label: '기준 벡터 u' });
+  VIZ.draggable(hv, p, mover(v), { label: '벡터 v' });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — 임베딩 공간과 코사인 유사도 히트맵
+   같은 방향이면 거리가 멀어도 유사도가 1 에 가깝다.
+   ============================================================ */
+WIDGETS.register('embedding-heatmap', function (root, ctx) {
+  var WORDS = [
+    { w: '왕',   v: [2.6, 1.9] },
+    { w: '여왕', v: [2.2, 2.4] },
+    { w: '남자', v: [1.1, 0.4] },
+    { w: '여자', v: [0.7, 0.9] },
+    { w: '사과', v: [-1.9, 1.6] },
+    { w: '포도', v: [-2.3, 1.2] }
+  ];
+
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center;width:100%';
+  ctx.stage.appendChild(wrap);
+
+  var p = VIZ.plot({ w: 250, h: 250, xmin: -3.2, xmax: 3.2, ymin: -0.6, ymax: 3.2, pad: { t: 16, r: 12, b: 24, l: 26 } });
+  wrap.appendChild(p.svg);
+
+  function cos(a, b) {
+    var d = a[0] * b[0] + a[1] * b[1];
+    return d / (Math.sqrt(a[0] * a[0] + a[1] * a[1]) * Math.sqrt(b[0] * b[0] + b[1] * b[1]));
+  }
+
+  var M = WORDS.map(function (r) { return WORDS.map(function (c) { return cos(r.v, c.v); }); });
+  var hm = VIZ.heatmap({
+    data: M, cell: 32, min: -1, max: 1, padL: 40, padT: 24,
+    rowLabels: WORDS.map(function (x) { return x.w; }),
+    colLabels: WORDS.map(function (x) { return x.w; })
+  });
+  wrap.appendChild(hm);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'pair1', label: '왕 · 여왕' },
+    { key: 'pair2', label: '왕 · 사과' },
+    { key: 'pair3', label: '사과 · 포도' },
+    { key: 'note', label: '읽는 법' }
+  ]);
+
+  p.clear().grid(1, 1).axes('x', 'y').ticks(2, 1);
+  WORDS.forEach(function (x, i) {
+    p.vector(x.v[0], x.v[1], { stroke: i < 4 ? 'var(--jade)' : 'var(--amber)', width: 2, label: x.w, lx: 4, ly: -6 });
+  });
+
+  out.setRaw('pair1', cos(WORDS[0].v, WORDS[1].v).toFixed(3));
+  out.setRaw('pair2', cos(WORDS[0].v, WORDS[4].v).toFixed(3));
+  out.setRaw('pair3', cos(WORDS[4].v, WORDS[5].v).toFixed(3));
+  out.setRaw('note', '진할수록 유사도가 높다');
+});
+
+/* ============================================================
+   위젯 4 — 코사인 vs 유클리드
+   길이 배수만 키우면 코사인은 그대로, 거리만 커진다.
+   ============================================================ */
+WIDGETS.register('cos-vs-dist', function (root, ctx) {
+  var base = [1.6, 0.9];
+  var scale = 1.8, ang = 12;
+
+  var p = VIZ.plot({ w: 460, h: 300, xmin: -1, xmax: 8, ymin: -1, ymax: 5, pad: { t: 18, r: 14, b: 26, l: 32 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'cos', label: '코사인 유사도', digits: 4 },
+    { key: 'd2', label: '유클리드 거리', digits: 3 },
+    { key: 'dot', label: '내적 uᵀv', digits: 3 },
+    { key: 'verdict', label: '두 척도의 결론' }
+  ]);
+
+  function draw() {
+    var t = ang * Math.PI / 180;
+    var c = Math.cos(t), s = Math.sin(t);
+    var u = base;
+    var v = [scale * (u[0] * c - u[1] * s), scale * (u[0] * s + u[1] * c)];
+
+    p.clear().grid(1, 1).axes('x', 'y').ticks(2, 1);
+    p.line([[u[0], u[1]], [v[0], v[1]]], { alt: true, dash: '4 3', width: 2 });
+    p.vector(u[0], u[1], { label: 'u' });
+    p.vector(v[0], v[1], { stroke: 'var(--amber)', width: 2.5, label: 'v', lx: 8, ly: 14 });
+
+    var dot = u[0] * v[0] + u[1] * v[1];
+    var nu = Math.sqrt(u[0] * u[0] + u[1] * u[1]);
+    var nv = Math.sqrt(v[0] * v[0] + v[1] * v[1]);
+    var cs = nv < 1e-9 ? 0 : dot / (nu * nv);
+    var d2 = Math.sqrt((u[0] - v[0]) * (u[0] - v[0]) + (u[1] - v[1]) * (u[1] - v[1]));
+
+    out.set('cos', cs);
+    out.set('d2', d2);
+    out.set('dot', dot);
+    out.setRaw('verdict', (cs > 0.99 && d2 > 1)
+      ? '코사인: 똑같다 / 유클리드: 멀다'
+      : (cs > 0.99 ? '두 척도 모두 가깝다' : '방향이 달라 둘 다 반응'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'v 의 길이 배수', min: 0.4, max: 3, step: 0.05, value: 1.8, digits: 2,
+    onInput: function (x) { scale = x; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'v 의 회전각', min: 0, max: 60, step: 1, value: 12, unit: '°', digits: 0,
+    onInput: function (x) { ang = x; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — 세 가지 거리 비교
+   유클리드(직선) · 맨해튼(계단) · L∞(가장 긴 축).
+   ============================================================ */
+WIDGETS.register('metric-compare', function (root, ctx) {
+  var a = [-2, -1], b = [2, 1.6];
+
+  var p = VIZ.plot({ w: 460, h: 300, xmin: -4, xmax: 4, ymin: -2.6, ymax: 2.6 });
+  ctx.stage.appendChild(p.svg);
+
+  var ha = VIZ.el('circle', { r: 7, class: 'viz-handle' });
+  var hb = VIZ.el('circle', { r: 7, class: 'viz-handle' });
+  p.svg.appendChild(ha); p.svg.appendChild(hb);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'd2', label: '유클리드 d₂', digits: 3 },
+    { key: 'd1', label: '맨해튼 d₁', digits: 3 },
+    { key: 'di', label: '최대거리 d∞', digits: 3 },
+    { key: 'ord', label: '대소 관계' }
+  ]);
+
+  function draw() {
+    p.clear().grid(1, 1).axes('x', 'y').ticks(1, 1);
+
+    /* 맨해튼 경로 — 계단 (주묵) */
+    p.line([[a[0], a[1]], [b[0], a[1]], [b[0], b[1]]], { alt: true, width: 2.5, dash: '6 4' });
+    /* 유클리드 — 직선 */
+    p.line([[a[0], a[1]], [b[0], b[1]]], { width: 3 });
+
+    p.dot(a[0], a[1], 5);
+    p.dot(b[0], b[1], 5);
+
+    ha.setAttribute('cx', p.X(a[0])); ha.setAttribute('cy', p.Y(a[1]));
+    hb.setAttribute('cx', p.X(b[0])); hb.setAttribute('cy', p.Y(b[1]));
+
+    var dx = Math.abs(a[0] - b[0]), dy = Math.abs(a[1] - b[1]);
+    var d2 = Math.sqrt(dx * dx + dy * dy), d1 = dx + dy, di = Math.max(dx, dy);
+    out.set('d2', d2); out.set('d1', d1); out.set('di', di);
+    out.setRaw('ord', (Math.abs(d1 - d2) < 1e-6 && Math.abs(d2 - di) < 1e-6)
+      ? 'd∞ = d₂ = d₁ (한 축만 다름)' : 'd∞ ≤ d₂ ≤ d₁');
+  }
+
+  function mover(q) {
+    return function (x, y, dx, dy) {
+      if (x === null) { q[0] += dx; q[1] += dy; } else { q[0] = x; q[1] = y; }
+      q[0] = Math.max(-3.7, Math.min(3.7, q[0]));
+      q[1] = Math.max(-2.4, Math.min(2.4, q[1]));
+      draw();
+    };
+  }
+  VIZ.draggable(ha, p, mover(a), { label: '점 a' });
+  VIZ.draggable(hb, p, mover(b), { label: '점 b' });
+  draw();
+});
+
+/* ============================================================
+   위젯 6 — L2 정규화 애니메이션
+   점들이 방향을 유지한 채 단위원 위로 끌려 올라간다.
+   ============================================================ */
+WIDGETS.register('normalize-sphere', function (root, ctx) {
+  var PTS = [
+    [2.4, 0.8], [1.2, 0.4],      /* 같은 방향, 길이만 다름 → 정규화 후 겹친다 */
+    [-1.6, 1.9], [0.4, 2.2], [-2.2, -1.1], [1.5, -1.8], [2.6, 2.0]
+  ];
+  var N = 21;
+
+  var p = VIZ.plot({ w: 460, h: 300, xmin: -3.2, xmax: 3.2, ymin: -2.2, ymax: 2.2 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 't', label: '진행', digits: 2 },
+    { key: 'len1', label: '점 A 길이', digits: 3 },
+    { key: 'len2', label: '점 B 길이', digits: 3 },
+    { key: 'note', label: 'A·B 코사인', digits: 3 }
+  ]);
+
+  function draw(step) {
+    var t = step / (N - 1);
+    p.clear().grid(1, 1).axes('x', 'y').ticks(1, 1);
+
+    /* 단위원 */
+    p.add(VIZ.el('circle', {
+      cx: p.X(0), cy: p.Y(0), r: p.X(1) - p.X(0),
+      fill: 'none', stroke: 'var(--jade)', 'stroke-width': 2, 'stroke-dasharray': '5 4'
+    }));
+
+    var cur = PTS.map(function (q) {
+      var n = Math.sqrt(q[0] * q[0] + q[1] * q[1]);
+      var f = (1 - t) + t / n;
+      return [q[0] * f, q[1] * f];
+    });
+
+    cur.forEach(function (q, i) {
+      p.line([[0, 0], [q[0], q[1]]], { dash: '2 4' });
+      p.dot(q[0], q[1], i < 2 ? 6 : 4.5, i < 2 ? 'viz-point' : 'viz-handle');
+    });
+
+    var la = Math.sqrt(cur[0][0] * cur[0][0] + cur[0][1] * cur[0][1]);
+    var lb = Math.sqrt(cur[1][0] * cur[1][0] + cur[1][1] * cur[1][1]);
+    var cs = (cur[0][0] * cur[1][0] + cur[0][1] * cur[1][1]) / (la * lb);
+
+    out.set('t', t);
+    out.set('len1', la);
+    out.set('len2', lb);
+    out.set('note', cs);
+  }
+
+  WIDGETS.player({
+    host: ctx.controls, steps: N, fps: 12, label: '정규화 진행', onStep: draw
+  });
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.6 연립방정식과 행렬 분해 — AI 이론 학습</title>
+<meta name="description" content="가우스 소거법·LU·QR 분해와 정규방정식·최소제곱법을 단계별 애니메이션으로. 과결정·부족결정 시스템에서 해가 어떻게 달라지는지까지.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="2.6">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">2.6</span>
+        <span>2장 · 선형대수</span>
+      </div>
+      <h1>연립방정식과 행렬 분해</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 55분</span>
+        <span><b>난이도</b>★★★☆☆</span>
+        <span><b>선수지식</b>
+          <a href="2.5-linear-transformation.html">2.5 선형변환</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-system">연립선형방정식</a>
+      <a class="chip" href="#c-gauss">가우스 소거법</a>
+      <a class="chip" href="#c-lu">LU 분해</a>
+      <a class="chip" href="#c-qr">QR 분해</a>
+      <a class="chip" href="#c-normal">정규방정식</a>
+      <a class="chip" href="#c-lsq">최소제곱법</a>
+      <a class="chip" href="#c-over">과결정 시스템</a>
+      <a class="chip" href="#c-under">부족결정 시스템</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        $\mathbf{A}\mathbf{x}=\mathbf{b}$ 를 푼다는 것은 <strong>$\mathbf{b}$ 를 $\mathbf{A}$ 의 열들로 만들 계수를 찾는 일</strong>이고,
+        만들 수 없으면 <strong>가장 가까운 것으로 대신</strong>한다 — 그것이 최소제곱법이다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>가우스 소거법을 손으로 끝까지 수행하고, 해가 유일 · 무한 · 없음 중 어디에 해당하는지 판정할 수 있다.</li>
+        <li>LU · QR 분해가 각각 무엇을 미리 계산해 두는 장치인지 설명하고 손으로 구할 수 있다.</li>
+        <li>정규방정식 $\mathbf{A}^\top\mathbf{A}\mathbf{x}=\mathbf{A}^\top\mathbf{b}$ 를 직교 조건에서 유도하고 데이터 3개로 검산할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        연립방정식에는 서로 다른 두 그림이 있다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>관점</th><th>보는 방식</th><th>해가 뜻하는 것</th></tr></thead>
+          <tbody>
+            <tr><td><strong>행 그림</strong></td><td>각 식이 하나의 직선(평면)</td><td>직선들이 만나는 점</td></tr>
+            <tr><td><strong>열 그림</strong></td><td>$x_1\mathbf{a}_1 + x_2\mathbf{a}_2 = \mathbf{b}$</td><td>$\mathbf{b}$ 를 만드는 <em>배합 비율</em></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        학교에서는 행 그림을 배우지만, 선형대수의 힘은 <strong>열 그림</strong>에서 나온다.
+        "해가 있는가"는 곧 <strong>$\mathbf{b}$ 가 열공간 안에 있는가</strong>이고,
+        "해가 몇 개인가"는 <strong>영공간이 얼마나 큰가</strong>다 (<a href="2.5-linear-transformation.html">2.5</a>).
+      </p>
+
+      <figure class="widget" data-widget="two-lines">
+        <figcaption class="widget__bar">두 직선의 교차 — 유일해 · 무한해 · 해 없음</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">두 직선을 나란하게 만들어 보세요. $\det=0$ 이 되는 순간 해가 사라지거나(평행) 무한히 많아집니다(겹침).</p>
+        </div>
+      </figure>
+
+      <figure class="widget" data-widget="over-under">
+        <figcaption class="widget__bar">식이 많을 때와 적을 때 — 해집합의 모양</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">식이 많으면(과결정) 정확한 해가 없어 '가장 가까운 점'을 찾고, 적으면(부족결정) 해가 직선을 이루어 하나를 골라야 합니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-system"></span>
+      <h3>연립선형방정식</h3>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbf{A}\mathbf{x} = \mathbf{b}, \qquad \mathbf{A}\in\mathbb{R}^{m\times n},\ \ \mathbf{x}\in\mathbb{R}^{n},\ \ \mathbf{b}\in\mathbb{R}^{m} $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>미지수 $n$ 개, 식 $m$ 개다. 해의 개수는 세 가지뿐이며, 그 이유는 열공간과 영공간으로 설명된다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>경우</th><th>조건</th><th>해집합</th></tr></thead>
+          <tbody>
+            <tr><td>해 없음</td><td>$\mathbf{b}\notin\operatorname{Col}(\mathbf{A})$</td><td>공집합 (비일관, inconsistent)</td></tr>
+            <tr><td>유일해</td><td>$\mathbf{b}\in\operatorname{Col}(\mathbf{A})$, $\operatorname{Null}(\mathbf{A})=\{\mathbf{0}\}$</td><td>한 점</td></tr>
+            <tr><td>무한해</td><td>$\mathbf{b}\in\operatorname{Col}(\mathbf{A})$, $\dim\operatorname{Null}(\mathbf{A})=k>0$</td><td>$\mathbf{x}_p + \operatorname{Null}(\mathbf{A})$ — $k$ 차원 아핀 집합</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        마지막 줄이 중요하다. 해가 여러 개면 <strong>"특수해 하나 + 영공간 전체"</strong> 꼴이다.
+        <em>정확히 두 개</em>인 경우는 없다 — 두 해가 있으면 그 차이가 영공간에 들어가고,
+        영공간은 부분공간이라 무한히 많은 해를 만들어 낸다.
+      </p>
+
+      <span class="anchor" id="c-gauss"></span>
+      <h3>가우스 소거법</h3>
+      <p>
+        아래 <strong>세 가지 행 연산</strong>만 쓴다. 셋 다 되돌릴 수 있으므로 <strong>해집합이 변하지 않는다</strong>.
+      </p>
+      <ol>
+        <li>두 행을 맞바꾼다 (행 교환)</li>
+        <li>한 행에 0이 아닌 수를 곱한다</li>
+        <li>한 행에 다른 행의 배수를 더한다</li>
+      </ol>
+      <p>
+        목표는 <strong>행 사다리꼴</strong>(row echelon form)이다 — 각 행의 첫 0 아닌 원소(피벗)가
+        아래로 갈수록 오른쪽에 있는 계단 모양. 여기서 아래에서부터 대입해 올라가면(후진대입) 해가 나온다.
+        피벗이 없는 열에 해당하는 미지수를 <strong>자유변수</strong>라 하고, 자유변수의 개수가 곧 영공간의 차원이다.
+      </p>
+
+      <figure class="widget" data-widget="gauss-steps">
+        <figcaption class="widget__bar">가우스 소거법 — 한 연산씩</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">0 이 왼쪽 아래부터 차례로 채워집니다. 계단(피벗) 모양이 완성되면 아래에서부터 값을 대입해 올라갑니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-lu"></span>
+      <h3>LU 분해</h3>
+      <p>
+        가우스 소거를 하면서 <strong>사용한 배수들을 버리지 않고 기록</strong>하면 그것이 $\mathbf{L}$ 이 된다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbf{A} = \mathbf{L}\mathbf{U}, \qquad \mathbf{L} = \text{하삼각(대각 1)}, \quad \mathbf{U} = \text{상삼각} $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        왜 굳이 분해하는가. <strong>같은 $\mathbf{A}$ 에 여러 $\mathbf{b}$ 를 풀어야 할 때</strong> 압도적으로 싸다.
+        분해는 한 번 $O(n^3/3)$ 이고, 이후 각 $\mathbf{b}$ 는 삼각행렬 두 번 풀기로 $O(n^2)$ 에 끝난다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbf{A}\mathbf{x}=\mathbf{b} \;\Longrightarrow\; \mathbf{L}\underbrace{\mathbf{U}\mathbf{x}}_{\mathbf{y}} = \mathbf{b} \;\Longrightarrow\; \underbrace{\mathbf{L}\mathbf{y}=\mathbf{b}}_{\text{전진대입}} \ \text{ 풀고 } \ \underbrace{\mathbf{U}\mathbf{x}=\mathbf{y}}_{\text{후진대입}} $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        피벗이 0이 되면 행을 바꿔야 하므로 실제 구현은 치환행렬을 붙여 $\mathbf{P}\mathbf{A} = \mathbf{L}\mathbf{U}$ 로 쓴다
+        (부분 피벗팅). 수치 안정성 때문에 <strong>0이 아니어도 가장 큰 값을 피벗으로 고르는 것</strong>이 표준이다.
+      </p>
+
+      <figure class="widget" data-widget="lu-decompose">
+        <figcaption class="widget__bar">LU 분해 — 소거의 배수를 기록하기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">U 에서 0 을 만드는 데 쓴 배수가 그대로 L 의 같은 자리에 들어갑니다. 버리는 정보가 하나도 없습니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-qr"></span>
+      <h3>QR 분해</h3>
+      <p>
+        열들을 <strong>정규직교로 갈아 끼우는</strong> 분해다. 그람–슈미트 과정이 그 절차다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbf{A} = \mathbf{Q}\mathbf{R}, \qquad \mathbf{Q}^\top\mathbf{Q}=\mathbf{I}, \quad \mathbf{R} = \text{상삼각} $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>그람–슈미트는 <a href="2.3-inner-product.html">2.3</a>의 정사영을 반복 적용하는 것이 전부다.</p>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbf{q}_1 = \frac{\mathbf{a}_1}{\|\mathbf{a}_1\|}, \qquad \tilde{\mathbf{q}}_k = \mathbf{a}_k - \sum_{j<k}(\mathbf{q}_j^\top\mathbf{a}_k)\,\mathbf{q}_j, \qquad \mathbf{q}_k = \frac{\tilde{\mathbf{q}}_k}{\|\tilde{\mathbf{q}}_k\|} $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        "이미 만든 방향들 쪽 성분을 빼고 남은 것"을 새 방향으로 삼는다.
+        $\mathbf{R}$ 의 성분은 그때 뺀 계수 $\mathbf{q}_j^\top\mathbf{a}_k$ 와 남은 길이다.
+        QR 은 최소제곱을 풀 때 정규방정식보다 <strong>수치적으로 안정</strong>해 실무 표준이다.
+      </p>
+
+      <figure class="widget" data-widget="qr-gram-schmidt">
+        <figcaption class="widget__bar">그람–슈미트 — 직교 방향 만들기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">두 번째 벡터에서 첫 번째 방향 성분을 빼면 남은 것이 정확히 직각을 이룹니다 — 2.3절의 잔차와 같은 계산입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-over"></span>
+      <h3>과결정 시스템</h3>
+      <p>
+        식이 미지수보다 많은 경우($m>n$)다. 데이터 1000개로 파라미터 2개를 정하는 회귀가 전형적이다.
+        일반적으로 <strong>정확한 해가 없다</strong> — $\mathbf{b}$ 가 $n$ 차원 열공간 밖에 있기 때문이다.
+        그래서 목표를 바꾼다: <em>정확히 맞히기</em> 대신 <em>가장 가깝게</em>.
+      </p>
+
+      <span class="anchor" id="c-lsq"></span>
+      <h3>최소제곱법</h3>
+      <div class="eq">
+        <div class="eq__body">$$ \hat{\mathbf{x}} = \arg\min_{\mathbf{x}} \|\mathbf{A}\mathbf{x}-\mathbf{b}\|_2^2 $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        기하적으로는 <strong>$\mathbf{b}$ 를 열공간 위로 정사영하는 것</strong>이다.
+        $\mathbf{A}\hat{\mathbf{x}}$ 가 열공간 안에서 $\mathbf{b}$ 에 가장 가까운 점이고,
+        그 조건은 <strong>잔차가 열공간에 직교</strong>하는 것이다. 이 한 줄에서 정규방정식이 나온다.
+      </p>
+
+      <span class="anchor" id="c-normal"></span>
+      <h3>정규방정식</h3>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbf{A}^\top\mathbf{A}\,\hat{\mathbf{x}} = \mathbf{A}^\top\mathbf{b} \qquad\Longrightarrow\qquad \hat{\mathbf{x}} = (\mathbf{A}^\top\mathbf{A})^{-1}\mathbf{A}^\top\mathbf{b} \ \ (\mathbf{A}^\top\mathbf{A} \text{ 가역일 때}) $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        $(\mathbf{A}^\top\mathbf{A})^{-1}\mathbf{A}^\top$ 를 <strong>의사역행렬</strong>(pseudo-inverse) $\mathbf{A}^{+}$ 라 한다.
+        $\mathbf{A}^\top\mathbf{A}$ 는 <a href="2.4-matrix-operations.html">2.4</a>에서 본 대로 항상 대칭·준정부호이며,
+        $\mathbf{A}$ 의 열이 선형독립일 때 가역이다.
+      </p>
+      <div class="note note--trap">
+        <span class="note__label">식 (7)을 그대로 코딩하지 말 것</span>
+        <p>
+          $\mathbf{A}^\top\mathbf{A}$ 를 만드는 순간 <strong>조건수가 제곱</strong>된다 —
+          원래 $\kappa$ 였다면 $\kappa^2$ 이 되어 정밀도를 절반쯤 잃는다.
+          실무에서는 QR 분해(또는 SVD)로 푼다. NumPy 의 <code>np.linalg.lstsq</code> 가 그렇게 한다.
+        </p>
+      </div>
+
+      <figure class="widget" data-widget="least-squares">
+        <figcaption class="widget__bar">최소제곱 — 잔차 제곱합을 줄여 보기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">최적점에서는 잔차의 <strong>합이 0</strong>이 되고(위·아래로 균형), 잔차 제곱합이 더는 줄지 않습니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-under"></span>
+      <h3>부족결정 시스템</h3>
+      <p>
+        식이 미지수보다 적은 경우($m<n$)다. 해가 있으면 <strong>무한히 많다</strong>.
+        이때는 "어떤 해를 고를 것인가"가 문제가 되고, 표준 선택은 <strong>노름이 가장 작은 해</strong>다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \hat{\mathbf{x}} = \arg\min \|\mathbf{x}\|_2 \quad \text{s.t.}\quad \mathbf{A}\mathbf{x}=\mathbf{b} \qquad\Longrightarrow\qquad \hat{\mathbf{x}} = \mathbf{A}^\top(\mathbf{A}\mathbf{A}^\top)^{-1}\mathbf{b} $$</div>
+        <span class="eq__tag num">(8)</span>
+      </div>
+      <p>
+        파라미터가 데이터보다 많은 현대 신경망이 정확히 이 상황이다.
+        해가 무한히 많으므로 <strong>어떤 해로 가느냐를 정하는 것은 최적화 알고리즘과 정규화</strong>이지
+        데이터가 아니다. 이것이 "암묵적 편향(implicit bias)" 논의의 선형대수적 뿌리다.
+      </p>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>세 분해를 한자리에 두면 쓰임새가 갈린다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>분해</th><th>형태</th><th>비용</th><th>언제 쓰나</th></tr></thead>
+          <tbody>
+            <tr><td>LU</td><td>$\mathbf{PA}=\mathbf{LU}$</td><td>$\sim\tfrac{2}{3}n^3$</td><td>정사각 시스템을 여러 $\mathbf{b}$ 에 반복해 풀 때</td></tr>
+            <tr><td>QR</td><td>$\mathbf{A}=\mathbf{QR}$</td><td>$\sim2mn^2$</td><td>최소제곱 — 수치적으로 안정</td></tr>
+            <tr><td>SVD</td><td>$\mathbf{A}=\mathbf{U\Sigma V}^\top$</td><td>$\sim mn^2$ 이상</td><td>rank 결손·특이에 가까운 경우 (<a href="2.8-svd.html">2.8</a>)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$\mathbf{A}$</td><td>볼드 에이</td><td>계수행렬</td><td>$(m,n)$</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\mathbf{b}$</td><td>볼드 비</td><td>우변 벡터 (관측값)</td><td>$(m,)$</td><td>$\mathbb{R}^m$</td></tr>
+            <tr><td>$\mathbf{x}$</td><td>볼드 엑스</td><td>미지수 벡터</td><td>$(n,)$</td><td>$\mathbb{R}^n$</td></tr>
+            <tr><td>$\hat{\mathbf{x}}$</td><td>엑스 햇</td><td>최소제곱해 (추정값)</td><td>$(n,)$</td><td>$\mathbb{R}^n$</td></tr>
+            <tr><td>$\mathbf{x}_p$</td><td>엑스 피</td><td>특수해 — 아무 해나 하나</td><td>$(n,)$</td><td>—</td></tr>
+            <tr><td>$\mathbf{L}$</td><td>볼드 엘</td><td>하삼각행렬 (대각이 1)</td><td>$(n,n)$</td><td>—</td></tr>
+            <tr><td>$\mathbf{U}$</td><td>볼드 유</td><td>상삼각행렬</td><td>$(n,n)$</td><td>—</td></tr>
+            <tr><td>$\mathbf{P}$</td><td>볼드 피</td><td>치환행렬 (행 교환 기록)</td><td>$(n,n)$</td><td>0/1</td></tr>
+            <tr><td>$\mathbf{Q}$</td><td>볼드 큐</td><td>정규직교 열을 가진 행렬</td><td>$(m,n)$</td><td>$\mathbf{Q}^\top\mathbf{Q}=\mathbf{I}$</td></tr>
+            <tr><td>$\mathbf{R}$</td><td>볼드 알</td><td>상삼각행렬 (QR 의 R)</td><td>$(n,n)$</td><td>—</td></tr>
+            <tr><td>$\mathbf{q}_k$</td><td>큐 케이</td><td>$k$ 번째 정규직교 벡터</td><td>$(m,)$</td><td>$\|\mathbf{q}_k\|=1$</td></tr>
+            <tr><td>$\tilde{\mathbf{q}}_k$</td><td>큐 틸데 케이</td><td>정규화 전의 잔차 벡터</td><td>$(m,)$</td><td>—</td></tr>
+            <tr><td>$\mathbf{A}^{+}$</td><td>에이 플러스 · 의사역행렬</td><td>$(\mathbf{A}^\top\mathbf{A})^{-1}\mathbf{A}^\top$ (열 독립일 때)</td><td>$(n,m)$</td><td>—</td></tr>
+            <tr><td>$\mathbf{r}$</td><td>알 · 잔차</td><td>$\mathbf{b}-\mathbf{A}\hat{\mathbf{x}}$</td><td>$(m,)$</td><td>$\perp\operatorname{Col}(\mathbf{A})$</td></tr>
+            <tr><td>$\kappa$</td><td>카파 · 조건수</td><td>입력 오차가 답에서 몇 배로 커지는지</td><td>스칼라</td><td>$\geq1$</td></tr>
+            <tr><td>s.t.</td><td>서브젝트 투</td><td>"…라는 제약 아래에서"</td><td>표기</td><td>—</td></tr>
+            <tr><td>$\arg\min$</td><td>아그민</td><td>최소로 만드는 <em>입력</em></td><td>연산자</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — 정규방정식은 "잔차가 직교"에서 나온다</h3>
+      <p>
+        <a href="2.3-inner-product.html">2.3</a>의 정사영 유도와 완전히 같은 논법이다.
+        다만 이번에는 직선이 아니라 <strong>열공간 전체</strong>에 대해 직교를 요구한다.
+      </p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{r} = \mathbf{b} - \mathbf{A}\hat{\mathbf{x}} $$</div>
+          <div class="derive__why">잔차의 정의</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{r} \perp \operatorname{Col}(\mathbf{A}) \;\Longleftrightarrow\; \mathbf{a}_j^\top\mathbf{r} = 0 \quad (\forall j) $$</div>
+          <div class="derive__why">열공간에 직교 = <strong>모든 열</strong>과 직교. 열들이 열공간을 Span 하므로 이것으로 충분하다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{A}^\top\mathbf{r} = \mathbf{0} $$</div>
+          <div class="derive__why">$n$ 개의 조건을 한 줄로 묶었다 — $\mathbf{A}^\top$ 의 각 행이 $\mathbf{A}$ 의 각 열이다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{A}^\top(\mathbf{b}-\mathbf{A}\hat{\mathbf{x}}) = \mathbf{0} $$</div>
+          <div class="derive__why">$\mathbf{r}$ 을 풀어 썼다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \boxed{\;\mathbf{A}^\top\mathbf{A}\,\hat{\mathbf{x}} = \mathbf{A}^\top\mathbf{b}\;} $$</div>
+          <div class="derive__why">정리했다. <strong>정규방정식</strong> — 미지수 $n$ 개, 식 $n$ 개의 정사각 시스템이 되었다</div>
+        </div>
+      </div>
+
+      <details>
+        <summary>미분으로 유도해도 같은 식이 나온다</summary>
+        <p>
+          $J(\mathbf{x}) = \|\mathbf{A}\mathbf{x}-\mathbf{b}\|^2
+          = \mathbf{x}^\top\mathbf{A}^\top\mathbf{A}\mathbf{x} - 2\mathbf{b}^\top\mathbf{A}\mathbf{x} + \mathbf{b}^\top\mathbf{b}$ 를
+          $\mathbf{x}$ 로 미분하면 $\nabla J = 2\mathbf{A}^\top\mathbf{A}\mathbf{x} - 2\mathbf{A}^\top\mathbf{b}$ 이고,
+          이를 $\mathbf{0}$ 으로 두면 정규방정식이다.
+          $\mathbf{A}^\top\mathbf{A}$ 가 준정부호라 $J$ 는 볼록이므로 이 정류점이 전역 최소다.
+          벡터 미분 규칙은 3장에서 다룬다.
+        </p>
+      </details>
+
+      <h3>유도 2 — 최소제곱해가 정말 최소인가</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \|\mathbf{A}\mathbf{x}-\mathbf{b}\|^2 = \|(\mathbf{A}\mathbf{x} - \mathbf{A}\hat{\mathbf{x}}) - \mathbf{r}\|^2 $$</div>
+          <div class="derive__why">$\mathbf{b} = \mathbf{A}\hat{\mathbf{x}} + \mathbf{r}$ 를 대입해 임의의 $\mathbf{x}$ 와 비교한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ = \|\mathbf{A}(\mathbf{x}-\hat{\mathbf{x}})\|^2 - 2\,\mathbf{r}^\top\mathbf{A}(\mathbf{x}-\hat{\mathbf{x}}) + \|\mathbf{r}\|^2 $$</div>
+          <div class="derive__why">전개했다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{r}^\top\mathbf{A}(\mathbf{x}-\hat{\mathbf{x}}) = (\mathbf{A}^\top\mathbf{r})^\top(\mathbf{x}-\hat{\mathbf{x}}) = 0 $$</div>
+          <div class="derive__why">정규방정식이 $\mathbf{A}^\top\mathbf{r}=\mathbf{0}$ 을 보장하므로 <strong>교차항이 사라진다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \|\mathbf{A}\mathbf{x}-\mathbf{b}\|^2 = \|\mathbf{A}(\mathbf{x}-\hat{\mathbf{x}})\|^2 + \|\mathbf{r}\|^2 \geq \|\mathbf{r}\|^2 $$</div>
+          <div class="derive__why">첫 항은 항상 0 이상이고 $\mathbf{x}=\hat{\mathbf{x}}$ 일 때만 0이다. <strong>$\hat{\mathbf{x}}$ 가 최소</strong> (피타고라스)</div>
+        </div>
+      </div>
+
+      <h3>유도 3 — 행 연산은 왜 해집합을 바꾸지 않는가</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ R_i \leftarrow R_i + c\,R_j \quad (i\neq j) $$</div>
+          <div class="derive__why">세 번째 행 연산을 예로 든다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{x} \text{ 가 원래 해} \;\Rightarrow\; \mathbf{a}_i^{(r)\top}\mathbf{x}=b_i,\ \ \mathbf{a}_j^{(r)\top}\mathbf{x}=b_j $$</div>
+          <div class="derive__why">$\mathbf{a}^{(r)}$ 는 행벡터. 두 식이 모두 성립한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ (\mathbf{a}_i^{(r)}+c\,\mathbf{a}_j^{(r)})^\top\mathbf{x} = b_i + c\,b_j $$</div>
+          <div class="derive__why">두 식을 그대로 더한 것이므로 새 식도 성립 — <strong>해가 사라지지 않는다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ R_i \leftarrow R_i - c\,R_j \ \text{ 로 되돌릴 수 있다} $$</div>
+          <div class="derive__why">역연산이 있으므로 <strong>해가 늘어나지도 않는다</strong>. 두 방향을 합쳐 해집합이 정확히 보존된다</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① 가우스 소거로 $3\times3$ 풀기</h3>
+      <div class="eq">
+        <div class="eq__body">$$ \left[\begin{array}{ccc|c} 2&1&-1&8\\ -3&-1&2&-11\\ -2&1&2&-3 \end{array}\right] $$</div>
+        <span class="eq__tag num">(9)</span>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ R_2 \leftarrow R_2 + \tfrac32 R_1: \quad (-3+3,\ -1+\tfrac32,\ 2-\tfrac32 \mid -11+12) = (0,\ \tfrac12,\ \tfrac12 \mid 1) $$</div>
+          <div class="derive__why">1열을 0으로 만든다. 배수는 $-(-3)/2 = 3/2$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ R_3 \leftarrow R_3 + R_1: \quad (-2+2,\ 1+1,\ 2-1 \mid -3+8) = (0,\ 2,\ 1 \mid 5) $$</div>
+          <div class="derive__why">배수는 $-(-2)/2 = 1$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ R_3 \leftarrow R_3 - 4R_2: \quad (0,\ 2-2,\ 1-2 \mid 5-4) = (0,\ 0,\ -1 \mid 1) $$</div>
+          <div class="derive__why">배수는 $2 / \tfrac12 = 4$. <strong>사다리꼴 완성</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ -z = 1 \;\Rightarrow\; z = -1 $$</div>
+          <div class="derive__why">후진대입 시작 — 맨 아래 식부터</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \tfrac12 y + \tfrac12(-1) = 1 \;\Rightarrow\; \tfrac12 y = \tfrac32 \;\Rightarrow\; y = 3 $$</div>
+          <div class="derive__why">둘째 식에 $z$ 를 넣었다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 2x + 3 - (-1) = 8 \;\Rightarrow\; 2x = 4 \;\Rightarrow\; x = 2 $$</div>
+          <div class="derive__why">첫 식에 $y, z$ 를 넣었다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ -3(2)-(3)+2(-1) = -6-3-2 = -11 \ \checkmark $$</div>
+          <div class="derive__why"><strong>검산</strong> — 소거에 쓰지 않은 원래 둘째 식에 대입했다</div>
+        </div>
+      </div>
+
+      <h3>② LU 분해 — 배수를 기록하기</h3>
+      <p>같은 행렬 $\mathbf{A}=\begin{bmatrix}2&1&-1\\-3&-1&2\\-2&1&2\end{bmatrix}$ 다. 위에서 쓴 배수를 부호까지 그대로 옮긴다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \ell_{21} = \frac{-3}{2} = -1.5, \qquad \ell_{31} = \frac{-2}{2} = -1 $$</div>
+          <div class="derive__why">$\ell_{ij}$ = (없애려는 원소) ÷ (피벗)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{U} \to \begin{bmatrix}2&1&-1\\0&0.5&0.5\\0&2&1\end{bmatrix} $$</div>
+          <div class="derive__why">1열 소거 후. $R_2 - (-1.5)R_1$, $R_3 - (-1)R_1$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \ell_{32} = \frac{2}{0.5} = 4, \qquad \mathbf{U} = \begin{bmatrix}2&1&-1\\0&0.5&0.5\\0&0&-1\end{bmatrix} $$</div>
+          <div class="derive__why">2열 소거. $1 - 4(0.5) = -1$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{L} = \begin{bmatrix}1&0&0\\-1.5&1&0\\-1&4&1\end{bmatrix} $$</div>
+          <div class="derive__why">배수를 제자리에 넣고 대각을 1로</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ (\mathbf{LU})_{31} = -1(2) + 4(0) + 1(0) = -2 \ \checkmark $$</div>
+          <div class="derive__why">검산 1 — $\mathbf{A}$ 의 $(3,1)$ 성분과 같다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ (\mathbf{LU})_{33} = -1(-1) + 4(0.5) + 1(-1) = 1 + 2 - 1 = 2 \ \checkmark $$</div>
+          <div class="derive__why">검산 2 — $(3,3)$ 성분도 맞다</div>
+        </div>
+      </div>
+
+      <h3>③ 최소제곱 — 데이터 3개로 직선 맞추기</h3>
+      <p>점 $(1,1), (2,2), (3,2)$ 에 $y = a + bx$ 를 맞춘다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{A} = \begin{bmatrix}1&1\\1&2\\1&3\end{bmatrix}, \quad \mathbf{b} = \begin{bmatrix}1\\2\\2\end{bmatrix}, \quad \mathbf{x} = \begin{bmatrix}a\\b\end{bmatrix} $$</div>
+          <div class="derive__why">첫 열은 절편용 1, 둘째 열은 $x$ 값. 식 3개 · 미지수 2개 — <strong>과결정</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{A}^\top\mathbf{A} = \begin{bmatrix}3 & 1{+}2{+}3\\ 1{+}2{+}3 & 1{+}4{+}9\end{bmatrix} = \begin{bmatrix}3&6\\6&14\end{bmatrix} $$</div>
+          <div class="derive__why">$(1,1)$ 은 1의 개수, $(1,2)$ 는 $\sum x_i$, $(2,2)$ 는 $\sum x_i^2$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{A}^\top\mathbf{b} = \begin{bmatrix}1+2+2\\ 1(1)+2(2)+3(2)\end{bmatrix} = \begin{bmatrix}5\\11\end{bmatrix} $$</div>
+          <div class="derive__why">$\sum y_i$ 와 $\sum x_i y_i$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 3a + 6b = 5, \qquad 6a + 14b = 11 $$</div>
+          <div class="derive__why">정규방정식을 성분으로 폈다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 2\times(\text{첫 식}) : 6a+12b = 10 \;\Rightarrow\; (6a{+}14b)-(6a{+}12b) = 11-10 $$</div>
+          <div class="derive__why">$a$ 를 소거하려고 맞췄다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 2b = 1 \;\Rightarrow\; b = 0.5, \qquad a = \frac{5 - 6(0.5)}{3} = \frac{2}{3} \approx 0.6667 $$</div>
+          <div class="derive__why">기울기 0.5, 절편 2/3</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat{y} = \left(\tfrac76,\ \tfrac53,\ \tfrac{13}{6}\right) \;\Rightarrow\; \mathbf{r} = \left(-\tfrac16,\ \tfrac13,\ -\tfrac16\right) $$</div>
+          <div class="derive__why">$\hat y_1 = 2/3+0.5 = 7/6$, $\hat y_2 = 2/3+1 = 5/3$, $\hat y_3 = 2/3+1.5 = 13/6$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sum r_i = -\tfrac16+\tfrac13-\tfrac16 = 0 \ \checkmark $$</div>
+          <div class="derive__why"><strong>검산 1</strong> — 잔차가 1열(전부 1)과 직교. 절편이 있으면 잔차의 합은 반드시 0이다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sum x_i r_i = 1(-\tfrac16) + 2(\tfrac13) + 3(-\tfrac16) = \frac{-1+4-3}{6} = 0 \ \checkmark $$</div>
+          <div class="derive__why"><strong>검산 2</strong> — 잔차가 2열($x$ 값)과도 직교. 정규방정식이 요구한 그대로다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \|\mathbf{r}\|^2 = \tfrac1{36}+\tfrac4{36}+\tfrac1{36} = \tfrac{6}{36} = \tfrac16 \approx 0.1667 $$</div>
+          <div class="derive__why">최소 잔차 제곱합. 이보다 작게 만드는 직선은 없다</div>
+        </div>
+      </div>
+
+      <h3>④ 그람–슈미트로 QR 구하기</h3>
+      <p>$\mathbf{A} = \begin{bmatrix}3&1\\4&7\end{bmatrix}$ 의 두 열을 직교화한다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \|\mathbf{a}_1\| = \sqrt{9+16} = 5 \;\Rightarrow\; \mathbf{q}_1 = \tfrac15(3,4)^\top = (0.6,\ 0.8)^\top $$</div>
+          <div class="derive__why">첫 열은 정규화만 하면 된다. $r_{11}=5$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ r_{12} = \mathbf{q}_1^\top\mathbf{a}_2 = 0.6(1) + 0.8(7) = 0.6+5.6 = 6.2 $$</div>
+          <div class="derive__why">$\mathbf{a}_2$ 가 $\mathbf{q}_1$ 방향으로 가진 성분</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \tilde{\mathbf{q}}_2 = (1,7)^\top - 6.2(0.6,0.8)^\top = (1-3.72,\ 7-4.96)^\top = (-2.72,\ 2.04)^\top $$</div>
+          <div class="derive__why">그 성분을 빼면 남는 것이 <strong>직교 잔차</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{q}_1^\top\tilde{\mathbf{q}}_2 = 0.6(-2.72)+0.8(2.04) = -1.632+1.632 = 0 \ \checkmark $$</div>
+          <div class="derive__why">검산 — 정말 직교한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ r_{22} = \|\tilde{\mathbf{q}}_2\| = \sqrt{7.3984+4.1616} = \sqrt{11.56} = 3.4 $$</div>
+          <div class="derive__why">$\mathbf{q}_2 = (-0.8,\ 0.6)^\top$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{Q}=\begin{bmatrix}0.6&-0.8\\0.8&0.6\end{bmatrix},\quad \mathbf{R}=\begin{bmatrix}5&6.2\\0&3.4\end{bmatrix} $$</div>
+          <div class="derive__why">$\mathbf{Q}$ 는 회전행렬, $\mathbf{R}$ 은 상삼각</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ (\mathbf{QR})_{12} = 0.6(6.2) + (-0.8)(3.4) = 3.72 - 2.72 = 1 \ \checkmark $$</div>
+          <div class="derive__why">$\mathbf{A}$ 의 $(1,2)$ 성분과 일치. $(2,2)$ 도 $0.8(6.2)+0.6(3.4) = 4.96+2.04 = 7$ ✓</div>
+        </div>
+      </div>
+
+      <h3>⑤ 부족결정 — 최소 노름해</h3>
+      <p>식 하나에 미지수 둘: $x_1 + x_2 = 2$.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{A}=[1\ \ 1], \quad \mathbf{A}\mathbf{A}^\top = 2, \quad \mathbf{b}=2 $$</div>
+          <div class="derive__why">식 (8)에 필요한 값들</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat{\mathbf{x}} = \mathbf{A}^\top(\mathbf{A}\mathbf{A}^\top)^{-1}\mathbf{b} = \begin{bmatrix}1\\1\end{bmatrix}\cdot\frac12\cdot2 = \begin{bmatrix}1\\1\end{bmatrix} $$</div>
+          <div class="derive__why">최소 노름해</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \|(1,1)\|^2 = 2 \quad\text{vs}\quad \|(2,0)\|^2 = 4, \quad \|(0,2)\|^2 = 4 $$</div>
+          <div class="derive__why">$(2,0)$, $(0,2)$ 도 모두 정답이지만 <strong>노름이 더 크다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \|(1+t,\,1-t)\|^2 = 2 + 2t^2 \geq 2 $$</div>
+          <div class="derive__why">해집합 전체를 매개변수로 적어 확인했다. $t=0$ 에서 최소</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        위젯은 개념 옆에 배치했다 — <a href="#s-intuition">직관</a>의 <strong>두 직선</strong>과 <strong>과결정/부족결정</strong>,
+        <a href="#s-definition">정의</a>의 <strong>가우스 소거</strong> · <strong>LU</strong> · <strong>그람–슈미트</strong> · <strong>최소제곱</strong>.
+        아래에서는 <strong>정규방정식이 왜 수치적으로 불리한지</strong>를 조건수로 확인한다.
+      </p>
+
+      <figure class="widget" data-widget="condition-number">
+        <figcaption class="widget__bar">조건수가 제곱된다 — 정규방정식의 대가</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">두 열을 나란하게 만들수록 $\kappa(\mathbf{A})$ 가 커지고, $\kappa(\mathbf{A}^\top\mathbf{A})$ 는 그 제곱으로 폭주합니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"식의 개수와 미지수의 개수가 같으면 해가 하나다."</p>
+        <p>
+          <strong>실제로는</strong> $\det=0$ 이면 해가 없거나 무한히 많다.
+          $x+y=1$, $2x+2y=3$ 은 식 2개 · 미지수 2개지만 평행선이라 해가 없고,
+          $x+y=1$, $2x+2y=2$ 는 같은 직선이라 해가 무한하다.
+          개수가 아니라 <strong>rank 가 결정한다</strong>.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"해가 두 개일 수도 있다."</p>
+        <p>
+          <strong>실제로는</strong> 선형 시스템의 해는 <strong>0개 · 1개 · 무한개</strong> 셋 중 하나다.
+          해가 $\mathbf{x}_1\neq\mathbf{x}_2$ 로 둘 있으면 $\mathbf{A}(\mathbf{x}_1-\mathbf{x}_2)=\mathbf{0}$ 이므로
+          $\mathbf{x}_1 + t(\mathbf{x}_1-\mathbf{x}_2)$ 가 모든 $t$ 에 대해 해가 된다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"$\hat{\mathbf{x}} = (\mathbf{A}^\top\mathbf{A})^{-1}\mathbf{A}^\top\mathbf{b}$ 를 그대로 구현하면 된다."</p>
+        <p>
+          <strong>실제로는</strong> $\mathbf{A}^\top\mathbf{A}$ 를 만들면서 조건수가 제곱되어
+          유효숫자를 절반쯤 잃는다. 게다가 $\mathbf{A}^\top\mathbf{A}$ 계산 자체가 $O(mn^2)$ 로 비싸다.
+          <code>np.linalg.lstsq</code> 나 <code>scipy.linalg.lstsq</code> 를 쓰면 내부에서 QR/SVD 로 처리한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"LU 분해는 어떤 행렬이든 된다."</p>
+        <p>
+          <strong>실제로는</strong> 피벗이 0이 되면 행 교환 없이는 불가능하다.
+          $\begin{bmatrix}0&1\\1&0\end{bmatrix}$ 이 그 예다.
+          그래서 실제 라이브러리는 항상 $\mathbf{PA}=\mathbf{LU}$ 형태로 치환을 함께 반환한다.
+          수치적으로도 <strong>절댓값이 가장 큰 원소를 피벗으로 고르는 것</strong>이 표준이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"부족결정이면 정보가 부족하니 아무 해나 써도 된다."</p>
+        <p>
+          <strong>실제로는</strong> 어떤 해를 고르느냐가 일반화 성능을 바꾼다.
+          최소 노름해는 $L_2$ 정규화의 극한이고, $L_1$ 최소해를 고르면 희소해가 된다(압축센싱).
+          현대 신경망도 부족결정 상태이며, 경사하강법이 <strong>암묵적으로</strong> 특정 해를 고른다.
+          "해가 여러 개"라는 사실 자체가 정규화 연구의 출발점이다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–⑤를 전부 검증한다.</p>
+      <details>
+        <summary>NumPy/SciPy — 소거 · LU · QR · 최소제곱 (20줄)</summary>
+<pre><code>import numpy as np
+from scipy.linalg import lu
+
+A = np.array([[2., 1., -1.], [-3., -1., 2.], [-2., 1., 2.]])
+b = np.array([8., -11., -3.])
+print(np.linalg.solve(A, b))        # [ 2.  3. -1.]
+
+P, L, U = lu(A)                     # 부분 피벗팅 포함
+print(np.allclose(P @ L @ U, A))    # True
+
+X = np.array([[1., 1.], [1., 2.], [1., 3.]])
+y = np.array([1., 2., 2.])
+coef, *_ = np.linalg.lstsq(X, y, rcond=None)
+print(coef)                         # [0.66666667 0.5]
+r = y - X @ coef
+print(r.sum(), (X[:, 1] * r).sum()) # 거의 0, 거의 0  <- 직교
+print((r ** 2).sum())               # 0.16666666666666671  = 1/6
+
+Q, R = np.linalg.qr(np.array([[3., 1.], [4., 7.]]))
+print(Q.round(3))                   # [[-0.6  0.8] [-0.8 -0.6]]  부호는 구현마다 다름
+print(np.allclose(Q @ R, [[3, 1], [4, 7]]))   # True
+
+Au = np.array([[1., 1.]])
+print(np.linalg.pinv(Au) @ np.array([2.]))    # [1. 1.]  최소 노름해
+
+M = np.array([[1., 1.], [1., 1.0001]])
+print(np.linalg.cond(M), np.linalg.cond(M.T @ M))   # 4e4,  1.6e9  <- 제곱된다
+</code></pre>
+        <p>
+          <small>
+            QR 의 부호가 교재와 다를 수 있다 — $\mathbf{q}_k$ 와 $-\mathbf{q}_k$ 는 둘 다 정당한 선택이라
+            LAPACK 구현이 고르는 부호를 따른다. $\mathbf{QR}$ 곱이 원래 행렬과 같으면 맞는 분해다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $2x+y=5$, $x-y=1$ 의 해는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$(2,\ 1)$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$(1,\ 3)$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>해가 없다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            두 식을 더하면 $3x = 6$, $x=2$. 둘째 식에서 $y = x-1 = 1$.
+            검산: $2(2)+1 = 5$ ✓, $2-1=1$ ✓. $\det = 2(-1)-1(1) = -3 \neq 0$ 이라 유일해다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\mathbf{A}=\begin{bmatrix}1&1\\1&2\\1&3\end{bmatrix}$ 일 때 $\mathbf{A}^\top\mathbf{A}$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\begin{bmatrix}3&6\\6&14\end{bmatrix}$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$\begin{bmatrix}3&6\\6&6\end{bmatrix}$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$\begin{bmatrix}2&6\\6&14\end{bmatrix}$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $(1,1)$ 은 1열과 1열의 내적 $=1+1+1=3$,
+            $(1,2)$ 는 $1(1)+1(2)+1(3)=6$,
+            $(2,2)$ 는 $1+4+9=14$. 대칭이므로 $(2,1)$ 도 6이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            $\mathbf{A}\in\mathbb{R}^{100\times3}$, $\mathbf{b}\in\mathbb{R}^{100}$ 인 회귀에서 $\mathbf{A}\mathbf{x}=\mathbf{b}$ 를 정확히 만족하는 해가 없는 이유는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>열공간이 100차원 중 3차원뿐이라 $\mathbf{b}$ 가 그 밖에 있을 가능성이 크다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$\mathbf{A}$ 가 정사각이 아니라 곱셈이 정의되지 않는다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>영공간이 너무 커서</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\operatorname{Col}(\mathbf{A})$ 는 $\mathbb{R}^{100}$ 안의 3차원 부분공간이다.
+            잡음이 섞인 관측 $\mathbf{b}$ 가 그 얇은 부분공간에 정확히 놓일 확률은 사실상 0이다.
+            그래서 정사영해 <strong>가장 가까운 점</strong>을 택한다. 영공간은 오히려 $\{\mathbf{0}\}$ 이다(열이 독립이면).
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            같은 $\mathbf{A}$ 에 대해 서로 다른 $\mathbf{b}$ 1000개를 풀어야 한다. 가장 효율적인 방법은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>LU 분해를 한 번 하고 각 $\mathbf{b}$ 마다 전진·후진 대입</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$\mathbf{b}$ 마다 가우스 소거를 처음부터 다시</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$\mathbf{A}^{-1}$ 를 구해 1000번 곱한다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            분해 $O(n^3)$ 한 번 + 대입 $O(n^2)\times1000$ 이 가장 싸다.
+            나는 $O(n^3)\times1000$ 이라 훨씬 비싸다.
+            다는 연산량이 비슷해 보여도 역행렬을 명시적으로 만드는 과정에서
+            <strong>오차가 더 커진다</strong> — 실무에서 피하는 이유다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            예제 ③의 최소제곱 직선 $y = \tfrac23 + \tfrac12 x$ 로 $x=4$ 를 예측하면?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\tfrac{8}{3} \approx 2.667$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$2$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$\tfrac{7}{6} \approx 1.167$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\tfrac23 + \tfrac12(4) = \tfrac23 + 2 = \tfrac{2+6}{3} = \tfrac83 \approx 2.667$.
+            다는 $x=1$ 에서의 예측값이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            파라미터가 데이터보다 많은 신경망(부족결정)에 대해 옳은 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button"><span class="opt__mark">가</span><span>해가 없으므로 학습이 불가능하다</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">나</span><span>훈련 손실 0인 해가 무수히 많고, 어느 해로 가는지는 최적화·정규화가 정한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>해가 정확히 하나로 정해진다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            부족결정 시스템은 해집합이 아핀 공간을 이룬다.
+            훈련 데이터를 완벽히 맞히는 파라미터가 무수히 많으므로,
+            <strong>일반화 성능의 차이는 데이터가 아니라 "어느 해를 고르는가"에서 온다</strong>.
+            식 (8)의 최소 노름해가 그 선택 중 하나다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="2.7-eigenvalues.html">2.7 고유값과 고유벡터</a></strong> — 소거로 특성방정식을 푼 뒤 고유벡터를 찾는다.</li>
+        <li><strong><a href="2.8-svd.html">2.8 특이값 분해</a></strong> — rank 결손이나 특이에 가까운 경우의 최소제곱은 SVD 로 푼다.</li>
+        <li><strong><a href="2.9-dimensionality-reduction.html">2.9 차원 축소</a></strong> — PCA 도 정사영이므로 같은 직교 조건을 쓴다.</li>
+        <li><strong><a href="2.10-linear-algebra-in-ai.html">2.10 AI와 선형대수</a></strong> — 선형회귀는 신경망의 가장 단순한 형태다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Deisenroth, M. P., Faisal, A. A. &amp; Ong, C. S. (2020). <em>Mathematics for Machine Learning</em>. Cambridge University Press.</span>
+          <span class="ref__where">2.1절(Systems of Linear Equations) — 해가 0·1·무한 셋뿐이라는 서술. 2.3절(Solving Systems of Linear Equations) — 행 연산, 사다리꼴, 피벗과 자유변수, 특수해+영공간 형태의 일반해. 3.8절 — 정사영으로 본 최소제곱</span>
+          <a class="ref__link" href="https://mml-book.github.io/">mml-book.github.io</a>
+        </li>
+        <li class="ref" id="ref-goodfellow2016-dl" data-ref="goodfellow2016-dl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>. MIT Press.</span>
+          <span class="ref__where">2.9절(The Moore-Penrose Pseudoinverse) — 과결정에서는 최소제곱해, 부족결정에서는 최소 노름해를 준다는 서술. 식 (7)·(8)과 오해 5의 근거</span>
+          <a class="ref__link" href="https://www.deeplearningbook.org/">deeplearningbook.org</a>
+        </li>
+        <li class="ref" id="ref-mit-1806" data-ref="mit-1806">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Strang, G. <em>MIT 18.06 Linear Algebra</em> (Spring 2010). MIT OpenCourseWare.</span>
+          <span class="ref__where">Lecture 2 (Elimination with matrices) · Lecture 4 (Factorization into A = LU) — 예제 ①·②의 소거 순서와 배수를 L 에 기록하는 방식. Lecture 16 (Projection matrices and least squares) · Lecture 17 (Orthogonal matrices and Gram-Schmidt) — 유도 1과 예제 ④</span>
+          <a class="ref__link" href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/">ocw.mit.edu</a>
+        </li>
+        <li class="ref" id="ref-3blue1brown-linalg" data-ref="3blue1brown-linalg">
+          <span class="ref__type" data-type="video">영상</span>
+          <span class="ref__cite">3Blue1Brown. <em>Essence of Linear Algebra</em>, Ch.7 <em>Inverse matrices, column space and null space</em>.</span>
+          <span class="ref__where">00:40–06:00 — $\mathbf{Ax}=\mathbf{b}$ 를 '어떤 입력이 b 로 착지하는가'로 읽는 관점과 $\det=0$ 일 때 해가 사라지거나 무한해지는 그림. '두 직선의 교차' 위젯의 직관</span>
+          <a class="ref__link" href="https://www.3blue1brown.com/topics/linear-algebra">3blue1brown.com</a>
+        </li>
+        <li class="ref" id="ref-petersen2012-matrix-cookbook" data-ref="petersen2012-matrix-cookbook">
+          <span class="ref__type" data-type="doc">문서</span>
+          <span class="ref__cite">Petersen, K. B. &amp; Pedersen, M. S. (2012). <em>The Matrix Cookbook</em> (ver. 20121115). Technical University of Denmark.</span>
+          <span class="ref__where">3.4절(Pseudo Inverse)과 5.5–5.6절(Solutions to Systems of Equations / LU·QR 관련 항등식) — 의사역행렬의 정의와 최소제곱·최소노름 해 공식의 대조 확인</span>
+          <a class="ref__link" href="https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf">matrixcookbook.pdf</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+/* 행렬 격자 그리기 (이 페이지 공용) */
+var MATVIZ = (function () {
+  var el = VIZ.el;
+  function grid(svg, x0, y0, vals, cell, hi, fmt) {
+    var rows = vals.length, cols = vals[0].length;
+    var COLOR = { a: 'var(--jade)', b: 'var(--amber)', c: 'var(--seal)' };
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        var k = hi ? hi(r, c) : null;
+        svg.appendChild(el('rect', {
+          x: x0 + c * cell, y: y0 + r * cell, width: cell - 3, height: cell - 3, rx: 3,
+          fill: k ? COLOR[k] : 'var(--jade)', 'fill-opacity': k ? 0.28 : 0.07,
+          stroke: k ? COLOR[k] : 'var(--rule)', 'stroke-width': k ? 1.8 : 1
+        }));
+        var t = fmt ? fmt(vals[r][c], r, c) : String(vals[r][c]);
+        if (t !== null && t !== '') {
+          svg.appendChild(el('text', {
+            x: x0 + c * cell + (cell - 3) / 2, y: y0 + r * cell + (cell - 3) / 2 + 4,
+            'text-anchor': 'middle', class: 'viz-label', 'font-size': 11, text: t
+          }));
+        }
+      }
+    }
+  }
+  function label(svg, x, y, text, size) {
+    svg.appendChild(el('text', {
+      x: x, y: y, 'text-anchor': 'middle', class: 'viz-label',
+      'font-size': size || 12, 'font-weight': '700', text: text
+    }));
+  }
+  return { grid: grid, label: label };
+})();
+
+/* ============================================================
+   위젯 1 — 두 직선의 교차
+   둘째 식의 계수를 움직이며 유일해·무한해·해없음을 만든다.
+   ============================================================ */
+WIDGETS.register('two-lines', function (root, ctx) {
+  /* 식 1: 2x + y = 5  (고정) */
+  var a2 = 1, b2 = -1, c2 = 1;
+
+  var p = VIZ.plot({ w: 460, h: 320, xmin: -2, xmax: 6, ymin: -3, ymax: 5 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'det', label: 'det', digits: 3 },
+    { key: 'sol', label: '해' },
+    { key: 'kind', label: '분류' },
+    { key: 'eq', label: '둘째 식' }
+  ]);
+
+  function linePts(a, b, c) {
+    /* ax + by = c 위의 두 점 */
+    if (Math.abs(b) > 1e-9) return [[-2, (c - a * (-2)) / b], [6, (c - a * 6) / b]];
+    if (Math.abs(a) > 1e-9) return [[c / a, -3], [c / a, 5]];
+    return null;
+  }
+
+  function draw() {
+    p.clear().grid(1, 1).axes('x', 'y').ticks(1, 1);
+
+    var l1 = linePts(2, 1, 5);
+    p.line(l1, { width: 3 });
+    var l2 = linePts(a2, b2, c2);
+    if (l2) p.line(l2, { alt: true, width: 3 });
+
+    var det = 2 * b2 - 1 * a2;
+    var kind, sol;
+    if (Math.abs(det) > 1e-9) {
+      var x = (5 * b2 - 1 * c2) / det;
+      var y = (2 * c2 - 5 * a2) / det;
+      p.dot(x, y, 7);
+      sol = '(' + x.toFixed(2) + ', ' + y.toFixed(2) + ')';
+      kind = '유일해 — 한 점에서 만남';
+    } else {
+      /* 평행 또는 겹침: (a2,b2) = k(2,1) 일 때 c2 = 5k 이면 겹침 */
+      var k = Math.abs(2) > 1e-9 ? a2 / 2 : b2 / 1;
+      if (Math.abs(c2 - 5 * k) < 1e-9) { sol = '무한히 많음'; kind = '무한해 — 두 직선이 겹침'; }
+      else { sol = '없음'; kind = '해 없음 — 평행'; }
+    }
+
+    out.set('det', det);
+    out.setRaw('sol', sol);
+    out.setRaw('kind', kind);
+    out.setRaw('eq', a2.toFixed(1) + 'x + ' + b2.toFixed(1) + 'y = ' + c2.toFixed(1));
+  }
+
+  WIDGETS.slider({ host: ctx.controls, label: '둘째 식의 a', min: -4, max: 4, step: 0.5, value: 1, digits: 1,
+    onInput: function (v) { a2 = v; draw(); } });
+  WIDGETS.slider({ host: ctx.controls, label: '둘째 식의 b', min: -4, max: 4, step: 0.5, value: -1, digits: 1,
+    onInput: function (v) { b2 = v; draw(); } });
+  WIDGETS.slider({ host: ctx.controls, label: '둘째 식의 c', min: -6, max: 10, step: 0.5, value: 1, digits: 1,
+    onInput: function (v) { c2 = v; draw(); } });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — 과결정 · 정칙 · 부족결정
+   식의 개수에 따라 해집합의 모양이 달라진다.
+   ============================================================ */
+WIDGETS.register('over-under', function (root, ctx) {
+  var mode = 'over';
+
+  var p = VIZ.plot({ w: 460, h: 320, xmin: -1, xmax: 5, ymin: -1, ymax: 4 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'size', label: '식 × 미지수' },
+    { key: 'sol', label: '정확한 해' },
+    { key: 'pick', label: '무엇을 고르나' },
+    { key: 'name', label: '분류' }
+  ]);
+
+  function draw() {
+    p.clear().grid(1, 1).axes('x', 'y').ticks(1, 1);
+
+    if (mode === 'over') {
+      /* 세 직선이 한 점에서 만나지 않는다 */
+      p.line([[-1, 3.2], [5, 0.2]], { width: 2.5 });        /* x + 2y = 5.4 근처 */
+      p.line([[-1, -0.6], [5, 3.4]], { width: 2.5 });
+      p.line([[-1, 1.9], [5, 2.6]], { width: 2.5 });
+      p.dot(2.05, 1.95, 7);                                   /* 최소제곱해 */
+      p.text(2.05, 1.95, '최소제곱해', { dx: 8, dy: -8, size: 11, fill: 'var(--seal)' });
+      out.setRaw('size', '3 × 2  (m > n)');
+      out.setRaw('sol', '없음 — 세 직선이 한 점에서 안 만남');
+      out.setRaw('pick', '오차 제곱합이 최소인 점');
+      out.setRaw('name', '과결정 (overdetermined)');
+    } else if (mode === 'square') {
+      p.line([[-1, 3.5], [5, 0.5]], { width: 2.5 });
+      p.line([[-1, -0.5], [5, 3.5]], { width: 2.5 });
+      p.dot(2, 2, 7);
+      p.text(2, 2, '유일해', { dx: 8, dy: -8, size: 11, fill: 'var(--seal)' });
+      out.setRaw('size', '2 × 2  (m = n)');
+      out.setRaw('sol', '한 점');
+      out.setRaw('pick', '고를 필요 없음');
+      out.setRaw('name', '정칙 (square, 가역)');
+    } else {
+      p.line([[-1, 3.5], [5, 0.5]], { width: 3 });
+      /* 해집합 = 직선 전체, 최소 노름해 = 원점에서 가장 가까운 점 */
+      p.line([[0, 0], [1.2, 1.4]], { alt: true, dash: '4 3', width: 2 });
+      p.dot(1.2, 1.4, 7);
+      p.text(1.2, 1.4, '최소 노름해', { dx: 8, dy: -8, size: 11, fill: 'var(--seal)' });
+      out.setRaw('size', '1 × 2  (m < n)');
+      out.setRaw('sol', '직선 전체 — 무한히 많음');
+      out.setRaw('pick', '노름이 가장 작은 해 (원점에 가장 가까운 점)');
+      out.setRaw('name', '부족결정 (underdetermined)');
+    }
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '시스템 종류',
+    options: [
+      { value: 'over', label: '과결정 (식이 많음)' },
+      { value: 'square', label: '정칙 (같음)' },
+      { value: 'under', label: '부족결정 (식이 적음)' }
+    ],
+    value: 'over', onChange: function (v) { mode = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — 가우스 소거법 단계별
+   ============================================================ */
+WIDGETS.register('gauss-steps', function (root, ctx) {
+  var el = VIZ.el;
+  var STEPS = [
+    { M: [[2, 1, -1, 8], [-3, -1, 2, -11], [-2, 1, 2, -3]], op: '시작 — 확대행렬', hi: null, sol: '' },
+    { M: [[2, 1, -1, 8], [0, 0.5, 0.5, 1], [-2, 1, 2, -3]], op: 'R2 ← R2 + 1.5·R1', hi: 1, sol: '' },
+    { M: [[2, 1, -1, 8], [0, 0.5, 0.5, 1], [0, 2, 1, 5]], op: 'R3 ← R3 + 1·R1', hi: 2, sol: '' },
+    { M: [[2, 1, -1, 8], [0, 0.5, 0.5, 1], [0, 0, -1, 1]], op: 'R3 ← R3 − 4·R2  (사다리꼴 완성)', hi: 2, sol: '' },
+    { M: [[2, 1, -1, 8], [0, 0.5, 0.5, 1], [0, 0, -1, 1]], op: '후진대입 ①  −z = 1', hi: 2, sol: 'z = −1' },
+    { M: [[2, 1, -1, 8], [0, 0.5, 0.5, 1], [0, 0, -1, 1]], op: '후진대입 ②  0.5y + 0.5(−1) = 1', hi: 1, sol: 'y = 3,  z = −1' },
+    { M: [[2, 1, -1, 8], [0, 0.5, 0.5, 1], [0, 0, -1, 1]], op: '후진대입 ③  2x + 3 + 1 = 8', hi: 0, sol: 'x = 2,  y = 3,  z = −1' }
+  ];
+
+  var VW = 480, VH = 150, cell = 40;
+  var svg = el('svg', { viewBox: '0 0 ' + VW + ' ' + VH, role: 'img', 'aria-label': '가우스 소거법 단계' });
+  ctx.stage.appendChild(svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'op', label: '이번 연산' },
+    { key: 'sol', label: '지금까지 구한 값' },
+    { key: 'pivot', label: '피벗' },
+    { key: 'note', label: '남은 일' }
+  ]);
+
+  function draw(step) {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var S = STEPS[step];
+    var x0 = (VW - 4 * cell) / 2, y0 = 26;
+
+    MATVIZ.grid(svg, x0, y0, S.M, cell,
+      function (r, c) {
+        if (S.hi === r) return c === 3 ? 'b' : 'a';
+        return null;
+      },
+      function (v) { return (Math.round(v * 100) / 100).toString(); });
+
+    /* 세로 구분선 (계수 | 우변) */
+    svg.appendChild(el('line', {
+      x1: x0 + 3 * cell - 5, y1: y0 - 4, x2: x0 + 3 * cell - 5, y2: y0 + 3 * cell - 2,
+      stroke: 'var(--ink-3)', 'stroke-width': 1.5
+    }));
+    MATVIZ.label(svg, VW / 2, 16, '확대행렬 [A | b]');
+
+    out.setRaw('op', S.op);
+    out.setRaw('sol', S.sol || '아직 없음');
+    out.setRaw('pivot', step < 4 ? '2, 0.5, −1' : '후진대입 중');
+    out.setRaw('note', step < 3 ? '아래 왼쪽을 0으로' : (step < 6 ? '아래부터 대입해 올라가기' : '완료 ✓'));
+  }
+
+  WIDGETS.player({
+    host: ctx.controls, steps: STEPS.length, fps: 0.6, label: '소거 단계',
+    labels: STEPS.map(function (s, i) { return (i + 1) + '. ' + s.op.split('  ')[0]; }),
+    onStep: draw
+  });
+});
+
+/* ============================================================
+   위젯 4 — LU 분해
+   소거에 쓴 배수가 L 로 들어간다.
+   ============================================================ */
+WIDGETS.register('lu-decompose', function (root, ctx) {
+  var el = VIZ.el;
+  var STAGES = [
+    {
+      L: [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+      U: [[2, 1, -1], [-3, -1, 2], [-2, 1, 2]],
+      op: '시작 — L = I, U = A', fill: []
+    },
+    {
+      L: [[1, 0, 0], [-1.5, 1, 0], [0, 0, 1]],
+      U: [[2, 1, -1], [0, 0.5, 0.5], [-2, 1, 2]],
+      op: 'ℓ₂₁ = −3/2 = −1.5 를 기록하고 R2 소거', fill: [[1, 0]]
+    },
+    {
+      L: [[1, 0, 0], [-1.5, 1, 0], [-1, 0, 1]],
+      U: [[2, 1, -1], [0, 0.5, 0.5], [0, 2, 1]],
+      op: 'ℓ₃₁ = −2/2 = −1 을 기록하고 R3 소거', fill: [[2, 0]]
+    },
+    {
+      L: [[1, 0, 0], [-1.5, 1, 0], [-1, 4, 1]],
+      U: [[2, 1, -1], [0, 0.5, 0.5], [0, 0, -1]],
+      op: 'ℓ₃₂ = 2/0.5 = 4 를 기록하고 완료', fill: [[2, 1]]
+    }
+  ];
+
+  var VW = 480, VH = 160, cell = 34;
+  var svg = el('svg', { viewBox: '0 0 ' + VW + ' ' + VH, role: 'img', 'aria-label': 'LU 분해 단계' });
+  ctx.stage.appendChild(svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'op', label: '이번 단계' },
+    { key: 'l', label: 'L 에 기록된 배수' },
+    { key: 'check', label: '검산 (LU)₃₃' },
+    { key: 'why', label: '왜 기록하나' }
+  ]);
+
+  function draw(step) {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var S = STAGES[step];
+    var lx = 62, ux = 62 + 3 * cell + 66, y0 = 40;
+
+    MATVIZ.grid(svg, lx, y0, S.L, cell, function (r, c) {
+      return S.fill.some(function (f) { return f[0] === r && f[1] === c; }) ? 'c' : null;
+    }, function (v) { return (Math.round(v * 100) / 100).toString(); });
+    MATVIZ.label(svg, lx + 1.5 * cell, y0 - 12, 'L (하삼각)');
+
+    MATVIZ.grid(svg, ux, y0, S.U, cell, function (r, c) {
+      return (step > 0 && r > c && Math.abs(S.U[r][c]) < 1e-9) ? 'a' : null;
+    }, function (v) { return (Math.round(v * 100) / 100).toString(); });
+    MATVIZ.label(svg, ux + 1.5 * cell, y0 - 12, 'U (상삼각)');
+
+    out.setRaw('op', S.op);
+    out.setRaw('l', 'ℓ₂₁=' + S.L[1][0] + '  ℓ₃₁=' + S.L[2][0] + '  ℓ₃₂=' + S.L[2][1]);
+    out.setRaw('check', step === 3 ? '−1(−1)+4(0.5)+1(−1) = 2 = A₃₃ ✓' : '분해 진행 중');
+    out.setRaw('why', '나중에 Ly=b, Ux=y 두 번의 대입만으로 풀기 위해');
+  }
+
+  WIDGETS.player({
+    host: ctx.controls, steps: STAGES.length, fps: 0.6, label: '분해 단계',
+    labels: ['시작', 'ℓ₂₁ 기록', 'ℓ₃₁ 기록', 'ℓ₃₂ 기록 · 완료'],
+    onStep: draw
+  });
+});
+
+/* ============================================================
+   위젯 5 — 그람–슈미트 (QR)
+   ============================================================ */
+WIDGETS.register('qr-gram-schmidt', function (root, ctx) {
+  var a1 = [3, 4], a2 = [1, 7];
+
+  var p = VIZ.plot({ w: 460, h: 340, xmin: -4, xmax: 8, ymin: -1, ymax: 8 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'step', label: '단계' },
+    { key: 'q1', label: 'q₁' },
+    { key: 'q2', label: 'q₂' },
+    { key: 'check', label: '검산 q₁ᵀq₂', digits: 6 }
+  ]);
+
+  function draw(step) {
+    var n1 = Math.sqrt(a1[0] * a1[0] + a1[1] * a1[1]);
+    var q1 = [a1[0] / n1, a1[1] / n1];
+    var r12 = q1[0] * a2[0] + q1[1] * a2[1];
+    var proj = [r12 * q1[0], r12 * q1[1]];
+    var t2 = [a2[0] - proj[0], a2[1] - proj[1]];
+    var n2 = Math.sqrt(t2[0] * t2[0] + t2[1] * t2[1]);
+    var q2 = [t2[0] / n2, t2[1] / n2];
+
+    p.clear().grid(1, 1).axes('x', 'y').ticks(2, 2);
+
+    p.vector(a1[0], a1[1], { stroke: 'var(--ink-3)', width: 2, label: 'a₁' });
+    p.vector(a2[0], a2[1], { stroke: 'var(--ink-3)', width: 2, label: 'a₂' });
+
+    if (step >= 1) p.vector(q1[0], q1[1], { width: 3, label: 'q₁' });
+    if (step >= 2) {
+      p.vector(proj[0], proj[1], { stroke: 'var(--amber)', width: 2, label: '투영' });
+      p.line([[a2[0], a2[1]], [proj[0], proj[1]]], { alt: true, dash: '4 3', width: 2 });
+    }
+    if (step >= 3) p.vector(t2[0], t2[1], { stroke: 'var(--seal)', width: 2.5, label: 'q̃₂' });
+    if (step >= 4) p.vector(q2[0], q2[1], { width: 3, label: 'q₂', lx: -30, ly: -6 });
+
+    var NAMES = ['원래 두 열 a₁, a₂', 'q₁ = a₁/‖a₁‖ (정규화)',
+                 'a₂ 의 q₁ 방향 성분 = 6.2', 'q̃₂ = a₂ − 6.2·q₁ (잔차)', 'q₂ = q̃₂/‖q̃₂‖ — 완성'];
+    out.setRaw('step', NAMES[step]);
+    out.setRaw('q1', step >= 1 ? '(' + q1[0].toFixed(2) + ', ' + q1[1].toFixed(2) + ')' : '—');
+    out.setRaw('q2', step >= 4 ? '(' + q2[0].toFixed(2) + ', ' + q2[1].toFixed(2) + ')' : '—');
+    out.set('check', step >= 3 ? q1[0] * t2[0] + q1[1] * t2[1] : 0);
+  }
+
+  WIDGETS.player({
+    host: ctx.controls, steps: 5, fps: 0.6, label: '직교화 단계',
+    labels: ['① 두 열', '② q₁ 정규화', '③ 투영 성분', '④ 잔차', '⑤ q₂ 완성'],
+    onStep: draw
+  });
+});
+
+/* ============================================================
+   위젯 6 — 최소제곱
+   기울기·절편을 움직이며 잔차 제곱합을 줄여 본다.
+   ============================================================ */
+WIDGETS.register('least-squares', function (root, ctx) {
+  var X = [1, 2, 3], Y = [1, 2, 2];
+  var a = 0.2, b = 0.9;
+  var A_OPT = 2 / 3, B_OPT = 0.5, SSE_OPT = 1 / 6;
+
+  var p = VIZ.plot({ w: 460, h: 300, xmin: 0, xmax: 4, ymin: 0, ymax: 3.4 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'sse', label: '잔차 제곱합', digits: 4 },
+    { key: 'opt', label: '최소값 (이론)', digits: 4 },
+    { key: 'sum', label: '잔차의 합', digits: 4 },
+    { key: 'gap', label: '최적과의 차이', digits: 4 }
+  ]);
+
+  function draw() {
+    p.clear().grid(1, 1).axes('x', 'y').ticks(1, 1);
+
+    p.line([[0, a], [4, a + 4 * b]], { width: 2.5 });
+
+    var sse = 0, sum = 0;
+    for (var i = 0; i < 3; i++) {
+      var yh = a + b * X[i];
+      var r = Y[i] - yh;
+      sse += r * r; sum += r;
+      p.add(VIZ.el('line', {
+        x1: p.X(X[i]), y1: p.Y(Y[i]), x2: p.X(X[i]), y2: p.Y(yh),
+        stroke: 'var(--seal)', 'stroke-width': 2.5, 'stroke-dasharray': '3 2'
+      }));
+      p.dot(X[i], Y[i], 5.5);
+    }
+
+    out.set('sse', sse);
+    out.set('opt', SSE_OPT);
+    out.set('sum', sum);
+    out.set('gap', sse - SSE_OPT);
+  }
+
+  WIDGETS.slider({ host: ctx.controls, label: '절편 a', min: -0.5, max: 2, step: 0.01, value: 0.2, digits: 2,
+    onInput: function (v) { a = v; draw(); } });
+  WIDGETS.slider({ host: ctx.controls, label: '기울기 b', min: -0.5, max: 1.5, step: 0.01, value: 0.9, digits: 2,
+    onInput: function (v) { b = v; draw(); } });
+  draw();
+});
+
+/* ============================================================
+   위젯 7 — 조건수가 제곱된다
+   두 열이 나란할수록 κ(A) 가 커지고 κ(AᵀA) 는 그 제곱이 된다.
+   ============================================================ */
+WIDGETS.register('condition-number', function (root, ctx) {
+  var eps = 0.3;
+
+  var p = VIZ.plot({
+    w: 460, h: 260, xmin: 0.01, xmax: 1, ymin: 0, ymax: 6,
+    pad: { t: 20, r: 14, b: 30, l: 46 }
+  });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'ka', label: 'κ(A)', digits: 1 },
+    { key: 'kg', label: 'κ(AᵀA)', digits: 1 },
+    { key: 'digits', label: '잃는 유효숫자(대략)', digits: 1 },
+    { key: 'note', label: '해석' }
+  ]);
+
+  /* A = [[1,1],[0,eps]] 의 특이값으로 조건수를 구한다 */
+  function kappa(e) {
+    var a = 1, b = 1, c = 0, d = e;
+    var m11 = a * a + c * c, m12 = a * b + c * d, m22 = b * b + d * d;
+    var tr = m11 + m22, det = m11 * m22 - m12 * m12;
+    var disc = Math.sqrt(Math.max(0, tr * tr / 4 - det));
+    var l1 = tr / 2 + disc, l2 = tr / 2 - disc;
+    return Math.sqrt(l1 / Math.max(l2, 1e-18));
+  }
+
+  function draw() {
+    p.clear().grid(0.2, 1).axes('ε', 'log₁₀ κ').ticks(0.2, 1);
+    p.curve(function (e) { return Math.log10(kappa(Math.max(e, 0.01))); });
+    p.curve(function (e) { return Math.min(6, 2 * Math.log10(kappa(Math.max(e, 0.01)))); }, { alt: true });
+    p.dot(eps, Math.min(6, Math.log10(kappa(eps))), 6);
+    p.text(0.42, 5.4, '위: κ(AᵀA) = κ(A)²   아래: κ(A)', { size: 11 });
+
+    var ka = kappa(eps);
+    out.set('ka', ka);
+    out.set('kg', ka * ka);
+    out.set('digits', 2 * Math.log10(ka));
+    out.setRaw('note', ka > 30 ? '정규방정식은 위험 — QR/SVD 를 쓸 것' : '아직은 안전한 범위');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '두 열이 벌어진 정도 ε', min: 0.01, max: 1, step: 0.01, value: 0.3, digits: 2,
+    onInput: function (v) { eps = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

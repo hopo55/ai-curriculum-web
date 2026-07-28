@@ -777,12 +777,12 @@ print(np.linalg.cond(M), np.linalg.cond(M.T @ M))   # 4e4,  1.6e9  <- 제곱된�
           <p class="q__stem"><span class="q__tag">개념</span>
             $\mathbf{A}\in\mathbb{R}^{100\times3}$, $\mathbf{b}\in\mathbb{R}^{100}$ 인 회귀에서 $\mathbf{A}\mathbf{x}=\mathbf{b}$ 를 정확히 만족하는 해가 없는 이유는?</p>
           <div class="opts">
-            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>column space가 100dimension 중 3차원뿐이라 $\mathbf{b}$ 가 그 밖에 있을 가능성이 크다</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>column space가 100-dimensional 중 3차원뿐이라 $\mathbf{b}$ 가 그 밖에 있을 가능성이 크다</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>$\mathbf{A}$ 가 정사각이 아니라 곱셈이 정의되지 않는다</span></button>
             <button class="opt" type="button"><span class="opt__mark">다</span><span>null space가 너무 커서</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            $\operatorname{Col}(\mathbf{A})$ 는 $\mathbb{R}^{100}$ 안의 3dimension subspace다.
+            $\operatorname{Col}(\mathbf{A})$ 는 $\mathbb{R}^{100}$ 안의 3-dimensional subspace다.
             잡음이 섞인 관측 $\mathbf{b}$ 가 그 얇은 subspace에 정확히 놓일 probability(확률)는 사실상 0이다.
             그래서 project 해 <strong>가장 가까운 점</strong>을 택한다. null space는 오히려 $\{\mathbf{0}\}$ 이다(열이 독립이면).
           </div>

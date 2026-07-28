@@ -804,7 +804,7 @@ print(np.linalg.det(D), np.linalg.det(Ap))  # 6.0 6.0
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
             $\operatorname{rank}\leq\min(3,5)=3$ 이고 Rank–Nullity로 $\text{nullity} = 5-\operatorname{rank} \geq 5-3 = 2$.
-            입력 5dimension을 3dimension으로 보내니 <strong>적어도 2dimension이 짓뭉개진다</strong>.
+            입력 5-dimensional을 3-dimensional으로 보내니 <strong>적어도 2-dimensional이 짓뭉개진다</strong>.
             정사각이 아니므로 가역일 수 없다.
           </div>
         </div>
@@ -1254,8 +1254,8 @@ WIDGETS.register('rank-null', function (root, ctx) {
     p.vector(b, d, { stroke: 'var(--amber)', label: '2열', lx: 6, ly: 14 });
 
     out.setRaw('rank', String(rank));
-    out.setRaw('null', rank === 2 ? '{0} (0dimension)' : (rank === 1 ? '직선 (1dimension, 빨간 점선)' : '평면 전체 (2dimension)'));
-    out.setRaw('col', rank === 2 ? '평면 R² (2dimension)' : (rank === 1 ? '직선 (1dimension)' : '{0}'));
+    out.setRaw('null', rank === 2 ? '{0} (0-dimensional)' : (rank === 1 ? '직선 (1-dimensional, 빨간 점선)' : '평면 전체 (2-dimensional)'));
+    out.setRaw('col', rank === 2 ? '평면 R² (2-dimensional)' : (rank === 1 ? '직선 (1-dimensional)' : '{0}'));
     out.setRaw('check', rank + ' + ' + (2 - rank) + ' = 2 ✓');
   }
 

@@ -230,7 +230,7 @@
 
       <p>실무에서 쓰는 판정법은 이렇다.</p>
       <ul>
-        <li>vector가 <strong>2개</strong>: 한쪽이 다른 쪽의 스칼라배이면 종속. 2dimension에서는 $\det[\mathbf{u}\ \mathbf{v}] = u_1v_2 - u_2v_1 = 0$ 인지 보면 된다.</li>
+        <li>vector가 <strong>2개</strong>: 한쪽이 다른 쪽의 스칼라배이면 종속. 2-dimensional에서는 $\det[\mathbf{u}\ \mathbf{v}] = u_1v_2 - u_2v_1 = 0$ 인지 보면 된다.</li>
         <li>vector가 <strong>$k$ 개</strong>: 열로 세운 matrix(행렬)의 rank가 $k$ 이면 독립 (<a href="2.5-linear-transformation.html">2.5</a>).</li>
         <li><strong>$\mathbb{R}^n$ 안에서 $n+1$ 개 이상이면 무조건 종속</strong>이다. 방이 좁으면 반드시 겹친다.</li>
         <li>집합에 $\mathbf{0}$ 이 들어 있으면 무조건 종속이다 ($1\cdot\mathbf{0} = \mathbf{0}$).</li>
@@ -353,7 +353,7 @@
             <tr><td>$\theta$</td><td>theta 세타</td><td>두 vector가 이루는 각</td><td>scalar</td><td>$[0, \pi]$</td></tr>
             <tr><td>$\mathbf{u}^\top\mathbf{v}$</td><td>u transpose v</td><td>inner product — 성분곱의 합</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
             <tr><td>$|c|$</td><td>absolute value</td><td>부호를 뗀 크기</td><td>scalar</td><td>$\geq 0$</td></tr>
-            <tr><td>$\det$</td><td>determinant</td><td>determinant(행렬식) — 2dimension에서 넓이 배율</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\det$</td><td>determinant</td><td>determinant(행렬식) — 2-dimensional에서 넓이 배율</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
             <tr><td>$\max_i$</td><td>max</td><td>가장 큰 값</td><td>연산자</td><td>—</td></tr>
             <tr><td>$\Rightarrow$</td><td>implies 임플라이</td><td>"…이면 …이다"</td><td>논리 기호</td><td>—</td></tr>
           </tbody>
@@ -413,7 +413,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \det\begin{bmatrix} u_1 & v_1 \\ u_2 & v_2\end{bmatrix} = u_1v_2 - u_2v_1 = c v_1 v_2 - c v_2 v_1 = 0 $$</div>
-          <div class="derive__why">2dimension에서는 determinant로 즉시 판정된다. $\mathbf{u}=c\mathbf{v}$ 를 대입하니 0</div>
+          <div class="derive__why">2-dimensional에서는 determinant로 즉시 판정된다. $\mathbf{u}=c\mathbf{v}$ 를 대입하니 0</div>
         </div>
       </div>
       <details>
@@ -421,7 +421,7 @@
         <p>
           성립한다. $u_1v_2 = u_2v_1$ 일 때, $\mathbf{v}\neq\mathbf{0}$ 이면 $v_1$ 또는 $v_2$ 가 0이 아니다.
           $v_1 \neq 0$ 인 경우 $c = u_1/v_1$ 로 두면 $u_2 = u_1v_2/v_1 = cv_2$ 이므로 $\mathbf{u}=c\mathbf{v}$ 다.
-          $v_2 \neq 0$ 인 경우도 대칭적으로 같다. 따라서 2dimension에서
+          $v_2 \neq 0$ 인 경우도 대칭적으로 같다. 따라서 2-dimensional에서
           <strong>$\det = 0 \iff$ linear dependence</strong>이다. 일반 dimension에서는 rank로 확장된다
           (<a href="2.5-linear-transformation.html">2.5</a>).
         </p>
@@ -633,8 +633,8 @@
         <span class="note__label">오해 2</span>
         <p>"vector가 $n$ 개면 $n$ dimension 공간을 만든다."</p>
         <p>
-          <strong>실제로는</strong> 독립일 때만 그렇다. $(3,1)$ 과 $(6,2)$ 는 두 개지만 Span은 1dimension 직선이다.
-          반대로 $\mathbb{R}^2$ 에 vector를 100개 넣어도 Span은 최대 2dimension이다.
+          <strong>실제로는</strong> 독립일 때만 그렇다. $(3,1)$ 과 $(6,2)$ 는 두 개지만 Span은 1-dimensional 직선이다.
+          반대로 $\mathbb{R}^2$ 에 vector를 100개 넣어도 Span은 최대 2-dimensional이다.
           <strong>개수가 아니라 rank가 dimension을 정한다.</strong>
         </p>
       </div>
@@ -755,7 +755,7 @@ print(np.linalg.det(np.column_stack([u, 2 * u])))  # 0.0  -> 종속
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
             $\mathbb{R}^n$ 에서 독립인 vector는 최대 $n$ 개다. 4개는 3보다 많으므로 반드시 종속이다.
-            나는 반례가 있다 — 넷이 모두 같은 직선 위에 있으면 Span은 1dimension이다.
+            나는 반례가 있다 — 넷이 모두 같은 직선 위에 있으면 Span은 1-dimensional이다.
           </div>
         </div>
 
@@ -1030,7 +1030,7 @@ WIDGETS.register('lincomb-span', function (root, ctx) {
 
     out.setRaw('res', '(' + r[0].toFixed(2) + ', ' + r[1].toFixed(2) + ')');
     out.set('det', det);
-    out.setRaw('span', Math.abs(det) < 1e-9 ? '직선 (1dimension)' : '평면 R² (2dimension)');
+    out.setRaw('span', Math.abs(det) < 1e-9 ? '직선 (1-dimensional)' : '평면 R² (2-dimensional)');
     out.setRaw('dim', Math.abs(det) < 1e-9 ? '1' : '2');
   }
 

@@ -283,11 +283,28 @@
         <span class="note__label">"dimension"은 세 군데서 다른 뜻으로 쓰인다</span>
         <p>
           ① <strong>공간의 dimension</strong> — basis의 크기. $\dim \mathbb{R}^3 = 3$.<br>
-          ② <strong>vector의 길이</strong> — 성분 개수. "768dimension embedding"은 $\mathbb{R}^{768}$ 의 vector를 뜻한다.<br>
+          ② <strong>vector의 길이</strong> — 성분 개수. "768-dimensional embedding"은 $\mathbb{R}^{768}$ 의 vector를 뜻한다.<br>
           ③ <strong>배열의 축 수</strong> — NumPy의 <code>ndim</code>. <span class="tex">(32, 3, 224, 224)</span> 배열은 <code>ndim</code> 이 4다.<br>
-          ①과 ②는 사실상 같은 말이지만, ③은 완전히 다른 뜻이다. "4dimension tensor"와 "4dimension vector"는 전혀 다른 것을 가리킨다.
+          ①과 ②는 사실상 같은 말이지만, ③은 완전히 다른 뜻이다. "4-dimensional tensor"와 "4-dimensional vector"는 전혀 다른 것을 가리킨다.
         </p>
       </div>
+
+      <p>
+        여기까지 나온 네 개념 — vector space · subspace · basis · dimension — 은 따로 있는 것이 아니라
+        <strong>한 그림 안에 겹겹이 들어 있다.</strong> $\mathbb{R}^3$ 를 방이라 하면,
+        그 안의 평면과 직선이 subspace이고, 그것을 만드는 화살표가 basis이며,
+        <strong>화살표의 개수가 곧 dimension</strong>이다.
+      </p>
+
+      <figure class="widget" data-widget="space-ladder">
+        <figcaption class="widget__bar">공간 · 부분공간 · 기저 · 차원 — 한 그림으로</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">기저를 바꿔도 <strong>부분공간(회색 도형)은 그대로</strong>이고 화살표 개수도 그대로입니다. 그래서 dimension이 하나로 정해집니다.</p>
+        </div>
+      </figure>
 
       <span class="anchor" id="c-shape"></span>
       <h3>Shape</h3>
@@ -612,7 +629,7 @@
 
       <h3>shape와 메모리 배치</h3>
       <p>
-        축의 길이를 바꿔 가며 원소 수가 어떻게 변하는지, 그리고 2dimension 배열이 메모리에는
+        축의 길이를 바꿔 가며 원소 수가 어떻게 변하는지, 그리고 2-dimensional 배열이 메모리에는
         <strong>한 줄로</strong> 어떻게 펴지는지 확인한다(행 우선, row-major).
       </p>
 
@@ -672,7 +689,7 @@
         <p>"dimension이 높을수록 표현력이 좋다."</p>
         <p>
           <strong>실제로는</strong> dimension은 <em>basis의 크기</em>일 뿐 정보량이 아니다.
-          $\mathbb{R}^{1000}$ 안에 있어도 data가 2dimension subspace에만 놓여 있으면 실제 degrees of freedom(자유도)은 2다.
+          $\mathbb{R}^{1000}$ 안에 있어도 data가 2-dimensional subspace에만 놓여 있으면 실제 degrees of freedom(자유도)은 2다.
           이 간극을 이용해 dimension을 줄이는 것이 <a href="2.9-dimensionality-reduction.html">2.9 dimensionality reduction(차원 축소)</a>이고,
           high-dimensional(고차원)에서 거리가 무의미해지는 현상(dimension의 저주)은 오히려 높은 dimension의 대가다.
         </p>
@@ -779,15 +796,15 @@ print((np.zeros(3) + np.zeros((3, 1))).shape)      # (3, 3)  ← 오해 2
 
         <div class="q">
           <p class="q__stem"><span class="q__tag">함정</span>
-            "4dimension tensor"와 "4dimension vector"에 대한 설명으로 옳은 것은?</p>
+            "4-dimensional tensor"와 "4-dimensional vector"에 대한 설명으로 옳은 것은?</p>
           <div class="opts">
             <button class="opt" type="button"><span class="opt__mark">가</span><span>둘 다 원소가 4개다</span></button>
             <button class="opt" type="button"><span class="opt__mark">나</span><span>둘 다 축이 4개다</span></button>
             <button class="opt" type="button" data-correct="true"><span class="opt__mark">다</span><span>앞은 축이 4개, 뒤는 축이 1개이고 원소가 4개다</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>
-            "4dimension tensor"의 4는 <em>축의 수</em>(<code>ndim</code>), "4dimension vector"의 4는 <em>성분의 수</em>다.
-            <span class="tex">(32,3,224,224)</span> tensor는 4dimension 텐서지만 원소는 480만 개가 넘는다.
+            "4-dimensional tensor"의 4는 <em>축의 수</em>(<code>ndim</code>), "4-dimensional vector"의 4는 <em>성분의 수</em>다.
+            <span class="tex">(32,3,224,224)</span> tensor는 4-dimensional 텐서지만 원소는 480만 개가 넘는다.
             같은 단어가 다른 것을 세고 있다.
           </div>
         </div>
@@ -976,6 +993,113 @@ WIDGETS.register('tensor-ladder', function (root, ctx) {
     labels: STEPS.map(function (s, i) { return i + '축 · ' + s.name; }),
     label: '축을 하나씩 늘리기', onStep: draw
   });
+});
+
+/* ============================================================
+   위젯 1-b — 공간 · 부분공간 · 기저 · 차원
+   R³ 를 축측투영으로 그리고, dimension 을 0→3 으로 올리며
+   부분공간(점·직선·평면·방)과 기저 화살표가 함께 자라는 것을 보인다.
+   기저를 바꿔도 부분공간과 개수는 그대로 — dimension 이 잘 정의되는 이유.
+   ============================================================ */
+WIDGETS.register('space-ladder', function (root, ctx) {
+  var BASES = {
+    std: { name: '표준기저', B: [[1, 0, 0], [0, 1, 0], [0, 0, 1]] },
+    alt: { name: '다른 기저', B: [[1.6, 0, 0], [0.8, 1.4, 0], [0.3, 0.4, 1.3]] }
+  };
+  var dim = 2, which = 'std';
+
+  /* 축측투영 — x 는 오른쪽, z 는 위, y 는 뒤쪽 왼쪽으로 */
+  function proj(v) { return [v[0] - 0.55 * v[1], v[2] - 0.35 * v[1]]; }
+  function unit(v) {
+    var n = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) || 1;
+    return [v[0] / n, v[1] / n, v[2] / n];
+  }
+  function comb(a, s, b, t) { return [a[0] * s + b[0] * t, a[1] * s + b[1] * t, a[2] * s + b[2] * t]; }
+
+  var p = VIZ.plot({ w: 460, h: 340, xmin: -3.4, xmax: 3.4, ymin: -2.6, ymax: 2.6 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'sub', label: '부분공간' },
+    { key: 'basis', label: '기저 벡터 개수' },
+    { key: 'dim', label: 'dimension' },
+    { key: 'free', label: '자유도 (좌표 개수)' }
+  ]);
+
+  function seg(a, b, opts) { p.line([proj(a), proj(b)], opts || {}); }
+
+  function draw() {
+    var B = BASES[which].B;
+    p.clear();
+
+    /* 둘러싼 공간 R³ — 방의 뼈대 */
+    var K = 1.9, on3 = (dim === 3);
+    var C = [];
+    for (var i = 0; i < 8; i++) {
+      C.push([(i & 1 ? K : -K), (i & 2 ? K : -K), (i & 4 ? K : -K)]);
+    }
+    [[0,1],[1,3],[3,2],[2,0],[4,5],[5,7],[7,6],[6,4],[0,4],[1,5],[2,6],[3,7]].forEach(function (e) {
+      seg(C[e[0]], C[e[1]], { dash: on3 ? null : '3 5', width: on3 ? 2 : 1 });
+    });
+
+    /* 좌표축 (옅게) */
+    [[2.6,0,0],[0,2.6,0],[0,0,2.2]].forEach(function (a) {
+      seg([0,0,0], a, { dash: '2 4' });
+    });
+
+    /* 부분공간 그리기 */
+    if (dim === 1) {
+      var u = unit(B[0]);
+      seg(comb(u, -2.4, u, 0), comb(u, 2.4, u, 0), { alt: true, width: 4 });
+    } else if (dim === 2) {
+      var u1 = unit(B[0]), u2 = unit(B[1]);
+      var q = [comb(u1, 1.9, u2, 1.9), comb(u1, -1.9, u2, 1.9),
+               comb(u1, -1.9, u2, -1.9), comb(u1, 1.9, u2, -1.9)].map(proj);
+      p.add(VIZ.el('path', {
+        d: 'M' + q.map(function (z) { return p.X(z[0]) + ' ' + p.Y(z[1]); }).join(' L') + ' Z',
+        fill: 'var(--seal)', 'fill-opacity': 0.16, stroke: 'var(--seal)', 'stroke-width': 2
+      }));
+      for (var t = -1; t <= 1; t++) {
+        if (!t) continue;
+        seg(comb(u1, -1.9, u2, t * 1.0), comb(u1, 1.9, u2, t * 1.0), { alt: true, dash: '3 4' });
+        seg(comb(u1, t * 1.0, u2, -1.9), comb(u1, t * 1.0, u2, 1.9), { alt: true, dash: '3 4' });
+      }
+    } else if (dim === 3) {
+      var f = [C[0], C[1], C[5], C[4]].map(proj);
+      p.add(VIZ.el('path', {
+        d: 'M' + f.map(function (z) { return p.X(z[0]) + ' ' + p.Y(z[1]); }).join(' L') + ' Z',
+        fill: 'var(--seal)', 'fill-opacity': 0.12, stroke: 'none'
+      }));
+    }
+
+    /* 기저 화살표 */
+    var LAB = ['b₁', 'b₂', 'b₃'];
+    for (var k = 0; k < dim; k++) {
+      var e = proj(B[k]);
+      p.vector(e[0], e[1], { width: 3, label: LAB[k], lx: k === 1 ? -26 : 8, ly: k === 2 ? -10 : 16 });
+    }
+    p.dot(0, 0, 5);
+
+    var NAMES = ['원점 한 점 {0}', '원점을 지나는 직선', '원점을 지나는 평면', '공간 전체 R³'];
+    if (dim === 0) p.callout(0, 0, '{0} — 가장 작은 subspace', { dx: 30, dy: -26, tone: 'var(--seal-ink)' });
+
+    out.setRaw('sub', NAMES[dim]);
+    out.setRaw('basis', dim + ' 개');
+    out.setRaw('dim', String(dim));
+    out.setRaw('free', dim + ' 개의 좌표로 그 안의 모든 점을 적을 수 있다');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'dimension (기저 벡터를 하나씩 늘린다)',
+    min: 0, max: 3, step: 1, value: 2, digits: 0,
+    onInput: function (v) { dim = v; draw(); }
+  });
+  WIDGETS.toggle({
+    host: ctx.controls, label: '기저 바꾸기 — 부분공간은 그대로인지 보세요',
+    options: [{ value: 'std', label: '표준기저' }, { value: 'alt', label: '다른 기저' }],
+    value: 'std', onChange: function (v) { which = v; draw(); }
+  });
+  draw();
 });
 
 /* ============================================================

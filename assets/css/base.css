@@ -49,7 +49,6 @@ a { color: inherit; }
   --seal-soft:  #f0dbd6;
   --seal-ink:   #8d2c20;
   --hl-band:    rgba(222, 152, 0, .92);
-  --hl-deep:    rgba(210, 140, 0, .95);
 
   /* 청자 — 인터랙티브 요소 전용 */
   --jade:       #2f6f66;
@@ -112,7 +111,6 @@ a { color: inherit; }
     --seal-soft:  #3a2320;
     --seal-ink:   #f0937f;
     --hl-band:    rgba(255, 214, 0, .38);
-    --hl-deep:    rgba(255, 214, 0, .48);
 
     --jade:       #6cb3a6;
     --jade-soft:  #1c2f2c;
@@ -142,7 +140,6 @@ a { color: inherit; }
   --seal-soft:  #3a2320;
   --seal-ink:   #f0937f;
   --hl-band:    rgba(255, 214, 0, .38);
-  --hl-deep:    rgba(255, 214, 0, .48);
 
   --jade:       #6cb3a6;
   --jade-soft:  #1c2f2c;
@@ -827,18 +824,17 @@ input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.25); }
      라이트·다크 어느 쪽에서도 대비가 무너지지 않는다. */
 .hl {
   background-color: transparent;
-  /* 띠는 글자 높이를 덮되(22%~90%) 윗줄·아랫줄과는 떨어져 한 덩어리로 뭉치지 않는다.
-     아래로 갈수록 아주 조금 진해져 형광펜 잉크가 고인 느낌만 준다.
+  /* 띠는 글자 높이를 덮되(22%~86%) 윗줄·아랫줄과는 떨어져 한 덩어리로 뭉치지 않는다.
 
-     ⚠ 정지점을 같은 위치에 두 번 쓰지 않는다(예: 74%, 74%).
-       그 자리에 또렷한 가로선이 생겨 하이라이트가 둘로 갈라져 보인다. */
+     ⚠ 색은 처음부터 끝까지 하나로 유지한다. 위아래 어디든 더 진한 구간을 두면
+       그 자리가 선으로 읽혀 하이라이트에 밑줄이 그어진 것처럼 보인다.
+       위아래 경계만 짧게 흐려 형광펜 자국처럼 만든다. */
   background-image: linear-gradient(
     to bottom,
     transparent 22%,
-    var(--hl-band) 34%,
-    var(--hl-band) 64%,
-    var(--hl-deep) 82%,
-    transparent 90%);
+    var(--hl-band) 30%,
+    var(--hl-band) 78%,
+    transparent 86%);
   color: inherit;
   padding: 0 .16em;
   margin: 0 -.04em;

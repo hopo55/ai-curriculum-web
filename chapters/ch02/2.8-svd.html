@@ -94,10 +94,10 @@
       <p>
         <a href="2.7-eigenvalues.html">2.7</a>의 eigendecomposition(고유분해)에는 두 가지 결함이 있었다 —
         square matrix(정사각행렬)에만 있고, 있어도 <strong>존재하지 않을 수 있으며</strong>, eigenvector(고유벡터)가 orthogonal(직교)라는 보장도 없었다.
-        SVD는 이 셋을 모두 고친다. <span class="hl"><strong>어떤 모양의 matrix이든, 언제나, orthogonal basis(기저) 두 벌로</strong></span> 분해된다.
+        SVD는 이 셋을 모두 고친다. <strong>어떤 모양의 matrix이든, 언제나, orthogonal basis(기저) 두 벌로</strong> 분해된다.
       </p>
       <p>
-        기하학적 그림이 특히 선명하다. unit circle(단위원) 위의 모든 점에 matrix를 곱하면 <span class="hl"><strong>반드시 타원이 나온다</strong></span>.
+        기하학적 그림이 특히 선명하다. unit circle(단위원) 위의 모든 점에 matrix를 곱하면 <strong>반드시 타원이 나온다</strong>.
         그 타원의 <em>가장 긴 반지름</em>이 $\sigma_1$, 그다음이 $\sigma_2$ 다.
         원에서 타원으로 가는 길을 <strong>돌리고 · 늘이고 · 다시 돌리는</strong> 세 단계로 나눈 것이 SVD 다.
       </p>
@@ -153,13 +153,13 @@
 
       <span class="anchor" id="c-sigma"></span>
       <h3>Singular Value 특이값</h3>
-      <div class="eq">
+      <div class="eq eq--key">
         <div class="eq__body">$$ \sigma_i = \sqrt{\lambda_i(\mathbf{A}^\top\mathbf{A})}, \qquad \sigma_i \geq 0 $$</div>
         <span class="eq__tag num">(1)</span>
       </div>
       <p>
-        $\mathbf{A}^\top\mathbf{A}$ 는 대칭·준정부호이므로(<a href="2.4-matrix-operations.html">2.4</a>)
-        eigenvalue가 모두 0 이상이고, 그 제곱근이 singular value다. 따라서 <span class="hl"><strong>singular value는 절대 음수가 아니다</strong></span>.
+        <span class="hl">$\mathbf{A}^\top\mathbf{A}$ 는 대칭·준정부호이므로(<a href="2.4-matrix-operations.html">2.4</a>)
+        eigenvalue가 모두 0 이상이고, 그 제곱근이 singular value다.</span> 따라서 <strong>singular value는 절대 음수가 아니다</strong>.
         정보도 여럿 준다.
       </p>
       <ul>
@@ -178,7 +178,7 @@
       <p>
         $\mathbf{v}_i$ 를 <strong>오른쪽 singular vector(특이벡터)</strong>(입력 쪽 basis, $\mathbf{A}^\top\mathbf{A}$ 의 eigenvector),
         $\mathbf{u}_i$ 를 <strong>왼쪽 singular vector</strong>(출력 쪽 basis, $\mathbf{A}\mathbf{A}^\top$ 의 eigenvector)라 한다.
-        식 (2)가 SVD의 실질적인 의미다 — <strong>$\mathbf{v}_i$ 를 넣으면 $\sigma_i$ 배로 늘어난 $\mathbf{u}_i$ 가 나온다.</strong>
+        <span class="hl">식 (2)가 SVD의 실질적인 의미다 — <strong>$\mathbf{v}_i$ 를 넣으면 $\sigma_i$ 배로 늘어난 $\mathbf{u}_i$ 가 나온다.</strong></span>
       </p>
       <p>
         네 subspace(부분공간)(<a href="2.5-linear-transformation.html">2.5</a>)과도 곧장 연결된다 —
@@ -188,7 +188,7 @@
 
       <span class="anchor" id="c-lowrank"></span>
       <h3>Low-Rank Approximation 저랭크 근사</h3>
-      <p>SVD를 <span class="hl"><strong>랭크 1 조각의 합</strong></span>으로 다시 쓰면 근사의 길이 열린다.</p>
+      <p><span class="hl">SVD를 <strong>랭크 1 조각의 합</strong>으로 다시 쓰면 근사의 길이 열린다.</span></p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{A} = \sum_{i=1}^{r} \sigma_i\,\mathbf{u}_i\mathbf{v}_i^\top, \qquad \mathbf{A}_k = \sum_{i=1}^{k} \sigma_i\,\mathbf{u}_i\mathbf{v}_i^\top \quad (k<r) $$</div>
         <span class="eq__tag num">(3)</span>
@@ -204,7 +204,7 @@
         </p>
       </div>
       <p>
-        <span class="hl"><strong>"큰 것부터 $k$ 개 자르기"가 최적</strong></span>이라는 것이 이 정리의 힘이다.
+        <strong>"큰 것부터 $k$ 개 자르기"가 최적</strong>이라는 것이 이 정리의 힘이다.
         더 좋은 근사를 찾으려 애쓸 필요가 없고, <strong>버려지는 오차의 크기까지 미리 안다</strong>.
       </p>
 
@@ -221,8 +221,8 @@
       <span class="anchor" id="c-compress"></span>
       <h3>Matrix Compression 행렬 압축</h3>
       <p>
-        $\mathbf{A}_k$ 를 저장하려면 $\mathbf{u}_i$ ($m$ 개), $\mathbf{v}_i$ ($n$ 개), $\sigma_i$ (1개)씩
-        $k$ 벌만 있으면 된다.
+        <span class="hl">$\mathbf{A}_k$ 를 저장하려면 $\mathbf{u}_i$ ($m$ 개), $\mathbf{v}_i$ ($n$ 개), $\sigma_i$ (1개)씩
+        $k$ 벌만 있으면 된다.</span>
       </p>
       <div class="eq">
         <div class="eq__body">$$ \text{원본 } mn \quad\longrightarrow\quad \text{압축 } k(m+n+1), \qquad \text{압축률} = \frac{k(m+n+1)}{mn} $$</div>
@@ -246,7 +246,7 @@
       <span class="anchor" id="c-denoise"></span>
       <h3>Denoising 노이즈 제거</h3>
       <p>
-        실제 data(데이터)는 대개 <strong>낮은 랭크의 구조 + 잡음</strong>이다.
+        <span class="hl">실제 data(데이터)는 대개 <strong>낮은 랭크의 구조 + 잡음</strong>이다.</span>
         구조는 앞쪽 큰 singular value 몇 개에 모이고, 잡음은 뒤쪽 작은 singular value들에 얇게 퍼진다.
         그래서 뒤쪽을 잘라내면 잡음이 함께 잘린다.
       </p>
@@ -274,7 +274,7 @@
       <p>
         사용자×영화 평점 matrix를 생각하자. $\mathbf{A}\approx\mathbf{U}_k\boldsymbol{\Sigma}_k\mathbf{V}_k^\top$ 로 자르면
         각 행(사용자)이 $k$ dimension(차원) vector(벡터)로, 각 열(영화)도 $k$ dimension vector로 표현된다.
-        이 $k$ dimension 공간이 <strong>latent space(잠재 공간)</strong>이다.
+        <span class="hl">이 $k$ dimension 공간이 <strong>latent space(잠재 공간)</strong>이다.</span>
       </p>
       <div class="eq">
         <div class="eq__body">$$ a_{ij} \approx \sum_{t=1}^{k}\sigma_t\,u_{it}\,v_{jt} = \langle \tilde{\mathbf{u}}_i,\ \tilde{\mathbf{v}}_j\rangle $$</div>
@@ -300,7 +300,7 @@
       <span class="anchor" id="c-completion"></span>
       <h3>Matrix Completion 행렬 완성</h3>
       <p>
-        평점 matrix는 대부분이 비어 있다. <strong>관측된 일부만으로 나머지를 채우는 문제</strong>가 matrix completion(행렬 완성)이다.
+        평점 matrix는 대부분이 비어 있다. <span class="hl"><strong>관측된 일부만으로 나머지를 채우는 문제</strong>가 matrix completion(행렬 완성)이다.</span>
         그냥은 불가능하지만, <strong>"원래 matrix가 저랭크다"</strong>라는 가정을 넣으면 풀린다.
       </p>
       <div class="eq">

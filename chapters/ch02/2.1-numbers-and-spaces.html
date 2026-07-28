@@ -100,7 +100,7 @@
         영상은 그것을 시간축으로 또 쌓는다.
       </p>
       <p>
-        모두 <span class="hl"><strong>"숫자를 담는 상자"</strong></span>이고, 다른 것은 <span class="hl"><strong>상자를 몇 겹으로 포갰는가</strong></span>뿐이다.
+        모두 <strong>"숫자를 담는 상자"</strong>이고, 다른 것은 <strong>상자를 몇 겹으로 포갰는가</strong>뿐이다.
         이 겹의 수를 축(axis)의 개수라 부른다. 축이 0개면 scalar, 1개면 vector, 2개면 matrix,
         3개 이상이면 그냥 텐서라 부른다. 이름이 넷이지만 개념은 하나다.
       </p>
@@ -141,7 +141,7 @@
 
       <p>
         여기서 한 가지가 더 필요하다. vector를 <span class="tex">(3, 1)</span> 이라고 적을 때,
-        그 숫자 3과 1은 <span class="hl"><strong>vector 자체가 아니라 어떤 자를 대고 잰 눈금</strong></span>이다.
+        그 숫자 3과 1은 <strong>vector 자체가 아니라 어떤 자를 대고 잰 눈금</strong>이다.
         자를 바꾸면 같은 화살표라도 다른 숫자가 나온다. 그 자가 <strong>basis</strong>이고,
         basis를 정해 숫자를 읽는 방식이 <strong>coordinate system(좌표계)</strong>다.
       </p>
@@ -154,17 +154,17 @@
       <span class="anchor" id="c-scalar"></span>
       <h3>Scalar 스칼라</h3>
       <p>
-        scalar는 축이 0개인 값, 즉 실수 하나다. $a \in \mathbb{R}$ 로 쓰고 기울인 소문자로 표기한다.
+        <span class="hl">scalar는 축이 0개인 값, 즉 실수 하나다.</span> $a \in \mathbb{R}$ 로 쓰고 기울인 소문자로 표기한다.
         learning rate(학습률) $\eta$, 손실값 $L$, normalization(정규화) 계수 $\lambda$ 가 모두 스칼라다.
       </p>
 
       <span class="anchor" id="c-vector"></span>
       <h3>Vector 벡터</h3>
       <p>
-        vector는 축이 1개인 값이다. $\mathbf{x} \in \mathbb{R}^{n}$ 은 실수 $n$ 개를 <em>순서대로</em> 묶은 것이고,
+        <span class="hl">vector는 축이 1개인 값이다.</span> $\mathbf{x} \in \mathbb{R}^{n}$ 은 실수 $n$ 개를 <em>순서대로</em> 묶은 것이고,
         이 사이트에서는 특별한 말이 없으면 <strong>column vector(열벡터)</strong>(세로로 세운 것)로 본다.
       </p>
-      <div class="eq">
+      <div class="eq eq--key">
         <div class="eq__body">$$ \mathbf{x} = \begin{bmatrix} x_1 \\ x_2 \\ \vdots \\ x_n \end{bmatrix} \in \mathbb{R}^{n}, \qquad \mathbf{x}^\top = [\,x_1\ x_2\ \cdots\ x_n\,] \in \mathbb{R}^{1 \times n} $$</div>
         <span class="eq__tag num">(1)</span>
       </div>
@@ -176,8 +176,8 @@
       <span class="anchor" id="c-matrix"></span>
       <h3>Matrix 행렬</h3>
       <p>
-        matrix는 축이 2개인 값이다. $\mathbf{A} \in \mathbb{R}^{m \times n}$ 은 $m$ 행 $n$ 열의 직사각형 배열이고,
-        $(i, j)$ 자리의 원소를 $a_{ij}$ 로 쓴다. <span class="hl"><strong>행이 먼저, 열이 나중</strong></span>이라는 순서는 관례이며 이 사이트 전체에서 지킨다.
+        <span class="hl">matrix는 축이 2개인 값이다.</span> $\mathbf{A} \in \mathbb{R}^{m \times n}$ 은 $m$ 행 $n$ 열의 직사각형 배열이고,
+        $(i, j)$ 자리의 원소를 $a_{ij}$ 로 쓴다. <strong>행이 먼저, 열이 나중</strong>이라는 순서는 관례이며 이 사이트 전체에서 지킨다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{A} = \begin{bmatrix} a_{11} & a_{12} & \cdots & a_{1n} \\ a_{21} & a_{22} & \cdots & a_{2n} \\ \vdots & \vdots & \ddots & \vdots \\ a_{m1} & a_{m2} & \cdots & a_{mn} \end{bmatrix} \in \mathbb{R}^{m \times n} $$</div>
@@ -192,7 +192,7 @@
       <span class="anchor" id="c-tensor"></span>
       <h3>Tensor 텐서</h3>
       <p>
-        축이 3개 이상이면 tensor라 부른다. 정확히 말하면 축이 몇 개든 텐서이므로
+        <span class="hl">축이 3개 이상이면 tensor라 부른다.</span> 정확히 말하면 축이 몇 개든 텐서이므로
         scalar는 0차 tensor, vector는 1차 tensor, matrix는 2차 텐서다. 축의 개수를
         tensor의 <strong>차수</strong>(order) 또는 <strong>모드 수</strong>(number of modes)라 하고, 이 용어는
         tensor 분해 문헌의 표준을 따른다<a class="cite" href="#ref-kolda2009-tensor-decompositions" data-ref="kolda2009-tensor-decompositions">1</a>.
@@ -214,8 +214,8 @@
       <h3>Vector Space 벡터 공간</h3>
       <p>
         지금까지는 "숫자를 어떻게 담는가"였다. 이제 "그 안에서 무엇을 할 수 있는가"를 정한다.
-        <strong>vector space</strong>은 <em>더하기</em>와 <em>실수배</em>가 정의되어 있고,
-        그 두 연산이 밖으로 새지 않는 집합이다. 형식적으로는 여덟 개의 조건을 만족하는
+        <span class="hl"><strong>vector space</strong>은 <em>더하기</em>와 <em>실수배</em>가 정의되어 있고,
+        그 두 연산이 밖으로 새지 않는 집합이다.</span> 형식적으로는 여덟 개의 조건을 만족하는
         집합 $V$ 와 두 연산의 짝 $(V, +, \cdot)$ 을 말한다<a class="cite" href="#ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">2</a>.
       </p>
       <div class="tablewrap">
@@ -242,7 +242,7 @@
       <span class="anchor" id="c-subspace"></span>
       <h3>Subspace 부분공간</h3>
       <p>
-        vector space $V$ 의 부분집합 $U \subseteq V$ 가 그 자체로 vector 공간이면 <strong>subspace(부분공간)</strong>이라 한다.
+        <span class="hl">vector space $V$ 의 부분집합 $U \subseteq V$ 가 그 자체로 vector 공간이면 <strong>subspace(부분공간)</strong>이라 한다.</span>
         여덟 조건을 다시 확인할 필요 없이 <strong>세 가지만</strong> 보면 된다.
       </p>
       <div class="note note--key">
@@ -261,7 +261,7 @@
       <span class="anchor" id="c-basis"></span>
       <h3>Basis 기저</h3>
       <p>
-        vector 집합 $B = \{\mathbf{b}_1, \dots, \mathbf{b}_k\} \subseteq V$ 가 다음 둘을 동시에 만족하면 $V$ 의 <strong>basis</strong>다.
+        <span class="hl">vector 집합 $B = \{\mathbf{b}_1, \dots, \mathbf{b}_k\} \subseteq V$ 가 다음 둘을 동시에 만족하면 $V$ 의 <strong>basis</strong>다.</span>
       </p>
       <ul>
         <li><strong>생성</strong>(spanning): $V$ 의 모든 vector를 $\mathbf{b}_i$ 들의 합과 상수배로 만들 수 있다.</li>
@@ -277,7 +277,7 @@
       <h3>Dimension 차원</h3>
       <p>
         vector space $V$ 의 <strong>dimension(차원)</strong> $\dim V$ 는 basis에 든 vector의 개수다.
-        basis는 여러 개 있을 수 있지만 <strong>그 개수는 항상 같다</strong>. 그래서 dimension은 잘 정의된다.
+        <span class="hl">basis는 여러 개 있을 수 있지만 <strong>그 개수는 항상 같다</strong>. 그래서 dimension은 잘 정의된다.</span>
       </p>
       <div class="note note--trap">
         <span class="note__label">"dimension"은 세 군데서 다른 뜻으로 쓰인다</span>
@@ -292,7 +292,7 @@
       <span class="anchor" id="c-shape"></span>
       <h3>Shape</h3>
       <p>
-        shape는 <strong>각 축의 길이를 축 순서대로 적은 튜플</strong>이다.
+        <span class="hl">shape는 <strong>각 축의 길이를 축 순서대로 적은 튜플</strong>이다.</span>
         축 수는 <code>len(shape)</code>, 원소 수는 shape 원소들의 곱이다.
       </p>
       <div class="eq">
@@ -300,7 +300,7 @@
         <span class="eq__tag num">(3)</span>
       </div>
       <p>
-        shape는 단순한 메타데이터가 아니라 <span class="hl"><strong>연산 가능 여부를 판정하는 타입</strong></span>이다.
+        shape는 단순한 메타데이터가 아니라 <strong>연산 가능 여부를 판정하는 타입</strong>이다.
         NumPy · PyTorch 계열 라이브러리는 shape 규칙(브로드캐스팅)을 언어의 문법처럼 쓰며,
         이 규약이 배열 프로그래밍 생태계 전체의 공통 기반이 되었다<a class="cite" href="#ref-harris2020-array-programming-with" data-ref="harris2020-array-programming-with">3</a>.
         실무 오류의 상당수는 수학이 틀려서가 아니라 shape가 어긋나서 난다.
@@ -309,7 +309,7 @@
       <span class="anchor" id="c-coord"></span>
       <h3>Coordinate System 좌표계</h3>
       <p>
-        basis $B = (\mathbf{b}_1, \dots, \mathbf{b}_n)$ 를 <em>순서까지</em> 정하면 coordinate system이 된다.
+        <span class="hl">basis $B = (\mathbf{b}_1, \dots, \mathbf{b}_n)$ 를 <em>순서까지</em> 정하면 coordinate system이 된다.</span>
         임의의 $\mathbf{x} \in V$ 는 단 하나의 계수 조합으로 표현되고, 그 계수를 모은 vector가 <strong>coordinates</strong>다.
       </p>
       <div class="eq">

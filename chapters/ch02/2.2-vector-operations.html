@@ -95,7 +95,7 @@
 
       <p>
         vector를 <em>이동 명령</em>으로 보자. $(3,1)$ 은 "오른쪽으로 3, 위로 1 가라"는 뜻이다.
-        그러면 <span class="hl"><strong>덧셈은 명령을 이어서 수행하는 것</strong></span>이고,
+        그러면 <strong>덧셈은 명령을 이어서 수행하는 것</strong>이고,
         <strong>scalar multiplication(스칼라 곱)은 같은 방향으로 몇 배만큼 더 가라는 것</strong>이다.
         음수배는 뒤로 돌아 가라는 뜻이다.
       </p>
@@ -138,9 +138,9 @@
       <span class="anchor" id="c-add"></span>
       <h3>Vector Addition 벡터 덧셈</h3>
       <p>
-        같은 공간의 두 vector는 <strong>성분끼리</strong> 더한다. shape가 다르면 정의되지 않는다.
+        <span class="hl">같은 공간의 두 vector는 <strong>성분끼리</strong> 더한다.</span> shape가 다르면 정의되지 않는다.
       </p>
-      <div class="eq">
+      <div class="eq eq--key">
         <div class="eq__body">$$ \mathbf{u} + \mathbf{v} = \begin{bmatrix} u_1 + v_1 \\ \vdots \\ u_n + v_n \end{bmatrix}, \qquad \mathbf{u}, \mathbf{v} \in \mathbb{R}^n $$</div>
         <span class="eq__tag num">(1)</span>
       </div>
@@ -153,7 +153,7 @@
       <span class="anchor" id="c-smul"></span>
       <h3>Scalar Multiplication 스칼라 곱</h3>
       <p>
-        scalar multiplication은 모든 성분에 같은 수를 곱한다.
+        <span class="hl">scalar multiplication은 모든 성분에 같은 수를 곱한다.</span>
         <strong>inner product(내적)과 다른 연산</strong>이므로 혼동하지 않는다 — inner product는
         <a href="2.3-inner-product.html">2.3</a>에서 다룬다.
       </p>
@@ -177,14 +177,14 @@
         <span class="eq__tag num">(3)</span>
       </div>
       <p>
-        neural network(신경망)의 한 뉴런이 하는 계산 $\sum_i w_i x_i$ 도, embedding(임베딩) 평균도, image(이미지)의 pixel(픽셀) 혼합도 모두 이 형태다.
-        <span class="hl"><strong>deep learning(딥러닝)에서 "선형"이라 부르는 것은 대부분 식 (3)을 가리킨다.</strong></span>
+        <span class="hl">neural network(신경망)의 한 뉴런이 하는 계산 $\sum_i w_i x_i$ 도, embedding(임베딩) 평균도, image(이미지)의 pixel(픽셀) 혼합도 모두 이 형태다.</span>
+        <strong>deep learning(딥러닝)에서 "선형"이라 부르는 것은 대부분 식 (3)을 가리킨다.</strong>
       </p>
 
       <span class="anchor" id="c-span"></span>
       <h3>Span</h3>
       <p>
-        Span은 <span class="hl"><strong>가능한 모든 linear combination의 집합</strong></span>이다. "이 vector들로 도달할 수 있는 곳 전부"라고 읽으면 된다.
+        <span class="hl">Span은 <strong>가능한 모든 linear combination의 집합</strong>이다.</span> "이 vector들로 도달할 수 있는 곳 전부"라고 읽으면 된다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \operatorname{span}\{\mathbf{v}_1,\dots,\mathbf{v}_k\} = \Bigl\{\, \sum_{i=1}^{k}\lambda_i\mathbf{v}_i \;\Big|\; \lambda_i \in \mathbb{R} \,\Bigr\} $$</div>
@@ -213,11 +213,11 @@
         <p>
           $\lambda_1\mathbf{v}_1 + \cdots + \lambda_k\mathbf{v}_k = \mathbf{0}$ 을 만족하는 방법이
           <strong>$\lambda_1=\cdots=\lambda_k=0$ 뿐</strong>이면 그 vector들은 <strong>linear independence</strong>(linearly independent)이다.
-          0 이 아닌 계수로도 $\mathbf{0}$ 을 만들 수 있으면 <strong>linear dependence(선형종속)</strong>(linearly dependent)이다.
+          <span class="hl">0 이 아닌 계수로도 $\mathbf{0}$ 을 만들 수 있으면 <strong>linear dependence(선형종속)</strong>(linearly dependent)이다.</span>
         </p>
       </div>
       <p>
-        정의가 추상적으로 보이지만 뜻은 단순하다. <span class="hl"><strong>종속 = 군더더기가 있다</strong></span>는 말이다.
+        정의가 추상적으로 보이지만 뜻은 단순하다. <strong>종속 = 군더더기가 있다</strong>는 말이다.
         실제로 $\lambda_1 \neq 0$ 인 관계식이 있으면 양변을 $\lambda_1$ 로 나눠
         $\mathbf{v}_1 = -\frac{\lambda_2}{\lambda_1}\mathbf{v}_2 - \cdots$ 로 쓸 수 있다 —
         $\mathbf{v}_1$ 은 나머지로 만들 수 있으니 없어도 그만이다.
@@ -232,14 +232,14 @@
       <ul>
         <li>vector가 <strong>2개</strong>: 한쪽이 다른 쪽의 스칼라배이면 종속. 2dimension에서는 $\det[\mathbf{u}\ \mathbf{v}] = u_1v_2 - u_2v_1 = 0$ 인지 보면 된다.</li>
         <li>vector가 <strong>$k$ 개</strong>: 열로 세운 matrix(행렬)의 rank가 $k$ 이면 독립 (<a href="2.5-linear-transformation.html">2.5</a>).</li>
-        <li><span class="hl"><strong>$\mathbb{R}^n$ 안에서 $n+1$ 개 이상이면 무조건 종속</strong></span>이다. 방이 좁으면 반드시 겹친다.</li>
+        <li><strong>$\mathbb{R}^n$ 안에서 $n+1$ 개 이상이면 무조건 종속</strong>이다. 방이 좁으면 반드시 겹친다.</li>
         <li>집합에 $\mathbf{0}$ 이 들어 있으면 무조건 종속이다 ($1\cdot\mathbf{0} = \mathbf{0}$).</li>
       </ul>
 
       <span class="anchor" id="c-norm"></span>
       <h3>Vector Norm 벡터의 크기</h3>
       <p>
-        크기는 <strong>norm(노름)</strong>이라는 함수 $\|\cdot\| : V \to \mathbb{R}$ 로 정의한다.
+        <span class="hl">크기는 <strong>norm(노름)</strong>이라는 함수 $\|\cdot\| : V \to \mathbb{R}$ 로 정의한다.</span>
         아무 함수나 되는 것이 아니라 세 조건을 만족해야 한다<a class="cite" href="#ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">1</a>.
       </p>
       <div class="tablewrap">
@@ -266,7 +266,7 @@
       <span class="anchor" id="c-unit"></span>
       <h3>Unit Vector 단위벡터</h3>
       <p>
-        길이가 1인 vector를 unit vector라 한다. 영이 아닌 vector는 자기 길이로 나누면 unit vector가 된다.
+        <span class="hl">길이가 1인 vector를 unit vector라 한다.</span> 영이 아닌 vector는 자기 길이로 나누면 unit vector가 된다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \hat{\mathbf{v}} = \frac{\mathbf{v}}{\|\mathbf{v}\|}, \qquad \|\hat{\mathbf{v}}\| = 1 $$</div>
@@ -280,7 +280,7 @@
       <span class="anchor" id="c-dist"></span>
       <h3>Distance 거리</h3>
       <p>
-        두 vector 사이의 거리는 <strong>차이 vector의 크기</strong>다.
+        <span class="hl">두 vector 사이의 거리는 <strong>차이 vector의 크기</strong>다.</span>
       </p>
       <div class="eq">
         <div class="eq__body">$$ d(\mathbf{u}, \mathbf{v}) = \|\mathbf{u} - \mathbf{v}\| = \sqrt{\sum_{i=1}^{n}(u_i - v_i)^2} $$</div>
@@ -295,7 +295,7 @@
       <span class="anchor" id="c-angle"></span>
       <h3>Angle 각도</h3>
       <p>
-        두 vector가 이루는 각도는 inner product로 정의한다. inner product 자체는 다음 절의 주제이므로,
+        <span class="hl">두 vector가 이루는 각도는 inner product로 정의한다.</span> inner product 자체는 다음 절의 주제이므로,
         여기서는 각도를 재는 <em>공식</em>만 먼저 확보한다.
       </p>
       <div class="eq">

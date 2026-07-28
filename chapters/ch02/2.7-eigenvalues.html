@@ -97,7 +97,7 @@
         <em>길이만 변하고 방향은 그대로</em>다. 그 방향이 eigenvector고, 변한 길이의 배율이 eigenvalue다.
       </p>
       <p>
-        왜 중요한가. 그 축을 기준으로 coordinates를 다시 잡으면 변환이 <span class="hl"><strong>축마다 곱하기 하나</strong></span>로 단순해진다.
+        왜 중요한가. 그 축을 기준으로 coordinates를 다시 잡으면 변환이 <strong>축마다 곱하기 하나</strong>로 단순해진다.
         복잡하게 얽힌 matrix multiplication(행렬 곱)이 숫자 몇 개의 거듭제곱으로 바뀐다 —
         반복 적용, 미분방정식, 안정성 분석이 전부 여기서 쉬워진다.
       </p>
@@ -153,13 +153,13 @@
         $\lambda=0$ 이 eigenvalue이라는 것은 곧 $\mathbf{A}$ 가 특이하다는 뜻이다.
       </p>
       <p>
-        eigenvector는 <span class="hl"><strong>방향만 의미가 있다</strong></span>. $\mathbf{v}$ 가 고유벡터면 $c\mathbf{v}$ 도 고유벡터이므로,
+        eigenvector는 <strong>방향만 의미가 있다</strong>. $\mathbf{v}$ 가 고유벡터면 $c\mathbf{v}$ 도 고유벡터이므로,
         보통 길이 1로 normalize 해 표기한다.
       </p>
 
       <span class="anchor" id="c-charpoly"></span>
       <h3>Characteristic Equation 특성방정식</h3>
-      <div class="eq">
+      <div class="eq eq--key">
         <div class="eq__body">$$ \det(\mathbf{A}-\lambda\mathbf{I}) = 0 $$</div>
         <span class="eq__tag num">(1)</span>
       </div>
@@ -175,12 +175,12 @@
         <p>그렇게 보내려면 공간을 찌그러뜨려야 하고, 찌그러뜨린다는 것은 넓이 배율이 0 — 즉 $\det=0$ 이라는 뜻입니다. 그래서 determinant를 0 으로 두고 $\lambda$ 를 찾습니다.</p>
       </div>
 
-      <div class="eq">
+      <div class="eq eq--key">
         <div class="eq__body">$$ \lambda^2 - (\operatorname{tr}\mathbf{A})\,\lambda + \det\mathbf{A} = 0, \qquad \operatorname{tr}\mathbf{A}=a_{11}+a_{22} $$</div>
         <span class="eq__tag num">(2)</span>
       </div>
       <p>
-        여기서 두 가지 항등식이 바로 나온다 — <span class="hl"><strong>eigenvalue의 합 = trace(대각합)</strong></span>,
+        여기서 두 가지 항등식이 바로 나온다 — <strong>eigenvalue의 합 = trace(대각합)</strong>,
         <strong>eigenvalue의 곱 = determinant(행렬식)</strong>. 일반 $n$ dimension(차원)에서도 성립하며, 계산 결과를 검산하는 데 유용하다.
       </p>
 
@@ -201,7 +201,7 @@
         <span class="eq__tag num">(3)</span>
       </div>
       <p>
-        같은 eigenvalue에 딸린 eigenvector 전체(에 zero vector(영벡터)를 더한 것)이며, <strong>subspace(부분공간)</strong>이다.
+        <span class="hl">같은 eigenvalue에 딸린 eigenvector 전체(에 zero vector(영벡터)를 더한 것)이며, <strong>subspace(부분공간)</strong>이다.</span>
         두 가지 multiplicity(중복도)를 구분해야 한다.
       </p>
       <div class="tablewrap">
@@ -221,7 +221,7 @@
       <span class="anchor" id="c-diag"></span>
       <h3>Diagonalization 대각화</h3>
       <p>
-        eigenvector $n$ 개가 선형독립이면 그것들을 열로 세운 $\mathbf{P}$ 로 다음이 성립한다.
+        <span class="hl">eigenvector $n$ 개가 선형독립이면 그것들을 열로 세운 $\mathbf{P}$ 로 다음이 성립한다.</span>
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{A} = \mathbf{P}\mathbf{D}\mathbf{P}^{-1}, \qquad \mathbf{D}=\operatorname{diag}(\lambda_1,\dots,\lambda_n) $$</div>
@@ -252,8 +252,8 @@
         <span class="eq__tag num">(6)</span>
       </div>
       <p>
-        오른쪽 형태가 특히 유용하다. matrix가 <strong>랭크 1 조각들의 가중합</strong>으로 분해되고,
-        weight(가중치)가 곧 eigenvalue다. 큰 $\lambda$ 에 해당하는 항만 남기면 <strong>근사</strong>가 되며,
+        오른쪽 형태가 특히 유용하다. <span class="hl">matrix가 <strong>랭크 1 조각들의 가중합</strong>으로 분해되고,
+        weight(가중치)가 곧 eigenvalue다.</span> 큰 $\lambda$ 에 해당하는 항만 남기면 <strong>근사</strong>가 되며,
         이 아이디어가 PCA(<a href="2.9-dimensionality-reduction.html">2.9</a>)와 SVD(<a href="2.8-svd.html">2.8</a>)로 이어진다.
         covariance matrix(공분산 행렬) · Gram matrix(그람 행렬) · Hessian(헤시안)이 모두 대칭이라 실무에서 만나는 대부분이 이 경우다.
       </p>
@@ -271,8 +271,8 @@
       <span class="anchor" id="c-iterate"></span>
       <h3>Iterated Linear Map 반복 선형변환</h3>
       <p>
-        같은 변환을 계속 적용하는 상황 $\mathbf{x}_{k+1}=\mathbf{A}\mathbf{x}_k$ 을 생각하자.
-        초기 vector를 eigenvector로 분해하면 거동이 한눈에 보인다.
+        <span class="hl">같은 변환을 계속 적용하는 상황 $\mathbf{x}_{k+1}=\mathbf{A}\mathbf{x}_k$ 을 생각하자.
+        초기 vector를 eigenvector로 분해하면 거동이 한눈에 보인다.</span>
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{x}_0 = \sum_i c_i\mathbf{v}_i \;\Longrightarrow\; \mathbf{x}_k = \mathbf{A}^k\mathbf{x}_0 = \sum_i c_i\lambda_i^k\,\mathbf{v}_i $$</div>
@@ -298,7 +298,7 @@
       <span class="anchor" id="c-stability"></span>
       <h3>Stability Analysis 안정성 분석</h3>
       <p>
-        spectral radius $\rho(\mathbf{A}) = \max_i |\lambda_i|$ 하나로 장기 거동이 갈린다.
+        <span class="hl">spectral radius $\rho(\mathbf{A}) = \max_i |\lambda_i|$ 하나로 장기 거동이 갈린다.</span>
       </p>
       <div class="tablewrap">
         <table>

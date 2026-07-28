@@ -95,7 +95,7 @@
 
       <p>
         두 사람이 같은 방향으로 밀면 힘이 보태지고, 직각으로 밀면 서로 보태지 않고,
-        반대로 밀면 상쇄된다. inner product는 정확히 <span class="hl"><strong>이 "보탬의 정도"</strong></span>를 재는 수다.
+        반대로 밀면 상쇄된다. inner product는 정확히 <strong>이 "보탬의 정도"</strong>를 재는 수다.
         같은 방향이면 양수, 직각이면 0, 반대 방향이면 음수다.
       </p>
 
@@ -112,7 +112,7 @@
       <p>
         다른 그림으로도 볼 수 있다. $\mathbf{v}$ 에서 $\mathbf{u}$ 방향으로 <em>그림자</em>를 내리면
         그 그림자의 길이가 $\|\mathbf{v}\|\cos\theta$ 다. 여기에 $\|\mathbf{u}\|$ 를 곱한 것이 inner product다.
-        <span class="hl"><strong>inner product = (그림자 길이) × (기준 vector의 길이)</strong></span>.
+        <strong>inner product = (그림자 길이) × (기준 vector의 길이)</strong>.
       </p>
 
       <figure class="widget" data-widget="projection">
@@ -143,9 +143,9 @@
       <span class="anchor" id="c-dot"></span>
       <h3>Inner Product 내적</h3>
       <p>
-        $\mathbb{R}^n$ 에서 가장 흔히 쓰는 inner product는 <strong>dot product(점곱)</strong>이다.
+        <span class="hl">$\mathbb{R}^n$ 에서 가장 흔히 쓰는 inner product는 <strong>dot product(점곱)</strong>이다.</span>
       </p>
-      <div class="eq">
+      <div class="eq eq--key">
         <div class="eq__body">$$ \langle \mathbf{x}, \mathbf{y}\rangle = \mathbf{x}^\top\mathbf{y} = \sum_{i=1}^{n} x_i y_i $$</div>
         <span class="eq__tag num">(1)</span>
       </div>
@@ -164,12 +164,12 @@
         </table>
       </div>
       <p>
-        마지막 조건 덕분에 <span class="hl"><strong>inner product가 norm(노름)을 낳는다</strong></span>: $\|\mathbf{x}\| = \sqrt{\langle\mathbf{x},\mathbf{x}\rangle}$.
+        마지막 조건 덕분에 <strong>inner product가 norm(노름)을 낳는다</strong>: $\|\mathbf{x}\| = \sqrt{\langle\mathbf{x},\mathbf{x}\rangle}$.
         식 (1)에서 $\mathbf{y}=\mathbf{x}$ 로 두면 $\sum_i x_i^2$ 이고, 제곱근을 씌우면
         <a href="2.2-vector-operations.html">2.2</a>의 $L_2$ norm이 그대로 나온다.
       </p>
       <p>기하적 의미는 다음 한 줄로 요약된다.</p>
-      <div class="eq">
+      <div class="eq eq--key">
         <div class="eq__body">$$ \mathbf{x}^\top\mathbf{y} = \|\mathbf{x}\|\,\|\mathbf{y}\|\cos\theta $$</div>
         <span class="eq__tag num">(2)</span>
       </div>
@@ -177,7 +177,7 @@
       <span class="anchor" id="c-ortho"></span>
       <h3>Orthogonality 직교성</h3>
       <p>
-        $\mathbf{x}^\top\mathbf{y} = 0$ 이면 두 vector는 <strong>orthogonal</strong> 한다고 하고 $\mathbf{x}\perp\mathbf{y}$ 로 쓴다.
+        <span class="hl">$\mathbf{x}^\top\mathbf{y} = 0$ 이면 두 vector는 <strong>orthogonal</strong> 한다고 하고 $\mathbf{x}\perp\mathbf{y}$ 로 쓴다.</span>
         식 (2)에서 $\cos\theta = 0$, 즉 $\theta = 90^\circ$ 인 경우다.
         zero vector(영벡터)는 모든 vector와 orthogonal 한다(관례).
       </p>
@@ -194,7 +194,7 @@
       <span class="anchor" id="c-proj"></span>
       <h3>Orthogonal Projection 정사영</h3>
       <p>
-        $\mathbf{v}$ 를 $\mathbf{u}$ 가 만드는 직선 위로 <span class="hl"><strong>수직으로 내린 그림자</strong></span>가 orthogonal projection이다.
+        <span class="hl">$\mathbf{v}$ 를 $\mathbf{u}$ 가 만드는 직선 위로 <strong>수직으로 내린 그림자</strong>가 orthogonal projection이다.</span>
       </p>
       <div class="eq">
         <div class="eq__body">$$ \operatorname{proj}_{\mathbf{u}}(\mathbf{v}) = \frac{\mathbf{u}^\top\mathbf{v}}{\mathbf{u}^\top\mathbf{u}}\,\mathbf{u} = \frac{\mathbf{u}^\top\mathbf{v}}{\|\mathbf{u}\|^2}\,\mathbf{u} $$</div>
@@ -209,14 +209,14 @@
       <span class="anchor" id="c-cos"></span>
       <h3>Cosine Similarity 코사인 유사도</h3>
       <p>
-        식 (2)를 $\cos\theta$ 에 대해 풀면 <strong>cosine similarity</strong>가 된다.
+        <span class="hl">식 (2)를 $\cos\theta$ 에 대해 풀면 <strong>cosine similarity</strong>가 된다.</span>
       </p>
       <div class="eq">
         <div class="eq__body">$$ \operatorname{cossim}(\mathbf{x},\mathbf{y}) = \frac{\mathbf{x}^\top\mathbf{y}}{\|\mathbf{x}\|\,\|\mathbf{y}\|} \in [-1,\,1] $$</div>
         <span class="eq__tag num">(4)</span>
       </div>
       <p>
-        <span class="hl"><strong>크기를 나눠 버렸으므로 방향만 본다.</strong></span> 문서 길이가 10배 차이 나도,
+        <strong>크기를 나눠 버렸으므로 방향만 본다.</strong> 문서 길이가 10배 차이 나도,
         단어 빈도의 절대량이 달라도 방향이 같으면 1이다. 검색 · 추천 · embedding(임베딩) 비교에서
         기본값처럼 쓰이는 이유가 이 크기 불변성이다.
       </p>
@@ -263,8 +263,8 @@
       <span class="anchor" id="c-metric"></span>
       <h3>Metric Space 거리 공간</h3>
       <p>
-        아무 함수나 "거리"라 부를 수는 없다. 집합 $X$ 위의 함수
-        $d: X\times X \to \mathbb{R}$ 가 <strong>네 조건</strong>을 만족할 때 $(X, d)$ 를 metric space(거리 공간)이라 한다.
+        아무 함수나 "거리"라 부를 수는 없다. <span class="hl">집합 $X$ 위의 함수
+        $d: X\times X \to \mathbb{R}$ 가 <strong>네 조건</strong>을 만족할 때 $(X, d)$ 를 metric space(거리 공간)이라 한다.</span>
       </p>
       <div class="tablewrap">
         <table>
@@ -286,8 +286,8 @@
       <span class="anchor" id="c-simspace"></span>
       <h3>Similarity Space 유사도 공간</h3>
       <p>
-        similarity는 거리와 방향이 반대다 — 가까울수록 <em>크다</em>.
-        inner product와 cosine similarity가 대표적이다. 여기서 자주 저지르는 실수가 있다.
+        <span class="hl">similarity는 거리와 방향이 반대다 — 가까울수록 <em>크다</em>.
+        inner product와 cosine similarity가 대표적이다.</span> 여기서 자주 저지르는 실수가 있다.
       </p>
       <div class="note note--trap">
         <span class="note__label">코사인 "거리"는 metric space가 아니다</span>
@@ -325,8 +325,8 @@
       <span class="anchor" id="c-embed"></span>
       <h3>Embedding Space 임베딩 공간</h3>
       <p>
-        embedding은 이산적인 대상(단어 · 사용자 · 상품)을 vector로 옮겨,
-        <strong>의미의 유사성을 기하적 근접성으로 바꾸는 것</strong>이다.
+        <span class="hl">embedding은 이산적인 대상(단어 · 사용자 · 상품)을 vector로 옮겨,
+        <strong>의미의 유사성을 기하적 근접성으로 바꾸는 것</strong>이다.</span>
         word2vec은 이 공간에서 vector addition(벡터 덧셈)이 의미의 합성처럼 동작함을 보였고,
         similarity 측정에 코사인을 사용했다<a class="cite" href="#ref-mikolov2013-efficient-estimation-of" data-ref="mikolov2013-efficient-estimation-of">2</a>.
       </p>

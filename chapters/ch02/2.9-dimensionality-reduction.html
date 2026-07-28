@@ -97,7 +97,7 @@
         넓게 퍼진 그림자는 원래 점들을 구별할 수 있고, 뭉친 그림자는 구별할 수 없다.
       </p>
       <p>
-        PCA는 <span class="hl"><strong>그림자가 가장 넓게 퍼지는 방향</strong></span>을 고르는 일이다.
+        PCA는 <strong>그림자가 가장 넓게 퍼지는 방향</strong>을 고르는 일이다.
         그리고 놀랍게도 그 방향이 <strong>원본과 그림자 사이의 거리(information loss(정보 손실))를 가장 작게</strong> 만드는 방향이기도 하다.
         두 목표가 같은 답을 준다는 것이 이 절의 핵심이다.
       </p>
@@ -139,10 +139,10 @@
       <span class="anchor" id="c-cov"></span>
       <h3>Covariance Matrix 공분산 행렬</h3>
       <p>
-        data matrix(행렬) $\mathbf{X}\in\mathbb{R}^{n\times d}$ 의 각 행이 하나의 샘플이라 하자.
-        <span class="hl"><strong>먼저 평균을 뺀다</strong></span>(centering(중심화)). 이 단계를 빠뜨리면 PCA 전체가 어긋난다.
+        <span class="hl">data matrix(행렬) $\mathbf{X}\in\mathbb{R}^{n\times d}$ 의 각 행이 하나의 샘플이라 하자.
+        <strong>먼저 평균을 뺀다</strong>(centering(중심화)). 이 단계를 빠뜨리면 PCA 전체가 어긋난다.</span>
       </p>
-      <div class="eq">
+      <div class="eq eq--key">
         <div class="eq__body">$$ \tilde{\mathbf{X}} = \mathbf{X} - \mathbf{1}\bar{\mathbf{x}}^\top, \qquad \mathbf{C} = \frac{1}{n-1}\tilde{\mathbf{X}}^\top\tilde{\mathbf{X}} \in \mathbb{R}^{d\times d} $$</div>
         <span class="eq__tag num">(1)</span>
       </div>
@@ -165,18 +165,18 @@
         </p>
       </div>
       <p>
-        principal component는 <strong>서로 orthogonal 하고</strong>, <strong>variance가 큰 순서</strong>로 정렬되어 있다.
+        <span class="hl">principal component는 <strong>서로 orthogonal 하고</strong>, <strong>variance가 큰 순서</strong>로 정렬되어 있다.</span>
         첫 principal component는 "data가 가장 길게 퍼진 방향", 둘째는 "그것과 orthogonal 하면서 가장 길게 퍼진 방향"이다.
       </p>
       <p>
         SVD 와의 관계도 한 줄이다. $\tilde{\mathbf{X}} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^\top$ 라 하면
       </p>
-      <div class="eq">
+      <div class="eq eq--key">
         <div class="eq__body">$$ \mathbf{C} = \frac{\tilde{\mathbf{X}}^\top\tilde{\mathbf{X}}}{n-1} = \frac{\mathbf{V}\boldsymbol{\Sigma}^2\mathbf{V}^\top}{n-1} \;\Longrightarrow\; \mathbf{w}_i = \mathbf{v}_i, \qquad \lambda_i = \frac{\sigma_i^2}{n-1} $$</div>
         <span class="eq__tag num">(2)</span>
       </div>
       <p>
-        <span class="hl"><strong>center 한 data의 SVD가 곧 PCA</strong></span> 다. 실무에서는 covariance matrix를 만들지 않고
+        <strong>center 한 data의 SVD가 곧 PCA</strong> 다. 실무에서는 covariance matrix를 만들지 않고
         $\tilde{\mathbf{X}}$ 에 바로 SVD를 쓴다 — $\mathbf{C}$ 를 만들면 condition number(조건수)가 제곱되기 때문이다
         (<a href="2.6-linear-systems.html">2.6</a>의 오해 3과 같은 이유).
       </p>
@@ -184,7 +184,7 @@
       <span class="anchor" id="c-lowdim"></span>
       <h3>Low-Dimensional Representation 저차원 표현</h3>
       <p>
-        앞의 $k$ 개 principal component를 열로 세운 $\mathbf{W}_k\in\mathbb{R}^{d\times k}$ 로 사영하면 $k$ dimension 표현이 된다.
+        <span class="hl">앞의 $k$ 개 principal component를 열로 세운 $\mathbf{W}_k\in\mathbb{R}^{d\times k}$ 로 사영하면 $k$ dimension 표현이 된다.</span>
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{z} = \mathbf{W}_k^\top\tilde{\mathbf{x}} \in \mathbb{R}^{k}, \qquad \hat{\mathbf{x}} = \mathbf{W}_k\mathbf{z} + \bar{\mathbf{x}} \in \mathbb{R}^{d} $$</div>
@@ -204,7 +204,7 @@
         <span class="eq__tag num">(4)</span>
       </div>
       <p>
-        분모의 $\sum_j\lambda_j = \operatorname{tr}(\mathbf{C})$ 는 <strong>총 variance</strong>이다.
+        <span class="hl">분모의 $\sum_j\lambda_j = \operatorname{tr}(\mathbf{C})$ 는 <strong>총 variance</strong>이다.</span>
         "$k$ 개로 95% 를 설명한다"는 말은 누적 EVR이 0.95 라는 뜻이고,
         동시에 <strong>버린 정보가 5%</strong>라는 뜻이다.
         $k$ 를 고를 때는 누적 EVR 곡선이 꺾이는 지점(스크리 플롯의 팔꿈치)을 흔히 쓴다.
@@ -223,7 +223,7 @@
       <span class="anchor" id="c-loss"></span>
       <h3>Information Loss 차원 축소의 정보 손실</h3>
       <p>
-        $k$ 개만 남겼을 때의 평균 제곱 reconstruction error는 <strong>버린 eigenvalue의 합</strong>과 정확히 같다.
+        <span class="hl">$k$ 개만 남겼을 때의 평균 제곱 reconstruction error는 <strong>버린 eigenvalue의 합</strong>과 정확히 같다.</span>
       </p>
       <div class="eq">
         <div class="eq__body">$$ \frac{1}{n-1}\sum_{i=1}^{n}\|\tilde{\mathbf{x}}_i - \hat{\tilde{\mathbf{x}}}_i\|^2 = \sum_{j=k+1}^{d}\lambda_j $$</div>
@@ -263,7 +263,7 @@
       <span class="anchor" id="c-whiten"></span>
       <h3>Whitening</h3>
       <p>
-        principal component로 회전한 뒤 <strong>각 축을 표준편차로 나누면</strong> covariance가 identity matrix(단위행렬)가 된다.
+        <span class="hl">principal component로 회전한 뒤 <strong>각 축을 표준편차로 나누면</strong> covariance가 identity matrix(단위행렬)가 된다.</span>
         data 구름이 <strong>동그란 공</strong>이 되는 것이다.
       </p>
       <div class="eq">
@@ -290,7 +290,7 @@
       <span class="anchor" id="c-viz"></span>
       <h3>Visualization 시각화</h3>
       <p>
-        사람은 2~3차원까지만 볼 수 있으므로, high-dimensional(고차원) data를 보려면 반드시 줄여야 한다.
+        <span class="hl">사람은 2~3차원까지만 볼 수 있으므로, high-dimensional(고차원) data를 보려면 반드시 줄여야 한다.</span>
         PCA는 <strong>선형 projection</strong>이라 빠르고 해석이 쉽지만, 곡면 위에 놓인 구조는 잡지 못한다.
       </p>
       <div class="tablewrap">

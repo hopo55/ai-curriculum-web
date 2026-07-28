@@ -643,6 +643,15 @@ tbody tr:hover { background: var(--paper-3); }
 }
 .eq__body { flex: 1; min-width: 0; overflow-x: auto; }
 .eq__body .katex-display { margin-block: 0 !important; }
+/* 핵심 수식 — 그 절의 뼈대가 되는 식 한둘에만.
+   형광펜과 같은 호박색 계열로 묶어 '핵심'이라는 뜻을 일치시킨다. */
+.eq--key {
+  background: var(--amber-soft);
+  border-color: var(--amber);
+  border-left-width: 4px;
+}
+.eq--key .eq__tag { color: var(--amber); font-weight: 700; }
+
 .eq__tag {
   flex: none;
   font-family: var(--font-display);

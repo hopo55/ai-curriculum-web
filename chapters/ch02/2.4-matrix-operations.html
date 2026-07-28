@@ -100,7 +100,7 @@
       </p>
       <p>
         그래서 matrix multiplication을 처음 배울 때의 "행과 열을 곱해 더한다"는 절차는
-        <span class="hl"><strong>정의라기보다 계산법</strong></span>이다. 왜 그렇게 정의했는지는
+        <strong>정의라기보다 계산법</strong>이다. 왜 그렇게 정의했는지는
         아래 네 가지 관점 중 두 번째(열의 linear combination)를 보면 분명해진다.
       </p>
 
@@ -134,7 +134,7 @@
         <strong>shape가 완전히 같아야</strong> 정의되고, 성분끼리 더한다.
         스칼라배도 성분마다 곱한다. 이 두 연산 덕분에 $\mathbb{R}^{m\times n}$ 자체가 vector space(벡터 공간)가 된다.
       </p>
-      <div class="eq">
+      <div class="eq eq--key">
         <div class="eq__body">$$ (\mathbf{A}+\mathbf{B})_{ij} = a_{ij} + b_{ij}, \qquad (c\mathbf{A})_{ij} = c\,a_{ij} $$</div>
         <span class="eq__tag num">(1)</span>
       </div>
@@ -144,7 +144,7 @@
       <p>
         $\mathbf{A}\in\mathbb{R}^{m\times n}$, $\mathbf{B}\in\mathbb{R}^{n\times p}$ 일 때
         곱 $\mathbf{C}=\mathbf{AB} \in \mathbb{R}^{m\times p}$ 는 다음과 같다.
-        <span class="hl"><strong>안쪽 치수 $n$ 이 맞아야</strong></span> 정의된다.
+        <span class="hl"><strong>안쪽 치수 $n$ 이 맞아야</strong> 정의된다.</span>
       </p>
       <div class="eq">
         <div class="eq__body">$$ c_{ij} = \sum_{k=1}^{n} a_{ik}\,b_{kj} \qquad (m,n)\times(n,p) \to (m,p) $$</div>
@@ -166,7 +166,7 @@
         <p>관점 ②가 가장 쓸모 있습니다. matrix multiplication을 <strong>"재료를 정해진 비율로 섞는 일"</strong>로 읽는 것입니다.</p>
         <p>$\mathbf{A}$ 의 열이 <em>재료</em>이고, $\mathbf{B}$ 의 한 열이 <em>배합 비율</em>입니다. 결과의 한 열은 그 비율로 섞은 결과입니다. 신경망의 한 layer가 하는 일이 정확히 이것입니다.</p>
       </div>
-      <p>대수적 성질은 다음과 같다. <span class="hl"><strong>교환법칙만 없다</strong></span>는 점이 핵심이다.</p>
+      <p>대수적 성질은 다음과 같다. <strong>교환법칙만 없다</strong>는 점이 핵심이다.</p>
 
       <ul>
         <li>결합법칙: $(\mathbf{AB})\mathbf{C} = \mathbf{A}(\mathbf{BC})$ — 계산 순서를 바꿔 <em>비용</em>을 줄일 수 있다.</li>
@@ -183,7 +183,7 @@
         <span class="eq__tag num">(3)</span>
       </div>
       <p>
-        마지막 식에서 <span class="hl"><strong>순서가 뒤집힌다</strong></span>는 것이 중요하다.
+        마지막 식에서 <strong>순서가 뒤집힌다</strong>는 것이 중요하다.
         inverse matrix도 마찬가지로 $(\mathbf{AB})^{-1} = \mathbf{B}^{-1}\mathbf{A}^{-1}$ 이다.
         옷을 입은 순서의 역순으로 벗는 것과 같다.
       </p>
@@ -201,7 +201,7 @@
       <span class="anchor" id="c-identity"></span>
       <h3>Identity Matrix 단위행렬</h3>
       <p>
-        대각선이 1이고 나머지가 0인 square matrix(정사각행렬) $\mathbf{I}_n$ 이다. 곱셈의 항등원 역할을 한다.
+        <span class="hl">대각선이 1이고 나머지가 0인 square matrix(정사각행렬) $\mathbf{I}_n$ 이다.</span> 곱셈의 항등원 역할을 한다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{I}_3 = \begin{bmatrix}1&0&0\\0&1&0\\0&0&1\end{bmatrix}, \qquad \mathbf{A}\mathbf{I}_n = \mathbf{I}_m\mathbf{A} = \mathbf{A} $$</div>
@@ -224,9 +224,9 @@
         <span class="eq__tag num">(5)</span>
       </div>
       <p>
-        $\det\mathbf{A} = 0$ 이면 나눌 수 없으므로 inverse matrix가 없다. 이때를 <strong>특이</strong>(singular)하다고 한다.
+        <span class="hl">$\det\mathbf{A} = 0$ 이면 나눌 수 없으므로 inverse matrix가 없다.</span> 이때를 <strong>특이</strong>(singular)하다고 한다.
         기하적으로 $|\det|$ 는 <a href="2.2-vector-operations.html">2.2</a>에서 본 parallelogram(평행사변형)의 넓이 배율이고,
-        0이 되었다는 것은 <span class="hl"><strong>공간이 납작하게 눌려 되돌릴 수 없다</strong></span>는 뜻이다.
+        0이 되었다는 것은 <strong>공간이 납작하게 눌려 되돌릴 수 없다</strong>는 뜻이다.
       </p>
 
       <figure class="widget" data-widget="inverse-2x2">
@@ -242,7 +242,7 @@
       <span class="anchor" id="c-symmetric"></span>
       <h3>Symmetric Matrix 대칭행렬</h3>
       <p>
-        $\mathbf{A} = \mathbf{A}^\top$ 인 square matrix다. 어떤 matrix $\mathbf{X}$ 를 가져와도
+        <span class="hl">$\mathbf{A} = \mathbf{A}^\top$ 인 square matrix다.</span> 어떤 matrix $\mathbf{X}$ 를 가져와도
         $\mathbf{X}^\top\mathbf{X}$ 와 $\mathbf{X}\mathbf{X}^\top$ 는 <strong>항상 대칭</strong>이다(<a href="#s-derivation">유도 2</a>).
         Gram matrix(그람 행렬) · covariance matrix(공분산 행렬) · kernel(커널) matrix가 모두 이 형태라서 symmetric matrix(대칭행렬)는 어디에나 나온다.
       </p>
@@ -254,7 +254,7 @@
       <span class="anchor" id="c-diagonal"></span>
       <h3>Diagonal Matrix 대각행렬</h3>
       <p>
-        대각선 밖이 전부 0인 matrix $\mathbf{D} = \operatorname{diag}(d_1,\dots,d_n)$ 이다.
+        <span class="hl">대각선 밖이 전부 0인 matrix $\mathbf{D} = \operatorname{diag}(d_1,\dots,d_n)$ 이다.</span>
         <strong>축마다 따로 스케일을 주는 변환</strong>이라 계산이 매우 싸다.
       </p>
       <div class="tablewrap">
@@ -291,7 +291,7 @@
       <span class="anchor" id="c-block"></span>
       <h3>Block Matrix 블록행렬</h3>
       <p>
-        matrix를 부분 matrix로 나눠 적은 것이다. <strong>블록 경계가 맞으면 블록을 원소처럼 다뤄 곱할 수 있다.</strong>
+        <span class="hl">matrix를 부분 matrix로 나눠 적은 것이다.</span> <strong>블록 경계가 맞으면 블록을 원소처럼 다뤄 곱할 수 있다.</strong>
       </p>
       <div class="eq">
         <div class="eq__body">$$ \begin{bmatrix}\mathbf{A}&\mathbf{B}\\\mathbf{C}&\mathbf{D}\end{bmatrix}\begin{bmatrix}\mathbf{X}\\\mathbf{Y}\end{bmatrix} = \begin{bmatrix}\mathbf{AX}+\mathbf{BY}\\\mathbf{CX}+\mathbf{DY}\end{bmatrix} $$</div>
@@ -305,7 +305,7 @@
       <span class="anchor" id="c-sparse"></span>
       <h3>Sparse Matrix 희소행렬</h3>
       <p>
-        원소 대부분이 0인 matrix다. 0을 저장하지 않으면 메모리와 연산을 함께 아낀다.
+        <span class="hl">원소 대부분이 0인 matrix다.</span> 0을 저장하지 않으면 메모리와 연산을 함께 아낀다.
         대표적인 저장 형식이 CSR(Compressed Sparse Row)로, <em>0이 아닌 값 · 열 인덱스 · 행 시작 위치</em> 세 배열만 갖는다.
       </p>
       <div class="eq">

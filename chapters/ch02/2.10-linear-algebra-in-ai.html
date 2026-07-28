@@ -108,7 +108,7 @@
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">출력의 각 성분은 <span class="hl"><strong>입력 전체와의 inner product(내적) 하나</strong></span>입니다. 뉴런 수만큼 inner product를 반복하는 것이 matrix multiplication입니다.</p>
+          <p class="watch">출력의 각 성분은 <strong>입력 전체와의 inner product(내적) 하나</strong>입니다. 뉴런 수만큼 inner product를 반복하는 것이 matrix multiplication입니다.</p>
         </div>
       </figure>
 
@@ -131,7 +131,7 @@
 
       <span class="anchor" id="c-linear"></span>
       <h3>Linear Layer 신경망의 선형층</h3>
-      <div class="eq">
+      <div class="eq eq--key">
         <div class="eq__body">$$ \mathbf{y} = \mathbf{W}\mathbf{x} + \mathbf{b}, \qquad \mathbf{W}\in\mathbb{R}^{d_{\text{out}}\times d_{\text{in}}},\ \ \mathbf{b}\in\mathbb{R}^{d_{\text{out}}} $$</div>
         <span class="eq__tag num">(1)</span>
       </div>
@@ -158,20 +158,20 @@
       <span class="anchor" id="c-embed"></span>
       <h3>Embedding 임베딩</h3>
       <p>
-        embedding layer는 <strong>token(토큰) 번호를 vector(벡터)로 바꾸는 표</strong>다. 수학적으로는
-        one-hot vector에 embedding matrix를 곱하는 것과 같다.
+        embedding layer는 <strong>token(토큰) 번호를 vector(벡터)로 바꾸는 표</strong>다. <span class="hl">수학적으로는
+        one-hot vector에 embedding matrix를 곱하는 것과 같다.</span>
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{e}_t = \mathbf{E}^\top\mathbf{o}_t = \mathbf{E}[t,:]^\top, \qquad \mathbf{E}\in\mathbb{R}^{V\times d} $$</div>
         <span class="eq__tag num">(2)</span>
       </div>
       <p>
-        $\mathbf{o}_t$ 는 $t$ 번째만 1인 one-hot 벡터다. <span class="hl"><strong>one-hot과의 곱 = 그 행을 꺼내는 것</strong></span>이므로
+        $\mathbf{o}_t$ 는 $t$ 번째만 1인 one-hot 벡터다. <strong>one-hot과의 곱 = 그 행을 꺼내는 것</strong>이므로
         실제 구현은 곱셈을 하지 않고 인덱싱만 한다 — 연산량이 $O(Vd)$ 에서 $O(d)$ 로 준다.
         parameter는 $Vd$ 개로, vocabulary(어휘) 5만 · dimension(차원) 768 이면 약 3,840만 개다.
       </p>
       <p>
-        embedding space(임베딩 공간)에서 <span class="hl"><strong>의미의 유사성이 기하적 근접성으로</strong></span> 나타난다는 성질은
+        embedding space(임베딩 공간)에서 <strong>의미의 유사성이 기하적 근접성으로</strong> 나타난다는 성질은
         <a href="2.3-inner-product.html">2.3</a>에서 다뤘다. 학습된 결과이지 주어진 성질이 아니라는 점을 기억한다.
       </p>
 
@@ -194,8 +194,8 @@
       <p>
         $\mathbf{Q}\in\mathbb{R}^{L\times d_k}$, $\mathbf{K}\in\mathbb{R}^{L\times d_k}$,
         $\mathbf{V}\in\mathbb{R}^{L\times d_v}$ 이므로 $\mathbf{Q}\mathbf{K}^\top$ 은 $(L,L)$ 이다.
-        이것은 <a href="2.3-inner-product.html">2.3</a>에서 본 <strong>Gram matrix</strong> — 모든 위치 쌍의 inner product —
-        의 비대칭 판이다. $(i,j)$ 성분이 "$i$ 번째 token이 $j$ 번째 token을 얼마나 볼지"의 점수다.
+        <span class="hl">이것은 <a href="2.3-inner-product.html">2.3</a>에서 본 <strong>Gram matrix</strong> — 모든 위치 쌍의 inner product —
+        의 비대칭 판이다.</span> $(i,j)$ 성분이 "$i$ 번째 token이 $j$ 번째 token을 얼마나 볼지"의 점수다.
       </p>
       <div class="tablewrap">
         <table>
@@ -209,7 +209,7 @@
         </table>
       </div>
       <p>
-        $\sqrt{d_k}$ 로 나누는 이유는 <span class="hl"><strong>dimension이 커질수록 inner product의 variance(분산)가 커지기</strong></span> 때문이다.
+        $\sqrt{d_k}$ 로 나누는 이유는 <strong>dimension이 커질수록 inner product의 variance(분산)가 커지기</strong> 때문이다.
         성분이 독립이고 variance 1이면 inner product의 variance가 $d_k$ 가 되므로, $\sqrt{d_k}$ 로 나눠 되돌린다
         — 그러지 않으면 softmax가 한쪽으로 포화되어 gradient(기울기)가 사라진다<a class="cite" href="#ref-vaswani2017-attention-is-all" data-ref="vaswani2017-attention-is-all">1</a>.
       </p>
@@ -238,7 +238,7 @@
       <span class="anchor" id="c-lora"></span>
       <h3>Low-Rank Adaptation (LoRA) 저랭크 적응</h3>
       <p>
-        사전학습된 weight $\mathbf{W}_0$ 는 얼려 두고, <strong>변화량만 low-rank으로</strong> 학습한다.
+        <span class="hl">사전학습된 weight $\mathbf{W}_0$ 는 얼려 두고, <strong>변화량만 low-rank으로</strong> 학습한다.</span>
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{W} = \mathbf{W}_0 + \Delta\mathbf{W} = \mathbf{W}_0 + \mathbf{B}\mathbf{A}, \qquad \mathbf{B}\in\mathbb{R}^{d\times r},\ \mathbf{A}\in\mathbb{R}^{r\times k},\ r \ll \min(d,k) $$</div>
@@ -291,7 +291,7 @@
       <h3>Graph Representation 그래프 표현</h3>
       <p>
         graph는 <strong>adjacency matrix</strong> $\mathbf{A}\in\{0,1\}^{n\times n}$ 로 표현한다.
-        $A_{ij}=1$ 이면 $i$ 와 $j$ 가 연결되어 있다는 뜻이다.
+        <span class="hl">$A_{ij}=1$ 이면 $i$ 와 $j$ 가 연결되어 있다는 뜻이다.</span>
       </p>
       <div class="eq">
         <div class="eq__body">$$ (\mathbf{A}\mathbf{H})_{i} = \sum_{j\in\mathcal{N}(i)} \mathbf{h}_j, \qquad \mathbf{H}^{(l+1)} = \sigma\!\left(\hat{\mathbf{A}}\mathbf{H}^{(l)}\mathbf{W}^{(l)}\right) $$</div>
@@ -319,8 +319,8 @@
       <span class="anchor" id="c-imgtensor"></span>
       <h3>Image Tensor 이미지 텐서</h3>
       <p>
-        image는 $(N, C, H, W)$ 4축 텐서다 — batch · channel(채널) · 세로 · 가로
-        (PyTorch 규약. TensorFlow는 $(N,H,W,C)$ 를 쓴다).
+        <span class="hl">image는 $(N, C, H, W)$ 4축 텐서다 — batch · channel(채널) · 세로 · 가로
+        (PyTorch 규약. TensorFlow는 $(N,H,W,C)$ 를 쓴다).</span>
       </p>
       <div class="eq">
         <div class="eq__body">$$ \text{im2col}: \ (N,C,H,W) \to (N\!\cdot\!H'W',\ C k^2) \quad\Longrightarrow\quad \text{합성곱} = \text{행렬 곱} $$</div>
@@ -335,8 +335,8 @@
       <span class="anchor" id="c-seqtensor"></span>
       <h3>Sequence Tensor 시퀀스 텐서</h3>
       <p>
-        sequence는 $(N, L, d)$ 3축 텐서다 — batch · 길이 · embedding dimension.
-        여기에 multi-head(멀티헤드) attention이 붙으면 축이 하나 더 생긴다.
+        <span class="hl">sequence는 $(N, L, d)$ 3축 텐서다 — batch · 길이 · embedding dimension.
+        여기에 multi-head(멀티헤드) attention이 붙으면 축이 하나 더 생긴다.</span>
       </p>
       <div class="eq">
         <div class="eq__body">$$ (N, L, d) \ \to\ (N, h, L, d/h) \ \xrightarrow{\ \mathbf{Q}\mathbf{K}^\top\ } \ (N, h, L, L) \ \to\ (N, L, d) $$</div>

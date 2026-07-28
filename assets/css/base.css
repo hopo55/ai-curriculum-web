@@ -48,8 +48,8 @@ a { color: inherit; }
   --seal:       #b23a2b;
   --seal-soft:  #f0dbd6;
   --seal-ink:   #8d2c20;
-  --hl-band:    rgba(232, 168, 0, .85);
-  --hl-edge:    rgba(160, 105, 0, .90);
+  --hl-band:    rgba(222, 152, 0, .92);
+  --hl-deep:    rgba(210, 140, 0, .95);
 
   /* 청자 — 인터랙티브 요소 전용 */
   --jade:       #2f6f66;
@@ -112,7 +112,7 @@ a { color: inherit; }
     --seal-soft:  #3a2320;
     --seal-ink:   #f0937f;
     --hl-band:    rgba(255, 214, 0, .38);
-    --hl-edge:    rgba(255, 214, 0, .60);
+    --hl-deep:    rgba(255, 214, 0, .48);
 
     --jade:       #6cb3a6;
     --jade-soft:  #1c2f2c;
@@ -142,7 +142,7 @@ a { color: inherit; }
   --seal-soft:  #3a2320;
   --seal-ink:   #f0937f;
   --hl-band:    rgba(255, 214, 0, .38);
-  --hl-edge:    rgba(255, 214, 0, .60);
+  --hl-deep:    rgba(255, 214, 0, .48);
 
   --jade:       #6cb3a6;
   --jade-soft:  #1c2f2c;
@@ -827,16 +827,18 @@ input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.25); }
      라이트·다크 어느 쪽에서도 대비가 무너지지 않는다. */
 .hl {
   background-color: transparent;
-  /* 띠가 글자 높이를 덮어야 형광펜으로 보인다.
-     56%에서 시작하면 baseline 아래만 칠해져 밑줄처럼 보였다.
-     26%~82% 는 글자를 덮되 윗줄·아랫줄 띠와는 떨어져 한 덩어리로 뭉치지 않는 구간이다. */
+  /* 띠는 글자 높이를 덮되(22%~90%) 윗줄·아랫줄과는 떨어져 한 덩어리로 뭉치지 않는다.
+     아래로 갈수록 아주 조금 진해져 형광펜 잉크가 고인 느낌만 준다.
+
+     ⚠ 정지점을 같은 위치에 두 번 쓰지 않는다(예: 74%, 74%).
+       그 자리에 또렷한 가로선이 생겨 하이라이트가 둘로 갈라져 보인다. */
   background-image: linear-gradient(
-    transparent 26%,
-    var(--hl-band) 26%,
-    var(--hl-band) 74%,
-    var(--hl-edge) 74%,      /* 형광펜이 지나간 아래쪽 진한 자국 */
-    var(--hl-edge) 82%,
-    transparent 82%);
+    to bottom,
+    transparent 22%,
+    var(--hl-band) 34%,
+    var(--hl-band) 64%,
+    var(--hl-deep) 82%,
+    transparent 90%);
   color: inherit;
   padding: 0 .16em;
   margin: 0 -.04em;
@@ -849,16 +851,6 @@ mark {
   background-color: transparent;
   color: inherit;
 }
-/* 이미 색이 깔린 곳(콜아웃·요약 상자) 안에서는 밑줄로 바꿔 겹치지 않게 */
-.note .hl,
-.tldr .hl {
-  background: none;
-  padding: 0;
-  margin: 0;
-  border-bottom: 3px solid var(--amber);
-  border-radius: 0;
-}
-
 /* 수식 항 ↔ 그림 연결 (위젯 카탈로그 G)
    칩 하나가 수식의 항 하나에 대응하고, 색이 그림의 같은 색 부분을 가리킨다. */
 .terms { margin-top: var(--sp-3); }

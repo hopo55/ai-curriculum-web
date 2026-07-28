@@ -48,7 +48,8 @@ a { color: inherit; }
   --seal:       #b23a2b;
   --seal-soft:  #f0dbd6;
   --seal-ink:   #8d2c20;
-  --hl-band:    rgba(178, 58, 43, .46);
+  --hl-band:    rgba(232, 168, 0, .85);
+  --hl-edge:    rgba(160, 105, 0, .90);
 
   /* 청자 — 인터랙티브 요소 전용 */
   --jade:       #2f6f66;
@@ -110,7 +111,8 @@ a { color: inherit; }
     --seal:       #e2705c;
     --seal-soft:  #3a2320;
     --seal-ink:   #f0937f;
-    --hl-band:    rgba(226, 112, 92, .55);
+    --hl-band:    rgba(255, 214, 0, .38);
+    --hl-edge:    rgba(255, 214, 0, .60);
 
     --jade:       #6cb3a6;
     --jade-soft:  #1c2f2c;
@@ -139,7 +141,8 @@ a { color: inherit; }
   --seal:       #e2705c;
   --seal-soft:  #3a2320;
   --seal-ink:   #f0937f;
-  --hl-band:    rgba(226, 112, 92, .55);
+  --hl-band:    rgba(255, 214, 0, .38);
+  --hl-edge:    rgba(255, 214, 0, .60);
 
   --jade:       #6cb3a6;
   --jade-soft:  #1c2f2c;
@@ -812,8 +815,9 @@ input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.25); }
 }
 .watch::before { content: "관찰 포인트 · "; font-weight: 700; }
 
-/* 핵심 문장 형광펜
-   색의 뜻은 §8 — 주묵(--seal)은 강조 전용이다.
+/* 핵심 문장 형광펜 — 노란 형광펜
+   색의 뜻은 §8 — 호박색(--amber)은 '핵심'을 가리키는 색이다
+   (.note--key 핵심 정리 콜아웃과 같은 계열). 주묵(--seal)은 완료·채점에 남겨 둔다.
    배경을 통째로 깔지 않고 아래 절반만 칠해 형광펜 자국처럼 보이게 한다.
 
    ⚠ <mark> 을 쓰지 않는다. <mark> 은 브라우저 기본 배경이 밝은 노랑이라
@@ -829,7 +833,9 @@ input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.25); }
   background-image: linear-gradient(
     transparent 26%,
     var(--hl-band) 26%,
-    var(--hl-band) 82%,
+    var(--hl-band) 74%,
+    var(--hl-edge) 74%,      /* 형광펜이 지나간 아래쪽 진한 자국 */
+    var(--hl-edge) 82%,
     transparent 82%);
   color: inherit;
   padding: 0 .16em;
@@ -849,7 +855,7 @@ mark {
   background: none;
   padding: 0;
   margin: 0;
-  border-bottom: 3px solid var(--seal);
+  border-bottom: 3px solid var(--amber);
   border-radius: 0;
 }
 

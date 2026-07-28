@@ -841,18 +841,21 @@ input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.25); }
      ⚠ 색은 처음부터 끝까지 하나로 유지한다. 위아래 어디든 더 진한 구간을 두면
        그 자리가 선으로 읽혀 하이라이트에 밑줄이 그어진 것처럼 보인다.
        위아래 경계만 짧게 흐려 형광펜 자국처럼 만든다. */
-  /* 밴드 안 글자색을 뒤집으므로(다크) 글자가 밴드 밖으로 삐져나오면 안 된다.
-     20%~86% 는 글자의 위아래 끝(대략 22%~78%)을 여유 있게 덮는 구간이다. */
+  /* 글자가 차지하는 구간은 줄 상자의 대략 22%~78% 다.
+     띠를 13%~88% 로 두어 글자 위아래에 각각 2.8px · 3.1px 여백을 남긴다
+     (본문 17px · 행간 1.78 → 줄 상자 30.3px 기준).
+     더 넓히면 윗줄·아랫줄 띠 사이 간격(4.2px)이 사라져 한 덩어리로 보인다.
+     밴드 안 글자색을 뒤집으므로(다크) 글자가 띠 밖으로 나가면 안 된다. */
   background-image: linear-gradient(
     to bottom,
-    transparent 14%,
-    var(--hl-band) 20%,
-    var(--hl-band) 86%,
-    transparent 92%);
+    transparent 8%,
+    var(--hl-band) 13%,
+    var(--hl-band) 88%,
+    transparent 94%);
   color: var(--hl-ink);
   padding: 0 .16em;
   margin: 0 -.04em;
-  border-radius: 2px;
+  border-radius: 3px;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }

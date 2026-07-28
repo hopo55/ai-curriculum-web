@@ -129,7 +129,7 @@
       <span class="anchor" id="c-ai"></span>
       <h3>Artificial Intelligence 인공지능</h3>
       <p>
-        artificial intelligence에는 하나의 합의된 정의가 없다.
+        <span class="hl">artificial intelligence에는 하나의 합의된 정의가 없다.</span>
         Russell과 Norvig는 역사적으로 쓰인 정의들을 두 축으로 나눈다 —
         <strong>사고(thinking)인가 행동(acting)인가</strong>, 그리고
         <strong>사람처럼(humanly)인가 합리적으로(rationally)인가</strong>.
@@ -188,10 +188,10 @@
       <span class="anchor" id="c-dl"></span>
       <h3>Deep Learning 딥러닝</h3>
       <p>
-        deep learning은 machine learning의 한 갈래로,
-        <strong>단순한 함수를 여러 layer(층)로 겹쳐 표현(representation)을 단계적으로 training</strong> 하는 방법이다.
+        <span class="hl">deep learning은 machine learning의 한 갈래로,
+        <strong>단순한 함수를 여러 layer(층)로 겹쳐 표현(representation)을 단계적으로 training</strong> 하는 방법이다.</span>
       </p>
-      <div class="eq">
+      <div class="eq eq--key">
         <div class="eq__body">$$ f_{\theta} \;=\; f_L \circ f_{L-1} \circ \cdots \circ f_2 \circ f_1 $$</div>
         <span class="eq__tag num">(1)</span>
       </div>
@@ -205,9 +205,9 @@
       <span class="anchor" id="c-genai"></span>
       <h3>Generative AI 생성형 AI</h3>
       <p>
-        구분의 기준은 <strong>어떤 probability distribution(확률분포)을 모델링하는가</strong>이다.
+        <span class="hl">구분의 기준은 <strong>어떤 probability distribution(확률분포)을 모델링하는가</strong>이다.</span>
       </p>
-      <div class="eq">
+      <div class="eq eq--key">
         <div class="eq__body">$$ \underbrace{p(y \mid x)}_{\text{판별 모델}} \qquad\text{vs}\qquad \underbrace{p(x) \;\text{ 또는 }\; p(x \mid c)}_{\text{생성 모델}} $$</div>
         <span class="eq__tag num">(2)</span>
       </div>
@@ -386,8 +386,8 @@
 
       <h3>Data and Knowledge 데이터와 지식</h3>
       <p>
-        방금 벌어진 일을 다시 보자. <strong>숫자 여섯 개(data)가 숫자 하나(지식)로 압축됐다.</strong>
-        $w^{*} = 25/14$ 만 들고 있으면 원래 data를 버려도 새 입력에 답할 수 있다.
+        방금 벌어진 일을 다시 보자. <span class="hl"><strong>숫자 여섯 개(data)가 숫자 하나(지식)로 압축됐다.</strong>
+        $w^{*} = 25/14$ 만 들고 있으면 원래 data를 버려도 새 입력에 답할 수 있다.</span>
       </p>
       <p>
         이것이 machine learning에서 "지식"이라 부르는 것의 정체다 —
@@ -413,7 +413,7 @@
       <span class="anchor" id="c-rule-vs-learn"></span>
       <h3>규칙 기반 시스템과 학습 기반 시스템</h3>
       <p>
-        두 방식의 차이는 <strong>상황이 바뀔 때</strong> 드러난다.
+        <span class="hl">두 방식의 차이는 <strong>상황이 바뀔 때</strong> 드러난다.</span>
         아래에서 data의 batch(배치)를 회전시켜 보라. 사람이 정한 규칙은 곧 무너지지만,
         data에서 뽑은 경계는 따라온다.
       </p>
@@ -455,8 +455,8 @@
       <span class="anchor" id="c-system"></span>
       <h3>Components of an Intelligent System 지능형 시스템의 구성</h3>
       <p>
-        model 하나만으로는 시스템이 되지 않는다. 실제로 동작하는 지능형 시스템은
-        입력을 받아 표현으로 바꾸고, 판단하고, 행동한 뒤, 그 결과를 다시 되먹인다.
+        model 하나만으로는 시스템이 되지 않는다. <span class="hl">실제로 동작하는 지능형 시스템은
+        입력을 받아 표현으로 바꾸고, 판단하고, 행동한 뒤, 그 결과를 다시 되먹인다.</span>
       </p>
 
       <figure class="widget" data-widget="agent-loop">

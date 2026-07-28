@@ -502,6 +502,7 @@ node tools/check.mjs 2.3      # 특정 절
 3. 기호표(`.symtab`) 존재
 4. 위젯 3개 이상 / 등록 이름 일치 / `.watch` 안내
 5. 함정 3개 이상, 자가 점검 4문제 이상, 각 문제에 정답 지정
+5-b. **형광펜 3개 이상**, 핵심 수식 표시(`.eq--key`) 존재, `<mark>` 사용 금지(오류)
 6. **출처 4개 이상, 유형 3종 이상, 모든 `data-ref` 가 레지스트리에 등록됨, `ref__where` 존재**
 7. 절대경로 0, 외부 리소스 로드 0(`src`/`<link>`), 외부 `<img>` 0
 8. 내부 링크가 실제 파일을 가리키는지
@@ -538,7 +539,8 @@ node tools/check-visual.mjs      # jsdom 필요: npm i -D jsdom
 
 ## 10. 절을 추가한 뒤
 
-1. `assets/js/pages.js` 에 등록
+1. 형광펜(`<span class="hl">`)과 핵심 수식(`.eq--key`) 표시 — §5.4-b
+2. `assets/js/pages.js` 에 등록
 
 ```js
 "2.3": {
@@ -549,10 +551,10 @@ node tools/check-visual.mjs      # jsdom 필요: npm i -D jsdom
 }
 ```
 
-2. 출처 반영 — `node tools/refs.mjs scan` (cited_by 갱신 + 미등록 인용 탐지)
-3. `PROGRESS.md` 갱신 — `node tools/build-progress.mjs`
-4. `node tools/check.mjs` 통과 확인
-5. 커밋 & 푸시 → 약 1분 뒤 배포 반영
+3. 출처 반영 — `node tools/refs.mjs scan` (cited_by 갱신 + 미등록 인용 탐지)
+4. `PROGRESS.md` 갱신 — `node tools/build-progress.mjs`
+5. `node tools/check.mjs` 통과 확인
+6. 커밋 & 푸시 → 약 1분 뒤 배포 반영
 
 ---
 

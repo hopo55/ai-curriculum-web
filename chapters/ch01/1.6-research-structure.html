@@ -120,19 +120,19 @@
 
       <span class="anchor" id="c-question"></span>
       <p>
-        <strong>research question</strong> — 무엇을 모르고 있으며, 알면 무엇이 달라지는가.
-        좋은 research question은 <em>틀릴 수 있게</em> 진술된다.
+        <span class="hl"><strong>research question</strong> — 무엇을 모르고 있으며, 알면 무엇이 달라지는가.
+        좋은 research question은 <em>틀릴 수 있게</em> 진술된다.</span>
         "성능을 높인다"는 반증 불가능하지만, "긴 문맥에서 성능이 떨어지는 원인이 위치 인코딩에 있다"는
         틀릴 수 있다.
       </p>
       <span class="anchor" id="c-related"></span>
       <p>
-        <strong>related work</strong> — 이미 알려진 것과 이 연구의 경계를 긋는다.
+        <span class="hl"><strong>related work</strong> — 이미 알려진 것과 이 연구의 경계를 긋는다.</span>
         목록 나열이 아니라 <em>왜 기존 방법으로는 부족한가</em>를 보이는 자리다.
       </p>
       <span class="anchor" id="c-method"></span>
       <p>
-        <strong>방법론</strong> — 무엇을 새로 했는지 재현 가능하게 적는다.
+        <span class="hl"><strong>방법론</strong> — 무엇을 새로 했는지 재현 가능하게 적는다.</span>
         <a href="1.1-ai-fundamentals.html#c-model-algo">1.1절의 구분</a>대로
         model(모델) 구조, loss function(손실함수), optimization(최적화) 절차를 나눠 쓰면 무엇이 새로운지 분명해진다.
       </p>
@@ -140,7 +140,7 @@
       <span class="anchor" id="c-design"></span>
       <h3>Experimental Design 실험 설계</h3>
       <p>
-        주장을 검증할 수 있는 실험을 구성한다. 최소 조건 셋:
+        <span class="hl">주장을 검증할 수 있는 실험을 구성한다.</span> 최소 조건 셋:
       </p>
       <ul>
         <li><strong>통제</strong> — 비교 대상과 <em>내 방법 외의 모든 것</em>을 같게 한다 (data, 학습량, 탐색 예산).</li>
@@ -151,7 +151,7 @@
       <span class="anchor" id="c-compare"></span>
       <h3>Comparative Experiment 비교 실험</h3>
       <p>
-        비교가 공정하려면 <strong>탐색 예산</strong>도 같아야 한다.
+        <span class="hl">비교가 공정하려면 <strong>탐색 예산</strong>도 같아야 한다.</span>
         내 방법은 hyperparameter(하이퍼파라미터)를 100번 탐색하고 baseline(베이스라인)은 기본값만 썼다면,
         그 차이는 방법의 우수성이 아니라 <em>들인 노력의 차이</em>일 수 있다.
         Dodge 등은 이 문제를 지적하며 <strong>탐색 예산을 함께 보고</strong>할 것을 제안했다<a class="cite" href="#ref-dodge2019-show-your-work" data-ref="dodge2019-show-your-work">1</a>.
@@ -160,9 +160,9 @@
       <span class="anchor" id="c-ablation"></span>
       <h3>Ablation Study</h3>
       <p>
-        방법이 여러 성분으로 이뤄져 있을 때, <strong>성분을 하나씩 제거해</strong> 각각의 기여를 잰다.
+        <span class="hl">방법이 여러 성분으로 이뤄져 있을 때, <strong>성분을 하나씩 제거해</strong> 각각의 기여를 잰다.</span>
       </p>
-      <div class="eq">
+      <div class="eq eq--key">
         <div class="eq__body">$$ \Delta_{A} \;=\; \mathrm{Acc}(\text{전체}) \;-\; \mathrm{Acc}(\text{전체} \setminus A) $$</div>
         <span class="eq__tag num">(1)</span>
       </div>
@@ -173,7 +173,7 @@
 
       <span class="anchor" id="c-limits"></span>
       <p>
-        <strong>한계</strong> — 어디까지 주장하고 어디부터는 주장하지 않는지 긋는다.
+        <span class="hl"><strong>한계</strong> — 어디까지 주장하고 어디부터는 주장하지 않는지 긋는다.</span>
         Lipton과 Steinhardt는 좋은 논문의 조건으로
         <em>직관과 근거 있는 결론을 명확히 구분할 것</em>,
         <em>대안 가설을 검토하고 배제할 것</em>,
@@ -184,22 +184,22 @@
 
       <span class="anchor" id="c-repro"></span>
       <p>
-        <strong>reproducibility</strong> — 코드·data·시드·hyperparameter·계산 자원·탐색 횟수를 밝힌다.
+        <span class="hl"><strong>reproducibility</strong> — 코드·data·시드·hyperparameter·계산 자원·탐색 횟수를 밝힌다.</span>
         NeurIPS reproducibility 체크리스트가 요구하는 항목들이다<a class="cite" href="#ref-pineau2020-improving-reproducibility-in" data-ref="pineau2020-improving-reproducibility-in">3</a>.
         <a href="1.5-data-split-evaluation.html#c-repro">1.5절</a>에서 본 대로, 밝히지 않은 탐색량은 결과를 낙관적으로 만든다.
       </p>
 
       <span class="anchor" id="c-ethics"></span>
       <p>
-        <strong>ethical consideration(윤리적 고려)</strong> — data 출처와 동의, 개인정보, bias(편향)와 그 영향, 오용 가능성, 환경 비용.
-        주요 학회는 이제 이 항목을 심사 대상에 포함한다.
+        <span class="hl"><strong>ethical consideration(윤리적 고려)</strong> — data 출처와 동의, 개인정보, bias(편향)와 그 영향, 오용 가능성, 환경 비용.
+        주요 학회는 이제 이 항목을 심사 대상에 포함한다.</span>
         <em>누가 이득을 보고 누가 위험을 지는가</em>를 묻는 자리다.
       </p>
 
       <span class="anchor" id="c-future"></span>
       <p>
-        <strong>future work(후속 연구)</strong> — 이 연구가 열어놓은 질문.
-        한계와 짝을 이룬다. "무엇을 못 했는가"가 곧 "다음에 무엇을 할 것인가"다.
+        <span class="hl"><strong>future work(후속 연구)</strong> — 이 연구가 열어놓은 질문.
+        한계와 짝을 이룬다.</span> "무엇을 못 했는가"가 곧 "다음에 무엇을 할 것인가"다.
       </p>
     </section>
 
@@ -211,7 +211,7 @@
         <strong>측정값이 얼마나 흔들리는지</strong>를 알아야 한다.
         같은 설정으로 시드만 바꿔 $m$ 번 돌린 결과에서 다음을 구한다.
       </p>
-      <div class="eq">
+      <div class="eq eq--key">
         <div class="eq__body">$$ \bar{a} = \frac{1}{m}\sum_{i=1}^{m} a_i, \qquad s^{2} = \frac{1}{m-1}\sum_{i=1}^{m}\bigl(a_i - \bar{a}\bigr)^{2}, \qquad \mathrm{SE} = \frac{s}{\sqrt{m}} $$</div>
         <span class="eq__tag num">(2)</span>
       </div>

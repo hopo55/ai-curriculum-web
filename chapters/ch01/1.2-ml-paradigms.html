@@ -143,8 +143,8 @@
 
       <span class="anchor" id="c-supervised"></span>
       <h3>Supervised Learning 지도학습</h3>
-      <p>입력마다 사람이 만든 정답이 붙어 있다.</p>
-      <div class="eq">
+      <p><span class="hl">입력마다 사람이 만든 정답이 붙어 있다.</span></p>
+      <div class="eq eq--key">
         <div class="eq__body">$$ \mathcal{D} = \{(x_i,\, y_i)\}_{i=1}^{n}, \qquad \theta^{*} = \arg\min_{\theta} \frac{1}{n}\sum_{i=1}^{n} L\bigl(f_\theta(x_i),\, y_i\bigr) $$</div>
         <span class="eq__tag num">(1)</span>
       </div>
@@ -155,7 +155,7 @@
 
       <span class="anchor" id="c-unsupervised"></span>
       <h3>Unsupervised Learning 비지도학습</h3>
-      <p>정답이 없다. data 안의 구조 자체를 찾는다.</p>
+      <p>정답이 없다. <span class="hl">data 안의 구조 자체를 찾는다.</span></p>
       <div class="eq">
         <div class="eq__body">$$ \mathcal{D} = \{x_i\}_{i=1}^{n}, \qquad \theta^{*} = \arg\max_{\theta} \sum_{i=1}^{n} \log p_\theta(x_i) $$</div>
         <span class="eq__tag num">(2)</span>
@@ -167,7 +167,7 @@
 
       <span class="anchor" id="c-semi"></span>
       <h3>Semi-Supervised Learning 반지도학습</h3>
-      <p>라벨된 것 조금, 라벨 없는 것 많이. 현실에서 가장 흔한 상황이다.</p>
+      <p><span class="hl">라벨된 것 조금, 라벨 없는 것 많이. 현실에서 가장 흔한 상황이다.</span></p>
       <div class="eq">
         <div class="eq__body">$$ \mathcal{D} = \underbrace{\{(x_i, y_i)\}_{i=1}^{l}}_{\text{라벨 있음}} \cup \underbrace{\{x_j\}_{j=l+1}^{l+u}}_{\text{라벨 없음},\; u \gg l}, \qquad \mathcal{L} = \mathcal{L}_{\text{sup}} + \lambda\, \mathcal{L}_{\text{unsup}} $$</div>
         <span class="eq__tag num">(3)</span>
@@ -181,7 +181,7 @@
       <span class="anchor" id="c-selfsup"></span>
       <h3>Self-Supervised Learning 자기지도학습</h3>
       <p>
-        라벨이 없는데 supervised learning처럼 푼다. <strong>정답을 data 자신에게서 만들어내기</strong> 때문이다.
+        <span class="hl">라벨이 없는데 supervised learning처럼 푼다.</span> <strong>정답을 data 자신에게서 만들어내기</strong> 때문이다.
         data의 일부를 가리고, 가린 것을 맞히게 한다.
       </p>
       <div class="eq">
@@ -212,7 +212,7 @@
         <span class="eq__tag num">(5)</span>
       </div>
       <p>
-        앞의 넷과 결정적으로 다른 점이 둘 있다.
+        <span class="hl">앞의 넷과 결정적으로 다른 점이 둘 있다.</span>
         첫째, <strong>data를 스스로 만든다</strong> — 정책 $\pi_\theta$ 가 바뀌면 마주치는 상황도 바뀐다.
         둘째, <strong>피드백이 지연된다</strong> — 바둑에서 어느 수가 좋았는지는 끝나야 안다.
         그래서 최소화가 아니라 최대화로 쓰고, 24장에서 따로 다룬다.
@@ -435,14 +435,14 @@
       <span class="anchor" id="c-transfer"></span>
       <h4>transfer learning</h4>
       <p>
-        원천 task $\mathcal{T}_S$ 에서 배운 $\theta$ 를 목표 task $\mathcal{T}_T$ 의 출발점으로 삼는다.
+        <span class="hl">원천 task $\mathcal{T}_S$ 에서 배운 $\theta$ 를 목표 task $\mathcal{T}_T$ 의 출발점으로 삼는다.</span>
         보통 앞쪽 layer(층)는 그대로 두고 뒤쪽만 다시 학습한다.
         <strong>data가 적은 목표 task</strong>에서 특히 효과가 크다.
       </p>
 
       <span class="anchor" id="c-multitask"></span>
       <h4>multi-task learning(멀티태스크 학습)</h4>
-      <p>여러 task를 <strong>동시에</strong> 배운다. 표현을 공유하되 과제별 머리를 따로 둔다.</p>
+      <p><span class="hl">여러 task를 <strong>동시에</strong> 배운다.</span> 표현을 공유하되 과제별 머리를 따로 둔다.</p>
       <div class="eq">
         <div class="eq__body">$$ \mathcal{L} = \sum_{k=1}^{K} w_k \,\mathcal{L}_k(\theta_{\text{shared}},\, \theta_k) $$</div>
         <span class="eq__tag num">(7)</span>
@@ -455,7 +455,7 @@
       <span class="anchor" id="c-meta"></span>
       <h4>meta-learning</h4>
       <p>
-        task 하나를 잘 푸는 것이 목표가 아니라, <strong>새 task를 빨리 배우는 능력</strong>을 배운다.
+        <span class="hl">task 하나를 잘 푸는 것이 목표가 아니라, <strong>새 task를 빨리 배우는 능력</strong>을 배운다.</span>
         task 분포 $p(\mathcal{T})$ 를 상정하고, 몇 걸음만에 적응할 수 있는 초기값을 찾는다.
       </p>
       <div class="eq">
@@ -470,7 +470,7 @@
       <span class="anchor" id="c-continual"></span>
       <h4>continual learning(연속학습)</h4>
       <p>
-        task가 <strong>차례로</strong> 도착하고, 지난 task의 data는 다시 볼 수 없다.
+        <span class="hl">task가 <strong>차례로</strong> 도착하고, 지난 task의 data는 다시 볼 수 없다.</span>
         그대로 학습하면 새것을 배우면서 옛것을 잊는 <strong>catastrophic forgetting(파국적 망각)</strong>이 일어난다.
       </p>
       <div class="eq">

@@ -66,17 +66,21 @@ cp templates/section.html chapters/ch02/2.3-inner-product.html
 #    ※ data-root 를 "../" → "../../" 로 바꾸는 것을 잊지 말 것
 #    ※ 파트 12 에 출처 4개 이상, ref__where 에 "어느 부분을 썼는지" 명시
 
-# 4. assets/js/pages.js 에 등록  (등록 안 하면 목차·검색에 안 나온다)
+# 4. 형광펜·핵심 수식 표시
+#    정의·성질 문장에 <span class="hl">, 절의 뼈대가 되는 식에 class="eq eq--key"
+#    (절당 5~10개. 비유·예시에는 칠하지 않는다. <mark> 금지 — SPEC §5.4-b)
 
-# 5. 출처 반영 + 검사 — 반드시 통과시킬 것 (오류 0)
+# 5. assets/js/pages.js 에 등록  (등록 안 하면 목차·검색에 안 나온다)
+
+# 6. 출처 반영 + 검사 — 반드시 통과시킬 것 (오류 0)
 node tools/refs.mjs scan
 node tools/check.mjs 2.3
 node tools/check-visual.mjs      # 글자 겹침·그림 이탈 (jsdom 필요)
 
-# 6. 진행 현황 갱신 (자동 생성 — 손으로 표를 고치지 않는다)
+# 7. 진행 현황 갱신 (자동 생성 — 손으로 표를 고치지 않는다)
 node tools/build-progress.mjs
 
-# 7. main 에 커밋 & 푸시 → 1분 뒤 자동 배포 (브랜치·PR 없음, 묻지 말고 바로)
+# 8. main 에 커밋 & 푸시 → 1분 뒤 자동 배포 (브랜치·PR 없음, 묻지 말고 바로)
 git add -A && git commit -m "2.3 내적과 유사도 추가" && git push
 ```
 

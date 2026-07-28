@@ -118,7 +118,7 @@
         pipeline은 <strong>함수 합성</strong>으로 쓸 수 있다.
         <a href="1.1-ai-fundamentals.html#c-dl">1.1절의 deep learning(딥러닝) 정의</a>와 같은 형식이다.
       </p>
-      <div class="eq">
+      <div class="eq eq--key">
         <div class="eq__body">$$ \hat{y} \;=\; \bigl(h_{\theta^{*}} \circ \phi \circ \rho\bigr)(x_{\text{raw}}) $$</div>
         <span class="eq__tag num">(1)</span>
       </div>
@@ -130,26 +130,26 @@
       <h3>Preparation Stage 준비 단계</h3>
       <span class="anchor" id="c-collect"></span>
       <p>
-        <strong>data collection</strong> — 무엇을 모을지가 곧 무엇을 배울지를 정한다.
+        <span class="hl"><strong>data collection</strong> — 무엇을 모을지가 곧 무엇을 배울지를 정한다.</span>
         collection(수집) 과정의 bias(편향)는 나중에 어떤 algorithm(알고리즘)으로도 지울 수 없다.
         "어떤 표본이 빠졌는가"를 묻는 것이 이 단계의 핵심이다.
       </p>
       <span class="anchor" id="c-preprocess"></span>
       <p>
-        <strong>data preprocessing(데이터 전처리)</strong> $\rho$ — 결측 처리, 이상치 제거, 중복 제거, 스케일 조정.
-        여기서 쓰는 통계량(평균·표준편차 등)은 <strong>반드시 training data(훈련 데이터)에서만</strong> 계산해야 한다.
+        <span class="hl"><strong>data preprocessing(데이터 전처리)</strong> $\rho$ — 결측 처리, 이상치 제거, 중복 제거, 스케일 조정.
+        여기서 쓰는 통계량(평균·표준편차 등)은 <strong>반드시 training data(훈련 데이터)에서만</strong> 계산해야 한다.</span>
         validation·test data(테스트 데이터)를 포함해 계산하면 정보가 새어 든다(<a href="1.5-data-split-evaluation.html#c-leakage">1.5절 data leakage(데이터 누출)</a>).
       </p>
       <span class="anchor" id="c-feature"></span>
       <p>
-        <strong>feature representation</strong> $\phi$ — 원자료를 model이 다룰 수 있는 vector(벡터)로 바꾼다.
+        <span class="hl"><strong>feature representation</strong> $\phi$ — 원자료를 model이 다룰 수 있는 vector(벡터)로 바꾼다.</span>
         전통적으로는 사람이 설계했고(feature engineering),
         deep learning은 이 단계를 <a href="1.2-ml-paradigms.html#c-selfsup">training으로 대체</a>한다.
         그래도 완전히 사라지지는 않는다 — 토큰화, normalization(정규화), 창 나누기는 여전히 사람이 정한다.
       </p>
       <span class="anchor" id="c-select"></span>
       <p>
-        <strong>model selection(모델 선택)</strong> — hypothesis space(가설 공간)를 고르는 일이다.
+        <span class="hl"><strong>model selection(모델 선택)</strong> — hypothesis space(가설 공간)를 고르는 일이다.</span>
         <a href="1.1-ai-fundamentals.html#c-model-algo">1.1절에서 구분한 대로</a> model은 <em>무엇을 표현할 수 있는가</em>를 정한다.
         hyperparameter(하이퍼파라미터) 탐색도 여기에 속하며, <strong>validation data(검증 데이터)로 판단</strong>한다.
       </p>
@@ -157,18 +157,18 @@
       <h3>Training and Validation 학습과 검증</h3>
       <span class="anchor" id="c-train"></span>
       <p>
-        <strong>training</strong> — $\theta^{*} = \arg\min_\theta \frac{1}{n}\sum L$.
-        training data만 쓴다.
+        <span class="hl"><strong>training</strong> — $\theta^{*} = \arg\min_\theta \frac{1}{n}\sum L$.
+        training data만 쓴다.</span>
       </p>
       <span class="anchor" id="c-validate"></span>
       <p>
-        <strong>validation</strong> — training 중에 <em>선택</em>을 하기 위해 쓴다.
+        <span class="hl"><strong>validation</strong> — training 중에 <em>선택</em>을 하기 위해 쓴다.</span>
         어느 hyperparameter가 나은가, 언제 멈출까(early stopping), 어느 model을 채택할까.
         validation data는 <strong>여러 번 본다.</strong>
       </p>
       <span class="anchor" id="c-evaluate"></span>
       <p>
-        <strong>evaluation</strong> — 모든 선택이 끝난 뒤 <em>단 한 번</em> 성능을 재기 위해 쓴다.
+        <span class="hl"><strong>evaluation</strong> — 모든 선택이 끝난 뒤 <em>단 한 번</em> 성능을 재기 위해 쓴다.</span>
         test data를 보고 model을 고치면, 그 순간 test data는 validation data가 되어 버린다.
       </p>
       <div class="note note--key">
@@ -184,25 +184,25 @@
       <h3>Operation Stage 운영 단계</h3>
       <span class="anchor" id="c-infer"></span>
       <p>
-        <strong>inference(추론)</strong> — 학습된 $\theta^{*}$ 로 새 입력에 답한다.
+        <span class="hl"><strong>inference(추론)</strong> — 학습된 $\theta^{*}$ 로 새 입력에 답한다.</span>
         training과 달리 <em>지연시간·처리량·비용</em>이 제약이 된다.
         같은 model도 batch(배치) 추론이냐 실시간이냐에 따라 설계가 달라진다.
       </p>
       <span class="anchor" id="c-deploy"></span>
       <p>
-        <strong>deployment(배포)</strong> — model을 실제 서비스에 올린다.
+        <span class="hl"><strong>deployment(배포)</strong> — model을 실제 서비스에 올린다.</span>
         버전 관리, 점진적 롤아웃, 문제 시 되돌리기(rollback)가 필요하다.
         <strong>training 때의 preprocessing $\rho, \phi$ 를 그대로 재현</strong>하는 것이 핵심 과제다.
       </p>
       <span class="anchor" id="c-monitor"></span>
       <p>
-        <strong>monitoring</strong> — 예측 품질, 입력 분포, 지연시간, 오류율을 지켜본다.
+        <span class="hl"><strong>monitoring</strong> — 예측 품질, 입력 분포, 지연시간, 오류율을 지켜본다.</span>
         정답이 늦게 오거나 아예 안 오는 경우가 많아, 정답 없이도 이상을 감지하는 장치가 필요하다
         (입력 distribution shift(분포 변화) 감시 등).
       </p>
       <span class="anchor" id="c-retrain"></span>
       <p>
-        <strong>retraining</strong> — 성능이 떨어지면 새 data로 다시 학습해 배포한다.
+        <span class="hl"><strong>retraining</strong> — 성능이 떨어지면 새 data로 다시 학습해 배포한다.</span>
         <em>얼마나 자주</em> 할지는 감이 아니라 계산으로 정할 수 있다. 아래에서 유도한다.
       </p>
     </section>

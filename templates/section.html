@@ -117,14 +117,22 @@
     <section class="sec" id="s-definition">
       <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
       <span class="anchor" id="c-1"></span>
-      <p>정의를 정확하게. 앵커(<code>id="c-1"</code>)를 개념 바로 앞에 둬서 칩이 여기로 오게 한다.</p>
+      <!-- 정의문에는 형광펜을 단다 (SPEC §5.4-b).
+           칠하는 것: 정의 · 반드시 알아야 하는 성질·조건
+           칠하지 않는 것: 비유·예시·수사 (그건 .tldr / .note 의 몫)
+           ⚠ <mark> 을 쓰지 말 것 — 브라우저 기본 노랑 때문에 다크에서 글자가 사라진다 -->
+      <p>
+        <span class="hl">길이가 1인 vector를 unit vector라 한다.</span>
+        앵커(<code>id="c-1"</code>)를 개념 바로 앞에 둬서 칩이 여기로 오게 한다.
+      </p>
     </section>
 
     <!-- ===== 5. 수식과 기호표 ===== -->
     <section class="sec" id="s-math">
       <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
 
-      <div class="eq">
+      <!-- 절의 뼈대가 되는 식 한둘에는 eq--key 를 붙인다 (SPEC §5.4-b) -->
+      <div class="eq eq--key">
         <div class="eq__body">$$ y = \mathbf{w}^\top \mathbf{x} + b $$</div>
         <span class="eq__tag num">(1)</span>
       </div>

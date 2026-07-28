@@ -58,6 +58,7 @@ const MIN_TRAPS = 3;
 const MIN_QUIZ = 4;
 const MIN_REFS = 4;        // 절당 최소 출처 개수
 const MIN_REF_TYPES = 3;   // 최소 유형 종류 (논문·교재·강의·영상·웹문서)
+const MIN_HL = 3;          // 절당 최소 형광펜 (SPEC §5.4-b, 권장 5~10)
 
 /* ---------- 결과 수집 ---------- */
 let errors = 0, warns = 0;
@@ -196,6 +197,22 @@ for (const file of files) {
   qBlocks.forEach((q, i) => {
     if (!/data-correct="true"/.test(q)) warn(rel, `${i + 1}번 문제에 data-correct="true" 선택지가 없습니다.`);
   });
+
+  /* (5-b) 형광펜과 핵심 수식 — SPEC §5.4-b
+         정의·성질에 <span class="hl">, 절의 뼈대가 되는 식에 .eq--key 를 단다.
+         훑어보기만 해도 절의 뼈대가 보이게 하는 장치라 빠지면 절의 값이 크게 떨어진다. */
+  const hls = html.match(/<span class="hl">/g) || [];
+  if (hls.length < MIN_HL) {
+    warn(rel, `형광펜(<span class="hl">)이 ${hls.length}개입니다. 정의·성질에 ${MIN_HL}개 이상 다세요 ` +
+      `(SPEC §5.4-b, 커리큘럼 항목 수에 맞춰 보통 5~10개).`);
+  }
+  if (/<mark[\s>]/.test(html)) {
+    err(rel, '<mark> 을 쓰지 마세요. 브라우저 기본 배경이 밝은 노랑이라 스타일이 늦게 오면 ' +
+      '다크 모드에서 글자가 보이지 않습니다. <span class="hl"> 을 쓰세요 (SPEC §5.4-b).');
+  }
+  if (!/class="eq eq--key"/.test(html) && /class="eq"/.test(html)) {
+    warn(rel, '핵심 수식 표시(.eq--key)가 없습니다. 절의 뼈대가 되는 식 한둘에 다세요 (SPEC §5.4-b).');
+  }
 
   /* (6) 출처 — SOURCES.md 규약 */
   const refsBlock = /<ol class="refs"[\s\S]*?<\/ol>/.exec(html);

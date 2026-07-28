@@ -125,7 +125,7 @@
       <p>
         모든 supervised learning(지도학습) task는 다음 삼중항으로 특정된다.
       </p>
-      <div class="eq">
+      <div class="eq eq--key">
         <div class="eq__body">$$ \bigl(\mathcal{X},\; \mathcal{Y},\; L\bigr) \quad\text{그리고 찾을 대상}\quad f_\theta : \mathcal{X} \to \mathcal{Y} $$</div>
         <span class="eq__tag num">(1)</span>
       </div>
@@ -133,60 +133,60 @@
       <h3>모달리티가 다르면 공간이 다르다</h3>
       <span class="anchor" id="c-nlp"></span>
       <p>
-        <strong>natural language processing</strong>는 입력과 출력이 모두 이산 토큰열이다.
+        <span class="hl"><strong>natural language processing</strong>는 입력과 출력이 모두 이산 토큰열이다.</span>
         $\mathcal{X} = \mathcal{V}^{*}$ (vocabulary(어휘) $\mathcal{V}$ 위의 유한 열), 출력도 같다.
         loss는 token(토큰) 단위 교차엔트로피다.
       </p>
       <span class="anchor" id="c-cv"></span>
       <p>
-        <strong>computer vision(컴퓨터 비전)</strong>은 입력이 연속값 텐서다.
+        <span class="hl"><strong>computer vision(컴퓨터 비전)</strong>은 입력이 연속값 텐서다.</span>
         $\mathcal{X} = \mathbb{R}^{H \times W \times C}$ — 높이·너비·channel(채널).
         출력은 task마다 다르다: 분류면 $\{1,\dots,K\}$, 탐지면 상자 집합, 분할이면 픽셀별 라벨.
       </p>
       <span class="anchor" id="c-asr"></span>
       <p>
-        <strong>speech recognition</strong>은 파형 $\mathbb{R}^{T}$ 에서 토큰열로 간다.
+        <span class="hl"><strong>speech recognition</strong>은 파형 $\mathbb{R}^{T}$ 에서 토큰열로 간다.</span>
         입력 길이와 출력 길이가 다르고 정렬도 모르므로, 정렬을 주변화하는 CTC 같은 loss를 쓴다.
       </p>
       <span class="anchor" id="c-tts"></span>
       <p>
-        <strong>speech synthesis(음성 합성)</strong>은 그 반대 방향이다. 토큰열 → 파형.
+        <span class="hl"><strong>speech synthesis(음성 합성)</strong>은 그 반대 방향이다.</span> 토큰열 → 파형.
         같은 두 공간을 잇지만 방향이 반대라 어려움의 성질이 다르다 —
         인식은 <em>정보를 버리는</em> 문제, 합성은 <em>없는 정보를 만들어내는</em> 문제다.
       </p>
       <span class="anchor" id="c-recsys"></span>
       <p>
-        <strong>recommender system</strong>의 입력은 (사용자, 아이템) 쌍이고 출력은 선호도 점수다.
+        <span class="hl"><strong>recommender system</strong>의 입력은 (사용자, 아이템) 쌍이고 출력은 선호도 점수다.</span>
         $\mathcal{X} = \mathcal{U} \times \mathcal{I}$, $\mathcal{Y} = \mathbb{R}$.
         관측된 값이 극히 일부라 <strong>결측이 기본</strong>인 것이 특징이다.
       </p>
       <span class="anchor" id="c-ts"></span>
       <p>
-        <strong>time series forecasting(시계열 예측)</strong>은 과거 창에서 미래 값으로 간다.
+        <span class="hl"><strong>time series forecasting(시계열 예측)</strong>은 과거 창에서 미래 값으로 간다.</span>
         $\mathcal{X} = \mathbb{R}^{w}$ (최근 $w$ 개), $\mathcal{Y} = \mathbb{R}^{h}$ (앞으로 $h$ 개).
         <a href="1.2-ml-paradigms.html#s-example">1.2절의 self-supervised(자기지도) 예제</a>가 바로 $w = h = 1$ 인 경우였다.
       </p>
       <span class="anchor" id="c-robotics"></span>
       <p>
-        <strong>robotics(로보틱스)</strong>는 관측에서 행동으로 간다. $\mathcal{Y}$ 가 <em>토크·관절각 같은 연속 제어값</em>이고,
+        <span class="hl"><strong>robotics(로보틱스)</strong>는 관측에서 행동으로 간다.</span> $\mathcal{Y}$ 가 <em>토크·관절각 같은 연속 제어값</em>이고,
         무엇보다 <strong>출력이 다음 입력을 바꾼다</strong>. 앞의 분야들과 결정적으로 다른 점이다.
       </p>
       <span class="anchor" id="c-driving"></span>
       <p>
-        <strong>autonomous driving(자율주행)</strong>은 robotics의 특수한 경우이면서, 여러 센서(카메라·라이다·레이더)를 융합하고
-        안전 제약이 절대적이라는 점에서 따로 다뤄진다. 실패 비용이 비대칭적으로 크다.
+        <span class="hl"><strong>autonomous driving(자율주행)</strong>은 robotics의 특수한 경우이면서, 여러 센서(카메라·라이다·레이더)를 융합하고
+        안전 제약이 절대적이라는 점에서 따로 다뤄진다.</span> 실패 비용이 비대칭적으로 크다.
       </p>
       <span class="anchor" id="c-multimodal"></span>
       <p>
-        <strong>multimodal(멀티모달) AI</strong>는 서로 다른 modality를 <em>같은 표현 공간</em>으로 보낸다.
+        <span class="hl"><strong>multimodal(멀티모달) AI</strong>는 서로 다른 modality를 <em>같은 표현 공간</em>으로 보낸다.</span>
         $\phi_{\text{img}} : \mathcal{X}_{\text{img}} \to \mathbb{R}^{d}$,
         $\phi_{\text{txt}} : \mathcal{X}_{\text{txt}} \to \mathbb{R}^{d}$ — 목표 dimension(차원) $d$ 가 같다.
         그래야 image와 문장을 inner product(내적)로 비교할 수 있다<a class="cite" href="#ref-radford2021-learning-transferable-visual" data-ref="radford2021-learning-transferable-visual">1</a>.
       </p>
       <span class="anchor" id="c-generative"></span>
       <p>
-        <strong>generative model(생성 모델)</strong>은 <a href="1.2-ml-paradigms.html#c-unsupervised">1.2절</a>에서 본 대로
-        $p(x)$ 또는 $p(x \mid c)$ 를 모델링한다. 위 분야들과 <em>층위가 다르다</em> —
+        <span class="hl"><strong>generative model(생성 모델)</strong>은 <a href="1.2-ml-paradigms.html#c-unsupervised">1.2절</a>에서 본 대로
+        $p(x)$ 또는 $p(x \mid c)$ 를 모델링한다.</span> 위 분야들과 <em>층위가 다르다</em> —
         비전에도 generative model이 있고 음성에도 있다. 분야가 아니라 <strong>목적의 종류</strong>다.
       </p>
 
@@ -200,23 +200,23 @@
       </div>
       <span class="anchor" id="c-foundation"></span>
       <p>
-        <strong>Foundation Model</strong>은 특정 task가 아니라 <em>대규모 self-supervised pretraining(사전학습)으로 만든 범용 백본</em>이다.
+        <span class="hl"><strong>Foundation Model</strong>은 특정 task가 아니라 <em>대규모 self-supervised pretraining(사전학습)으로 만든 범용 백본</em>이다.</span>
         하나를 만들어 여러 task에 적응시킨다. 분야가 아니라 <strong>model을 만드는 방식</strong>이다.
       </p>
       <span class="anchor" id="c-vlm"></span>
       <p>
-        <strong>Vision-Language Model</strong>은 시각과 언어를 함께 다루는 Foundation Model이다.
+        <span class="hl"><strong>Vision-Language Model</strong>은 시각과 언어를 함께 다루는 Foundation Model이다.</span>
         multimodal AI의 부분집합이면서, 오늘날 대부분 <em>시각 인코더 + LLM</em> 구조를 취한다.
       </p>
       <span class="anchor" id="c-worldmodel"></span>
       <p>
-        <strong>World Model</strong>은 환경의 <em>동역학</em>을 학습한다.
+        <span class="hl"><strong>World Model</strong>은 환경의 <em>동역학</em>을 학습한다.</span>
         $\hat{s}_{t+1} = g_\theta(s_t, a_t)$ — 지금 상태에서 이 행동을 하면 다음에 무엇이 오는가.
         예측이 가능하면 <strong>머릿속에서 미리 시뮬레이션</strong>해 계획할 수 있다.
       </p>
       <span class="anchor" id="c-embodied"></span>
       <p>
-        <strong>Embodied AI</strong>는 몸을 가진 에이전트가 환경과 <em>닫힌 고리</em>로 상호작용하는 것을 다룬다.
+        <span class="hl"><strong>Embodied AI</strong>는 몸을 가진 에이전트가 환경과 <em>닫힌 고리</em>로 상호작용하는 것을 다룬다.</span>
         인식·계획·제어가 하나로 묶이고, <a href="1.1-ai-fundamentals.html#c-system">1.1절의 되먹임 화살표</a>가 실제 물리 세계를 통과한다.
       </p>
     </section>

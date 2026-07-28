@@ -134,16 +134,16 @@
       <span class="anchor" id="c-generalize"></span>
       <h3>일반화 — 우리가 정말 원하는 것</h3>
       <p>
-        data가 어떤 분포 $\mathcal{P}$ 에서 나온다고 하자. 진짜 목표는 <strong>기대 위험</strong>이다.
+        <span class="hl">data가 어떤 분포 $\mathcal{P}$ 에서 나온다고 하자. 진짜 목표는 <strong>기대 위험</strong>이다.</span>
       </p>
-      <div class="eq">
+      <div class="eq eq--key">
         <div class="eq__body">$$ R(\theta) = \mathbb{E}_{(x,y)\sim\mathcal{P}}\bigl[L(f_\theta(x),\, y)\bigr] $$</div>
         <span class="eq__tag num">(1)</span>
       </div>
       <p>
         그런데 $\mathcal{P}$ 를 모르므로 계산할 수 없다. 대신 가진 표본으로 <strong>경험적 위험</strong>을 잰다.
       </p>
-      <div class="eq">
+      <div class="eq eq--key">
         <div class="eq__body">$$ \hat{R}_{\mathcal{S}}(\theta) = \frac{1}{|\mathcal{S}|}\sum_{(x_i,y_i)\in\mathcal{S}} L\bigl(f_\theta(x_i),\, y_i\bigr) $$</div>
         <span class="eq__tag num">(2)</span>
       </div>
@@ -155,17 +155,17 @@
 
       <h3>Three Splits 세 집합</h3>
       <span class="anchor" id="c-train"></span>
-      <p><strong>training data</strong> $\mathcal{S}_{\text{tr}}$ — parameter $\theta$ 를 정한다. 여기서 잰 오차는 성능 추정에 쓸 수 없다.</p>
+      <p><span class="hl"><strong>training data</strong> $\mathcal{S}_{\text{tr}}$ — parameter $\theta$ 를 정한다.</span> 여기서 잰 오차는 성능 추정에 쓸 수 없다.</p>
       <span class="anchor" id="c-valid"></span>
-      <p><strong>validation data</strong> $\mathcal{S}_{\text{val}}$ — hyperparameter, model 구조, 조기 종료 시점을 고른다. <em>여러 번</em> 쓴다.</p>
+      <p><span class="hl"><strong>validation data</strong> $\mathcal{S}_{\text{val}}$ — hyperparameter, model 구조, 조기 종료 시점을 고른다.</span> <em>여러 번</em> 쓴다.</p>
       <span class="anchor" id="c-test"></span>
-      <p><strong>test data(테스트 데이터)</strong> $\mathcal{S}_{\text{te}}$ — 모든 선택이 끝난 뒤 <em>한 번</em> 쓴다. 보고 나서 model을 고치면 그 순간 validation data가 된다.</p>
+      <p><span class="hl"><strong>test data(테스트 데이터)</strong> $\mathcal{S}_{\text{te}}$ — 모든 선택이 끝난 뒤 <em>한 번</em> 쓴다.</span> 보고 나서 model을 고치면 그 순간 validation data가 된다.</p>
 
       <span class="anchor" id="c-cv"></span>
       <h3>Cross-Validation 교차검증</h3>
       <p>
-        data가 적으면 검증용으로 떼어놓는 것이 아깝다. $k$-겹 cross-validation(교차검증)은 data를 $k$ 조각으로 나눠,
-        각 조각을 한 번씩 검증용으로 쓰고 나머지로 학습한다.
+        data가 적으면 검증용으로 떼어놓는 것이 아깝다. <span class="hl">$k$-겹 cross-validation(교차검증)은 data를 $k$ 조각으로 나눠,
+        각 조각을 한 번씩 검증용으로 쓰고 나머지로 학습한다.</span>
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathrm{CV}_k = \frac{1}{k}\sum_{j=1}^{k} \hat{R}_{\mathcal{S}_j}\bigl(\theta^{(-j)}\bigr) $$</div>
@@ -191,14 +191,14 @@
         </table>
       </div>
       <p>
-        진단의 열쇠는 <strong>두 오차를 함께 보는 것</strong>이다.
+        <span class="hl">진단의 열쇠는 <strong>두 오차를 함께 보는 것</strong>이다.</span>
         training 오차만 보면 overfitting을 성공으로 착각하고, validation 오차만 보면 원인을 알 수 없다.
       </p>
 
       <span class="anchor" id="c-leakage"></span>
       <h3>Data Leakage 데이터 누출</h3>
       <p>
-        테스트 시점에는 알 수 없는 정보가 training에 새어 드는 것이다.
+        <span class="hl">테스트 시점에는 알 수 없는 정보가 training에 새어 드는 것이다.</span>
         성능이 <em>비현실적으로 좋게</em> 나오고, 배포하면 무너진다. 전형적 경로 셋:
       </p>
       <ul>
@@ -210,7 +210,7 @@
       <span class="anchor" id="c-shift"></span>
       <h3>Distribution Shift 분포 변화</h3>
       <p>
-        식 (1)은 training과 테스트가 <strong>같은 분포 $\mathcal{P}$</strong> 에서 나온다고 가정한다.
+        <span class="hl">식 (1)은 training과 테스트가 <strong>같은 분포 $\mathcal{P}$</strong> 에서 나온다고 가정한다.</span>
         현실에서는 이 가정이 깨진다 — 계절이 바뀌고, 사용자층이 달라지고, 카메라가 교체된다.
         분포가 달라지면 아무리 잘 나눠도 테스트 점수가 실제 성능을 보장하지 못한다.
         <a href="1.4-ml-system-structure.html#c-retrain">1.4절의 retraining(재학습)</a>이 필요한 이유다.
@@ -220,7 +220,7 @@
       <span class="anchor" id="c-baseline"></span>
       <h3>Benchmark and Baseline 벤치마크와 베이스라인</h3>
       <p>
-        <strong>benchmark(벤치마크)</strong>는 공통으로 쓰는 표준 dataset(데이터셋)·과제다. 비교를 가능하게 만든다.
+        <span class="hl"><strong>benchmark(벤치마크)</strong>는 공통으로 쓰는 표준 dataset(데이터셋)·과제다.</span> 비교를 가능하게 만든다.
         <strong>baseline(베이스라인)</strong>은 비교 대상이 되는 단순한 방법이다 —
         최빈값 예측, 선형 model, 직전 값 반복 같은 것.
       </p>
@@ -242,7 +242,7 @@
       <span class="anchor" id="c-repro"></span>
       <h3>Reproducibility 재현성</h3>
       <p>
-        같은 코드와 data로 같은 결과가 나와야 한다. 무너뜨리는 요인은
+        <span class="hl">같은 코드와 data로 같은 결과가 나와야 한다.</span> 무너뜨리는 요인은
         무작위 시드, data 분할 방식, 라이브러리 버전, 하드웨어 비결정성, 보고되지 않은 hyperparameter 탐색량이다.
         NeurIPS의 reproducibility(재현성) 체크리스트는 이런 항목을 명시적으로 적게 만든다<a class="cite" href="#ref-pineau2020-improving-reproducibility-in" data-ref="pineau2020-improving-reproducibility-in">2</a>.
       </p>

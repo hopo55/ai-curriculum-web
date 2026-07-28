@@ -244,7 +244,26 @@ node tools/refs.mjs scan               # 페이지의 data-ref → cited_by 갱�
 - 이미 한국어가 표준인 것: 검산 · 유도 · 예제 · 함정
 - 단, 이들이 **전문용어의 일부**이면 영어로 간다: `row space`, `column space`, `unit vector`
 
-### 5.4 그 밖의 서술 규칙
+### 5.4 형식으로 뛰기 전에 '쉬운 말로' 한 칸
+
+정의·공식이 나온 직후, 그것을 <strong>일상어 비유</strong>로 다시 말하는 상자를 둔다.
+Khan Academy 식으로 "같은 것을 두 번, 다른 언어로" 말해 주는 장치다.
+
+```html
+<div class="note note--tip">
+  <span class="note__label">쉬운 말로</span>
+  <p>분자는 "둘이 얼마나 같이 가는가", 분모는 "각자 얼마나 긴가"를 잽니다.</p>
+  <p>그래서 화살표를 길게 늘여도 값이 안 변합니다 — 분자도 분모도 같이 커지니까요.</p>
+</div>
+```
+
+- 위치: 그 절에서 **가장 가파른 지점** 하나. 절마다 1~2개면 충분하다.
+- 문장: 기호를 쓰지 않는다. 그림·물건·동작으로 바꿔 말한다
+  (모눈종이 · 그림자 · 악수 · 재료와 배합 비율).
+- 형식 정의를 <em>대체</em>하지 않는다. 정의는 그대로 두고 옆에 덧붙인다.
+- 문제 풀이 과정을 여기에 넣지 않는다. 계산은 파트 7(손으로 푸는 예제)의 몫이다.
+
+### 5.5 그 밖의 서술 규칙
 
 - 수식 기호는 원 표기 유지 — 번역하지 않는다.
 - 문장은 짧게. 한 문단은 3~5문장.
@@ -318,7 +337,7 @@ WIDGETS.register('dot-product', function (root, ctx) {
 | D | 드래그 가능한 점·벡터 | 내적과 각도, 결정경계, KNN |
 | E | 히트맵 hover → 값 툴팁 | attention matrix, 공분산, 혼동행렬 |
 | F | A/B 토글 비교 | Pre-Norm vs Post-Norm, L1 vs L2, 편향-분산 |
-| G | 수식 항 ↔ 그림 부분 하이라이트 연결 | 복잡한 손실함수, ELBO 분해 |
+| G | 수식 항 ↔ 그림 부분 하이라이트 연결 (`WIDGETS.terms`) | 코사인 유사도, SVD, 어텐션 |
 | H | 즉답 퀴즈 | 어디에나 |
 
 각 위젯에는 `.watch` 로 **무엇을 관찰해야 하는지** 한 줄을 반드시 붙인다.
@@ -341,6 +360,14 @@ WIDGETS.matrix({ host, rows, cols, values, label, onChange })
 
 // A/B 토글
 WIDGETS.toggle({ host, label, options:[{value,label}], value, onChange })
+
+// 수식 항 ↔ 그림 연결 — 칩에 마우스를 올리면 그림의 해당 부분이 밝아지고
+// 아래에 '쉬운 말' 설명이 뜬다. tone 은 jade|seal|amber (§8 의 색 규칙을 따른다)
+WIDGETS.terms({
+  host, label,
+  items: [{ k:'num', label:'uᵀv (분자)', tone:'jade', say:'두 화살표가 같이 가는 정도' }],
+  onFocus: function (k) { /* 그림 쪽 강조 */ }
+})
 ```
 
 ```js
@@ -352,6 +379,8 @@ p.line([[0,0],[1,1]]);                // 점 잇기
 p.dot(x, y, r);                       // 점
 p.vector(x, y, { label: 'a' });       // 원점에서의 화살표
 p.text(x, y, '라벨');
+p.callout(x, y, '여기가 가장 긴 반지름', { dx: 26, dy: -20, tone: 'var(--seal-ink)' });
+                                      // 지시선 + 라벨. viewBox 밖으로 나가면 스스로 접어 넣는다
 p.clear();                            // 다시 그리기 전에
 
 VIZ.draggable(node, p, onMove, { label });  // 드래그 + 화살표키

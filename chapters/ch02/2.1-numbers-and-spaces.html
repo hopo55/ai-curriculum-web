@@ -321,6 +321,12 @@
         $\mathbf{e}_1 = (1,0)^\top,\ \mathbf{e}_2 = (0,1)^\top$ 다. standard basis에서는 coordinates와 성분이 우연히 같아 보이지만,
         basis를 바꾸면 <strong>같은 화살표가 다른 숫자</strong>가 된다. 이것이 이 절의 마지막 요점이다.
       </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>basis는 <strong>바닥에 깔아 둔 모눈종이</strong>입니다. 같은 자리에 꽂힌 압정이라도 모눈이 기울어져 있으면 "오른쪽으로 몇 칸, 위로 몇 칸"이라는 대답이 달라집니다.</p>
+        <p>그래서 숫자 $(3, 1)$ 은 압정의 성질이 아니라 <strong>모눈과 압정 사이의 관계</strong>입니다. 모눈을 바꾸면 숫자가 바뀌는 것이 당연합니다.</p>
+      </div>
+
     </section>
 
     <!-- ===== 5. 수식과 기호 ===== -->
@@ -1139,6 +1145,14 @@ WIDGETS.register('basis-coords', function (root, ctx) {
     p.vector(b2[0], b2[1], { label: 'b2' });
     p.dot(TARGET[0], TARGET[1], 6);
     p.text(TARGET[0], TARGET[1], 'x = (3, 1)', { dx: -4, dy: -12, anchor: 'end', fill: 'var(--seal)', size: 12 });
+
+    /* 좌표가 곧 '두 걸음'이라는 것을 그림 위에 적는다 */
+    if (ok) {
+      p.callout(a * b1[0] / 2, a * b1[1] / 2, '① b₁ 방향으로 ' + a.toFixed(1) + '걸음',
+        { dx: -18, dy: 26, tone: 'var(--jade-ink)' });
+      p.callout((a * b1[0] + TARGET[0]) / 2, (a * b1[1] + TARGET[1]) / 2,
+        '② b₂ 방향으로 ' + b.toFixed(1) + '걸음', { dx: 24, dy: -34, tone: 'var(--jade-ink)' });
+    }
 
     h1.setAttribute('cx', p.X(b1[0])); h1.setAttribute('cy', p.Y(b1[1]));
     h2.setAttribute('cx', p.X(b2[0])); h2.setAttribute('cy', p.Y(b2[1]));

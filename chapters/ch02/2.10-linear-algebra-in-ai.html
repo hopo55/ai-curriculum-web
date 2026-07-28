@@ -218,6 +218,12 @@
         <strong>결과의 각 행은 $\mathbf{V}$ 의 행들을 attention weight로 섞은 linear combination</strong>이다.
         weight가 음이 아니고 합이 1이므로 <em>convex combination(볼록 결합)</em>이며, 출력이 값 vector들의 볼록껍질 안에 놓인다.
       </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>$\mathbf{Q}\mathbf{K}^\top$ 은 <strong>모든 토큰 쌍끼리 악수를 시켜 보고 점수를 적은 표</strong>입니다. $i$ 행 $j$ 열은 "$i$ 가 $j$ 를 얼마나 볼지"입니다.</p>
+        <p>softmax는 그 점수를 <em>비율</em>로 바꾸고(한 행의 합이 1), 마지막 $\mathbf{V}$ 곱은 그 비율대로 값을 섞습니다. 점수 매기기 → 비율로 바꾸기 → 비율대로 섞기, 세 단계가 전부입니다.</p>
+      </div>
+
 
       <figure class="widget" data-widget="attention-flow">
         <figcaption class="widget__bar">attention 한 번 — 단계별 matrix 연산</figcaption>

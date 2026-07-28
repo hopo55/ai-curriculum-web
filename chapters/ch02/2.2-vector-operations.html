@@ -222,6 +222,12 @@
         $\mathbf{v}_1 = -\frac{\lambda_2}{\lambda_1}\mathbf{v}_2 - \cdots$ 로 쓸 수 있다 —
         $\mathbf{v}_1$ 은 나머지로 만들 수 있으니 없어도 그만이다.
       </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>"0 을 만드는 방법이 하나뿐인가"를 묻는 것입니다. 아무것도 안 쓰면(계수를 전부 0) 당연히 0 이 됩니다. 그것 말고 <em>다른 방법</em>이 또 있다면, 어떤 화살표가 나머지로 흉내 낼 수 있다는 뜻입니다.</p>
+        <p>흉내 낼 수 있으면 그 화살표는 없어도 그만입니다 — 그것이 종속입니다.</p>
+      </div>
+
       <p>실무에서 쓰는 판정법은 이렇다.</p>
       <ul>
         <li>vector가 <strong>2개</strong>: 한쪽이 다른 쪽의 스칼라배이면 종속. 2dimension에서는 $\det[\mathbf{u}\ \mathbf{v}] = u_1v_2 - u_2v_1 = 0$ 인지 보면 된다.</li>
@@ -1084,6 +1090,10 @@ WIDGETS.register('independence-test', function (root, ctx) {
 
     p.vector(u[0], u[1], { label: 'u' });
     p.vector(v[0], v[1], { stroke: 'var(--amber)', label: 'v' });
+
+    p.callout((u[0] + v[0]) / 2, (u[1] + v[1]) / 2,
+      dep ? '넓이 0 — 납작하게 눌렸다' : '이 넓이가 |det| = ' + Math.abs(det).toFixed(2),
+      { dx: 18, dy: 34, tone: dep ? 'var(--seal-ink)' : 'var(--jade-ink)' });
 
     hu.setAttribute('cx', p.X(u[0])); hu.setAttribute('cy', p.Y(u[1]));
     hv.setAttribute('cx', p.X(v[0])); hv.setAttribute('cy', p.Y(v[1]));

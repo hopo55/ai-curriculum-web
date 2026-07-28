@@ -169,6 +169,12 @@
         좌변은 $\lambda$ 의 $n$ 차 다항식이며 이를 <strong>characteristic polynomial(특성다항식)</strong>이라 한다.
         $2\times2$ 에서는 특히 외우기 쉽다.
       </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>$(\mathbf{A}-\lambda\mathbf{I})\mathbf{v}=\mathbf{0}$ 은 "이 변환이 0 이 아닌 $\mathbf{v}$ 를 <strong>납작하게 눌러 0 으로 보내는가</strong>"를 묻는 식입니다.</p>
+        <p>그렇게 보내려면 공간을 찌그러뜨려야 하고, 찌그러뜨린다는 것은 넓이 배율이 0 — 즉 $\det=0$ 이라는 뜻입니다. 그래서 determinant를 0 으로 두고 $\lambda$ 를 찾습니다.</p>
+      </div>
+
       <div class="eq">
         <div class="eq__body">$$ \lambda^2 - (\operatorname{tr}\mathbf{A})\,\lambda + \det\mathbf{A} = 0, \qquad \operatorname{tr}\mathbf{A}=a_{11}+a_{22} $$</div>
         <span class="eq__tag num">(2)</span>
@@ -948,6 +954,12 @@ WIDGETS.register('eigen-hunt', function (root, ctx) {
 
     p.vector(v[0], v[1], { width: 3, label: 'v' });
     p.vector(Av[0], Av[1], { stroke: 'var(--seal)', width: 2.5, label: 'Av' });
+
+    if (E.real) {
+      var eh = norm2(E.v1);
+      p.callout(2.6 * eh[0], 2.6 * eh[1], '점선 위에서는 방향이 안 변한다',
+        { dx: -16, dy: -20, tone: 'var(--ink-3)' });
+    }
 
     var na = Math.sqrt(Av[0] * Av[0] + Av[1] * Av[1]);
     var cos = na < 1e-9 ? 1 : (v[0] * Av[0] + v[1] * Av[1]) / na;

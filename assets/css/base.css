@@ -809,6 +809,42 @@ input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.25); }
 }
 .watch::before { content: "관찰 포인트 · "; font-weight: 700; }
 
+/* 수식 항 ↔ 그림 연결 (위젯 카탈로그 G)
+   칩 하나가 수식의 항 하나에 대응하고, 색이 그림의 같은 색 부분을 가리킨다. */
+.terms { margin-top: var(--sp-3); }
+.terms__row { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.termchip {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  padding: .3rem .7rem;
+  border: 1.5px solid var(--tc, var(--rule));
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--tc, var(--ink-2));
+  cursor: pointer;
+  transition: background .15s ease, transform .15s ease;
+}
+.termchip:hover { background: var(--tcs, var(--paper-2)); }
+.termchip.is-on {
+  background: var(--tcs, var(--paper-2));
+  font-weight: 700;
+  transform: translateY(-1px);
+}
+.termchip:focus-visible { outline: 2px solid var(--tc, var(--jade)); outline-offset: 2px; }
+.termchip--jade  { --tc: var(--jade-ink);  --tcs: var(--jade-soft); }
+.termchip--seal  { --tc: var(--seal-ink);  --tcs: var(--seal-soft); }
+.termchip--amber { --tc: var(--amber);     --tcs: var(--amber-soft); }
+.terms__say {
+  margin-top: var(--sp-2);
+  min-height: 2.6em;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--paper-3);
+  border-radius: var(--radius);
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
 /* 라이브 수치 판 */
 .readout {
   display: flex;

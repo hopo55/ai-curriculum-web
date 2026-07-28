@@ -233,6 +233,12 @@
         Eckart–Young 정리(<a href="2.8-svd.html">2.8</a>)의 PCA 판이다.
         <strong>얼마나 잃었는지 미리 계산할 수 있다</strong>는 점이 PCA의 큰 장점이다.
       </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>막대기를 벽에 비춰 그림자를 만든다고 하면, <strong>그림자 길이의 제곱</strong>과 <strong>막대기가 벽에서 뜬 정도의 제곱</strong>을 더한 값이 늘 막대기 길이의 제곱입니다(피타고라스).</p>
+        <p>그림자를 길게 만들수록 벽에서 뜬 부분이 줄어듭니다. "분산을 키우는 것"과 "오차를 줄이는 것"이 같은 말인 이유가 이것입니다.</p>
+      </div>
+
       <div class="note note--trap">
         <span class="note__label">"variance = 정보"는 가정이다</span>
         <p>
@@ -946,6 +952,10 @@ WIDGETS.register('pca-projection', function (root, ctx) {
       }));
       STAT.dotIn(p, PTS[i][0], PTS[i][1], 5);
       STAT.dotIn(p, pr[0], pr[1], 4, 'viz-handle');
+      if (i === 0) {
+        p.callout((PTS[i][0] + pr[0]) / 2, (PTS[i][1] + pr[1]) / 2, '이 거리가 잃는 정보',
+          { dx: 16, dy: -12, tone: 'var(--seal-ink)' });
+      }
     });
 
     var n1 = PTS.length - 1;

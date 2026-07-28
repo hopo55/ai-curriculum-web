@@ -221,6 +221,31 @@
         기본값처럼 쓰이는 이유가 이 크기 불변성이다.
       </p>
 
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>
+          분자는 <strong>"둘이 얼마나 같이 가는가"</strong>를 재고, 분모는 <strong>"각자 얼마나 긴가"</strong>를 잰다.
+          같이 가는 정도를 각자의 길이로 나누면 <em>길이와 상관없는 순수한 방향 점수</em>만 남는다.
+        </p>
+        <p>
+          그래서 화살표를 아무리 길게 늘여도 값이 안 변한다 — 늘인 만큼 분자도 분모도 같이 커지기 때문이다.
+        </p>
+      </div>
+
+      <p>
+        식 (4)의 각 조각이 그림의 어디인지 아래에서 직접 짚어 볼 수 있다.
+      </p>
+
+      <figure class="widget" data-widget="cos-anatomy">
+        <figcaption class="widget__bar">공식 해부 — 각 조각이 그림의 어디인가</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">칩에 마우스를 올리면 그 조각이 그림에서 밝아집니다. 분자만 커지는 경우와 분모만 커지는 경우를 각각 만들어 보세요.</p>
+        </div>
+      </figure>
+
       <span class="anchor" id="c-euclid"></span>
       <span class="anchor" id="c-manhattan"></span>
       <h3>Euclidean and Manhattan Distance 유클리드·맨해튼 거리</h3>
@@ -1010,6 +1035,100 @@ WIDGETS.register('projection', function (root, ctx) {
   }
   VIZ.draggable(hu, p, mover(u), { label: '기준 vector u' });
   VIZ.draggable(hv, p, mover(v), { label: 'vector v' });
+  draw();
+});
+
+/* ============================================================
+   위젯 2-b — 공식 해부 (수식 항 ↔ 그림 부분)
+   칩을 고르면 그 조각이 그림에서 밝아진다.
+   ============================================================ */
+WIDGETS.register('cos-anatomy', function (root, ctx) {
+  var u = [3, 0];
+  var ang = 40, len = 2.4;
+  var pick = 'num';
+
+  var p = VIZ.plot({ w: 460, h: 320, xmin: -1.2, xmax: 4.4, ymin: -1.2, ymax: 2.8 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'num', label: '분자  uᵀv', digits: 3 },
+    { key: 'nu', label: '‖u‖', digits: 3 },
+    { key: 'nv', label: '‖v‖', digits: 3 },
+    { key: 'cos', label: 'cos θ = 분자 ÷ 분모', digits: 4 }
+  ]);
+
+  function arc(r, a0, a1, on) {
+    var cx = p.X(0), cy = p.Y(0);
+    var x0 = cx + r * Math.cos(a0), y0 = cy - r * Math.sin(a0);
+    var x1 = cx + r * Math.cos(a1), y1 = cy - r * Math.sin(a1);
+    var d = a1 - a0;
+    return VIZ.el('path', {
+      d: 'M' + x0.toFixed(2) + ' ' + y0.toFixed(2) + ' A' + r + ' ' + r + ' 0 0 ' +
+         (d > 0 ? 0 : 1) + ' ' + x1.toFixed(2) + ' ' + y1.toFixed(2),
+      fill: 'none', stroke: 'var(--amber)', 'stroke-width': on ? 4 : 2,
+      'stroke-opacity': on ? 1 : 0.45
+    });
+  }
+
+  function draw() {
+    var t = ang * Math.PI / 180;
+    var v = [len * Math.cos(t), len * Math.sin(t)];
+    var dot = u[0] * v[0] + u[1] * v[1];
+    var nu = Math.sqrt(u[0] * u[0] + u[1] * u[1]);
+    var nv = Math.sqrt(v[0] * v[0] + v[1] * v[1]);
+    var cos = dot / (nu * nv);
+    var s = dot / (nu * nu);            /* 그림자의 배율 */
+
+    p.clear().grid(1, 1).axes('x', 'y').ticks(1, 1);
+
+    /* 분자 = u 위에 드리운 그림자의 길이 × ‖u‖ */
+    var onNum = pick === 'num';
+    p.add(VIZ.el('line', {
+      x1: p.X(0), y1: p.Y(0), x2: p.X(s * u[0]), y2: p.Y(s * u[1]),
+      stroke: 'var(--jade)', 'stroke-width': onNum ? 11 : 7,
+      'stroke-opacity': onNum ? 0.6 : 0.22, 'stroke-linecap': 'round'
+    }));
+    p.line([[v[0], v[1]], [s * u[0], s * u[1]]], { dash: '3 3' });
+
+    p.vector(u[0], u[1], {
+      stroke: 'var(--jade)', width: pick === 'nu' ? 5 : 2.5, label: 'u'
+    });
+    p.vector(v[0], v[1], {
+      stroke: 'var(--seal)', width: pick === 'nv' ? 5 : 2.5, label: 'v'
+    });
+    p.add(arc(38, 0, t, pick === 'cos'));
+
+    if (onNum) p.callout(s * u[0] / 2, 0, '분자 = 그림자 × ‖u‖', { dy: 30, tone: 'var(--jade-ink)' });
+    if (pick === 'nu') p.callout(u[0] / 2, 0, 'u 의 길이', { dy: -26, tone: 'var(--jade-ink)' });
+    if (pick === 'nv') p.callout(v[0] / 2, v[1] / 2, 'v 의 길이', { dx: -20, dy: -18, tone: 'var(--seal-ink)' });
+    if (pick === 'cos') p.callout(0.62 * Math.cos(t / 2), 0.62 * Math.sin(t / 2), 'θ', { dx: 16, dy: -6, tone: 'var(--amber)' });
+
+    out.set('num', dot); out.set('nu', nu); out.set('nv', nv); out.set('cos', cos);
+  }
+
+  WIDGETS.terms({
+    host: ctx.controls, label: '식 (4) 의 조각',
+    items: [
+      { k: 'num', label: 'uᵀv (분자)', tone: 'jade',
+        say: '두 화살표가 같이 가는 정도. v 를 u 위에 눕혔을 때의 그림자 길이에 ‖u‖ 를 곱한 값입니다. 각도가 커지면 줄고, 90°를 넘으면 음수가 됩니다.' },
+      { k: 'nu', label: '‖u‖ (분모)', tone: 'jade',
+        say: 'u 가 얼마나 긴가. 분모에 있으니 u 를 늘여도 최종 점수는 변하지 않습니다 — 분자도 같이 커지기 때문입니다.' },
+      { k: 'nv', label: '‖v‖ (분모)', tone: 'seal',
+        say: 'v 가 얼마나 긴가. 아래 슬라이더로 v 만 길게 늘여 보세요. 분자와 분모가 같은 비율로 커져 cos θ 는 그대로입니다.' },
+      { k: 'cos', label: 'cos θ (결과)', tone: 'amber',
+        say: '남는 것은 각도뿐입니다. 0°면 1, 90°면 0, 180°면 −1. 길이는 이미 나눠서 지워졌습니다.' }
+    ],
+    onFocus: function (k) { pick = k; draw(); }
+  });
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'v 의 각도 θ', min: 0, max: 150, step: 1, value: 40, unit: '°', digits: 0,
+    onInput: function (x) { ang = x; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'v 의 길이', min: 0.6, max: 2.6, step: 0.05, value: 2.4, digits: 2,
+    onInput: function (x) { len = x; draw(); }
+  });
   draw();
 });
 

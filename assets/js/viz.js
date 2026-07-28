@@ -188,6 +188,44 @@
           class: 'viz-label', fill: opts.fill || null,
           'font-size': opts.size || null, text: str
         }));
+      },
+
+      /**
+       * 주석 — 그림의 한 점을 가리키며 쉬운 말로 설명을 붙인다.
+       * callout(x, y, '여기가 가장 긴 반지름', { dx: 26, dy: -20 })
+       *
+       * 라벨이 viewBox 밖으로 나가지 않게 스스로 접어 넣는다.
+       * (한글은 글자당 폭이 글꼴 크기와 거의 같다 — check-visual.mjs 와 같은 근사)
+       */
+      callout: function (x, y, str, opts) {
+        opts = opts || {};
+        var size = opts.size || 11;
+        var tone = opts.tone || 'var(--ink-3)';
+        var px = X(x), py = Y(y);
+        var dx = opts.dx === undefined ? 26 : opts.dx;
+        var dy = opts.dy === undefined ? -20 : opts.dy;
+
+        /* 글자 폭 추정 → 오른쪽으로 넘치면 왼쪽에 붙인다 */
+        var wpc = 0;
+        for (var i = 0; i < str.length; i++) {
+          wpc += /[ㄱ-힝　-〿]/.test(str[i]) ? size : size * 0.55;
+        }
+        var anchor = 'start';
+        if (px + dx + wpc > w - p.r) { dx = -Math.abs(dx); anchor = 'end'; }
+        if (px + dx - (anchor === 'end' ? wpc : 0) < p.l) { dx = Math.abs(dx); anchor = 'start'; }
+        var ly = Math.max(p.t + size, Math.min(h - p.b, py + dy));
+
+        var g = el('g');
+        g.appendChild(el('line', {
+          x1: px, y1: py, x2: px + dx * 0.72, y2: ly + 3,
+          stroke: tone, 'stroke-width': 1.2, 'stroke-dasharray': '3 2'
+        }));
+        g.appendChild(el('circle', { cx: px, cy: py, r: 3, fill: tone }));
+        g.appendChild(el('text', {
+          x: px + dx, y: ly, 'text-anchor': anchor, class: 'viz-label',
+          fill: tone, 'font-size': size, text: str
+        }));
+        return api.add(g);
       }
     };
 

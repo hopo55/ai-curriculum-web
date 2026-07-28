@@ -299,6 +299,70 @@
     return { el: wrap, get: function () { return cur; }, set: pick };
   }
 
+  /* ------------------------------------------- 수식 항 ↔ 그림 연결 (카탈로그 G) */
+  /**
+   * terms({host, items:[{k, label, tone, say}], onFocus})
+   *
+   * 수식의 각 항을 색이 있는 칩으로 늘어놓는다. 칩에 마우스를 올리거나
+   * 키보드로 옮기면 그 항이 그림의 어느 부분인지 onFocus(k) 로 알려 주고,
+   * 아래에 '쉬운 말' 설명을 띄운다.
+   *
+   * tone: 'jade' | 'seal' | 'amber'  (색의 뜻은 SPEC §8 을 따른다)
+   */
+  function terms(o) {
+    var wrap = document.createElement('div');
+    wrap.className = 'terms';
+
+    var row = document.createElement('div');
+    row.className = 'terms__row';
+    row.setAttribute('role', 'tablist');
+    if (o.label) row.setAttribute('aria-label', o.label);
+
+    var say = document.createElement('p');
+    say.className = 'terms__say';
+
+    var chips = [];
+    function focus(k) {
+      chips.forEach(function (c) {
+        var on = c.getAttribute('data-k') === String(k);
+        c.classList.toggle('is-on', on);
+        c.setAttribute('aria-selected', on ? 'true' : 'false');
+        c.tabIndex = on ? 0 : -1;
+      });
+      var it = o.items.filter(function (z) { return String(z.k) === String(k); })[0];
+      say.textContent = it ? (it.say || '') : '';
+      if (o.onFocus) o.onFocus(k);
+    }
+
+    o.items.forEach(function (it, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'termchip termchip--' + (it.tone || 'jade');
+      b.setAttribute('data-k', String(it.k));
+      b.setAttribute('role', 'tab');
+      b.textContent = it.label;
+      b.addEventListener('mouseenter', function () { focus(it.k); });
+      b.addEventListener('focus', function () { focus(it.k); });
+      b.addEventListener('click', function () { focus(it.k); });
+      b.addEventListener('keydown', function (e) {
+        var d = e.key === 'ArrowRight' ? 1 : (e.key === 'ArrowLeft' ? -1 : 0);
+        if (!d) return;
+        e.preventDefault();
+        var n = (i + d + o.items.length) % o.items.length;
+        chips[n].focus();
+      });
+      row.appendChild(b);
+      chips.push(b);
+    });
+
+    wrap.appendChild(row);
+    wrap.appendChild(say);
+    if (o.host) o.host.appendChild(wrap);
+    if (o.items.length) focus(o.items[0].k);
+
+    return { el: wrap, focus: focus };
+  }
+
   window.WIDGETS = {
     register: register,
     autoInit: autoInit,
@@ -306,6 +370,7 @@
     readout: readout,
     player: player,
     matrix: matrix,
-    toggle: toggle
+    toggle: toggle,
+    terms: terms
   };
 })();

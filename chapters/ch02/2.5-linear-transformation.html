@@ -327,6 +327,12 @@
         deep learning에서 weight(가중치) matrix의 유효 rank가 낮다는 관찰이 LoRA 같은 low-rank(저랭크) 기법의 출발점이다
         (<a href="2.8-svd.html">2.8</a>, <a href="2.10-linear-algebra-in-ai.html">2.10</a>).
       </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>입력의 자유도 $n$ 개가 변환을 지나면서 <strong>살아남는 것</strong>과 <strong>짓뭉개지는 것</strong>으로 갈립니다. rank는 살아남은 개수, nullity는 사라진 개수입니다.</p>
+        <p>$3$ 차원을 종이에 그림자로 비추면 $2$ 차원이 남고 $1$ 차원이 사라집니다 — rank 2, nullity 1. 둘을 더하면 언제나 원래 차원입니다.</p>
+      </div>
+
 
       <figure class="widget" data-widget="rank-null">
         <figcaption class="widget__bar">rank · null space · column space를 한 화면에</figcaption>

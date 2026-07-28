@@ -75,7 +75,7 @@
     <section class="sec" id="s-summary">
       <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
       <p class="tldr">
-        eigenvector(고유벡터)는 <strong>변환해도 방향이 바뀌지 않는 축</strong>이고, eigenvalue(고유값)는 그 축에서의 배율이다.
+        eigenvector(고유벡터)는 <mark class="hl"><strong>변환해도 방향이 바뀌지 않는 축</strong></mark>이고, eigenvalue(고유값)는 그 축에서의 배율이다.
         이 축들로 coordinates(좌표)를 바꾸면 복잡한 matrix(행렬)가 <strong>diagonal matrix(대각행렬) 하나로 단순해진다</strong>.
       </p>
 
@@ -97,7 +97,7 @@
         <em>길이만 변하고 방향은 그대로</em>다. 그 방향이 eigenvector고, 변한 길이의 배율이 eigenvalue다.
       </p>
       <p>
-        왜 중요한가. 그 축을 기준으로 coordinates를 다시 잡으면 변환이 <strong>축마다 곱하기 하나</strong>로 단순해진다.
+        왜 중요한가. 그 축을 기준으로 coordinates를 다시 잡으면 변환이 <mark class="hl"><strong>축마다 곱하기 하나</strong></mark>로 단순해진다.
         복잡하게 얽힌 matrix multiplication(행렬 곱)이 숫자 몇 개의 거듭제곱으로 바뀐다 —
         반복 적용, 미분방정식, 안정성 분석이 전부 여기서 쉬워진다.
       </p>
@@ -125,7 +125,7 @@
       <div class="note note--key">
         <span class="note__label">핵심</span>
         <p>
-          eigenvector는 <strong>변환이 "가장 단순하게 보이는" 좌표축</strong>이다.
+          eigenvector는 <mark class="hl"><strong>변환이 "가장 단순하게 보이는" 좌표축</strong></mark>이다.
           그 축에서 보면 matrix는 diagonal matrix고, diagonal matrix는 곱하기일 뿐이다.
         </p>
       </div>
@@ -153,7 +153,7 @@
         $\lambda=0$ 이 eigenvalue이라는 것은 곧 $\mathbf{A}$ 가 특이하다는 뜻이다.
       </p>
       <p>
-        eigenvector는 <strong>방향만 의미가 있다</strong>. $\mathbf{v}$ 가 고유벡터면 $c\mathbf{v}$ 도 고유벡터이므로,
+        eigenvector는 <mark class="hl"><strong>방향만 의미가 있다</strong></mark>. $\mathbf{v}$ 가 고유벡터면 $c\mathbf{v}$ 도 고유벡터이므로,
         보통 길이 1로 normalize 해 표기한다.
       </p>
 
@@ -180,7 +180,7 @@
         <span class="eq__tag num">(2)</span>
       </div>
       <p>
-        여기서 두 가지 항등식이 바로 나온다 — <strong>eigenvalue의 합 = trace(대각합)</strong>,
+        여기서 두 가지 항등식이 바로 나온다 — <mark class="hl"><strong>eigenvalue의 합 = trace(대각합)</strong></mark>,
         <strong>eigenvalue의 곱 = determinant(행렬식)</strong>. 일반 $n$ dimension(차원)에서도 성립하며, 계산 결과를 검산하는 데 유용하다.
       </p>
 

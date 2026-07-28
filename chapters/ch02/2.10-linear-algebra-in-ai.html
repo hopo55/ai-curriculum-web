@@ -77,7 +77,7 @@
       <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
       <p class="tldr">
         deep learning(딥러닝) model(모델)의 연산량 대부분은 <strong>matrix multiplication(행렬 곱) 하나</strong>이고,
-        구조의 차이는 <strong>무엇을 무엇에 곱하는가</strong>와 <strong>어떤 shape로 tensor(텐서)를 배치하는가</strong>의 차이다.
+        구조의 차이는 <mark class="hl"><strong>무엇을 무엇에 곱하는가</strong></mark>와 <strong>어떤 shape로 tensor(텐서)를 배치하는가</strong>의 차이다.
       </p>
 
       <h3>학습 목표</h3>
@@ -108,7 +108,7 @@
           <div class="widget__stage" data-stage></div>
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
-          <p class="watch">출력의 각 성분은 <strong>입력 전체와의 inner product(내적) 하나</strong>입니다. 뉴런 수만큼 inner product를 반복하는 것이 matrix multiplication입니다.</p>
+          <p class="watch">출력의 각 성분은 <mark class="hl"><strong>입력 전체와의 inner product(내적) 하나</strong></mark>입니다. 뉴런 수만큼 inner product를 반복하는 것이 matrix multiplication입니다.</p>
         </div>
       </figure>
 
@@ -166,12 +166,12 @@
         <span class="eq__tag num">(2)</span>
       </div>
       <p>
-        $\mathbf{o}_t$ 는 $t$ 번째만 1인 one-hot 벡터다. <strong>one-hot과의 곱 = 그 행을 꺼내는 것</strong>이므로
+        $\mathbf{o}_t$ 는 $t$ 번째만 1인 one-hot 벡터다. <mark class="hl"><strong>one-hot과의 곱 = 그 행을 꺼내는 것</strong></mark>이므로
         실제 구현은 곱셈을 하지 않고 인덱싱만 한다 — 연산량이 $O(Vd)$ 에서 $O(d)$ 로 준다.
         parameter는 $Vd$ 개로, vocabulary(어휘) 5만 · dimension(차원) 768 이면 약 3,840만 개다.
       </p>
       <p>
-        embedding space(임베딩 공간)에서 <strong>의미의 유사성이 기하적 근접성으로</strong> 나타난다는 성질은
+        embedding space(임베딩 공간)에서 <mark class="hl"><strong>의미의 유사성이 기하적 근접성으로</strong></mark> 나타난다는 성질은
         <a href="2.3-inner-product.html">2.3</a>에서 다뤘다. 학습된 결과이지 주어진 성질이 아니라는 점을 기억한다.
       </p>
 
@@ -209,7 +209,7 @@
         </table>
       </div>
       <p>
-        $\sqrt{d_k}$ 로 나누는 이유는 <strong>dimension이 커질수록 inner product의 variance(분산)가 커지기</strong> 때문이다.
+        $\sqrt{d_k}$ 로 나누는 이유는 <mark class="hl"><strong>dimension이 커질수록 inner product의 variance(분산)가 커지기</strong></mark> 때문이다.
         성분이 독립이고 variance 1이면 inner product의 variance가 $d_k$ 가 되므로, $\sqrt{d_k}$ 로 나눠 되돌린다
         — 그러지 않으면 softmax가 한쪽으로 포화되어 gradient(기울기)가 사라진다<a class="cite" href="#ref-vaswani2017-attention-is-all" data-ref="vaswani2017-attention-is-all">1</a>.
       </p>

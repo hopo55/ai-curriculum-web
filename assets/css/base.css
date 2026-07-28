@@ -809,6 +809,25 @@ input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.25); }
 }
 .watch::before { content: "관찰 포인트 · "; font-weight: 700; }
 
+/* 핵심 문장 형광펜
+   색의 뜻은 §8 — 주묵(--seal)은 강조 전용이다.
+   배경을 통째로 깔지 않고 아래 절반만 칠해 형광펜 자국처럼 보이게 한다. */
+.hl {
+  background: linear-gradient(transparent 56%, var(--seal-soft) 56%);
+  color: inherit;
+  padding: 0 .1em;
+  border-radius: 2px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+/* 이미 색이 깔린 곳(콜아웃·요약 상자) 안에서는 밑줄로 바꿔 겹치지 않게 */
+.note .hl,
+.tldr .hl {
+  background: none;
+  border-bottom: 2px solid var(--seal);
+  border-radius: 0;
+}
+
 /* 수식 항 ↔ 그림 연결 (위젯 카탈로그 G)
    칩 하나가 수식의 항 하나에 대응하고, 색이 그림의 같은 색 부분을 가리킨다. */
 .terms { margin-top: var(--sp-3); }

@@ -95,7 +95,7 @@
 
       <p>
         두 사람이 같은 방향으로 밀면 힘이 보태지고, 직각으로 밀면 서로 보태지 않고,
-        반대로 밀면 상쇄된다. inner product는 정확히 <strong>이 "보탬의 정도"</strong>를 재는 수다.
+        반대로 밀면 상쇄된다. inner product는 정확히 <mark class="hl"><strong>이 "보탬의 정도"</strong></mark>를 재는 수다.
         같은 방향이면 양수, 직각이면 0, 반대 방향이면 음수다.
       </p>
 
@@ -112,7 +112,7 @@
       <p>
         다른 그림으로도 볼 수 있다. $\mathbf{v}$ 에서 $\mathbf{u}$ 방향으로 <em>그림자</em>를 내리면
         그 그림자의 길이가 $\|\mathbf{v}\|\cos\theta$ 다. 여기에 $\|\mathbf{u}\|$ 를 곱한 것이 inner product다.
-        <strong>inner product = (그림자 길이) × (기준 vector의 길이)</strong>.
+        <mark class="hl"><strong>inner product = (그림자 길이) × (기준 vector의 길이)</strong></mark>.
       </p>
 
       <figure class="widget" data-widget="projection">
@@ -164,7 +164,7 @@
         </table>
       </div>
       <p>
-        마지막 조건 덕분에 <strong>inner product가 norm(노름)을 낳는다</strong>: $\|\mathbf{x}\| = \sqrt{\langle\mathbf{x},\mathbf{x}\rangle}$.
+        마지막 조건 덕분에 <mark class="hl"><strong>inner product가 norm(노름)을 낳는다</strong></mark>: $\|\mathbf{x}\| = \sqrt{\langle\mathbf{x},\mathbf{x}\rangle}$.
         식 (1)에서 $\mathbf{y}=\mathbf{x}$ 로 두면 $\sum_i x_i^2$ 이고, 제곱근을 씌우면
         <a href="2.2-vector-operations.html">2.2</a>의 $L_2$ norm이 그대로 나온다.
       </p>
@@ -194,7 +194,7 @@
       <span class="anchor" id="c-proj"></span>
       <h3>Orthogonal Projection 정사영</h3>
       <p>
-        $\mathbf{v}$ 를 $\mathbf{u}$ 가 만드는 직선 위로 <strong>수직으로 내린 그림자</strong>가 orthogonal projection이다.
+        $\mathbf{v}$ 를 $\mathbf{u}$ 가 만드는 직선 위로 <mark class="hl"><strong>수직으로 내린 그림자</strong></mark>가 orthogonal projection이다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \operatorname{proj}_{\mathbf{u}}(\mathbf{v}) = \frac{\mathbf{u}^\top\mathbf{v}}{\mathbf{u}^\top\mathbf{u}}\,\mathbf{u} = \frac{\mathbf{u}^\top\mathbf{v}}{\|\mathbf{u}\|^2}\,\mathbf{u} $$</div>
@@ -216,7 +216,7 @@
         <span class="eq__tag num">(4)</span>
       </div>
       <p>
-        <strong>크기를 나눠 버렸으므로 방향만 본다.</strong> 문서 길이가 10배 차이 나도,
+        <mark class="hl"><strong>크기를 나눠 버렸으므로 방향만 본다.</strong></mark> 문서 길이가 10배 차이 나도,
         단어 빈도의 절대량이 달라도 방향이 같으면 1이다. 검색 · 추천 · embedding(임베딩) 비교에서
         기본값처럼 쓰이는 이유가 이 크기 불변성이다.
       </p>

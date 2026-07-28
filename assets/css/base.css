@@ -49,6 +49,7 @@ a { color: inherit; }
   --seal-soft:  #f0dbd6;
   --seal-ink:   #8d2c20;
   --hl-band:    rgba(222, 152, 0, .92);
+  --hl-ink:     var(--ink);
 
   /* 청자 — 인터랙티브 요소 전용 */
   --jade:       #2f6f66;
@@ -110,7 +111,8 @@ a { color: inherit; }
     --seal:       #e2705c;
     --seal-soft:  #3a2320;
     --seal-ink:   #f0937f;
-    --hl-band:    rgba(255, 214, 0, .38);
+    --hl-band:    #ffd54f;
+    --hl-ink:     #14161a;
 
     --jade:       #6cb3a6;
     --jade-soft:  #1c2f2c;
@@ -139,7 +141,8 @@ a { color: inherit; }
   --seal:       #e2705c;
   --seal-soft:  #3a2320;
   --seal-ink:   #f0937f;
-  --hl-band:    rgba(255, 214, 0, .38);
+  --hl-band:    #ffd54f;
+  --hl-ink:     #14161a;
 
   --jade:       #6cb3a6;
   --jade-soft:  #1c2f2c;
@@ -838,19 +841,28 @@ input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.25); }
      ⚠ 색은 처음부터 끝까지 하나로 유지한다. 위아래 어디든 더 진한 구간을 두면
        그 자리가 선으로 읽혀 하이라이트에 밑줄이 그어진 것처럼 보인다.
        위아래 경계만 짧게 흐려 형광펜 자국처럼 만든다. */
+  /* 밴드 안 글자색을 뒤집으므로(다크) 글자가 밴드 밖으로 삐져나오면 안 된다.
+     20%~86% 는 글자의 위아래 끝(대략 22%~78%)을 여유 있게 덮는 구간이다. */
   background-image: linear-gradient(
     to bottom,
-    transparent 22%,
-    var(--hl-band) 30%,
-    var(--hl-band) 78%,
-    transparent 86%);
-  color: inherit;
+    transparent 14%,
+    var(--hl-band) 20%,
+    var(--hl-band) 86%,
+    transparent 92%);
+  color: var(--hl-ink);
   padding: 0 .16em;
   margin: 0 -.04em;
   border-radius: 2px;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
+/* 밴드 안에서는 강조·링크도 같은 글자색을 따른다.
+   strong 은 color:var(--ink) 를 갖고 있어 명시적으로 되돌리지 않으면 다크에서 안 보인다. */
+.hl strong,
+.hl em,
+.hl b,
+.hl a { color: inherit; }
+.hl a { text-decoration-color: currentColor; }
 /* 혹시 <mark> 이 섞여 들어와도 기본 노랑이 나오지 않게 */
 mark {
   background-color: transparent;

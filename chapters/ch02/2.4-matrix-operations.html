@@ -100,7 +100,7 @@
       </p>
       <p>
         그래서 matrix multiplication을 처음 배울 때의 "행과 열을 곱해 더한다"는 절차는
-        <mark class="hl"><strong>정의라기보다 계산법</strong></mark>이다. 왜 그렇게 정의했는지는
+        <span class="hl"><strong>정의라기보다 계산법</strong></span>이다. 왜 그렇게 정의했는지는
         아래 네 가지 관점 중 두 번째(열의 linear combination)를 보면 분명해진다.
       </p>
 
@@ -144,7 +144,7 @@
       <p>
         $\mathbf{A}\in\mathbb{R}^{m\times n}$, $\mathbf{B}\in\mathbb{R}^{n\times p}$ 일 때
         곱 $\mathbf{C}=\mathbf{AB} \in \mathbb{R}^{m\times p}$ 는 다음과 같다.
-        <mark class="hl"><strong>안쪽 치수 $n$ 이 맞아야</strong></mark> 정의된다.
+        <span class="hl"><strong>안쪽 치수 $n$ 이 맞아야</strong></span> 정의된다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ c_{ij} = \sum_{k=1}^{n} a_{ik}\,b_{kj} \qquad (m,n)\times(n,p) \to (m,p) $$</div>
@@ -166,7 +166,7 @@
         <p>관점 ②가 가장 쓸모 있습니다. matrix multiplication을 <strong>"재료를 정해진 비율로 섞는 일"</strong>로 읽는 것입니다.</p>
         <p>$\mathbf{A}$ 의 열이 <em>재료</em>이고, $\mathbf{B}$ 의 한 열이 <em>배합 비율</em>입니다. 결과의 한 열은 그 비율로 섞은 결과입니다. 신경망의 한 layer가 하는 일이 정확히 이것입니다.</p>
       </div>
-      <p>대수적 성질은 다음과 같다. <mark class="hl"><strong>교환법칙만 없다</strong></mark>는 점이 핵심이다.</p>
+      <p>대수적 성질은 다음과 같다. <span class="hl"><strong>교환법칙만 없다</strong></span>는 점이 핵심이다.</p>
 
       <ul>
         <li>결합법칙: $(\mathbf{AB})\mathbf{C} = \mathbf{A}(\mathbf{BC})$ — 계산 순서를 바꿔 <em>비용</em>을 줄일 수 있다.</li>
@@ -183,7 +183,7 @@
         <span class="eq__tag num">(3)</span>
       </div>
       <p>
-        마지막 식에서 <mark class="hl"><strong>순서가 뒤집힌다</strong></mark>는 것이 중요하다.
+        마지막 식에서 <span class="hl"><strong>순서가 뒤집힌다</strong></span>는 것이 중요하다.
         inverse matrix도 마찬가지로 $(\mathbf{AB})^{-1} = \mathbf{B}^{-1}\mathbf{A}^{-1}$ 이다.
         옷을 입은 순서의 역순으로 벗는 것과 같다.
       </p>
@@ -226,7 +226,7 @@
       <p>
         $\det\mathbf{A} = 0$ 이면 나눌 수 없으므로 inverse matrix가 없다. 이때를 <strong>특이</strong>(singular)하다고 한다.
         기하적으로 $|\det|$ 는 <a href="2.2-vector-operations.html">2.2</a>에서 본 parallelogram(평행사변형)의 넓이 배율이고,
-        0이 되었다는 것은 <mark class="hl"><strong>공간이 납작하게 눌려 되돌릴 수 없다</strong></mark>는 뜻이다.
+        0이 되었다는 것은 <span class="hl"><strong>공간이 납작하게 눌려 되돌릴 수 없다</strong></span>는 뜻이다.
       </p>
 
       <figure class="widget" data-widget="inverse-2x2">

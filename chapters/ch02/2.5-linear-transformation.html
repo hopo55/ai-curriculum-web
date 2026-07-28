@@ -78,7 +78,7 @@
     <section class="sec" id="s-summary">
       <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
       <p class="tldr">
-        matrix(행렬)는 숫자표가 아니라 <mark class="hl"><strong>격자를 통째로 움직이는 함수</strong></mark>이고,
+        matrix(행렬)는 숫자표가 아니라 <span class="hl"><strong>격자를 통째로 움직이는 함수</strong></span>이고,
         그 함수가 무엇을 하는지는 <strong>basis vector(기저 벡터)를 어디로 보내는가</strong>만 보면 전부 알 수 있다.
       </p>
 
@@ -100,7 +100,7 @@
         <strong>격자선은 여전히 직선이고 서로 나란하며, 원점은 제자리에 있다.</strong>
       </p>
       <p>
-        이 규칙 아래에서는 놀랍게도 <mark class="hl"><strong>basis vector 두 개가 어디로 가는지만 알면 나머지가 전부 결정된다.</strong></mark>
+        이 규칙 아래에서는 놀랍게도 <span class="hl"><strong>basis vector 두 개가 어디로 가는지만 알면 나머지가 전부 결정된다.</strong></span>
         $\mathbf{e}_1 = (1,0)$ 이 어디로 가고 $\mathbf{e}_2 = (0,1)$ 이 어디로 가는지 — 숫자 네 개.
         그 네 숫자를 열로 세운 것이 바로 matrix다.
       </p>
@@ -155,7 +155,7 @@
       </p>
       <p>
         즉시 따라오는 결과가 하나 있다. $c=0$ 을 넣으면 $f(\mathbf{0}) = \mathbf{0}$ —
-        <mark class="hl"><strong>linear map은 반드시 원점을 원점으로 보낸다.</strong></mark>
+        <span class="hl"><strong>linear map은 반드시 원점을 원점으로 보낸다.</strong></span>
         그래서 bias(편향)가 있는 $\mathbf{x}\mapsto\mathbf{Wx}+\mathbf{b}$ 는 (b가 0이 아니면) 선형이 아니라
         <strong>affine transformation(아핀 변환)</strong>(affine)이다. deep learning(딥러닝)에서 "linear layer"라 부르는 layer(층)가 사실 아핀인 이유다.
       </p>
@@ -163,7 +163,7 @@
       <span class="anchor" id="c-matrep"></span>
       <h3>Matrix Representation 행렬 표현</h3>
       <p>
-        basis(기저)를 정하면 <mark class="hl"><strong>모든 linear map이 matrix 하나로 표현된다</strong></mark>. 그 matrix는 이렇게 만든다.
+        basis(기저)를 정하면 <span class="hl"><strong>모든 linear map이 matrix 하나로 표현된다</strong></span>. 그 matrix는 이렇게 만든다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{A} = \bigl[\,f(\mathbf{e}_1)\ \ f(\mathbf{e}_2)\ \cdots\ f(\mathbf{e}_n)\,\bigr] \in \mathbb{R}^{m\times n}, \qquad f(\mathbf{x}) = \mathbf{A}\mathbf{x} $$</div>
@@ -214,7 +214,7 @@
       <span class="anchor" id="c-compose"></span>
       <h3>Composition 합성 변환</h3>
       <p>
-        변환을 이어서 적용하면 matrix를 곱한 것과 같다. <mark class="hl"><strong>오른쪽 matrix가 먼저 적용된다.</strong></mark>
+        변환을 이어서 적용하면 matrix를 곱한 것과 같다. <span class="hl"><strong>오른쪽 matrix가 먼저 적용된다.</strong></span>
       </p>
       <div class="eq">
         <div class="eq__body">$$ (g \circ f)(\mathbf{x}) = g(f(\mathbf{x})) = \mathbf{B}(\mathbf{A}\mathbf{x}) = (\mathbf{BA})\mathbf{x} $$</div>

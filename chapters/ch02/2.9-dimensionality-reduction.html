@@ -75,8 +75,8 @@
     <section class="sec" id="s-summary">
       <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
       <p class="tldr">
-        dimension(차원)을 줄인다는 것은 <mark class="hl"><strong>어느 방향을 버릴지 고르는 일</strong></mark>이고,
-        PCA는 <mark class="hl"><strong>variance(분산)가 가장 작은 방향부터 버린다</strong></mark> — 그것이 곧 reconstruction error(복원 오차)를 가장 적게 하는 선택이다.
+        dimension(차원)을 줄인다는 것은 <span class="hl"><strong>어느 방향을 버릴지 고르는 일</strong></span>이고,
+        PCA는 <span class="hl"><strong>variance(분산)가 가장 작은 방향부터 버린다</strong></span> — 그것이 곧 reconstruction error(복원 오차)를 가장 적게 하는 선택이다.
       </p>
 
       <h3>학습 목표</h3>
@@ -97,7 +97,7 @@
         넓게 퍼진 그림자는 원래 점들을 구별할 수 있고, 뭉친 그림자는 구별할 수 없다.
       </p>
       <p>
-        PCA는 <mark class="hl"><strong>그림자가 가장 넓게 퍼지는 방향</strong></mark>을 고르는 일이다.
+        PCA는 <span class="hl"><strong>그림자가 가장 넓게 퍼지는 방향</strong></span>을 고르는 일이다.
         그리고 놀랍게도 그 방향이 <strong>원본과 그림자 사이의 거리(information loss(정보 손실))를 가장 작게</strong> 만드는 방향이기도 하다.
         두 목표가 같은 답을 준다는 것이 이 절의 핵심이다.
       </p>
@@ -140,7 +140,7 @@
       <h3>Covariance Matrix 공분산 행렬</h3>
       <p>
         data matrix(행렬) $\mathbf{X}\in\mathbb{R}^{n\times d}$ 의 각 행이 하나의 샘플이라 하자.
-        <mark class="hl"><strong>먼저 평균을 뺀다</strong></mark>(centering(중심화)). 이 단계를 빠뜨리면 PCA 전체가 어긋난다.
+        <span class="hl"><strong>먼저 평균을 뺀다</strong></span>(centering(중심화)). 이 단계를 빠뜨리면 PCA 전체가 어긋난다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \tilde{\mathbf{X}} = \mathbf{X} - \mathbf{1}\bar{\mathbf{x}}^\top, \qquad \mathbf{C} = \frac{1}{n-1}\tilde{\mathbf{X}}^\top\tilde{\mathbf{X}} \in \mathbb{R}^{d\times d} $$</div>
@@ -176,7 +176,7 @@
         <span class="eq__tag num">(2)</span>
       </div>
       <p>
-        <mark class="hl"><strong>center 한 data의 SVD가 곧 PCA</strong></mark> 다. 실무에서는 covariance matrix를 만들지 않고
+        <span class="hl"><strong>center 한 data의 SVD가 곧 PCA</strong></span> 다. 실무에서는 covariance matrix를 만들지 않고
         $\tilde{\mathbf{X}}$ 에 바로 SVD를 쓴다 — $\mathbf{C}$ 를 만들면 condition number(조건수)가 제곱되기 때문이다
         (<a href="2.6-linear-systems.html">2.6</a>의 오해 3과 같은 이유).
       </p>

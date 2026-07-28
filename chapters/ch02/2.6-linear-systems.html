@@ -105,7 +105,7 @@
       </div>
       <p>
         학교에서는 행 그림을 배우지만, linear algebra(선형대수)의 힘은 <strong>열 그림</strong>에서 나온다.
-        "해가 있는가"는 곧 <mark class="hl"><strong>$\mathbf{b}$ 가 column space(열공간) 안에 있는가</strong></mark>이고,
+        "해가 있는가"는 곧 <span class="hl"><strong>$\mathbf{b}$ 가 column space(열공간) 안에 있는가</strong></span>이고,
         "해가 몇 개인가"는 <strong>null space(영공간)가 얼마나 큰가</strong>다 (<a href="2.5-linear-transformation.html">2.5</a>).
       </p>
 
@@ -152,7 +152,7 @@
         </table>
       </div>
       <p>
-        마지막 줄이 중요하다. 해가 여러 개면 <mark class="hl"><strong>"특수해 하나 + null space 전체"</strong></mark> 꼴이다.
+        마지막 줄이 중요하다. 해가 여러 개면 <span class="hl"><strong>"특수해 하나 + null space 전체"</strong></span> 꼴이다.
         <em>정확히 두 개</em>인 경우는 없다 — 두 해가 있으면 그 차이가 null space에 들어가고,
         null space는 subspace(부분공간)라 무한히 많은 해를 만들어 낸다.
       </p>
@@ -160,7 +160,7 @@
       <span class="anchor" id="c-gauss"></span>
       <h3>Gaussian Elimination 가우스 소거법</h3>
       <p>
-        아래 <strong>세 가지 행 연산</strong>만 쓴다. 셋 다 되돌릴 수 있으므로 <mark class="hl"><strong>해집합이 변하지 않는다</strong></mark>.
+        아래 <strong>세 가지 행 연산</strong>만 쓴다. 셋 다 되돌릴 수 있으므로 <span class="hl"><strong>해집합이 변하지 않는다</strong></span>.
       </p>
       <ol>
         <li>두 행을 맞바꾼다 (행 교환)</li>
@@ -193,7 +193,7 @@
         <span class="eq__tag num">(2)</span>
       </div>
       <p>
-        왜 굳이 분해하는가. <mark class="hl"><strong>같은 $\mathbf{A}$ 에 여러 $\mathbf{b}$ 를 풀어야 할 때</strong></mark> 압도적으로 싸다.
+        왜 굳이 분해하는가. <span class="hl"><strong>같은 $\mathbf{A}$ 에 여러 $\mathbf{b}$ 를 풀어야 할 때</strong></span> 압도적으로 싸다.
         분해는 한 번 $O(n^3/3)$ 이고, 이후 각 $\mathbf{b}$ 는 삼각행렬 두 번 풀기로 $O(n^2)$ 에 끝난다.
       </p>
       <div class="eq">
@@ -232,7 +232,7 @@
       <p>
         "이미 만든 방향들 쪽 성분을 빼고 남은 것"을 새 방향으로 삼는다.
         $\mathbf{R}$ 의 성분은 그때 뺀 계수 $\mathbf{q}_j^\top\mathbf{a}_k$ 와 남은 길이다.
-        QR은 least squares를 풀 때 normal equation보다 <mark class="hl"><strong>수치적으로 안정</strong></mark>해 실무 표준이다.
+        QR은 least squares를 풀 때 normal equation보다 <span class="hl"><strong>수치적으로 안정</strong></span>해 실무 표준이다.
       </p>
 
       <figure class="widget" data-widget="qr-gram-schmidt">

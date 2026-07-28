@@ -48,6 +48,7 @@ a { color: inherit; }
   --seal:       #b23a2b;
   --seal-soft:  #f0dbd6;
   --seal-ink:   #8d2c20;
+  --hl-band:    rgba(178, 58, 43, .22);
 
   /* 청자 — 인터랙티브 요소 전용 */
   --jade:       #2f6f66;
@@ -109,6 +110,7 @@ a { color: inherit; }
     --seal:       #e2705c;
     --seal-soft:  #3a2320;
     --seal-ink:   #f0937f;
+    --hl-band:    rgba(226, 112, 92, .30);
 
     --jade:       #6cb3a6;
     --jade-soft:  #1c2f2c;
@@ -137,6 +139,7 @@ a { color: inherit; }
   --seal:       #e2705c;
   --seal-soft:  #3a2320;
   --seal-ink:   #f0937f;
+  --hl-band:    rgba(226, 112, 92, .30);
 
   --jade:       #6cb3a6;
   --jade-soft:  #1c2f2c;
@@ -811,14 +814,26 @@ input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.25); }
 
 /* 핵심 문장 형광펜
    색의 뜻은 §8 — 주묵(--seal)은 강조 전용이다.
-   배경을 통째로 깔지 않고 아래 절반만 칠해 형광펜 자국처럼 보이게 한다. */
+   배경을 통째로 깔지 않고 아래 절반만 칠해 형광펜 자국처럼 보이게 한다.
+
+   ⚠ <mark> 을 쓰지 않는다. <mark> 은 브라우저 기본 배경이 밝은 노랑이라
+     스타일시트가 아직 안 왔거나 캐시가 오래된 순간에 글자가 보이지 않는다.
+     <span class="hl"> 로 쓰면 스타일이 없을 때 그냥 평범한 글자가 된다.
+   ⚠ 색은 반투명(--hl-band)으로 둔다. 배경 위에 얹히는 방식이라
+     라이트·다크 어느 쪽에서도 대비가 무너지지 않는다. */
 .hl {
-  background: linear-gradient(transparent 56%, var(--seal-soft) 56%);
+  background-color: transparent;
+  background-image: linear-gradient(transparent 56%, var(--hl-band) 56%);
   color: inherit;
   padding: 0 .1em;
   border-radius: 2px;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
+}
+/* 혹시 <mark> 이 섞여 들어와도 기본 노랑이 나오지 않게 */
+mark {
+  background-color: transparent;
+  color: inherit;
 }
 /* 이미 색이 깔린 곳(콜아웃·요약 상자) 안에서는 밑줄로 바꿔 겹치지 않게 */
 .note .hl,

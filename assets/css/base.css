@@ -48,7 +48,7 @@ a { color: inherit; }
   --seal:       #b23a2b;
   --seal-soft:  #f0dbd6;
   --seal-ink:   #8d2c20;
-  --hl-band:    rgba(178, 58, 43, .22);
+  --hl-band:    rgba(178, 58, 43, .46);
 
   /* 청자 — 인터랙티브 요소 전용 */
   --jade:       #2f6f66;
@@ -110,7 +110,7 @@ a { color: inherit; }
     --seal:       #e2705c;
     --seal-soft:  #3a2320;
     --seal-ink:   #f0937f;
-    --hl-band:    rgba(226, 112, 92, .30);
+    --hl-band:    rgba(226, 112, 92, .55);
 
     --jade:       #6cb3a6;
     --jade-soft:  #1c2f2c;
@@ -139,7 +139,7 @@ a { color: inherit; }
   --seal:       #e2705c;
   --seal-soft:  #3a2320;
   --seal-ink:   #f0937f;
-  --hl-band:    rgba(226, 112, 92, .30);
+  --hl-band:    rgba(226, 112, 92, .55);
 
   --jade:       #6cb3a6;
   --jade-soft:  #1c2f2c;
@@ -823,9 +823,17 @@ input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.25); }
      라이트·다크 어느 쪽에서도 대비가 무너지지 않는다. */
 .hl {
   background-color: transparent;
-  background-image: linear-gradient(transparent 56%, var(--hl-band) 56%);
+  /* 띠가 글자 높이를 덮어야 형광펜으로 보인다.
+     56%에서 시작하면 baseline 아래만 칠해져 밑줄처럼 보였다.
+     26%~82% 는 글자를 덮되 윗줄·아랫줄 띠와는 떨어져 한 덩어리로 뭉치지 않는 구간이다. */
+  background-image: linear-gradient(
+    transparent 26%,
+    var(--hl-band) 26%,
+    var(--hl-band) 82%,
+    transparent 82%);
   color: inherit;
-  padding: 0 .1em;
+  padding: 0 .16em;
+  margin: 0 -.04em;
   border-radius: 2px;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
@@ -839,7 +847,9 @@ mark {
 .note .hl,
 .tldr .hl {
   background: none;
-  border-bottom: 2px solid var(--seal);
+  padding: 0;
+  margin: 0;
+  border-bottom: 3px solid var(--seal);
   border-radius: 0;
 }
 

@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5.12 이상치 탐지 — AI 이론 학습</title>
+<meta name="description" content="'정상'만 알려 주고 나머지를 찾게 하는 문제. 무엇을 이상하다고 볼 것인가 — 확률이 낮다, 고립되기 쉽다, 이웃보다 성기다, 재구성이 안 된다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="5.12">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">5.12</span>
+        <span>5장 · 전통적 머신러닝</span>
+      </div>
+      <h1>이상치 탐지</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 65분</span>
+        <span><b>난이도</b>★★★☆☆</span>
+        <span><b>선수지식</b>
+          <a href="5.10-clustering.html">5.10 군집화</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-stat">Statistical Outlier Detection</a>
+      <a class="chip" href="#c-iforest">Isolation Forest</a>
+      <a class="chip" href="#c-ocsvm">One-Class SVM</a>
+      <a class="chip" href="#c-lof">LOF</a>
+      <a class="chip" href="#c-recon">Reconstruction-based</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        이상치 탐지는 <strong>"정상"만 알려 주고 나머지를 찾게 하는 문제</strong>다.
+        <strong>무엇을 이상하다고 볼 것인가</strong>가 방법을 가른다 —
+        <strong>확률이 낮다</strong>(통계) · <strong>고립되기 쉽다</strong>(isolation forest) ·
+        <strong>이웃보다 성기다</strong>(LOF) · <strong>재구성이 안 된다</strong>(reconstruction).
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>z-score 와 Mahalanobis 거리를 손으로 계산하고 언제 각각이 필요한지 설명할 수 있다.</li>
+        <li>isolation forest 의 경로 길이 점수 $2^{-E[h]/c(n)}$ 를 계산하고 그 정규화의 의미를 말할 수 있다.</li>
+        <li>LOF 가 <strong>전역 방법이 놓치는 국소 이상치</strong>를 왜 잡는지 설명하고 손으로 계산할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        이상치 탐지가 <a href="5.1-ml-problem-definition.html">5.1</a>의 분류와 다른 점은
+        <strong>한쪽 class 의 예시가 거의 또는 전혀 없다</strong>는 것이다.
+        신용카드 사기는 전체의 0.1% 이고, 새로운 수법은 <strong>훈련 data 에 아예 없다</strong>.
+        <strong>"정상이 아닌 것"을 정상만 보고 정의해야</strong> 한다.
+      </p>
+      <p>
+        가장 단순한 답은 <strong>"드물면 이상하다"</strong>다 — 확률이 낮은 점을 고른다.
+        그런데 <strong>드문 것과 이상한 것은 다르다</strong>.
+        키 2m 인 사람은 드물지만 정상이고, 키 1.7m 에 몸무게 30kg 인 사람은
+        <strong>각각은 흔한데 조합이 이상</strong>하다.
+      </p>
+      <p>
+        여기서 방법들이 갈린다.
+        <strong>분포를 가정</strong>해 확률을 재거나(통계),
+        <strong>얼마나 쉽게 떼어낼 수 있는지</strong> 보거나(isolation),
+        <strong>주변 이웃과 비교</strong>하거나(LOF),
+        <strong>압축했다 되살려 보고 얼마나 망가지는지</strong> 본다(reconstruction).
+      </p>
+
+      <figure class="widget" data-widget="four-scores">
+        <figcaption class="widget__bar">네 가지 관점 — 같은 data, 다른 이상치</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">밀도가 다른 두 무리가 있으면 <strong>전역 방법과 LOF 의 답이 갈립니다</strong>.</p>
+        </div>
+      </figure>
+
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>도서관에서 <strong>제자리에 없는 책</strong>을 찾는다고 합시다. "아무도 안 빌려 간 책"을 찾는 것은 <strong>드문 것</strong>을 찾는 것이지 잘못 꽂힌 책을 찾는 것이 아닙니다.</p>
+        <p><strong>주변 책들과 비교</strong>해야 합니다 — 요리책 사이에 낀 물리학 책은 그 자체로 드물지 않아도 <strong>있어야 할 곳에 없습니다</strong>. 이것이 LOF 의 발상입니다.</p>
+        <p>또 다른 방법은 <strong>스무고개</strong>입니다. 아주 특이한 책은 <strong>두세 번만 물어도 특정</strong>되지만, 평범한 책은 <strong>한참을 물어야</strong> 합니다. 몇 번 만에 골라지는지가 곧 이상함의 척도입니다 — isolation forest 입니다.</p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-stat"></span>
+      <h3>Statistical Outlier Detection 통계적 이상치 탐지</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ z=\frac{x-\mu}{\sigma}, \qquad d_M(\mathbf{x})=\sqrt{(\mathbf{x}-\boldsymbol{\mu})^\top\boldsymbol{\Sigma}^{-1}(\mathbf{x}-\boldsymbol{\mu})} $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">z-score 는 <strong>표준편차 몇 배만큼 떨어져 있는가</strong>를 재고,
+        Mahalanobis 거리는 <strong>공분산을 고려한</strong> 그 다변량 판이다 —
+        <strong>각 feature 는 정상인데 조합이 이상한 점</strong>을 잡아낸다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>방법</th><th>기준</th><th>가정</th><th>약점</th></tr></thead>
+          <tbody>
+            <tr><td>z-score</td><td>$|z|>3$</td><td>정규분포, 1차원</td><td><strong>이상치가 $\mu,\sigma$ 를 오염</strong>시킨다</td></tr>
+            <tr><td><strong>수정 z-score</strong></td><td>$\frac{0.6745(x-\text{med})}{\text{MAD}}>3.5$</td><td>없음</td><td><strong>이상치에 강하다</strong></td></tr>
+            <tr><td>IQR (상자그림)</td><td>$Q_1-1.5\text{IQR}$ 밖</td><td>없음</td><td>1차원만</td></tr>
+            <tr><td>Mahalanobis</td><td>$d_M^2>\chi^2_{d,0.99}$</td><td>다변량 정규</td><td>$\boldsymbol{\Sigma}$ 추정이 오염된다</td></tr>
+            <tr><td><strong>Robust Mahalanobis</strong></td><td>MCD 로 $\boldsymbol{\mu},\boldsymbol{\Sigma}$ 추정</td><td>다변량 정규</td><td>계산이 비싸다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>가림 효과(masking)</strong> 가 통계적 방법의 근본 문제다 —
+        이상치가 <strong>자신을 찾는 데 쓰이는 $\mu$ 와 $\sigma$ 를 부풀려</strong>
+        스스로를 정상으로 보이게 만든다. 여럿이 함께 있으면 더 심하다.
+        그래서 <strong>중앙값과 MAD 처럼 이상치에 둔감한 추정량</strong>을 쓰는 것이 표준이다(예제 ①).
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \text{MAD}=\text{median}\bigl(|x_i-\text{median}(x)|\bigr), \qquad \hat{\sigma}\approx1.4826\,\text{MAD} $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        <strong>1.4826</strong> 은 정규분포에서 MAD 를 $\sigma$ 로 맞추는 상수다 —
+        $1/\Phi^{-1}(0.75)=1/0.6745$ 다.
+        MAD 의 <strong>붕괴점(breakdown point)이 50%</strong> 라
+        <strong>data 의 절반이 오염되어도 무너지지 않는다</strong>(표준편차는 <strong>한 점</strong>이면 무너진다).
+      </p>
+
+      <figure class="widget" data-widget="masking">
+        <figcaption class="widget__bar">Masking — 이상치가 자기를 숨긴다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">이상치를 더 멀리 보내면 <strong>z-score 가 오히려 줄어드는</strong> 구간이 나타납니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-iforest"></span>
+      <h3>Isolation Forest</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ s(\mathbf{x},n)=2^{-\frac{E[h(\mathbf{x})]}{c(n)}}, \qquad c(n)=2H_{n-1}-\frac{2(n-1)}{n},\ \ H_k\approx\ln k+0.5772 $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl">isolation forest 는 <strong>무작위로 feature 와 분할점을 골라</strong> 트리를 만들고,
+        <strong>한 점이 홀로 남기까지 걸린 깊이</strong> $h(\mathbf{x})$ 로 이상함을 잰다 —
+        <strong>이상치는 빨리 고립되므로 경로가 짧다</strong><a class="cite" href="#ref-liu2008-isolation-forest" data-ref="liu2008-isolation-forest">1</a>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$E[h]$</th><th>$s$</th><th>해석</th></tr></thead>
+          <tbody>
+            <tr><td>$\to0$</td><td>$\to1$</td><td><strong>확실한 이상치</strong></td></tr>
+            <tr><td>$=c(n)$</td><td><strong>0.5</strong></td><td>평균적 — 판단 보류</td></tr>
+            <tr><td>$\to n-1$</td><td>$\to0$</td><td>확실한 정상</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>$c(n)$ 은 무작위 이진탐색트리에서 실패 탐색의 평균 경로 길이</strong>다 —
+        $n$ 이 다르면 트리 깊이의 눈금 자체가 달라지므로, <strong>그것으로 나눠 정규화</strong>해야
+        표본 수가 달라도 <strong>같은 척도로 비교</strong>할 수 있다.
+      </p>
+      <p>
+        이 방법의 특징이 실무에서 결정적이다 —
+        <strong>거리를 전혀 계산하지 않아</strong> $O(n\log n)$ 으로 빠르고
+        <strong>고차원에서도 상대적으로 잘 버틴다</strong>.
+        게다가 <strong>표본추출(기본 256개)로 트리를 만들어</strong>
+        <strong>$n$ 이 아무리 커도 학습 비용이 거의 일정</strong>하다.
+        약점은 <strong>축에 나란한 분할만 쓰므로</strong> 비스듬한 구조에서 <strong>가짜 저밀도 영역</strong>을 만드는 것이다.
+      </p>
+
+      <figure class="widget" data-widget="iforest-depth">
+        <figcaption class="widget__bar">Isolation Forest — 이상치는 몇 번 만에 고립되나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">바깥쪽 점은 <strong>두세 번 자르면 혼자 남습니다</strong>. 가운데 점은 한참 걸립니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-ocsvm"></span>
+      <h3>One-Class SVM</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ f(\mathbf{x})=\sum_i\alpha_iK(\mathbf{x}_i,\mathbf{x})-\rho, \qquad f(\mathbf{x})<0 \Rightarrow \text{이상치} $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        <span class="hl">one-class SVM 은 <a href="5.8-support-vector-machine.html">5.8</a>에서 본 대로
+        <strong>정상 data 를 감싸는 경계</strong>를 찾으며,
+        $\nu$ 가 <strong>이상치로 볼 비율의 상한</strong>이라 정하기 쉽다<a class="cite" href="#ref-scholkopf2001-oneclass-svm" data-ref="scholkopf2001-oneclass-svm">2</a>.</span>
+      </p>
+      <p>
+        <strong>훈련 data 에 이상치가 섞여 있으면 취약</strong>하다는 것이 가장 큰 약점이다 —
+        경계를 그 점들까지 늘려 감싸려 하기 때문이다.
+        그래서 <strong>정상만 있는 깨끗한 훈련 data</strong>가 있을 때(novelty detection) 강하고,
+        <strong>오염된 data 에서 이상치를 찾을 때</strong>(outlier detection)는 다른 방법이 낫다.
+        <strong>$n$ 이 커지면 $O(n^2)$ 라 못 쓰는 것</strong>도 5.8 과 같다.
+      </p>
+
+      <span class="anchor" id="c-lof"></span>
+      <h3>LOF (Local Outlier Factor)</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathrm{LOF}_k(\mathbf{p})=\frac{1}{|N_k(\mathbf{p})|}\sum_{\mathbf{o}\in N_k(\mathbf{p})}\frac{\mathrm{lrd}_k(\mathbf{o})}{\mathrm{lrd}_k(\mathbf{p})} $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        <span class="hl">LOF 는 <strong>내 밀도가 이웃들의 밀도에 비해 얼마나 낮은가</strong>를 잰다 —
+        <strong>비율</strong>이라 <strong>밀도가 다른 여러 무리가 섞여 있어도</strong>
+        각 무리 안에서의 이상치를 잡아낸다<a class="cite" href="#ref-breunig2000-lof" data-ref="breunig2000-lof">3</a>.</span>
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \mathrm{lrd}_k(\mathbf{p})=\Bigl[\frac{1}{|N_k|}\sum_{\mathbf{o}\in N_k(\mathbf{p})}\mathrm{reach\text{-}dist}_k(\mathbf{p},\mathbf{o})\Bigr]^{-1}, \quad \mathrm{reach\text{-}dist}_k(\mathbf{p},\mathbf{o})=\max\bigl(k\text{-dist}(\mathbf{o}),\ d(\mathbf{p},\mathbf{o})\bigr) $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>LOF 값</th><th>해석</th></tr></thead>
+          <tbody>
+            <tr><td>$\approx1$</td><td><strong>이웃과 밀도가 비슷하다 — 정상</strong></td></tr>
+            <tr><td>$<1$</td><td>이웃보다 조밀하다 — 무리의 한가운데</td></tr>
+            <tr><td>$>1.5$ 정도</td><td>이웃보다 성기다 — <strong>이상치 의심</strong></td></tr>
+            <tr><td>$\gg2$</td><td>강한 이상치</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>reachability distance</strong> 라는 장치가 핵심이다 —
+        실제 거리를 쓰되 <strong>$\mathbf{o}$ 의 $k$번째 이웃 거리보다 작아지지 않게</strong> 막는다.
+        아주 가까이 붙은 점들 때문에 <strong>밀도 추정이 요동치는 것을 막는 평활 장치</strong>이며,
+        <strong>비대칭</strong>이라는 점(자기 자신의 $k$-거리가 아니라 <strong>상대의 것</strong>을 쓴다)이 중요하다.
+      </p>
+      <p>
+        <span class="hl">LOF 가 다른 방법과 결정적으로 다른 점은 <strong>절대적 밀도가 아니라 상대적 밀도</strong>를 본다는 것이다 —
+        <strong>성긴 무리 한가운데 있는 점</strong>은 전역 방법이 이상치로 오인하지만
+        LOF 는 정상으로 본다(예제 ③).</span>
+      </p>
+
+      <figure class="widget" data-widget="lof-lab">
+        <figcaption class="widget__bar">LOF — 상대적 밀도가 답을 바꾼다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">성긴 무리의 <strong>한가운데 점</strong>이 LOF 로는 정상, 전역 밀도로는 이상치가 됩니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-recon"></span>
+      <h3>Reconstruction-based 재구성 기반</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \text{score}(\mathbf{x})=\|\mathbf{x}-g(f(\mathbf{x}))\|^2, \qquad f=\text{압축},\ g=\text{복원} $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        <span class="hl">재구성 기반 방법은 <strong>정상 data 로 압축·복원을 학습</strong>한 뒤,
+        <strong>잘 복원되지 않는 점</strong>을 이상치로 본다 —
+        model 이 정상의 구조만 배웠으므로 <strong>그 구조에서 벗어난 것은 되살릴 수 없다</strong>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>압축 방법</th><th>점수</th><th>특징</th></tr></thead>
+          <tbody>
+            <tr><td><strong>PCA</strong></td><td>버린 성분들의 제곱합</td><td>선형·빠름·<strong>닫힌 해</strong> (<a href="5.11-dimensionality-reduction-manifold.html">5.11</a>)</td></tr>
+            <tr><td>Kernel PCA</td><td>특징공간 재구성 오차</td><td>비선형이지만 $O(n^3)$</td></tr>
+            <tr><td>Autoencoder</td><td>$\|\mathbf{x}-\hat{\mathbf{x}}\|^2$</td><td>비선형·큰 data (14장)</td></tr>
+            <tr><td>VAE</td><td>재구성 + KL (ELBO)</td><td>확률적 해석 가능 (13장)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        PCA 재구성 오차에는 깔끔한 형태가 있다 —
+        <strong>버린 주성분 방향의 좌표 제곱합</strong>이다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \text{score}(\mathbf{x})=\sum_{k=m+1}^{d}\bigl(\mathbf{w}_k^\top(\mathbf{x}-\bar{\mathbf{x}})\bigr)^2 $$</div>
+        <span class="eq__tag num">(8)</span>
+      </div>
+      <p>
+        <strong>Mahalanobis 거리와의 관계</strong>도 여기서 보인다 —
+        각 항을 $\lambda_k$ 로 나누면 정확히 $d_M^2$ 의 일부가 된다.
+        즉 <strong>PCA 재구성 오차는 "버린 방향에서만 잰, 정규화하지 않은 Mahalanobis 거리"</strong> 다(유도 3).
+      </p>
+      <p>
+        <strong>주의할 함정</strong> — autoencoder 의 용량이 너무 크면
+        <strong>이상치까지 잘 복원해 버려</strong> 탐지가 실패한다.
+        <strong>병목을 충분히 좁게</strong> 두어야 하고,
+        훈련 data 가 <strong>정상만으로 이루어져 있어야</strong> 한다(오해 5).
+      </p>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>다섯 방법을 상황별로 정리한다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>방법</th><th>가정</th><th>비용</th><th>고차원</th><th>오염된 훈련 data</th><th>강점</th></tr></thead>
+          <tbody>
+            <tr><td>z-score · IQR</td><td>단변량 분포</td><td>$O(n)$</td><td>✗</td><td><strong>취약</strong> (MAD 는 강함)</td><td>가장 단순</td></tr>
+            <tr><td>Mahalanobis</td><td>다변량 정규</td><td>$O(nd^2)$</td><td>△</td><td>취약 (MCD 는 강함)</td><td>상관을 고려</td></tr>
+            <tr><td><strong>Isolation Forest</strong></td><td><strong>없음</strong></td><td><strong>$O(n\log n)$</strong></td><td><strong>△~○</strong></td><td><strong>강하다</strong></td><td><strong>빠르고 무난한 기본값</strong></td></tr>
+            <tr><td>One-Class SVM</td><td>없음 (kernel)</td><td>$O(n^2)$</td><td>△</td><td><strong>취약</strong></td><td>깨끗한 정상 data 가 있을 때</td></tr>
+            <tr><td><strong>LOF</strong></td><td>없음</td><td>$O(n^2)$ / $O(n\log n)$</td><td>✗</td><td>보통</td><td><strong>밀도가 다른 무리</strong></td></tr>
+            <tr><td>Reconstruction</td><td>저차원 구조</td><td>PCA $O(nd^2)$</td><td><strong>○</strong></td><td>보통</td><td>고차원·이미지</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>실무 기본값은 isolation forest</strong> 다 —
+        가정이 없고 빠르며 hyperparameter 도 <code>contamination</code> 정도만 정하면 된다.
+        <strong>밀도가 다른 무리가 섞였다면 LOF</strong>,
+        <strong>고차원 이미지·신호라면 재구성 기반</strong>,
+        <strong>feature 가 몇 개뿐이고 정규분포에 가깝다면 robust Mahalanobis</strong> 가 낫다.
+      </p>
+      <p>
+        <span class="hl">그리고 <strong>세 문제를 구별</strong>해야 한다 —
+        <strong>outlier detection</strong>(오염된 data 에서 이상한 것 찾기),
+        <strong>novelty detection</strong>(깨끗한 정상으로 학습해 새 점을 판정),
+        <strong>불균형 분류</strong>(양쪽 label 이 다 있지만 한쪽이 아주 적음).
+        <strong>label 이 조금이라도 있으면 지도학습이 대개 더 낫다</strong>(오해 1).</span>
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$z$</td><td>z-score 표준점수</td><td>$(x-\mu)/\sigma$</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>MAD</td><td>median absolute deviation</td><td>중앙값에서의 절대편차의 중앙값</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$d_M$</td><td>Mahalanobis 마할라노비스 거리</td><td>공분산으로 정규화한 거리</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$h(\mathbf{x})$</td><td>path length 경로 길이</td><td>한 트리에서 고립되기까지의 깊이</td><td>정수</td><td>$\ge0$</td></tr>
+            <tr><td>$c(n)$</td><td>—</td><td><strong>정규화 상수</strong> — 평균 경로 길이</td><td>scalar</td><td>$\approx2\ln n$</td></tr>
+            <tr><td>$s(\mathbf{x},n)$</td><td>anomaly score</td><td>$2^{-E[h]/c(n)}$</td><td>scalar</td><td>$(0,1)$</td></tr>
+            <tr><td>$H_k$</td><td>harmonic number 조화수</td><td>$\sum_{i=1}^{k}1/i$</td><td>scalar</td><td>$\approx\ln k+0.5772$</td></tr>
+            <tr><td>$N_k(\mathbf{p})$</td><td>k-이웃 집합</td><td>$\mathbf{p}$ 의 $k$개 최근접 이웃</td><td>집합</td><td>$|N_k|\ge k$</td></tr>
+            <tr><td>$k$-dist</td><td>k-distance</td><td>$k$번째 이웃까지의 거리</td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>reach-dist</td><td>reachability distance</td><td>$\max(k\text{-dist}(\mathbf{o}),d(\mathbf{p},\mathbf{o}))$</td><td>scalar</td><td><strong>비대칭</strong></td></tr>
+            <tr><td>lrd</td><td>local reachability density</td><td>평균 reach-dist 의 역수</td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>LOF</td><td>local outlier factor</td><td>이웃 lrd 평균 / 내 lrd</td><td>scalar</td><td>$\approx1$ 이면 정상</td></tr>
+            <tr><td>$\nu$</td><td>nu 뉴</td><td>one-class SVM 의 이상치 비율 상한</td><td>scalar</td><td>$(0,1]$</td></tr>
+            <tr><td><code>contamination</code></td><td>—</td><td>이상치로 볼 비율 (문턱 결정용)</td><td>scalar</td><td>$(0,0.5]$</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">같은 것을 다르게 부른다</span>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>이 사이트</th><th>같은 뜻으로 쓰이는 말</th><th>주의할 점</th></tr></thead>
+            <tbody>
+              <tr><td>이상치 탐지</td><td>anomaly detection, outlier detection</td><td><strong>novelty detection 과 구별</strong>해야 한다</td></tr>
+              <tr><td>이상 점수</td><td>anomaly score, <code>decision_function</code></td><td>sklearn 은 <strong>낮을수록 이상</strong> (부호가 반대)</td></tr>
+              <tr><td>MAD</td><td>median absolute deviation</td><td>mean absolute deviation 과 <strong>다르다</strong></td></tr>
+              <tr><td>lrd</td><td>국소 도달가능 밀도</td><td>실제 밀도가 아니라 <strong>평활된 역거리</strong></td></tr>
+              <tr><td>MCD</td><td>minimum covariance determinant</td><td>robust 공분산 추정</td></tr>
+              <tr><td><code>contamination</code></td><td>—</td><td><strong>점수가 아니라 문턱만</strong> 바꾼다</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — z-score 로는 못 찾는 이상치가 있다</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mu=\frac1n\sum x_i,\qquad \sigma^2=\frac1n\sum(x_i-\mu)^2 $$</div>
+          <div class="derive__why"><strong>이상치도 이 합에 들어간다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{정상 } n-1 \text{ 개가 } \mu_0,\sigma_0,\ \text{이상치 하나가 } x_{\text{out}}=\mu_0+\Delta $$</div>
+          <div class="derive__why">$\Delta$ 를 키워 가며 본다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mu\approx\mu_0+\frac{\Delta}{n},\qquad \sigma^2\approx\sigma_0^2+\frac{\Delta^2}{n} $$</div>
+          <div class="derive__why"><strong>분산이 $\Delta^2$ 에 비례해 커진다</strong> — 이것이 결정적</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ z_{\text{out}}=\frac{\Delta(1-1/n)}{\sqrt{\sigma_0^2+\Delta^2/n}} $$</div>
+          <div class="derive__why">대입했다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Delta\to\infty:\ z_{\text{out}}\to\frac{\Delta}{\Delta/\sqrt{n}}=\sqrt{n} \quad \textbf{유계다} $$</div>
+          <div class="derive__why"><strong>아무리 멀리 보내도 $z$ 가 $\sqrt{n}$ 을 못 넘는다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ n=10:\ \max|z|=\frac{n-1}{\sqrt{n}}=\frac{9}{3.162}=2.846\ <\ 3 $$</div>
+          <div class="derive__why"><strong>표본 10개면 "|z|>3" 규칙이 아무것도 못 잡는다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ n=12:\ \frac{11}{3.464}=3.175 \ \Rightarrow\ \textbf{n≥12 부터 겨우 가능} $$</div>
+          <div class="derive__why">정확한 상계는 $(n-1)/\sqrt{n}$ 이다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{중앙값·MAD 를 쓰면 } \textbf{이상치가 추정에 못 들어간다} $$</div>
+          <div class="derive__why">붕괴점 50% — 식 (2), 예제 ①</div>
+        </div>
+      </div>
+
+      <h3>유도 2 — isolation forest 의 정규화 상수 $c(n)$</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{무작위로 분할점을 고르면 } \textbf{무작위 이진탐색트리(BST)} \text{ 와 같은 구조} $$</div>
+          <div class="derive__why">한 점이 고립되는 과정 = BST 에서 실패 탐색</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{BST 의 평균 실패 탐색 길이}=2H_{n-1}-\frac{2(n-1)}{n}\equiv c(n) $$</div>
+          <div class="derive__why">알고리즘론의 고전적 결과 — 식 (3)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ H_{k}=\sum_{i=1}^{k}\frac1i\approx\ln k+\gamma,\qquad \gamma=0.5772 $$</div>
+          <div class="derive__why">조화수의 근사</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ c(256)\approx2(\ln255+0.5772)-2\cdot\frac{255}{256}=2(6.1411)-1.992=10.29 $$</div>
+          <div class="derive__why">기본 표본 크기 256 에서의 값</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ s=2^{-E[h]/c(n)} \ \Rightarrow\ E[h]=c(n) \text{ 이면 } s=2^{-1}=0.5 $$</div>
+          <div class="derive__why"><strong>평균이면 정확히 0.5</strong> — 눈금이 맞춰졌다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ E[h]=0 \Rightarrow s=1;\qquad E[h]\to n-1 \Rightarrow s\to0 $$</div>
+          <div class="derive__why">$(0,1)$ 로 <strong>단조 사상</strong>된다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ n \text{ 이 달라도 } s \text{ 를 } \textbf{같은 척도로 비교} \text{ 할 수 있다} $$</div>
+          <div class="derive__why">$c(n)$ 으로 나누는 이유 ∎</div>
+        </div>
+      </div>
+
+      <h3>유도 3 — PCA 재구성 오차와 Mahalanobis 거리의 관계</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \boldsymbol{\Sigma}=\mathbf{W}\boldsymbol{\Lambda}\mathbf{W}^\top,\qquad \boldsymbol{\Sigma}^{-1}=\mathbf{W}\boldsymbol{\Lambda}^{-1}\mathbf{W}^\top $$</div>
+          <div class="derive__why">고유분해 (<a href="../ch02/2.7-eigenvalues.html">2.7</a>)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ d_M^2=\tilde{\mathbf{x}}^\top\mathbf{W}\boldsymbol{\Lambda}^{-1}\mathbf{W}^\top\tilde{\mathbf{x}}=\sum_{k=1}^{d}\frac{(\mathbf{w}_k^\top\tilde{\mathbf{x}})^2}{\lambda_k}=\sum_{k=1}^{d}\frac{z_k^2}{\lambda_k} $$</div>
+          <div class="derive__why"><strong>주성분 좌표 $z_k$ 를 각자의 분산으로 나눈 제곱합</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{PCA 재구성 오차}=\sum_{k=m+1}^{d}z_k^2 $$</div>
+          <div class="derive__why">식 (8) — <strong>버린 방향만, 나누지 않고</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{두 점수의 차이}:\ (\text{a}) \text{ 어느 방향을 보나},\ (\text{b}) \lambda_k \text{ 로 나누나} $$</div>
+          <div class="derive__why">본질은 이 둘뿐이다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ d_M^2 \text{ 는 } \textbf{모든 방향} \text{ 을 보고 } \lambda_k \text{ 로 나눈다} \Rightarrow \text{작은 } \lambda_k \text{ 방향이 } \textbf{지배} $$</div>
+          <div class="derive__why">잡음 방향의 미세한 오차가 <strong>증폭</strong>된다 — 고차원에서 불안정해지는 이유</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{PCA 오차는 } \textbf{잡음 방향만} \text{ 보되 나누지 않는다} \Rightarrow \text{훨씬 안정적} $$</div>
+          <div class="derive__why">그래서 <strong>고차원에서는 재구성 오차 쪽</strong>을 쓴다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{절충}:\ \sum_{k>m}\frac{z_k^2}{\lambda_k} \quad (\text{robust PCA 계열의 점수}) $$</div>
+          <div class="derive__why">버린 방향만 보되 정규화는 한다</div>
+        </div>
+      </div>
+
+      <details>
+        <summary>이상치 탐지를 어떻게 평가하는가 — label 이 없는데</summary>
+        <p>
+          이것이 이 분야의 가장 어려운 실무 문제다.
+          <strong>정확도는 쓸 수 없다</strong> — 이상치가 1% 면
+          "전부 정상"이라고 답해도 <strong>99% 정확도</strong>다.
+        </p>
+        <p>
+          label 이 <strong>조금이라도</strong> 있다면 <a href="5.13-model-evaluation.html">5.13</a>의
+          <strong>PR-AUC</strong> 를 쓴다 — 극단적 불균형에서는 ROC-AUC 가
+          <strong>지나치게 낙관적</strong>이기 때문이다.
+          <strong>Precision@k</strong>(상위 $k$개 중 진짜 이상치 비율)도 자주 쓰이며,
+          <strong>사람이 검토할 수 있는 건수가 정해져 있는</strong> 실무 상황에 잘 맞는다.
+        </p>
+        <p>
+          label 이 전혀 없다면 <strong>합성 이상치를 주입</strong>해 보거나
+          (균등분포에서 뽑아 섞고 그것을 찾아내는지 확인),
+          <strong>여러 방법의 순위 일치도</strong>를 본다.
+          결국 <strong>상위 몇 개를 사람이 직접 확인하는 것</strong>이 가장 확실하며,
+          그 과정에서 label 이 조금씩 쌓이면 <strong>지도학습으로 옮겨 가는 것</strong>이 정석이다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① z-score 는 실패하고 MAD 는 성공한다</h3>
+      <p>$x=(1,\ 2,\ 3,\ 4,\ 5,\ 6,\ 7,\ 8,\ 9,\ 100)$ — 마지막이 명백한 이상치다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mu=\frac{45+100}{10}=14.5 $$</div>
+          <div class="derive__why">$1+\dots+9=45$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sum(x_i-14.5)^2=182.25+156.25+\dots+30.25+7310.25 $$</div>
+          <div class="derive__why">$(1-14.5)^2=182.25$, $(100-14.5)^2=7310.25$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{앞 9개 합}=182.25+156.25+132.25+110.25+90.25+72.25+56.25+42.25+30.25=872.25 $$</div>
+          <div class="derive__why"></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sigma^2=\frac{872.25+7310.25}{10}=\frac{8182.5}{10}=818.25 \ \Rightarrow\ \sigma=28.60 $$</div>
+          <div class="derive__why"><strong>이상치 하나가 분산을 9배로 부풀렸다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ z_{100}=\frac{100-14.5}{28.60}=\frac{85.5}{28.60}=2.989\ <\ 3 $$</div>
+          <div class="derive__why"><strong>"|z|>3" 규칙으로는 못 잡는다</strong> — 유도 1 의 상계 $9/\sqrt{10}=2.846$ 에 근접</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{중앙값}=\frac{5+6}{2}=5.5 $$</div>
+          <div class="derive__why">이제 robust 방식으로</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ |x_i-5.5|=(4.5,\ 3.5,\ 2.5,\ 1.5,\ 0.5,\ 0.5,\ 1.5,\ 2.5,\ 3.5,\ 94.5) $$</div>
+          <div class="derive__why">절대편차</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{정렬}:\ (0.5,0.5,1.5,1.5,2.5,2.5,3.5,3.5,4.5,94.5) \ \Rightarrow\ \text{MAD}=\frac{2.5+2.5}{2}=2.5 $$</div>
+          <div class="derive__why"><strong>이상치가 중앙값에 전혀 영향을 못 준다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ M_{100}=\frac{0.6745(100-5.5)}{2.5}=\frac{0.6745(94.5)}{2.5}=\frac{63.74}{2.5}=25.50 $$</div>
+          <div class="derive__why">수정 z-score. <strong>문턱 3.5 를 압도적으로 넘는다</strong> ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ M_{1}=\frac{0.6745(1-5.5)}{2.5}=\frac{-3.035}{2.5}=-1.214 \quad (\text{정상}) $$</div>
+          <div class="derive__why">가장 작은 정상값도 안전하게 정상으로 판정 ✓</div>
+        </div>
+      </div>
+
+      <h3>② Isolation Forest 점수를 손으로</h3>
+      <p>$n=256$ (기본 표본 크기)일 때.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ H_{255}\approx\ln255+0.5772=5.5413+0.5772=6.1185 $$</div>
+          <div class="derive__why">$\ln255=5.5413$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ c(256)=2(6.1185)-2\Bigl(\frac{255}{256}\Bigr)=12.237-1.9922=10.245 $$</div>
+          <div class="derive__why">식 (3)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ E[h]=4:\ s=2^{-4/10.245}=2^{-0.3904}=e^{-0.3904(0.6931)}=e^{-0.2706}=0.7629 $$</div>
+          <div class="derive__why"><strong>빨리 고립됐다 → 이상치 의심</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ E[h]=10.245:\ s=2^{-1}=0.5 $$</div>
+          <div class="derive__why">정확히 평균 — <strong>판단 보류</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ E[h]=16:\ s=2^{-16/10.245}=2^{-1.5617}=e^{-1.0824}=0.3388 $$</div>
+          <div class="derive__why">깊이 묻혀 있다 → <strong>정상</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ n=1024 \text{ 라면}:\ c(1024)=2(\ln1023+0.5772)-2(0.999)=2(7.5077)-1.998=13.017 $$</div>
+          <div class="derive__why">$\ln1023=6.9305$… 정확히는 $6.9305+0.5772=7.5077$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ E[h]=4 \text{ 일 때}:\ s=2^{-4/13.017}=2^{-0.3073}=0.8082 $$</div>
+          <div class="derive__why"><strong>같은 깊이 4 라도 $n$ 이 크면 더 이상하다</strong> — 정규화의 효과 ✓</div>
+        </div>
+      </div>
+
+      <h3>③ LOF 를 손으로 — 밀도가 다른 두 무리</h3>
+      <p>
+        1차원 $x=(0,\ 1,\ 2,\ \ 20,\ 25,\ 30)$ — 앞 셋은 조밀, 뒤 셋은 성기다. $k=2$.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>점</th><th>2-이웃</th><th>2-dist</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0</td><td>1, 2</td><td class="num">2</td></tr>
+            <tr><td class="num">1</td><td>0, 2</td><td class="num">1</td></tr>
+            <tr><td class="num">2</td><td>1, 0</td><td class="num">2</td></tr>
+            <tr><td class="num">20</td><td>25, 30</td><td class="num">10</td></tr>
+            <tr><td class="num">25</td><td>20, 30</td><td class="num">5</td></tr>
+            <tr><td class="num">30</td><td>25, 20</td><td class="num">10</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{reach}(1\to0)=\max\bigl(2\text{-dist}(0),\ |1-0|\bigr)=\max(2,\ 1)=2 $$</div>
+          <div class="derive__why">식 (6). <strong>상대의 $k$-dist 를 쓴다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{reach}(1\to2)=\max(2,\ 1)=2 \ \Rightarrow\ \mathrm{lrd}(1)=\frac{1}{(2+2)/2}=0.5 $$</div>
+          <div class="derive__why">평균 reach 의 역수</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{lrd}(0):\ \text{reach}(0\to1)=\max(1,1)=1,\ \text{reach}(0\to2)=\max(2,2)=2 \Rightarrow \frac{1}{1.5}=0.6667 $$</div>
+          <div class="derive__why"></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{lrd}(2):\ \text{reach}(2\to1)=\max(1,1)=1,\ \text{reach}(2\to0)=\max(2,2)=2 \Rightarrow 0.6667 $$</div>
+          <div class="derive__why">0 과 대칭</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{LOF}(1)=\frac{\mathrm{lrd}(0)+\mathrm{lrd}(2)}{2\,\mathrm{lrd}(1)}=\frac{0.6667+0.6667}{2(0.5)}=\frac{1.3333}{1}=1.333 $$</div>
+          <div class="derive__why">식 (5)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{lrd}(25):\ \text{reach}(25\to20)=\max(10,5)=10,\ \text{reach}(25\to30)=\max(10,5)=10 \Rightarrow \frac1{10}=0.1 $$</div>
+          <div class="derive__why">성긴 무리의 <strong>한가운데</strong> 점</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{lrd}(20):\ \text{reach}(20\to25)=\max(5,5)=5,\ \text{reach}(20\to30)=\max(10,10)=10 \Rightarrow \frac{1}{7.5}=0.1333 $$</div>
+          <div class="derive__why"></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{lrd}(30)=\frac{1}{(5+10)/2}=0.1333 \quad (20 \text{ 과 대칭}) $$</div>
+          <div class="derive__why"></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{LOF}(25)=\frac{0.1333+0.1333}{2(0.1)}=\frac{0.2667}{0.2}=1.333 $$</div>
+          <div class="derive__why"><strong>점 1 과 정확히 같다</strong> — 스케일이 10배 다른데도 ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{전역 밀도로 보면}:\ 25 \text{ 의 이웃 거리 } 5 \text{ vs } 1 \text{ 의 이웃 거리 } 1 \ \Rightarrow\ 25 \text{ 가 } \textbf{5배 이상해 보인다} $$</div>
+          <div class="derive__why"><strong>LOF 만이 두 무리를 공평하게 다룬다</strong> — 이것이 "국소"의 뜻</div>
+        </div>
+      </div>
+
+      <h3>④ PCA 재구성 오차로 이상치 점수 매기기</h3>
+      <p>
+        2차원 data 가 대략 $y=x$ 선 위에 있고, 주성분 $\mathbf{w}_1=(1,1)/\sqrt2$,
+        $\mathbf{w}_2=(1,-1)/\sqrt2$, 평균은 원점. $m=1$ 로 압축한다.
+      </p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{x}_A=(3,3):\ z_1=\frac{3+3}{\sqrt2}=4.2426,\quad z_2=\frac{3-3}{\sqrt2}=0 $$</div>
+          <div class="derive__why">사영 좌표</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{score}(A)=z_2^2=0 $$</div>
+          <div class="derive__why">식 (8). <strong>선 위에 정확히 있으니 완벽 복원</strong> — 멀지만 정상</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{x}_B=(1,-1):\ z_1=0,\quad z_2=\frac{1+1}{\sqrt2}=1.4142 $$</div>
+          <div class="derive__why"></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{score}(B)=z_2^2=2 $$</div>
+          <div class="derive__why"><strong>원점에 더 가까운데 점수가 훨씬 높다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \|\mathbf{x}_A\|=4.243\ \gg\ \|\mathbf{x}_B\|=1.414 $$</div>
+          <div class="derive__why"><strong>단순 거리로는 A 가 이상해 보인다</strong> — 정반대의 결론</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lambda_1=10,\ \lambda_2=0.1 \text{ 이라면}:\ d_M^2(A)=\frac{18}{10}+0=1.8 $$</div>
+          <div class="derive__why">유도 3</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ d_M^2(B)=0+\frac{2}{0.1}=20 $$</div>
+          <div class="derive__why"><strong>Mahalanobis 도 B 를 이상치로 본다</strong> — 재구성 오차와 같은 결론 ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{다만 } \lambda_2 \text{ 로 나눠 } 2\to20 \text{ 으로 } \textbf{10배 증폭} $$</div>
+          <div class="derive__why">$\lambda_2$ 추정이 조금만 틀려도 점수가 크게 흔들린다 — 유도 3 의 마지막 세 줄</div>
+        </div>
+      </div>
+
+      <figure class="widget" data-widget="recon-score">
+        <figcaption class="widget__bar">Reconstruction — 부분공간에서 벗어난 만큼이 점수다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">주축을 <strong>따라 멀리 간 점은 정상</strong>, 조금이라도 <strong>벗어난 점은 이상치</strong>입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>네 관점</strong> · <strong>masking</strong> ·
+        <strong>isolation 깊이</strong> · <strong>LOF</strong> · <strong>재구성</strong> — 에 이어,
+        아래에서 <strong>문턱을 어디에 둘 것인가</strong>를 본다.
+      </p>
+
+      <figure class="widget" data-widget="threshold-lab">
+        <figcaption class="widget__bar">Contamination — 문턱 하나가 정밀도와 재현율을 맞바꾼다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch"><code>contamination</code> 은 <strong>점수를 바꾸지 않고 문턱만</strong> 옮깁니다 — 순위는 그대로입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"이상치가 드무니 비지도 이상치 탐지를 써야 한다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>label 이 조금이라도 있으면 지도학습이 대개 크게 앞선다</strong>.
+          비지도 방법은 <strong>"드문 것"</strong>을 찾지 <strong>"우리가 관심 있는 것"</strong>을 찾지 않는다 —
+          드물지만 무해한 패턴을 잔뜩 올려 준다.
+          사기 탐지에서 이상치 탐지가 <strong>과거 사례가 있는 사기 유형에는 열등</strong>한 이유다.
+          실무 정석은 <strong>비지도로 시작해 상위 건을 검토하며 label 을 모으고,
+          쌓이면 지도학습으로 옮기되 <strong>새로운 유형을 잡기 위해 비지도를 병행</strong>하는 것이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"$|z|>3$ 이면 이상치라고 하면 된다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>이상치 자신이 $\mu$ 와 $\sigma$ 를 오염</strong>시켜
+          스스로를 숨긴다(masking).
+          유도 1 이 보이듯 <strong>$|z|$ 는 $(n-1)/\sqrt{n}$ 을 절대 넘을 수 없어</strong>,
+          <strong>$n<12$ 면 "|z|>3" 규칙이 원리적으로 아무것도 못 잡는다</strong>.
+          예제 ①에서 100 이라는 명백한 이상치의 $z$ 가 <strong>2.989</strong> 로 문턱을 못 넘는다.
+          처방은 <strong>중앙값과 MAD 로 바꾸는 것</strong>(붕괴점 50%)이고,
+          다변량이면 <strong>MCD 기반 robust Mahalanobis</strong> 를 쓴다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"<code>contamination</code> 을 조정하면 model 이 더 잘 찾는다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>점수는 전혀 바뀌지 않고 문턱만 옮긴다</strong>.
+          isolation forest 든 LOF 든 <strong>먼저 모든 점에 점수를 매기고</strong>,
+          <code>contamination</code> 은 <strong>그 점수의 몇 분위수를 자를지</strong>만 정한다.
+          즉 <strong>순위는 그대로</strong>이고 <strong>정밀도와 재현율을 맞바꿀 뿐</strong>이다.
+          탐지 능력 자체를 바꾸려면 <strong>다른 방법을 쓰거나 feature 를 바꿔야</strong> 한다.
+          평가할 때는 문턱을 고정하지 말고 <strong>점수 순위 전체로 PR 곡선</strong>을 보는 것이 낫다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"고차원일수록 이상치가 더 잘 보인다 — 정보가 많으니까."</p>
+        <p>
+          <strong>실제로는</strong> <a href="5.5-distance-based-learning.html">5.5</a>의 <strong>차원의 저주</strong>가 그대로 온다.
+          차원이 높아지면 <strong>모든 점 사이의 거리가 비슷해져</strong>
+          "가깝다/멀다"가 의미를 잃고, <strong>거리 기반 방법(LOF·one-class SVM)이 먼저 무너진다</strong>.
+          게다가 <strong>무관한 feature 가 많으면 그 잡음이 거리를 지배</strong>한다.
+          처방은 <strong>PCA 등으로 먼저 차원을 줄이거나</strong>,
+          <strong>거리를 안 쓰는 isolation forest</strong> 를 쓰거나,
+          <strong>부분공간별로 탐지해 결합</strong>하는 것이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"autoencoder 를 크게 만들수록 재구성 기반 탐지가 잘 된다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>정확히 반대</strong>다.
+          용량이 크면 <strong>이상치까지 잘 복원해 버려</strong> 재구성 오차가 작아지고 탐지가 실패한다 —
+          극단적으로 항등함수를 학습하면 <strong>모든 점의 오차가 0</strong> 이다.
+          <strong>병목이 좁아야</strong> model 이 <strong>정상의 공통 구조만</strong> 배우고
+          거기서 벗어난 것을 복원하지 못한다.
+          같은 이유로 <strong>훈련 data 에 이상치가 섞이면 그것까지 배워</strong> 탐지력이 떨어지므로,
+          가능하면 <strong>정상만으로 학습</strong>해야 한다(novelty detection 설정).
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–④ 를 검산한다.</p>
+      <details>
+        <summary>NumPy — z-score vs MAD · iForest 점수 · LOF (22줄)</summary>
+<pre><code>import numpy as np
+
+x = np.array([1., 2, 3, 4, 5, 6, 7, 8, 9, 100])                 # 예제 ①
+z = (x - x.mean()) / x.std()
+mad = np.median(np.abs(x - np.median(x)))
+m = 0.6745 * (x - np.median(x)) / mad
+print(round(x.mean(), 2), round(x.std(), 2), round(z[-1], 4))    # 14.5 28.6 2.9895
+print(round(mad, 2), round(m[-1], 2), round((len(x) - 1) / np.sqrt(len(x)), 4))  # 2.5 25.5 2.846
+
+c = lambda n: 2 * (np.log(n - 1) + 0.5772) - 2 * (n - 1) / n     # 예제 ②
+for n in [256, 1024]:
+    print(n, round(c(n), 4), [round(2 ** (-h / c(n)), 4) for h in [4, 10.245, 16]])
+
+p = np.array([0., 1, 2, 20, 25, 30]); k = 2                      # 예제 ③
+D = np.abs(p[:, None] - p)
+nb = [np.argsort(D[i])[1:k+1] for i in range(len(p))]
+kd = np.array([D[i][nb[i][-1]] for i in range(len(p))])
+lrd = np.array([1 / np.mean([max(kd[o], D[i][o]) for o in nb[i]]) for i in range(len(p))])
+lof = np.array([np.mean([lrd[o] for o in nb[i]]) / lrd[i] for i in range(len(p))])
+print(np.round(kd, 3)); print(np.round(lrd, 4)); print(np.round(lof, 4))
+# lof = [0.9  1.333 0.9  1.0  1.333 1.0]  — 점 1 과 점 25 가 정확히 같다
+
+W = np.array([[1, 1], [1, -1]]) / np.sqrt(2)                     # 예제 ④
+for v in [[3., 3], [1., -1]]:
+    zz = W @ np.array(v)
+    print(v, np.round(zz, 4), round(zz[1]**2, 4), round(zz[0]**2/10 + zz[1]**2/0.1, 4))
+</code></pre>
+        <p>
+          <small>
+            첫 블록에서 <strong>$z_{100}=2.9895$ 로 문턱 3 을 못 넘고</strong>
+            상계 $9/\sqrt{10}=2.846$ 에 눌려 있는 것이 확인된다 — 유도 1 그대로다.
+            수정 z-score 는 <strong>25.5</strong> 로 압도적이다.
+            세 번째 블록에서 <strong>스케일이 10배 다른 두 무리의 LOF 가 정확히 같은 1.333</strong> 이 나온다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $n=6$ 인 표본에서 $|z|$ 가 가질 수 있는 최댓값은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 2.04</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>3</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>제한이 없다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $(n-1)/\sqrt{n}=5/2.449=2.041$ (유도 1).
+            <strong>표본이 6개면 어떤 값을 넣어도 $|z|$ 가 2.05 를 못 넘어</strong>
+            "|z|>3" 규칙이 <strong>원리적으로 아무것도 못 잡는다</strong>.
+            <strong>다</strong>는 $\mu,\sigma$ 를 <strong>알고 있을 때</strong>만 맞다 —
+            표본에서 추정하면 이상치가 $\sigma$ 를 함께 키운다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $c(n)=10$ 인 isolation forest 에서 $E[h]=5$ 인 점의 이상 점수는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 0.707</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.5</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>약 0.354</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $s=2^{-5/10}=2^{-0.5}=0.7071$ (식 3).
+            <strong>나</strong>는 $E[h]=c(n)$ 일 때의 값으로, <strong>정확히 평균</strong>을 뜻한다.
+            0.707 은 <strong>평균의 절반 깊이에서 고립됐다</strong>는 뜻이라 <strong>이상치 쪽</strong>이다.
+            0.5 를 기준으로 <strong>위면 이상, 아래면 정상</strong>으로 읽으면 된다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            어떤 점의 lrd 가 0.2, 이웃 세 점의 lrd 가 각각 0.6, 0.5, 0.4 다. LOF 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>2.5</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.4</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>1.5</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            이웃 lrd 평균 $=\frac{0.6+0.5+0.4}{3}=0.5$ → $\mathrm{LOF}=\frac{0.5}{0.2}=2.5$ (식 5).
+            <strong>나</strong>는 분수를 뒤집은 것이다.
+            2.5 는 <strong>이웃보다 2.5배 성기다</strong>는 뜻으로 <strong>강한 이상치</strong>다.
+            <strong>1 근처면 정상</strong>이라는 눈금이 LOF 의 가장 큰 장점이다 —
+            <strong>data 스케일과 무관하게 해석</strong>할 수 있다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            LOF 가 "국소"인 이유는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>절대 밀도가 아니라 이웃 대비 밀도 비율을 쓰기 때문</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>가까운 점들만 계산에 쓰기 때문</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>국소 최적해를 찾기 때문</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            <strong>비율</strong>이라 <strong>스케일이 상쇄</strong>된다 —
+            예제 ③에서 밀도가 10배 다른 두 무리의 대응하는 점이 <strong>정확히 같은 LOF 1.333</strong> 을 받았다.
+            <strong>나</strong>도 사실이지만 그것만으로는 국소가 되지 않는다 —
+            "이웃까지의 평균 거리"만 쓰면 <strong>성긴 무리 전체가 이상치</strong>가 된다.
+            <strong>분모에 자기 밀도를 두는 것</strong>이 핵심이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            PCA 재구성 오차가 큰 점은 무엇을 뜻하나?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>data 의 주된 부분공간에서 벗어나 있다 — 원점에서 멀 필요는 없다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>평균에서 멀리 떨어져 있다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>분산이 큰 방향으로 멀리 있다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            식 (8)이 <strong>버린 방향의 좌표만</strong> 세므로,
+            예제 ④의 $(3,3)$ 처럼 <strong>주축을 따라 아주 멀어도 점수가 0</strong> 이고
+            $(1,-1)$ 처럼 <strong>가깝지만 벗어난 점의 점수가 크다</strong>.
+            <strong>다</strong>는 정반대다 — 분산이 큰 방향은 <strong>남긴</strong> 방향이라 점수에 안 들어간다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            <code>contamination</code> 을 0.1 → 0.01 로 바꿨더니 탐지 건수가 줄었다. 성능은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>점수는 그대로 — 정밀도가 오르고 재현율이 내려갔을 뿐이다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>model 이 더 정확해졌다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>model 이 나빠졌다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            <code>contamination</code> 은 <strong>점수의 몇 분위수를 자를지</strong>만 정한다 —
+            <strong>점수와 순위는 전혀 바뀌지 않는다</strong>(오해 3).
+            따라서 <strong>PR 곡선 위를 움직인 것</strong>이지 곡선 자체가 바뀐 게 아니다.
+            탐지 능력을 비교하려면 <strong>문턱과 무관한 PR-AUC</strong> 나
+            <strong>Precision@k</strong> 를 봐야 한다(접힌 상자).
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="5.13-model-evaluation.html">5.13 모델 평가</a></strong> — 극단적 불균형에서는 PR-AUC 를 봐야 한다.</li>
+        <li><strong><a href="5.8-support-vector-machine.html">5.8 SVM</a></strong> — one-class SVM 의 원리와 $\nu$ 의 의미.</li>
+        <li><strong><a href="5.10-clustering.html">5.10 군집화</a></strong> — DBSCAN 의 잡음 label 이 곧 이상치다.</li>
+        <li><strong>13장 생성 모델</strong> — VAE·확산 model 의 우도를 이상 점수로 쓰는 접근.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-liu2008-isolation-forest" data-ref="liu2008-isolation-forest">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Liu, F. T., Ting, K. M. &amp; Zhou, Z.-H. (2008). <em>Isolation Forest</em>. ICDM 2008.</span>
+          <span class="ref__where">§3 — <strong>이상치는 적고 서로 다르므로 무작위 분할로 빨리 고립된다</strong>는 발상과 경로 길이 $h(\mathbf{x})$ 의 정의. §3.1 — 정규화 상수 $c(n)=2H_{n-1}-2(n-1)/n$ 이 <strong>무작위 BST 의 평균 실패 탐색 길이</strong>라는 근거와 점수 $2^{-E[h]/c(n)}$ 의 유도(식 3, 유도 2, 예제 ②). §4 — <strong>표본추출(기본 256)로 학습 비용이 $n$ 에 거의 무관</strong>해지고 swamping·masking 도 완화된다는 분석</span>
+          <a class="ref__link" href="https://doi.org/10.1109/ICDM.2008.17">doi.org</a>
+        </li>
+        <li class="ref" id="ref-breunig2000-lof" data-ref="breunig2000-lof">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Breunig, M. M., Kriegel, H.-P., Ng, R. T. &amp; Sander, J. (2000). <em>LOF: Identifying Density-Based Local Outliers</em>. SIGMOD 2000.</span>
+          <span class="ref__where">§1 Figure 1 — <strong>밀도가 다른 두 무리가 있을 때 전역 방법이 실패하는 예</strong>가 이 절 예제 ③의 원형이다. §4 — $k$-distance, <strong>reachability distance 의 비대칭 정의</strong>와 그것이 밀도 추정을 평활하는 역할(식 6). §4.3 — lrd 와 LOF 의 정의(식 5). 정리 1 — <strong>무리 내부의 점은 LOF 가 1 근처</strong> 라는 성질이 해석 가능한 눈금을 만든다</span>
+          <a class="ref__link" href="https://doi.org/10.1145/342009.335388">doi.org</a>
+        </li>
+        <li class="ref" id="ref-scholkopf2001-oneclass-svm" data-ref="scholkopf2001-oneclass-svm">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Schölkopf, B., Platt, J. C., Shawe-Taylor, J., Smola, A. J. &amp; Williamson, R. C. (2001). <em>Estimating the Support of a High-Dimensional Distribution</em>. Neural Computation, 13(7), 1443–1471.</span>
+          <span class="ref__where">§2 — 정상 data 를 원점에서 떼어 놓는 초평면으로 정식화하고 <strong>$f(\mathbf{x})<0$ 이면 이상치</strong>로 판정하는 결정함수(식 4). 정리 5 — <strong>$\nu$ 가 이상치 비율의 상한이자 support vector 비율의 하한</strong>. §6 — 훈련 data 가 오염되어 있으면 경계가 그쪽으로 늘어나는 한계</span>
+          <a class="ref__link" href="https://doi.org/10.1162/089976601750264965">doi.org</a>
+        </li>
+        <li class="ref" id="ref-rousseeuw1993-mad" data-ref="rousseeuw1993-mad">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Rousseeuw, P. J. &amp; Croux, C. (1993). <em>Alternatives to the Median Absolute Deviation</em>. Journal of the American Statistical Association, 88(424), 1273–1283.</span>
+          <span class="ref__where">§1 — MAD 의 <strong>붕괴점이 50%</strong> 인 반면 표준편차는 <strong>한 점만으로 무너진다</strong>는 대비와, 정규분포에서 $\sigma$ 로 맞추는 상수 <strong>1.4826</strong> 의 유래(식 2, 예제 ①). §2–3 — MAD 의 효율이 낮다는 약점과 그 대안($S_n$, $Q_n$) 제안. 이상치가 자신의 탐지 기준을 오염시키는 <strong>masking</strong> 문제에 대한 논의(유도 1, 오해 2)</span>
+          <a class="ref__link" href="https://doi.org/10.1080/01621459.1993.10476408">doi.org</a>
+        </li>
+        <li class="ref" id="ref-chandola2009-anomaly-survey" data-ref="chandola2009-anomaly-survey">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Chandola, V., Banerjee, A. &amp; Kumar, V. (2009). <em>Anomaly Detection: A Survey</em>. ACM Computing Surveys, 41(3), 1–58.</span>
+          <span class="ref__where">§2 — <strong>점 이상치·문맥 이상치·집단 이상치</strong> 의 구분과, 지도/준지도/비지도 설정의 차이('세 문제' 구분, 오해 1). §6–9 — 통계·거리·밀도·재구성 기반 방법군을 한 틀로 정리한 분류 체계('다섯 방법 비교' 표). §12 — <strong>label 없이 평가하는 어려움</strong>과 Precision@k 같은 실무 지표(접힌 상자)</span>
+          <a class="ref__link" href="https://doi.org/10.1145/1541880.1541882">doi.org</a>
+        </li>
+        <li class="ref" id="ref-sklearn-docs" data-ref="sklearn-docs">
+          <span class="ref__type" data-type="doc">문서</span>
+          <span class="ref__cite">scikit-learn developers. <em>User Guide — 2.7 Novelty and Outlier Detection · 2.6 Covariance estimation</em>.</span>
+          <span class="ref__where">2.7 도입부 — <strong>outlier detection 과 novelty detection 의 구별</strong>과 방법별 적용 조건 표('다섯 방법 비교' 표). 2.7.1절 — <strong><code>contamination</code> 은 점수가 아니라 <code>decision_function</code> 의 문턱만 정한다</strong>는 설명(오해 3, 퀴즈 6)과 <strong>sklearn 은 낮을수록 이상</strong> 이라는 부호 규약. 2.7.4절 — LOF 를 <code>novelty=True</code> 로 쓸 때의 주의. 2.6.3절 — MCD 기반 robust 공분산</span>
+          <a class="ref__link" href="https://scikit-learn.org/stable/modules/outlier_detection.html">scikit-learn.org</a>
+        </li>
+        <li class="ref" id="ref-aggarwal2017-outlier-analysis" data-ref="aggarwal2017-outlier-analysis">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Aggarwal, C. C. (2017). <em>Outlier Analysis</em> (2nd ed.). Springer.</span>
+          <span class="ref__where">2장 — z-score·Mahalanobis 같은 확률 기반 방법과 <strong>이상치가 자신의 탐지 기준을 오염시키는 masking·swamping</strong> 의 정식화(유도 1, 오해 2). 4장 — <strong>PCA 재구성 오차와 Mahalanobis 거리의 관계</strong>를 고유값 분해로 정리한 부분이 유도 3 의 구성 그대로다. 5장 — LOF 를 포함한 밀도 기반 방법군. 7장 — isolation forest 와 무작위 분할 계열. 9장 — <strong>고차원에서 거리 기반 방법이 먼저 무너지는</strong> 이유와 부분공간 접근(오해 4)</span>
+          <a class="ref__link" href="https://doi.org/10.1007/978-3-319-47578-3">doi.org</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+function panel(p) {
+  p.add(VIZ.el('rect', {
+    x: p.pad.l, y: p.pad.t, width: p.iw, height: p.ih,
+    fill: 'var(--ink-3)', 'fill-opacity': 0.03, stroke: 'none'
+  }));
+  return p;
+}
+function mkRand(seed) {
+  var s = seed || 12345;
+  return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+}
+function gauss(rnd) {
+  var u = Math.max(1e-9, rnd()), v = rnd();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+function d2(a, b) { var dx = a[0] - b[0], dy = a[1] - b[1]; return dx * dx + dy * dy; }
+
+/* LOF 계산 */
+function lofScores(X, k) {
+  var n = X.length, i, j;
+  var D = [];
+  for (i = 0; i < n; i++) {
+    D.push([]);
+    for (j = 0; j < n; j++) D[i].push(Math.sqrt(d2(X[i], X[j])));
+  }
+  var nb = [], kd = [];
+  for (i = 0; i < n; i++) {
+    var ord = [];
+    for (j = 0; j < n; j++) if (j !== i) ord.push({ j: j, d: D[i][j] });
+    ord.sort(function (a, b) { return a.d - b.d; });
+    var take = ord.slice(0, Math.min(k, ord.length));
+    nb.push(take.map(function (o) { return o.j; }));
+    kd.push(take.length ? take[take.length - 1].d : 1e-9);
+  }
+  var lrd = [];
+  for (i = 0; i < n; i++) {
+    var s = 0;
+    for (j = 0; j < nb[i].length; j++) s += Math.max(kd[nb[i][j]], D[i][nb[i][j]]);
+    lrd.push(nb[i].length / Math.max(1e-12, s));
+  }
+  var lof = [];
+  for (i = 0; i < n; i++) {
+    var t = 0;
+    for (j = 0; j < nb[i].length; j++) t += lrd[nb[i][j]];
+    lof.push((t / Math.max(1, nb[i].length)) / Math.max(1e-12, lrd[i]));
+  }
+  return { lof: lof, kd: kd, lrd: lrd };
+}
+
+/* isolation forest — 평균 경로 길이 */
+function cN(n) {
+  if (n <= 1) return 0;
+  if (n === 2) return 1;
+  return 2 * (Math.log(n - 1) + 0.5772156649) - 2 * (n - 1) / n;
+}
+function pathLen(pt, pts, rnd, depth, maxD) {
+  if (pts.length <= 1 || depth >= maxD) return depth + cN(pts.length);
+  var j = rnd() < 0.5 ? 0 : 1;
+  var lo = 1e18, hi = -1e18, i;
+  for (i = 0; i < pts.length; i++) { lo = Math.min(lo, pts[i][j]); hi = Math.max(hi, pts[i][j]); }
+  if (hi - lo < 1e-12) return depth + cN(pts.length);
+  var s = lo + (hi - lo) * rnd();
+  var sub = [];
+  for (i = 0; i < pts.length; i++) if ((pts[i][j] <= s) === (pt[j] <= s)) sub.push(pts[i]);
+  if (sub.length === pts.length) return depth + cN(pts.length);
+  return pathLen(pt, sub, rnd, depth + 1, maxD);
+}
+function iforestScores(X, trees, seed) {
+  var n = X.length, sc = new Array(n).fill(0), i, t;
+  var maxD = Math.ceil(Math.log(Math.max(2, n)) / Math.LN2);
+  for (t = 0; t < trees; t++) {
+    var rnd = mkRand(seed * 977 + t * 131 + 7);
+    var samp = [];
+    for (i = 0; i < Math.min(n, 64); i++) samp.push(X[Math.floor(rnd() * n)]);
+    for (i = 0; i < n; i++) sc[i] += pathLen(X[i], samp, rnd, 0, maxD) / trees;
+  }
+  var c = cN(Math.min(n, 64));
+  return sc.map(function (h) { return Math.pow(2, -h / Math.max(1e-9, c)); });
+}
+
+function makeTwoBlobs(seed) {
+  var rnd = mkRand(seed * 421 + 5), X = [], i;
+  for (i = 0; i < 40; i++) X.push([-1.5 + 0.22 * gauss(rnd), 0.7 + 0.22 * gauss(rnd)]);
+  for (i = 0; i < 40; i++) X.push([1.4 + 0.75 * gauss(rnd), -0.5 + 0.75 * gauss(rnd)]);
+  X.push([-0.65, 1.5]);      /* 조밀한 무리 근처의 국소 이상치 */
+  X.push([2.9, -2.3]);       /* 전역 이상치 */
+  X.push([1.4, -0.5]);       /* 성긴 무리의 한가운데 — 전역 방법이 오인 */
+  return X;
+}
+
+/* ============================================================
+   위젯 1 — 네 관점
+   ============================================================ */
+WIDGETS.register('four-scores', function (root, ctx) {
+  var method = 'lof', topk = 5, seed = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'm', label: '방법' },
+    { key: 'top', label: '가장 이상하다고 뽑은 점의 좌표' },
+    { key: 'mid', label: '성긴 무리 한가운데 점의 순위' },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function draw() {
+    var X = makeTwoBlobs(seed), n = X.length, i, sc = [];
+    if (method === 'lof') {
+      sc = lofScores(X, 12).lof;
+    } else if (method === 'iforest') {
+      sc = iforestScores(X, 40, seed);
+    } else if (method === 'maha') {
+      var mx = 0, my = 0;
+      for (i = 0; i < n; i++) { mx += X[i][0] / n; my += X[i][1] / n; }
+      var sxx = 0, syy = 0, sxy = 0;
+      for (i = 0; i < n; i++) {
+        sxx += (X[i][0] - mx) * (X[i][0] - mx) / n;
+        syy += (X[i][1] - my) * (X[i][1] - my) / n;
+        sxy += (X[i][0] - mx) * (X[i][1] - my) / n;
+      }
+      var det = Math.max(1e-9, sxx * syy - sxy * sxy);
+      for (i = 0; i < n; i++) {
+        var dx = X[i][0] - mx, dy = X[i][1] - my;
+        sc.push((syy * dx * dx - 2 * sxy * dx * dy + sxx * dy * dy) / det);
+      }
+    } else {
+      /* knn 거리 = 전역 밀도 */
+      for (i = 0; i < n; i++) {
+        var ds = [];
+        for (var j = 0; j < n; j++) if (j !== i) ds.push(Math.sqrt(d2(X[i], X[j])));
+        ds.sort(function (a, b) { return a - b; });
+        var s = 0;
+        for (var q = 0; q < 12; q++) s += ds[q] / 12;
+        sc.push(s);
+      }
+    }
+    var ord = [];
+    for (i = 0; i < n; i++) ord.push({ i: i, s: sc[i] });
+    ord.sort(function (a, b) { return b.s - a.s; });
+    var flag = {};
+    for (i = 0; i < Math.min(topk, n); i++) flag[ord[i].i] = i + 1;
+    var midIdx = n - 1;                         /* 마지막에 넣은 성긴 무리 중심점 */
+    var midRank = 0;
+    for (i = 0; i < n; i++) if (ord[i].i === midIdx) midRank = i + 1;
+
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -3, xmax: 4, ymin: -3, ymax: 2.6,
+      pad: { t: 30, r: 16, b: 30, l: 42 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x₁', '').ticks(1, 1);
+    p.text(-3, 2.6, 'x₂ · 테두리 친 점 = 상위 ' + topk + '개 이상치 · 왼쪽 무리는 조밀, 오른쪽은 성기다',
+      { size: 10, dy: -10 });
+
+    for (i = 0; i < n; i++) {
+      var f = flag[i];
+      p.add(VIZ.el('circle', {
+        cx: p.X(Math.max(-2.95, Math.min(3.95, X[i][0]))),
+        cy: p.Y(Math.max(-2.95, Math.min(2.55, X[i][1]))),
+        r: f ? 5.6 : 3, fill: f ? 'var(--seal)' : 'var(--jade)',
+        'fill-opacity': f ? 0.92 : 0.6,
+        stroke: f ? 'var(--amber)' : 'none', 'stroke-width': 2
+      }));
+    }
+    p.callout(X[midIdx][0], X[midIdx][1], '성긴 무리의 한가운데',
+      { dx: 12, dy: -26, tone: 'var(--ink-2)' });
+
+    out.setRaw('m', method === 'lof' ? 'LOF (국소)' : (method === 'iforest' ? 'Isolation Forest'
+      : (method === 'maha' ? 'Mahalanobis (전역)' : 'k-NN 거리 (전역 밀도)')));
+    out.setRaw('top', '(' + X[ord[0].i][0].toFixed(2) + ', ' + X[ord[0].i][1].toFixed(2) + ')');
+    out.setRaw('mid', midRank + ' / ' + n + (midRank <= topk ? '  ← 이상치로 오인' : '  (정상 판정)'));
+    out.setRaw('note', method === 'lof'
+      ? '이웃 대비 밀도라 성긴 무리의 중심을 정상으로 본다'
+      : (method === 'knn' ? '절대 거리를 보므로 성긴 무리 전체가 이상해 보인다'
+      : (method === 'maha' ? '타원 하나로만 보므로 두 무리를 구별하지 못한다'
+      : '축 정렬 분할이라 거리를 안 쓴다 — 빠르지만 대각 구조에 약하다')));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '방법',
+    options: [
+      { value: 'lof', label: 'LOF' },
+      { value: 'iforest', label: 'iForest' },
+      { value: 'knn', label: 'k-NN 거리' },
+      { value: 'maha', label: 'Mahalanobis' }
+    ],
+    value: 'lof', onChange: function (v) { method = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '상위 몇 개를 이상치로', min: 1, max: 12, step: 1, value: 5, digits: 0,
+    onInput: function (v) { topk = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — masking
+   ============================================================ */
+WIDGETS.register('masking', function (root, ctx) {
+  var delta = 20, n = 10;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'z', label: '이상치의 z-score', digits: 4 },
+    { key: 'lim', label: '이론적 상계 (n−1)/√n', digits: 4 },
+    { key: 'm', label: '수정 z-score (중앙값·MAD)', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function stats(dd) {
+    var x = [], i;
+    for (i = 0; i < n - 1; i++) x.push(i + 1);
+    x.push(dd);
+    var mu = 0;
+    for (i = 0; i < n; i++) mu += x[i] / n;
+    var v = 0;
+    for (i = 0; i < n; i++) v += (x[i] - mu) * (x[i] - mu) / n;
+    var sd = Math.sqrt(Math.max(1e-12, v));
+    var sorted = x.slice().sort(function (a, b) { return a - b; });
+    var med = n % 2 ? sorted[(n - 1) / 2] : (sorted[n / 2 - 1] + sorted[n / 2]) / 2;
+    var ad = x.map(function (q) { return Math.abs(q - med); }).sort(function (a, b) { return a - b; });
+    var mad = n % 2 ? ad[(n - 1) / 2] : (ad[n / 2 - 1] + ad[n / 2]) / 2;
+    return { z: (dd - mu) / sd, m: 0.6745 * (dd - med) / Math.max(1e-9, mad) };
+  }
+
+  function draw() {
+    var lim = (n - 1) / Math.sqrt(n);
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 5, xmax: 200, ymin: 0, ymax: Math.max(6, lim * 1.5),
+      pad: { t: 30, r: 16, b: 34, l: 48 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(40, 1).axes('이상치의 값', '').ticks(40, 1);
+    p.text(5, Math.max(6, lim * 1.5),
+      'z-score · 굵은 선 = z · 가로 점선 = 상계 (n−1)/√n 과 문턱 3', { size: 10, dy: -10 });
+
+    p.curve(function (dd) { return Math.min(Math.max(6, lim * 1.5), stats(dd).z); },
+      { samples: 200, width: 2.6 });
+    p.line([[5, lim], [200, lim]], { dash: '4 3', width: 1.8 });
+    p.line([[5, 3], [200, 3]], { dash: '2 3', width: 1.6 });
+    var st = stats(delta);
+    p.dot(delta, Math.min(Math.max(6, lim * 1.5), st.z), 5.5);
+    p.callout(delta, Math.min(Math.max(6, lim * 1.5), st.z), 'z = ' + st.z.toFixed(3),
+      { dx: 24, dy: 24, tone: 'var(--seal)' });
+
+    out.set('z', st.z);
+    out.set('lim', lim);
+    out.set('m', st.m);
+    out.setRaw('note', lim < 3
+      ? 'n = ' + n + ' 이면 z 가 3 을 넘는 것이 원리적으로 불가능하다'
+      : (st.z < 3 ? 'z 로는 아직 문턱 미달 — 수정 z-score 는 이미 크다'
+      : 'z 도 문턱을 넘었지만 상계에 눌려 있다'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '이상치의 값', min: 10, max: 200, step: 1, value: 20, digits: 0,
+    onInput: function (v) { delta = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '표본 수 n', min: 5, max: 40, step: 1, value: 10, digits: 0,
+    onInput: function (v) { n = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — isolation 깊이
+   ============================================================ */
+WIDGETS.register('iforest-depth', function (root, ctx) {
+  var trees = 30, seed = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'c', label: '정규화 상수 c(n)', digits: 4 },
+    { key: 'h1', label: '가장 바깥 점의 평균 경로 길이', digits: 3 },
+    { key: 's1', label: '그 점의 이상 점수', digits: 4 },
+    { key: 'h2', label: '가운데 점의 평균 경로 길이 / 점수' }
+  ]);
+
+  function draw() {
+    var rnd = mkRand(seed * 271 + 3), X = [], i;
+    for (i = 0; i < 70; i++) X.push([0.75 * gauss(rnd), 0.75 * gauss(rnd)]);
+    X.push([3.1, 2.5]);
+    X.push([0.02, -0.03]);
+
+    var maxD = Math.ceil(Math.log(Math.max(2, X.length)) / Math.LN2);
+    var hs = new Array(X.length).fill(0);
+    for (var t = 0; t < trees; t++) {
+      var r2 = mkRand(seed * 977 + t * 131 + 7);
+      var samp = [];
+      for (i = 0; i < 64; i++) samp.push(X[Math.floor(r2() * X.length)]);
+      for (i = 0; i < X.length; i++) hs[i] += pathLen(X[i], samp, r2, 0, maxD) / trees;
+    }
+    var c = cN(64);
+    var sc = hs.map(function (h) { return Math.pow(2, -h / c); });
+
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -3.4, xmax: 3.8, ymin: -3, ymax: 3,
+      pad: { t: 30, r: 16, b: 30, l: 42 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x₁', '').ticks(1, 1);
+    p.text(-3.4, 3, 'x₂ · 점의 크기 = 이상 점수 (클수록 이상) · 얇은 선 = 무작위 분할 예시',
+      { size: 10, dy: -10 });
+
+    /* 무작위 분할선 몇 개 */
+    var r3 = mkRand(seed * 61 + 11);
+    for (i = 0; i < 6; i++) {
+      var jj = r3() < 0.5 ? 0 : 1, s = -2.6 + 5.2 * r3();
+      if (jj === 0) p.line([[s, -3], [s, 3]], { dash: '2 4', width: 0.9 });
+      else p.line([[-3.4, s], [3.8, s]], { dash: '2 4', width: 0.9 });
+    }
+    for (i = 0; i < X.length; i++) {
+      p.add(VIZ.el('circle', {
+        cx: p.X(Math.max(-3.35, Math.min(3.75, X[i][0]))),
+        cy: p.Y(Math.max(-2.95, Math.min(2.95, X[i][1]))),
+        r: 1.6 + 9 * Math.max(0, sc[i] - 0.35),
+        fill: sc[i] > 0.55 ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': 0.8
+      }));
+    }
+    var iOut = X.length - 2, iMid = X.length - 1;
+    p.callout(X[iOut][0], X[iOut][1], 'h = ' + hs[iOut].toFixed(1),
+      { dx: -20, dy: -24, tone: 'var(--seal)' });
+    p.callout(X[iMid][0], X[iMid][1], 'h = ' + hs[iMid].toFixed(1),
+      { dx: 24, dy: 26, tone: 'var(--jade)' });
+
+    out.set('c', c);
+    out.set('h1', hs[iOut]);
+    out.set('s1', sc[iOut]);
+    out.setRaw('h2', hs[iMid].toFixed(3) + '  /  ' + sc[iMid].toFixed(4));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '트리 수', min: 5, max: 100, step: 5, value: 30, digits: 0,
+    onInput: function (v) { trees = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — LOF
+   ============================================================ */
+WIDGETS.register('lof-lab', function (root, ctx) {
+  var k = 12, thr = 1.5, seed = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'k', label: 'k' },
+    { key: 'nout', label: 'LOF > 문턱인 점의 수' },
+    { key: 'mid', label: '성긴 무리 한가운데 점의 LOF', digits: 4 },
+    { key: 'loc', label: '조밀한 무리 옆 국소 이상치의 LOF', digits: 4 }
+  ]);
+
+  function draw() {
+    var X = makeTwoBlobs(seed);
+    var r = lofScores(X, k), n = X.length, i;
+    var nout = 0;
+    for (i = 0; i < n; i++) if (r.lof[i] > thr) nout++;
+
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -3, xmax: 4, ymin: -3, ymax: 2.6,
+      pad: { t: 30, r: 16, b: 30, l: 42 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x₁', '').ticks(1, 1);
+    p.text(-3, 2.6, 'x₂ · 원의 크기 = LOF 값 · 진한 색 = 문턱 초과', { size: 10, dy: -10 });
+
+    for (i = 0; i < n; i++) {
+      var isOut = r.lof[i] > thr;
+      p.add(VIZ.el('circle', {
+        cx: p.X(Math.max(-2.95, Math.min(3.95, X[i][0]))),
+        cy: p.Y(Math.max(-2.95, Math.min(2.55, X[i][1]))),
+        r: 2 + 4 * Math.max(0, Math.min(2.5, r.lof[i] - 0.8)),
+        fill: isOut ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': isOut ? 0.92 : 0.55,
+        stroke: isOut ? 'var(--amber)' : 'none', 'stroke-width': 1.8
+      }));
+    }
+    var iLoc = n - 3, iMid = n - 1;
+    p.text(-2.9, 2.15, '국소 이상치 LOF = ' + r.lof[iLoc].toFixed(2)
+      + '   ·   성긴 무리 한가운데 LOF = ' + r.lof[iMid].toFixed(2), { size: 10 });
+
+    out.setRaw('k', String(k));
+    out.setRaw('nout', nout + ' / ' + n);
+    out.set('mid', r.lof[iMid]);
+    out.set('loc', r.lof[iLoc]);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'k (이웃 수)', min: 3, max: 30, step: 1, value: 12, digits: 0,
+    onInput: function (v) { k = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'LOF 문턱', min: 1, max: 3, step: 0.05, value: 1.5, digits: 2,
+    onInput: function (v) { thr = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — 재구성 점수
+   ============================================================ */
+WIDGETS.register('recon-score', function (root, ctx) {
+  var px = 1, py = -1, useMaha = 0;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'z', label: '(z₁, z₂) — 주성분 좌표' },
+    { key: 'rec', label: '재구성 오차 z₂²', digits: 4 },
+    { key: 'dist', label: '단순 거리 ||x||', digits: 4 },
+    { key: 'maha', label: 'Mahalanobis² (λ₁=10, λ₂=0.1)', digits: 4 }
+  ]);
+
+  function draw() {
+    var s = Math.SQRT1_2;
+    var z1 = (px + py) * s, z2 = (px - py) * s;
+
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -5, xmax: 5, ymin: -4, ymax: 4,
+      pad: { t: 30, r: 16, b: 30, l: 42 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x₁', '').ticks(1, 1);
+    p.text(-5, 4, 'x₂ · 굵은 선 = 주성분 방향 · 점선 = 사영 · 회색 점 = 정상 data',
+      { size: 10, dy: -10 });
+
+    /* 정상 data: 주축을 따라 퍼진 구름 */
+    var rnd = mkRand(20250729);
+    for (var i = 0; i < 90; i++) {
+      var a = 2.1 * gauss(rnd), b = 0.22 * gauss(rnd);
+      p.add(VIZ.el('circle', {
+        cx: p.X(Math.max(-4.9, Math.min(4.9, (a - b) * s))),
+        cy: p.Y(Math.max(-3.9, Math.min(3.9, (a + b) * s))), r: 2.4,
+        fill: 'var(--ink-3)', 'fill-opacity': 0.45 }));
+    }
+    p.line([[-4.5, -4.5], [4.5, 4.5]], { width: 2.6 });
+
+    /* 사영점 */
+    var qx = z1 * s, qy = z1 * s;
+    p.line([[px, py], [qx, qy]], { dash: '4 3', width: 2 });
+    p.dot(qx, qy, 4.5);
+    p.add(VIZ.el('circle', { cx: p.X(px), cy: p.Y(py), r: 6.5,
+      fill: 'var(--seal)', stroke: 'var(--amber)', 'stroke-width': 2.4 }));
+    p.text(-4.9, 3.45, useMaha ? 'Mahalanobis² = ' + (z1 * z1 / 10 + z2 * z2 / 0.1).toFixed(3)
+      : '재구성 오차 = ' + (z2 * z2).toFixed(3), { size: 11 });
+
+    out.setRaw('z', '(' + z1.toFixed(3) + ', ' + z2.toFixed(3) + ')');
+    out.set('rec', z2 * z2);
+    out.set('dist', Math.sqrt(px * px + py * py));
+    out.set('maha', z1 * z1 / 10 + z2 * z2 / 0.1);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'x₁', min: -4.5, max: 4.5, step: 0.1, value: 1, digits: 1,
+    onInput: function (v) { px = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'x₂', min: -3.5, max: 3.5, step: 0.1, value: -1, digits: 1,
+    onInput: function (v) { py = v; draw(); }
+  });
+  WIDGETS.toggle({
+    host: ctx.controls, label: '표시할 점수',
+    options: [{ value: 0, label: '재구성 오차' }, { value: 1, label: 'Mahalanobis²' }],
+    value: 0, onChange: function (v) { useMaha = Number(v); draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 6 — 문턱
+   ============================================================ */
+WIDGETS.register('threshold-lab', function (root, ctx) {
+  var cont = 0.06, seed = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'thr', label: '문턱 (점수 분위수)', digits: 4 },
+    { key: 'prec', label: '정밀도', digits: 4 },
+    { key: 'rec', label: '재현율', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function draw() {
+    /* 정상 90개 + 진짜 이상치 10개 */
+    var rnd = mkRand(seed * 331 + 7), X = [], truth = [], i;
+    for (i = 0; i < 90; i++) { X.push([0.8 * gauss(rnd), 0.8 * gauss(rnd)]); truth.push(0); }
+    for (i = 0; i < 10; i++) {
+      var a = 2 * Math.PI * rnd(), r = 2.6 + 1.1 * rnd();
+      X.push([r * Math.cos(a), r * Math.sin(a)]); truth.push(1);
+    }
+    var sc = iforestScores(X, 40, seed), n = X.length;
+    var sorted = sc.slice().sort(function (a, b) { return b - a; });
+    var kcut = Math.max(1, Math.round(cont * n));
+    var thr = sorted[kcut - 1];
+
+    var tp = 0, fp = 0, fn = 0;
+    for (i = 0; i < n; i++) {
+      var pred = sc[i] >= thr ? 1 : 0;
+      if (pred && truth[i]) tp++;
+      else if (pred && !truth[i]) fp++;
+      else if (!pred && truth[i]) fn++;
+    }
+
+    var p1 = VIZ.plot({ w: 460, h: 190, xmin: -4.2, xmax: 4.2, ymin: -4, ymax: 4,
+      pad: { t: 26, r: 14, b: 22, l: 40 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p1.svg);
+    panel(p1).grid(2, 2).axes('x₁', '').ticks(2, 2);
+    p1.text(-4.2, 4, 'x₂ · 테두리 = 이상치로 판정 · 붉은 점 = 진짜 이상치', { size: 10, dy: -8 });
+    for (i = 0; i < n; i++) {
+      var flagged = sc[i] >= thr;
+      p1.add(VIZ.el('circle', {
+        cx: p1.X(Math.max(-4.15, Math.min(4.15, X[i][0]))),
+        cy: p1.Y(Math.max(-3.95, Math.min(3.95, X[i][1]))),
+        r: flagged ? 4.4 : 2.8,
+        fill: truth[i] ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': 0.82,
+        stroke: flagged ? 'var(--amber)' : 'none', 'stroke-width': 2 }));
+    }
+
+    /* 점수 분포 */
+    var lo = Math.min.apply(null, sc), hi = Math.max.apply(null, sc);
+    if (hi - lo < 1e-9) hi = lo + 1e-3;
+    var p2 = VIZ.plot({ w: 460, h: 130, xmin: lo, xmax: hi, ymin: 0, ymax: 1,
+      pad: { t: 24, r: 14, b: 24, l: 46 } });
+    ctx.stage.appendChild(p2.svg);
+    panel(p2).grid((hi - lo) / 4, 0.5).axes('이상 점수', '').ticks((hi - lo) / 4, 0.5);
+    p2.text(lo, 1, '점수 분포 · 세로 점선 = 문턱 (contamination 이 정한다)', { size: 10, dy: -8 });
+    for (i = 0; i < n; i++) {
+      p2.add(VIZ.el('circle', {
+        cx: p2.X(sc[i]), cy: p2.Y(0.25 + 0.45 * ((i * 37) % 100) / 100), r: 2.6,
+        fill: truth[i] ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': 0.75 }));
+    }
+    p2.line([[thr, 0], [thr, 1]], { dash: '4 3', width: 2 });
+
+    out.set('thr', thr);
+    out.set('prec', tp / Math.max(1, tp + fp));
+    out.set('rec', tp / Math.max(1, tp + fn));
+    out.setRaw('note', '점수 자체는 바뀌지 않았다 — 세로 점선만 좌우로 움직인다');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'contamination', min: 0.01, max: 0.35, step: 0.01, value: 0.06, digits: 2,
+    onInput: function (v) { cont = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

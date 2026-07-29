@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5.10 군집화 — AI 이론 학습</title>
+<meta name="description" content="label 없이 비슷한 것끼리 묶는다. '비슷하다'를 무엇으로 정의하느냐가 알고리즘을 가르고, 정답이 없으니 평가도 간접적일 수밖에 없다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="5.10">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">5.10</span>
+        <span>5장 · 전통적 머신러닝</span>
+      </div>
+      <h1>군집화</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 70분</span>
+        <span><b>난이도</b>★★★☆☆</span>
+        <span><b>선수지식</b>
+          <a href="5.5-distance-based-learning.html">5.5 거리 기반 학습</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-kmeans">K-means</a>
+      <a class="chip" href="#c-kmedoids">K-medoids</a>
+      <a class="chip" href="#c-hier">Hierarchical Clustering</a>
+      <a class="chip" href="#c-dbscan">DBSCAN</a>
+      <a class="chip" href="#c-spectral">Spectral Clustering</a>
+      <a class="chip" href="#c-gmmc">Gaussian Mixture Clustering</a>
+      <a class="chip" href="#c-eval">Cluster Evaluation</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        군집화는 <strong>label 없이 비슷한 것끼리 묶는다</strong>.
+        <strong>"비슷하다"를 무엇으로 정의하느냐</strong>가 알고리즘을 가른다 —
+        중심까지의 거리(k-means), 밀도의 연결(DBSCAN), 그래프의 절단(spectral), 확률적 소속(GMM).
+        <strong>정답이 없으니 평가도 간접적</strong>일 수밖에 없다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>k-means 의 목적함수와 두 단계가 각각 그것을 줄인다는 것을 유도하고 손으로 한 라운드 돌릴 수 있다.</li>
+        <li>DBSCAN 의 세 가지 점 유형을 구분하고 $\epsilon,\ \text{minPts}$ 가 무엇을 바꾸는지 설명할 수 있다.</li>
+        <li>silhouette 계수를 손으로 계산하고, 내부 평가 지표의 한계를 말할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        <a href="5.9-probabilistic-generative-models.html">5.9</a>에서 잠재변수를 봤다 —
+        "이 점이 어느 무리에서 왔는가"가 안 보이는 상황이다.
+        군집화는 <strong>그 소속을 추정하는 일 자체</strong>가 목적이다.
+      </p>
+      <p>
+        문제는 <strong>"무리"가 무엇인지 아무도 정의해 주지 않는다</strong>는 것이다.
+        같은 점들을 놓고도 <strong>"중심에서 가까운 것끼리"</strong> 묶으면 동그란 덩어리가 되고,
+        <strong>"손을 뻗어 닿는 것끼리"</strong> 묶으면 길쭉한 띠가 되며,
+        <strong>"자를 때 끊기는 선이 가장 적게"</strong> 묶으면 또 다른 답이 나온다.
+        <strong>어느 것도 틀리지 않았다</strong> — 다른 질문에 답한 것뿐이다.
+      </p>
+      <p>
+        그래서 군집화에서 가장 중요한 결정은 알고리즘이 아니라 <strong>"무엇을 비슷하다고 볼 것인가"</strong>다.
+        그 결정이 <a href="5.1-ml-problem-definition.html">5.1</a>의 <strong>귀납적 편향</strong>이고,
+        <strong>data 를 보기 전에 사람이 내려야 한다</strong>.
+      </p>
+
+      <figure class="widget" data-widget="shape-compare">
+        <figcaption class="widget__bar">같은 data, 다른 답 — 무엇을 '비슷하다'고 볼 것인가</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">초승달 모양에서는 k-means 가 <strong>반드시 실패</strong>합니다 — 중심 기반이라 볼록한 덩어리만 만듭니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          군집화 알고리즘은 <strong>"무리"의 정의를 각자 다르게 내린 것</strong>이다.
+          <strong>k-means</strong> = 중심에 가까운 볼록 덩어리 ·
+          <strong>DBSCAN</strong> = 밀도로 이어진 임의 모양 ·
+          <strong>계층</strong> = 병합 순서로 만든 나무 ·
+          <strong>spectral</strong> = 그래프에서 잘 끊기는 조각 ·
+          <strong>GMM</strong> = 확률분포의 봉우리.
+          <strong>data 의 모양을 먼저 보고 고르는 것</strong>이지, 성능 서열이 있는 것이 아니다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-kmeans"></span>
+      <h3>K-means</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \min_{C,\{\boldsymbol{\mu}_k\}}\ J=\sum_{k=1}^{K}\sum_{i\in C_k}\|\mathbf{x}_i-\boldsymbol{\mu}_k\|^2 \qquad (\text{within-cluster sum of squares, WCSS}) $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">k-means 는 <strong>각 점에서 자기 중심까지 거리의 제곱 합</strong>을 최소화하며,
+        <strong>배정</strong>(가장 가까운 중심으로)과 <strong>갱신</strong>(그 무리의 평균으로)을 번갈아 돌린다 —
+        두 단계 모두 $J$ 를 줄이므로 <strong>반드시 수렴</strong>한다(유도 1)<a class="cite" href="#ref-lloyd1982-least-squares-quantization" data-ref="lloyd1982-least-squares-quantization">1</a>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>단계</th><th>고정</th><th>갱신</th><th>왜 $J$ 가 줄어드나</th></tr></thead>
+          <tbody>
+            <tr><td><strong>배정</strong></td><td>$\boldsymbol{\mu}_k$</td><td>$C_k$</td><td>각 점이 <strong>가장 가까운</strong> 중심을 고르니까</td></tr>
+            <tr><td><strong>갱신</strong></td><td>$C_k$</td><td>$\boldsymbol{\mu}_k$</td><td>평균이 <strong>제곱합을 최소로</strong> 하니까</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>전역 최적을 찾는 것은 NP-hard</strong> 라 초기값에 따라 다른 답이 나온다.
+        표준 처방은 <strong>k-means++</strong> — 첫 중심을 무작위로 고르고,
+        이후에는 <strong>이미 뽑힌 중심에서 먼 점일수록 높은 확률</strong>로 뽑는다.
+        중심들이 흩어져 시작하므로 나쁜 국소최적에 빠질 확률이 크게 줄고,
+        기대 성능에 대한 <strong>$O(\log K)$ 근사 보장</strong>도 있다<a class="cite" href="#ref-arthur2007-kmeanspp" data-ref="arthur2007-kmeanspp">2</a>.
+      </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>K 개의 우체국을 어디에 세울지 정하는 문제입니다. 먼저 아무 데나 세우고, <strong>모든 집을 가장 가까운 우체국에 배정</strong>합니다. 그다음 각 우체국을 <strong>담당 집들의 한가운데로 옮깁니다</strong>. 다시 배정하고, 다시 옮기고 — 더 이상 아무도 옮겨 가지 않으면 끝입니다.</p>
+        <p>이 방식은 우체국마다 <strong>둥근 담당 구역</strong>을 만듭니다. 강을 따라 길게 늘어선 마을은 이렇게 나눌 수 없습니다 — 그때가 DBSCAN 이 필요한 때입니다.</p>
+      </div>
+
+      <span class="anchor" id="c-kmedoids"></span>
+      <h3>K-medoids (PAM)</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \min\ \sum_{k}\sum_{i\in C_k} d(\mathbf{x}_i,\ \mathbf{m}_k), \qquad \mathbf{m}_k\in\{\mathbf{x}_1,\dots,\mathbf{x}_n\}\ (\textbf{실제 표본}) $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        <span class="hl">k-medoids 는 중심을 <strong>실제 data 점 중에서</strong> 고르고
+        임의의 거리 $d$ 를 쓸 수 있다 — <strong>이상치에 강하고</strong>,
+        평균이 정의되지 않는 대상(문자열·범주형)에도 적용된다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>K-means</th><th>K-medoids</th></tr></thead>
+          <tbody>
+            <tr><td>중심</td><td>평균 (가상의 점)</td><td><strong>실제 표본</strong> — 해석 가능</td></tr>
+            <tr><td>거리</td><td><strong>제곱 유클리드만</strong></td><td>임의 (맨해튼·편집거리·코사인)</td></tr>
+            <tr><td>이상치</td><td><strong>취약</strong> — 평균이 끌려간다</td><td>강하다 (중앙값 같은 성질)</td></tr>
+            <tr><td>비용</td><td>$O(nKd)$ / 반복</td><td><strong>$O(n^2)$</strong> — 훨씬 비싸다</td></tr>
+            <tr><td>대표 구현</td><td><code>KMeans</code></td><td>PAM, CLARA, <code>KMedoids</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <span class="anchor" id="c-hier"></span>
+      <h3>Hierarchical Clustering 계층적 군집화</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \text{매 단계 } d(A,B) \text{ 가 가장 작은 두 군집을 병합} \ \Rightarrow\ \textbf{dendrogram} $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl">계층적 군집화는 <strong>$K$ 를 미리 정하지 않고</strong> 병합의 나무를 만든 뒤
+        <strong>원하는 높이에서 잘라</strong> 군집 수를 정한다 —
+        <strong>연결 기준(linkage)</strong> 이 군집의 모양을 결정한다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>linkage</th><th>$d(A,B)$</th><th>만드는 모양</th><th>약점</th></tr></thead>
+          <tbody>
+            <tr><td>단일 (single)</td><td>$\min$ 거리</td><td><strong>길게 이어진 띠</strong></td><td><strong>사슬 효과</strong> — 한 줄로 늘어붙는다</td></tr>
+            <tr><td>완전 (complete)</td><td>$\max$ 거리</td><td>조밀한 덩어리</td><td>큰 군집을 쪼갠다</td></tr>
+            <tr><td>평균 (average)</td><td>평균 거리</td><td>중간</td><td>—</td></tr>
+            <tr><td><strong>Ward</strong></td><td>병합 시 <strong>WCSS 증가량</strong></td><td>크기가 고른 덩어리</td><td><strong>유클리드만</strong> 가능</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>Ward 가 기본값</strong>인 이유는 k-means 와 같은 목적($J$ 증가를 최소로)을 쓰면서도
+        <strong>$K$ 를 나중에 정할 수 있기</strong> 때문이다.
+        비용은 $O(n^2\log n)$ 에 메모리가 $O(n^2)$ 이라 <strong>$n$ 이 수만을 넘으면 어렵다</strong>.
+      </p>
+
+      <figure class="widget" data-widget="dendro">
+        <figcaption class="widget__bar">Dendrogram — 어느 높이에서 자를 것인가</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">single linkage 로 바꾸면 <strong>한 점씩 늘어붙는 사슬</strong>이 보입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-dbscan"></span>
+      <h3>DBSCAN</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathbf{x} \text{ 가 } \textbf{core point} \iff |\{\mathbf{z}:\ d(\mathbf{x},\mathbf{z})\le\epsilon\}|\ \ge\ \text{minPts} $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        <span class="hl">DBSCAN 은 <strong>밀도가 높은 점(core)들을 이웃 관계로 이어</strong> 군집을 만들고,
+        어디에도 닿지 않는 점은 <strong>잡음으로 남긴다</strong> —
+        <strong>$K$ 를 정하지 않아도 되고 임의의 모양을 찾는다</strong><a class="cite" href="#ref-ester1996-dbscan" data-ref="ester1996-dbscan">3</a>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>점의 유형</th><th>조건</th><th>역할</th></tr></thead>
+          <tbody>
+            <tr><td><strong>core</strong></td><td>$\epsilon$ 안에 minPts 개 이상</td><td>군집의 뼈대 — 이웃 core 와 이어진다</td></tr>
+            <tr><td><strong>border</strong></td><td>core 는 아니지만 core 의 $\epsilon$ 안</td><td>군집에 붙지만 <strong>확장하지 않는다</strong></td></tr>
+            <tr><td><strong>noise</strong></td><td>둘 다 아니다</td><td><strong>어느 군집에도 넣지 않는다</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>$\epsilon$ 을 고르는 실무 방법</strong>이 있다 —
+        각 점의 <strong>$k$번째 이웃까지의 거리</strong>를 정렬해 그리고,
+        <strong>급격히 꺾이는 지점(elbow)</strong> 을 $\epsilon$ 으로 삼는다($k=\text{minPts}$).
+        minPts 는 <strong>$d+1$ 이상, 보통 $2d$</strong> 를 쓴다.
+      </p>
+      <p>
+        약점은 <strong>밀도가 다른 군집이 섞여 있을 때</strong>다 —
+        하나의 $\epsilon$ 으로는 성긴 군집과 조밀한 군집을 동시에 잡을 수 없다.
+        <strong>HDBSCAN</strong> 은 여러 $\epsilon$ 을 계층적으로 훑어 이 문제를 해결한 확장이다.
+      </p>
+
+      <figure class="widget" data-widget="dbscan-lab">
+        <figcaption class="widget__bar">DBSCAN — ε 와 minPts 가 무엇을 바꾸나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$\epsilon$ 을 조금만 키우면 <strong>두 군집이 갑자기 하나로 붙습니다</strong> — 임계적입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-spectral"></span>
+      <h3>Spectral Clustering</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ L=D-W \ (\text{또는 } L_{\text{sym}}=I-D^{-1/2}WD^{-1/2}), \qquad \text{작은 고유값의 고유vector 로 사영 후 k-means} $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        <span class="hl">spectral clustering 은 점들을 <strong>그래프의 노드</strong>로 보고,
+        <strong>Laplacian 의 작은 고유vector</strong> 로 만든 새 좌표에서 k-means 를 돌린다 —
+        원래 공간에서 휘어 있던 군집이 <strong>그 좌표에서는 덩어리로 펴진다</strong><a class="cite" href="#ref-ng2001-spectral-clustering" data-ref="ng2001-spectral-clustering">4</a>.</span>
+      </p>
+      <p>
+        핵심은 <a href="../ch02/2.7-eigenvalues.html">2.7</a>의 결과다 —
+        <strong>Laplacian 의 고유값 0 의 중복도가 연결 성분의 개수</strong>와 같다.
+        그래프가 완전히 끊어져 있다면 고유vector 가 <strong>각 성분의 지시함수</strong>가 되어
+        군집이 <strong>정확히 한 점으로 모인다</strong>.
+        실제로는 약하게 이어져 있으므로 <strong>거의</strong> 모이고, 거기서 k-means 를 돌리면 된다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>단계</th><th>하는 일</th><th>고를 것</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>유사도 그래프 $W$ 구성</td><td><strong>RBF ($\gamma$) 또는 $k$-NN 그래프</strong></td></tr>
+            <tr><td>2</td><td>Laplacian $L$ 계산</td><td>정규화 여부</td></tr>
+            <tr><td>3</td><td>작은 고유값 $K$ 개의 고유vector</td><td>$K$</td></tr>
+            <tr><td>4</td><td>그 좌표에서 k-means</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>1단계가 성패를 가른다</strong> — 유사도 그래프가 잘못되면 뒤가 전부 무의미하다.
+        비용은 고유분해 때문에 <strong>$O(n^3)$</strong> 이라 $n$ 이 크면 근사가 필요하다.
+      </p>
+
+      <span class="anchor" id="c-gmmc"></span>
+      <h3>Gaussian Mixture Clustering</h3>
+      <p>
+        <span class="hl">GMM 군집화는 <a href="5.9-probabilistic-generative-models.html">5.9</a>의 EM 을 그대로 쓴 것으로,
+        <strong>각 점에 소속 확률을 준다</strong>(soft clustering) —
+        <strong>k-means 는 책임도를 0/1 로 자르고 공분산을 $\sigma^2\mathbf{I}$ 로 고정한 특수한 경우</strong>다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>K-means</th><th>GMM</th></tr></thead>
+          <tbody>
+            <tr><td>배정</td><td>딱딱한 0/1</td><td><strong>확률 $\gamma_{ik}$</strong></td></tr>
+            <tr><td>군집 모양</td><td>구 (등방)</td><td><strong>타원 — 크기·방향까지</strong></td></tr>
+            <tr><td>군집 크기</td><td>비슷하게 나뉘는 경향</td><td>$\pi_k$ 로 다르게 가능</td></tr>
+            <tr><td>겹친 군집</td><td>임의로 가른다</td><td><strong>확률로 표현</strong></td></tr>
+            <tr><td>$K$ 고르기</td><td>elbow · silhouette</td><td><strong>BIC · AIC</strong> (우도 기반)</td></tr>
+            <tr><td>비용</td><td>싸다</td><td>비싸다 ($d^2$ parameter)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <span class="anchor" id="c-eval"></span>
+      <h3>Cluster Evaluation 군집 평가</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ s(i)=\frac{b(i)-a(i)}{\max\bigl(a(i),\ b(i)\bigr)}\ \in[-1,1] $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        <span class="hl">silhouette 는 <strong>$a$ = 자기 군집 안 평균 거리</strong>,
+        <strong>$b$ = 가장 가까운 다른 군집까지 평균 거리</strong>로 계산하며,
+        <strong>1 에 가까우면 잘 묶였고 음수면 잘못 배정된 것</strong>이다<a class="cite" href="#ref-rousseeuw1987-silhouettes" data-ref="rousseeuw1987-silhouettes">5</a>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>지표</th><th>label 필요?</th><th>범위</th><th>성격</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Silhouette</strong></td><td>✗ 내부</td><td>$[-1,1]$</td><td>$K$ 고르기에 자주 쓴다</td></tr>
+            <tr><td>Davies-Bouldin</td><td>✗ 내부</td><td>$\ge0$, <strong>작을수록 좋다</strong></td><td>군집 간 분리도</td></tr>
+            <tr><td>Calinski-Harabasz</td><td>✗ 내부</td><td>$\ge0$, 클수록 좋다</td><td>분산비 (F 통계량 꼴)</td></tr>
+            <tr><td>Inertia (WCSS)</td><td>✗ 내부</td><td>$\ge0$</td><td><strong>$K$ 늘면 항상 준다 — 단독 사용 불가</strong></td></tr>
+            <tr><td><strong>ARI</strong></td><td>✓ 외부</td><td>$[-1,1]$, 무작위 = 0</td><td><strong>우연 보정된</strong> 일치도</td></tr>
+            <tr><td>NMI</td><td>✓ 외부</td><td>$[0,1]$</td><td>정보량 기반 (<a href="../ch04/4.7-information-theory.html">4.7</a>)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>내부 지표는 전부 특정한 군집 모양을 전제한다</strong> —
+        silhouette 도 Davies-Bouldin 도 <strong>거리 기반이라 볼록한 덩어리를 선호</strong>한다.
+        그래서 <strong>DBSCAN 이 찾은 초승달 군집은 silhouette 점수가 낮게</strong> 나온다.
+        <strong>사람이 보기에 완벽한 답인데도 그렇다</strong>(오해 4).
+      </p>
+
+      <figure class="widget" data-widget="silhouette-view">
+        <figcaption class="widget__bar">Silhouette — K 를 어떻게 고르나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">inertia 는 <strong>$K$ 가 늘면 언제나 줄어듭니다</strong>. silhouette 은 최고점이 생깁니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>여섯 방법을 한눈에 비교한다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>방법</th><th>$K$ 필요</th><th>군집 모양</th><th>잡음 처리</th><th>비용</th><th>주된 hyperparameter</th></tr></thead>
+          <tbody>
+            <tr><td>K-means</td><td><strong>✓</strong></td><td>구 (볼록)</td><td>✗ 전부 배정</td><td>$O(nKd)$</td><td>$K$, 초기화</td></tr>
+            <tr><td>K-medoids</td><td>✓</td><td>임의 거리</td><td>강하다</td><td>$O(n^2)$</td><td>$K$, 거리</td></tr>
+            <tr><td>계층적</td><td>나중에</td><td>linkage 에 따라</td><td>✗</td><td>$O(n^2\log n)$</td><td>linkage, 자르는 높이</td></tr>
+            <tr><td><strong>DBSCAN</strong></td><td><strong>✗</strong></td><td><strong>임의</strong></td><td><strong>✓ 잡음 label</strong></td><td>$O(n\log n)$</td><td>$\epsilon$, minPts</td></tr>
+            <tr><td>Spectral</td><td>✓</td><td>임의 (연결성)</td><td>✗</td><td><strong>$O(n^3)$</strong></td><td>$K$, 유사도 $\gamma$</td></tr>
+            <tr><td>GMM</td><td>✓</td><td>타원</td><td>✗ (확률로 약함)</td><td>$O(nKd^2)$</td><td>$K$, 공분산 형태</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <span class="hl"><strong>모든 군집화는 스케일에 민감하다</strong> —
+        전부 거리나 밀도에 기반하므로 <a href="5.5-distance-based-learning.html">5.5</a>와 같은 이유로
+        <strong>표준화가 사실상 필수</strong>다.</span>
+        다만 <strong>표준화 자체가 결과를 바꾸는 선택</strong>이라는 점도 기억해야 한다 —
+        정보량이 적은 잡음 feature 를 신호와 같은 크기로 부풀리기 때문이다.
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$K$</td><td>K</td><td>군집의 개수</td><td>정수</td><td>$1\le K\le n$</td></tr>
+            <tr><td>$C_k$</td><td>C sub k</td><td>$k$번째 군집 (점들의 집합)</td><td>집합</td><td>서로소</td></tr>
+            <tr><td>$\boldsymbol{\mu}_k$</td><td>mu 뮤 · centroid 중심</td><td>군집의 평균 — <strong>가상의 점</strong></td><td>$\mathbb{R}^d$</td><td>—</td></tr>
+            <tr><td>$\mathbf{m}_k$</td><td>medoid 메도이드</td><td>중심 역할을 하는 <strong>실제 표본</strong></td><td>$\mathbb{R}^d$</td><td>data 안</td></tr>
+            <tr><td>$J$</td><td>inertia · WCSS</td><td>군집 내 제곱합</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$\epsilon$</td><td>epsilon 엡실론</td><td>DBSCAN 의 이웃 반경</td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>minPts</td><td>—</td><td>core 가 되기 위한 최소 이웃 수</td><td>정수</td><td>보통 $2d$</td></tr>
+            <tr><td>$W$</td><td>affinity matrix 유사도 행렬</td><td>$W_{ij}$ = 점 $i,j$ 의 유사도</td><td>$n\times n$</td><td>$\ge0$, 대칭</td></tr>
+            <tr><td>$D$</td><td>degree matrix 차수 행렬</td><td>$D_{ii}=\sum_j W_{ij}$</td><td>대각 $n\times n$</td><td>$\ge0$</td></tr>
+            <tr><td>$L$</td><td>Laplacian 라플라시안</td><td>$D-W$</td><td>$n\times n$</td><td>양의 준정부호</td></tr>
+            <tr><td>$a(i)$</td><td>a of i</td><td>자기 군집 안 평균 거리</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$b(i)$</td><td>b of i</td><td><strong>가장 가까운 다른</strong> 군집까지 평균 거리</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$s(i)$</td><td>silhouette 실루엣</td><td>$(b-a)/\max(a,b)$</td><td>scalar</td><td>$[-1,1]$</td></tr>
+            <tr><td>ARI</td><td>adjusted Rand index</td><td>우연 보정한 일치도</td><td>scalar</td><td>$[-1,1]$</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">같은 것을 다르게 부른다</span>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>이 사이트</th><th>같은 뜻으로 쓰이는 말</th><th>주의할 점</th></tr></thead>
+            <tbody>
+              <tr><td>$J$ (WCSS)</td><td>inertia, 군집 내 제곱합, distortion</td><td>sklearn 의 <code>inertia_</code></td></tr>
+              <tr><td>k-means</td><td>Lloyd 알고리즘</td><td><strong>알고리즘과 목적함수를 구분</strong>해야 한다</td></tr>
+              <tr><td>계층적 군집화</td><td>agglomerative(상향식), HAC</td><td>divisive(하향식)도 있지만 드물다</td></tr>
+              <tr><td>유사도 행렬</td><td>affinity matrix, 가중 인접행렬</td><td>거리와 <strong>반대 방향</strong>이다</td></tr>
+              <tr><td>soft clustering</td><td>fuzzy clustering, 확률적 배정</td><td>GMM · fuzzy c-means</td></tr>
+              <tr><td>Rand index</td><td>ARI 는 <strong>우연 보정판</strong></td><td>보정 안 한 RI 는 <strong>무작위여도 높게</strong> 나온다</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — k-means 가 반드시 수렴하는 이유</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ J(C,\boldsymbol{\mu})=\sum_k\sum_{i\in C_k}\|\mathbf{x}_i-\boldsymbol{\mu}_k\|^2 $$</div>
+          <div class="derive__why">식 (1). 두 종류의 변수가 있다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \textbf{배정}:\ c(i)=\arg\min_k\|\mathbf{x}_i-\boldsymbol{\mu}_k\|^2 \ \Rightarrow\ J \text{ 의 각 항이 최소} $$</div>
+          <div class="derive__why">점마다 <strong>독립적으로</strong> 최선을 고르므로 합도 최소</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \textbf{갱신}:\ \frac{\partial}{\partial\boldsymbol{\mu}_k}\sum_{i\in C_k}\|\mathbf{x}_i-\boldsymbol{\mu}_k\|^2=-2\sum_{i\in C_k}(\mathbf{x}_i-\boldsymbol{\mu}_k)=0 $$</div>
+          <div class="derive__why">미분해서 0</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \boldsymbol{\mu}_k=\frac{1}{|C_k|}\sum_{i\in C_k}\mathbf{x}_i \quad (\textbf{평균}) $$</div>
+          <div class="derive__why"><a href="5.6-decision-trees.html">5.6</a> 유도 2 와 같은 결과 — <strong>제곱손실의 최적 상수는 평균</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ J \text{ 는 매 단계 } \textbf{줄어들거나 같다} $$</div>
+          <div class="derive__why">두 단계 모두 자기 변수에 대해 최적화</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{배정의 가짓수는 } K^n \text{ 으로 } \textbf{유한} \ \Rightarrow\ \text{유한 번에 멈춘다} \ \blacksquare $$</div>
+          <div class="derive__why">줄어들기만 하는데 상태가 유한하니 <strong>반복될 수 없다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{단, } \textbf{국소 최적} \text{ 이다} \ (\text{전역 최적은 NP-hard}) $$</div>
+          <div class="derive__why">그래서 <strong>k-means++ 초기화와 <code>n_init</code></strong> 이 필요하다</div>
+        </div>
+      </div>
+
+      <h3>유도 2 — 왜 k-means 는 볼록한 군집만 만드나</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{x}\in C_k \iff \|\mathbf{x}-\boldsymbol{\mu}_k\|^2\le\|\mathbf{x}-\boldsymbol{\mu}_j\|^2 \ \ \forall j $$</div>
+          <div class="derive__why">배정 규칙</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \|\mathbf{x}\|^2-2\boldsymbol{\mu}_k^\top\mathbf{x}+\|\boldsymbol{\mu}_k\|^2\ \le\ \|\mathbf{x}\|^2-2\boldsymbol{\mu}_j^\top\mathbf{x}+\|\boldsymbol{\mu}_j\|^2 $$</div>
+          <div class="derive__why">전개하면 <strong>$\|\mathbf{x}\|^2$ 이 양쪽에서 상쇄</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 2(\boldsymbol{\mu}_j-\boldsymbol{\mu}_k)^\top\mathbf{x}\ \le\ \|\boldsymbol{\mu}_j\|^2-\|\boldsymbol{\mu}_k\|^2 $$</div>
+          <div class="derive__why"><strong>$\mathbf{x}$ 에 대해 선형 부등식</strong> — 반공간 하나</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ C_k=\bigcap_{j\ne k}\{\text{반공간}\} $$</div>
+          <div class="derive__why">$K-1$ 개 반공간의 교집합</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{반공간은 볼록,\ 볼록집합의 교집합도 볼록} \ \Rightarrow\ C_k \textbf{ 는 볼록 다면체} \ \blacksquare $$</div>
+          <div class="derive__why"><strong>Voronoi 셀</strong>이다 — 초승달을 절대 만들 수 없다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{초승달 · 동심원 · 나선} \ \Rightarrow\ \textbf{DBSCAN 이나 spectral} $$</div>
+          <div class="derive__why">"어느 알고리즘이 좋은가"가 아니라 <strong>"어떤 모양인가"</strong> 의 문제</div>
+        </div>
+      </div>
+
+      <h3>유도 3 — Laplacian 의 고유값 0 이 연결 성분을 센다</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{f}^\top L\mathbf{f}=\frac12\sum_{i,j}W_{ij}(f_i-f_j)^2 $$</div>
+          <div class="derive__why">$L=D-W$ 를 전개하면 나오는 <strong>핵심 항등식</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ W_{ij}\ge0 \ \Rightarrow\ \mathbf{f}^\top L\mathbf{f}\ge0 \ \Rightarrow\ L \text{ 은 양의 준정부호} $$</div>
+          <div class="derive__why">고유값이 모두 <strong>0 이상</strong> (<a href="../ch02/2.7-eigenvalues.html">2.7</a>)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ L\mathbf{f}=0 \iff \mathbf{f}^\top L\mathbf{f}=0 \iff W_{ij}>0 \text{ 인 모든 } i,j \text{ 에서 } f_i=f_j $$</div>
+          <div class="derive__why">제곱합이 0 이려면 <strong>각 항이 0</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \mathbf{f} \text{ 는 } \textbf{각 연결 성분 위에서 상수} $$</div>
+          <div class="derive__why">이어진 노드끼리 값이 같아야 하니까</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \dim(\ker L)=\#\{\text{연결 성분}\} $$</div>
+          <div class="derive__why">성분마다 <strong>지시함수 하나씩</strong>이 기저를 이룬다 ∎</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{성분이 } \textbf{약하게 이어져} \text{ 있으면 고유값이 } 0 \text{ 근처의 작은 값} $$</div>
+          <div class="derive__why">완전히 끊기지 않아도 <strong>거의 지시함수</strong>가 나온다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{작은 고유vector } K \text{ 개로 사영하면 군집이 } \textbf{덩어리로 모인다} $$</div>
+          <div class="derive__why">거기서 k-means 를 돌리는 것이 spectral clustering — 식 (5)</div>
+        </div>
+      </div>
+
+      <details>
+        <summary>k-means 와 GMM 은 정확히 어떤 관계인가</summary>
+        <p>
+          GMM 에서 <strong>$\boldsymbol{\Sigma}_k=\sigma^2\mathbf{I}$ 로 고정</strong>하고 $\sigma^2\to0$ 극한을 보내면
+          책임도가
+        </p>
+        <div class="eq"><div class="eq__body">$$ \gamma_{ik}=\frac{\pi_k\exp\bigl(-\|\mathbf{x}_i-\boldsymbol{\mu}_k\|^2/2\sigma^2\bigr)}{\sum_j\pi_j\exp\bigl(-\|\mathbf{x}_i-\boldsymbol{\mu}_j\|^2/2\sigma^2\bigr)} \ \xrightarrow{\sigma^2\to0}\ \begin{cases}1 & k=\arg\min_j\|\mathbf{x}_i-\boldsymbol{\mu}_j\|\\ 0 & \text{그 외}\end{cases} $$</div></div>
+        <p>
+          가장 가까운 중심의 지수항이 <strong>다른 것들을 압도</strong>하기 때문이다.
+          그러면 E-step 이 <strong>가장 가까운 중심으로의 딱딱한 배정</strong>이 되고,
+          M-step 의 가중평균이 <strong>단순 평균</strong>이 된다 — 정확히 k-means 다.
+        </p>
+        <p>
+          그래서 <strong>k-means 는 "$\sigma\to0$ 인 등방 GMM"</strong> 이고,
+          여기서 실무적 결론이 나온다 —
+          <strong>k-means 는 군집의 크기와 모양이 모두 같다고 가정</strong>한다.
+          크기가 다른 두 군집이 붙어 있으면 <strong>큰 군집을 잘라 작은 쪽에 붙이는</strong> 오류를 낸다.
+          GMM 은 $\pi_k$ 와 $\boldsymbol{\Sigma}_k$ 로 그것을 표현할 수 있다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① k-means 한 라운드를 손으로</h3>
+      <p>1차원 data $x=(1,\ 2,\ 4,\ 8,\ 9)$, $K=2$, 초기 중심 $\mu_1=1,\ \mu_2=2$.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \textbf{배정}:\ |1-1|=0<|1-2|=1 \Rightarrow C_1;\quad |2-1|=1>|2-2|=0 \Rightarrow C_2 $$</div>
+          <div class="derive__why">가장 가까운 중심으로</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 4:\ |4-1|=3,\ |4-2|=2 \Rightarrow C_2;\quad 8,9 \text{ 도 } C_2 $$</div>
+          <div class="derive__why">$C_1=\{1\},\ C_2=\{2,4,8,9\}$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ J=0+\bigl[(2-5.75)^2+\dots\bigr] \quad\text{먼저 } \textbf{갱신} \text{ 부터} $$</div>
+          <div class="derive__why"></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mu_1=1,\qquad \mu_2=\frac{2+4+8+9}{4}=\frac{23}{4}=5.75 $$</div>
+          <div class="derive__why">각 군집의 평균 (유도 1)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \textbf{2라운드 배정}:\ 2:\ |2-1|=1<|2-5.75|=3.75 \Rightarrow C_1 $$</div>
+          <div class="derive__why"><strong>2 가 넘어왔다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 4:\ |4-1|=3>|4-5.75|=1.75 \Rightarrow C_2;\quad 8,9\Rightarrow C_2 $$</div>
+          <div class="derive__why">$C_1=\{1,2\},\ C_2=\{4,8,9\}$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mu_1=1.5,\qquad \mu_2=\frac{4+8+9}{3}=7 $$</div>
+          <div class="derive__why">갱신</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \textbf{3라운드}:\ 4:\ |4-1.5|=2.5<|4-7|=3 \Rightarrow C_1 \ (\text{또 넘어왔다}) $$</div>
+          <div class="derive__why">$C_1=\{1,2,4\},\ C_2=\{8,9\}$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mu_1=\frac{7}{3}=2.333,\quad \mu_2=8.5 \ \Rightarrow\ \text{배정이 안 바뀐다} \ \Rightarrow\ \textbf{수렴} $$</div>
+          <div class="derive__why">$J=(1-2.333)^2+(2-2.333)^2+(4-2.333)^2+0.25+0.25$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ J=1.778+0.111+2.778+0.25+0.25=5.167 $$</div>
+          <div class="derive__why">$\{1,2\}$ vs $\{4,8,9\}$ 였다면 $J=0.5+14=14.5$ — <strong>훨씬 나쁘다</strong></div>
+        </div>
+      </div>
+
+      <h3>② 초기값이 나쁘면 — 국소최적에 갇힌다</h3>
+      <p>같은 data 에서 초기 중심을 $\mu_1=8,\ \mu_2=9$ 로 두면.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ 1,2,4:\ |x-8|<|x-9| \ \Rightarrow\ \text{모두 } C_1 $$</div>
+          <div class="derive__why">$C_1=\{1,2,4,8\},\ C_2=\{9\}$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mu_1=\frac{15}{4}=3.75,\qquad \mu_2=9 $$</div>
+          <div class="derive__why">갱신</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 8:\ |8-3.75|=4.25>|8-9|=1 \Rightarrow C_2 \ \Rightarrow\ C_1=\{1,2,4\},\ C_2=\{8,9\} $$</div>
+          <div class="derive__why">회복했다 — <strong>이 경우엔 운이 좋았다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{그런데 } \mu_1=1,\ \mu_2=2 \text{ 로 } K=3 \text{ 을 나쁘게 시작하면 } \textbf{빈 군집} \text{ 이 생길 수도} $$</div>
+          <div class="derive__why">어떤 중심에 아무도 배정되지 않으면 <strong>평균을 못 구한다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{k-means++}:\ \text{첫 중심을 뽑고, 다음은 } p(\mathbf{x})\propto D(\mathbf{x})^2 \text{ 로 } $$</div>
+          <div class="derive__why">$D(\mathbf{x})$ = 이미 뽑힌 중심까지의 최소 거리 — <strong>멀수록 뽑힐 확률이 높다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{예}:\ \text{첫 중심}=1 \Rightarrow D^2=(0,1,9,49,64) \Rightarrow p=(0,\ 0.008,\ 0.073,\ 0.398,\ 0.520) $$</div>
+          <div class="derive__why">합 123 으로 나눴다 — <strong>8 이나 9 가 뽑힐 확률 92%</strong></div>
+        </div>
+      </div>
+
+      <h3>③ DBSCAN 을 손으로</h3>
+      <p>
+        1차원 $x=(1,\ 1.5,\ 2,\ 6,\ 6.5,\ 12)$, $\epsilon=1$, minPts$=2$
+        (자기 자신 포함해 세는 sklearn 관례).
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>점</th><th>$\epsilon$-이웃 (자기 포함)</th><th>개수</th><th>유형</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td>{1, 1.5}</td><td class="num">2</td><td><strong>core</strong></td></tr>
+            <tr><td class="num">1.5</td><td>{1, 1.5, 2}</td><td class="num">3</td><td><strong>core</strong></td></tr>
+            <tr><td class="num">2</td><td>{1.5, 2}</td><td class="num">2</td><td><strong>core</strong></td></tr>
+            <tr><td class="num">6</td><td>{6, 6.5}</td><td class="num">2</td><td><strong>core</strong></td></tr>
+            <tr><td class="num">6.5</td><td>{6, 6.5}</td><td class="num">2</td><td><strong>core</strong></td></tr>
+            <tr><td class="num">12</td><td>{12}</td><td class="num">1</td><td><strong>noise</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ 1 \leftrightarrow 1.5 \leftrightarrow 2 \ \text{가 이어진다} \ \Rightarrow\ \text{군집 A}=\{1,\ 1.5,\ 2\} $$</div>
+          <div class="derive__why">core 끼리 $\epsilon$ 안에 있으면 <strong>같은 군집</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 6 \leftrightarrow 6.5 \ \Rightarrow\ \text{군집 B}=\{6,\ 6.5\},\qquad 12 \Rightarrow \textbf{잡음} $$</div>
+          <div class="derive__why"><strong>$K$ 를 안 줬는데 2 개가 나왔다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \epsilon=4 \text{ 로 키우면}:\ 2 \leftrightarrow 6 \ (|2-6|=4\le4) \ \Rightarrow\ \text{A 와 B 가 } \textbf{하나로 병합} $$</div>
+          <div class="derive__why">$\epsilon$ 이 <strong>임계적</strong>이다 — 조금만 넘어도 갑자기 붙는다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \epsilon=0.4 \text{ 로 줄이면}:\ \text{모든 점의 이웃이 자기뿐} \Rightarrow\ \textbf{전부 잡음} $$</div>
+          <div class="derive__why">$|1-1.5|=0.5>0.4$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{minPts}=3 \text{ 이면}:\ 1,\ 2,\ 6,\ 6.5 \text{ 는 core 가 아니게 된다} $$</div>
+          <div class="derive__why">1.5 만 core → $\{1,1.5,2\}$ 는 남지만 <strong>$\{6,6.5\}$ 는 전부 잡음</strong></div>
+        </div>
+      </div>
+
+      <h3>④ Silhouette 을 손으로</h3>
+      <p>예제 ③의 군집 $A=\{1,1.5,2\}$, $B=\{6,6.5\}$ 에 대해 (잡음 12 는 제외).</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{점 } 1:\ a=\frac{|1-1.5|+|1-2|}{2}=\frac{0.5+1}{2}=0.75 $$</div>
+          <div class="derive__why">자기 군집 안 <strong>다른 점들과의</strong> 평균 거리</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ b=\frac{|1-6|+|1-6.5|}{2}=\frac{5+5.5}{2}=5.25 $$</div>
+          <div class="derive__why">가장 가까운 다른 군집(B)까지</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ s(1)=\frac{5.25-0.75}{\max(0.75,5.25)}=\frac{4.5}{5.25}=0.8571 $$</div>
+          <div class="derive__why">식 (6). <strong>매우 잘 묶였다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{점 } 2:\ a=\frac{1+0.5}{2}=0.75,\quad b=\frac{4+4.5}{2}=4.25 \ \Rightarrow\ s=\frac{3.5}{4.25}=0.8235 $$</div>
+          <div class="derive__why">B 에 더 가까우니 조금 낮다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{점 } 1.5:\ a=\frac{0.5+0.5}{2}=0.5,\quad b=\frac{4.5+5}{2}=4.75 \ \Rightarrow\ s=\frac{4.25}{4.75}=0.8947 $$</div>
+          <div class="derive__why"><strong>가운데 점이 가장 높다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{점 } 6:\ a=0.5,\quad b=\frac{5+4.5+4}{3}=4.5 \ \Rightarrow\ s=\frac{4}{4.5}=0.8889 $$</div>
+          <div class="derive__why">A 의 세 점까지 평균</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{점 } 6.5:\ a=0.5,\quad b=\frac{5.5+5+4.5}{3}=5 \ \Rightarrow\ s=\frac{4.5}{5}=0.9 $$</div>
+          <div class="derive__why"></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \bar{s}=\frac{0.8571+0.8235+0.8947+0.8889+0.9}{5}=\frac{4.3642}{5}=0.8728 $$</div>
+          <div class="derive__why"><strong>0.87 — 아주 좋은 군집</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{만약 } A=\{1,1.5\},\ B=\{2,6,6.5\} \text{ 였다면 점 } 2:\ a=\frac{4+4.5}{2}=4.25,\ b=\frac{1+0.5}{2}=0.75 $$</div>
+          <div class="derive__why">잘못된 배정</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ s(2)=\frac{0.75-4.25}{4.25}=-0.8235 \quad \textbf{음수} $$</div>
+          <div class="derive__why"><strong>다른 군집이 더 가깝다</strong>는 신호 — silhouette 이 이렇게 잘못을 잡아낸다</div>
+        </div>
+      </div>
+
+      <figure class="widget" data-widget="kmeans-run">
+        <figcaption class="widget__bar">K-means — 배정과 갱신을 번갈아</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$J$ 가 <strong>단조 감소</strong>합니다. 초기값을 바꾸면 <strong>다른 곳으로 수렴</strong>합니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>모양 비교</strong> · <strong>dendrogram</strong> ·
+        <strong>DBSCAN</strong> · <strong>silhouette</strong> · <strong>k-means 반복</strong> — 에 이어,
+        아래에서 <strong>spectral clustering 이 왜 통하는지</strong>를 본다.
+      </p>
+
+      <figure class="widget" data-widget="spectral-view">
+        <figcaption class="widget__bar">Spectral — 고유vector 좌표에서는 덩어리로 모인다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">원래 공간의 <strong>동심원</strong>이 고유vector 좌표에서는 <strong>두 점 뭉치</strong>가 됩니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"inertia(WCSS)가 가장 작은 $K$ 를 고르면 된다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>$K$ 를 늘리면 inertia 는 반드시 줄어든다</strong> —
+          극단적으로 $K=n$ 이면 <strong>정확히 0</strong> 이다.
+          그래서 최솟값을 고르면 언제나 $K=n$ 이 나온다.
+          <strong>elbow 법</strong>은 "줄어드는 속도가 꺾이는 곳"을 보는 것인데
+          <strong>꺾임이 애매한 경우가 대부분</strong>이다.
+          silhouette 은 <strong>최댓값이 존재</strong>하고, GMM 이면 BIC 를 쓸 수 있다.
+          가장 확실한 것은 <strong>여러 지표를 함께 보고 도메인 지식으로 결정하는 것</strong>이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"k-means 가 잘 안 되면 $K$ 를 조정하면 된다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>군집 모양이 문제일 수 있다</strong>.
+          유도 2 가 보였듯 k-means 의 군집은 <strong>반드시 볼록 다면체(Voronoi 셀)</strong>다 —
+          초승달·동심원·나선은 <strong>$K$ 를 어떻게 줘도 못 찾는다</strong>.
+          그리고 <strong>k-means 는 군집 크기가 비슷하다고 가정</strong>하므로
+          큰 군집과 작은 군집이 붙어 있으면 <strong>큰 쪽을 잘라 작은 쪽에 붙인다</strong>(접힌 상자).
+          <strong>먼저 산점도를 그려 보는 것</strong>이 hyperparameter 조정보다 훨씬 중요하다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"DBSCAN 은 $K$ 를 안 정해도 되니 k-means 보다 편하다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>$\epsilon$ 이 $K$ 보다 정하기 어렵다</strong>.
+          $K$ 는 도메인 지식으로 어림할 수 있지만 $\epsilon$ 은 <strong>data 의 스케일에 직접 매여</strong> 있고,
+          예제 ③에서 봤듯 <strong>조금만 넘어도 두 군집이 갑자기 하나로 붙는다</strong>.
+          게다가 <strong>밀도가 다른 군집이 섞여 있으면 하나의 $\epsilon$ 으로는 불가능</strong>하다.
+          처방은 <strong>$k$-거리 그래프의 elbow 로 $\epsilon$ 을 정하는 것</strong>,
+          또는 여러 $\epsilon$ 을 자동으로 훑는 <strong>HDBSCAN</strong> 을 쓰는 것이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"silhouette 점수가 높으면 좋은 군집화다."</p>
+        <p>
+          <strong>실제로는</strong> silhouette 은 <strong>거리 기반이라 볼록한 덩어리를 편애</strong>한다.
+          초승달 두 개를 <strong>사람이 봐도 완벽하게</strong> 나눈 DBSCAN 의 결과가
+          <strong>k-means 의 잘못된 절단보다 silhouette 이 낮게</strong> 나오는 일이 흔하다 —
+          초승달 안의 두 끝점 거리가 다른 군집까지의 거리보다 멀기 때문이다.
+          <strong>내부 지표는 그 지표가 전제하는 모양에 대해서만 유효</strong>하며,
+          <strong>어떤 내부 지표도 "정답"이 아니다</strong>. 가능하면 <strong>눈으로 확인</strong>하고,
+          label 이 조금이라도 있으면 <strong>ARI 같은 외부 지표</strong>를 쓰는 것이 낫다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"군집화는 비지도라 아무 data 나 넣으면 구조를 찾아 준다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>군집화 알고리즘은 구조가 없어도 군집을 내놓는다</strong>.
+          균등분포에서 뽑은 완전한 잡음에 k-means 를 돌려도 <strong>$K$ 개의 군집이 나온다</strong> —
+          그것이 의미 있는지는 <strong>알고리즘이 알려 주지 않는다</strong>.
+          그래서 <strong>군집 경향성(cluster tendency)</strong> 을 먼저 확인해야 하며,
+          <strong>Hopkins 통계량</strong>이나 <strong>무작위 data 와 silhouette 을 비교하는 gap 통계량</strong>이 그 도구다.
+          한 걸음 더 가면 <strong>스케일링·거리·전처리를 바꾸면 군집이 통째로 달라진다</strong> —
+          <strong>재현성과 안정성을 반드시 확인</strong>해야 한다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①·③·④ 를 검산한다.</p>
+      <details>
+        <summary>NumPy — k-means · DBSCAN · silhouette (22줄)</summary>
+<pre><code>import numpy as np
+
+x = np.array([1., 2, 4, 8, 9]); mu = np.array([1., 2])       # 예제 ①
+for it in range(5):
+    c = np.abs(x[:, None] - mu).argmin(1)
+    new = np.array([x[c == k].mean() if (c == k).any() else mu[k] for k in range(2)])
+    J = sum(((x[c == k] - new[k])**2).sum() for k in range(2))
+    print(it, c, np.round(new, 4), round(J, 4))
+    if np.allclose(new, mu): break
+    mu = new
+# 마지막: c=[0 0 0 1 1], mu=[2.3333 8.5], J=5.1667
+
+z = np.array([1., 1.5, 2, 6, 6.5, 12]); eps, mp = 1.0, 2      # 예제 ③
+nb = (np.abs(z[:, None] - z) &lt;= eps)
+core = nb.sum(1) &gt;= mp
+print(nb.sum(1), core)                                        # [2 3 2 2 2 1] [T T T T T F]
+
+def sil(groups):                                              # 예제 ④
+    out = []
+    for gi, g in enumerate(groups):
+        for p in g:
+            a = np.mean([abs(p - q) for q in g if q != p])
+            b = min(np.mean([abs(p - q) for q in o]) for oi, o in enumerate(groups) if oi != gi)
+            out.append((b - a) / max(a, b))
+    return np.round(out, 4), round(float(np.mean(out)), 4)
+print(sil([[1, 1.5, 2], [6, 6.5]]))    # [0.8571 0.8947 0.8235 0.8889 0.9] 0.8728
+print(sil([[1, 1.5], [2, 6, 6.5]]))    # 점 2 의 s 가 -0.8235 로 음수
+</code></pre>
+        <p>
+          <small>
+            첫 블록에서 $J$ 가 <strong>한 번도 오르지 않고</strong> 5.1667 로 수렴한다 — 유도 1 의 보장이다.
+            마지막 줄에서 <strong>점 2 를 잘못 배정하면 silhouette 이 음수</strong>가 되는 것이 확인된다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            군집 $\{2,4\}$ 와 $\{10,12\}$ 에서 점 2 의 silhouette 은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>0.8</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.5</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>9</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $a=|2-4|=2$, $b=\frac{8+10}{2}=9$ →
+            $s=\frac{9-2}{\max(2,9)}=\frac79=0.778$… 정확히는 <strong>0.778</strong> 이다.
+            선택지 중 가장 가까운 <strong>0.8</strong> 을 고르면 된다.
+            <strong>다</strong>는 $b$ 값 그 자체로, <strong>$\max(a,b)$ 로 나누는 정규화를 빼먹은</strong> 값이다.
+            그 정규화 덕분에 $s$ 가 <strong>스케일에 무관하게 $[-1,1]$</strong> 에 들어간다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $x=(0,1,10)$, 초기 중심 $\mu=(0,\ 1)$, $K=2$. 수렴 후 $J$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>0.5</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>40.5</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            배정 → $C_1=\{0\},\ C_2=\{1,10\}$ → $\mu=(0,\ 5.5)$ →
+            재배정 시 1 은 $|1-0|=1<|1-5.5|=4.5$ 라 $C_1$ 로 넘어온다 →
+            $C_1=\{0,1\},\ C_2=\{10\}$, $\mu=(0.5,\ 10)$ → 안정.
+            $J=0.25+0.25+0=0.5$.
+            <strong>나</strong>는 첫 배정에서 멈춘 값($ (1-5.5)^2+(10-5.5)^2=40.5$)으로,
+            <strong>한 번 더 돌리면 $J$ 가 크게 준다</strong> — 유도 1 의 단조 감소다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $x=(1,2,3,\ 10)$, $\epsilon=1.5$, minPts$=2$(자기 포함). 점 10 은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>noise</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>border</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>core</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            10 의 $\epsilon$-이웃은 자기 자신뿐(1개 &lt; 2)이라 core 가 아니고,
+            어떤 core 의 $\epsilon$ 안에도 없으므로 border 도 아니다 → <strong>noise</strong>.
+            <strong>DBSCAN 만이 "어느 군집도 아님"이라는 답을 낼 수 있다</strong> —
+            k-means 는 이 점도 어딘가에 반드시 배정하고, 그 바람에 <strong>중심이 끌려간다</strong>.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            k-means 가 초승달 모양 군집을 못 찾는 근본 이유는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>배정 규칙이 반공간의 교집합이라 군집이 반드시 볼록해진다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>초기값이 나빠서 국소최적에 빠지기 때문</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$K$ 를 잘못 줬기 때문</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            유도 2 에서 배정 조건을 전개하면 <strong>$\|\mathbf{x}\|^2$ 이 상쇄되어 선형 부등식</strong>이 되고,
+            군집은 <strong>Voronoi 셀(볼록 다면체)</strong> 이 된다.
+            <strong>초기값이나 $K$ 의 문제가 아니라 알고리즘의 구조적 한계</strong>다 —
+            아무리 좋은 초기값을 줘도 오목한 군집은 나올 수 없다(오해 2).
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            spectral clustering 에서 Laplacian 의 <strong>작은</strong> 고유값을 쓰는 이유는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>고유값 0 의 고유vector 가 연결 성분의 지시함수이기 때문</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>분산이 가장 큰 방향이기 때문</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>계산이 빠르기 때문</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\mathbf{f}^\top L\mathbf{f}=\frac12\sum W_{ij}(f_i-f_j)^2$ 이므로
+            $L\mathbf{f}=0$ 은 <strong>이어진 노드끼리 값이 같다</strong>는 뜻이고,
+            그런 $\mathbf{f}$ 들이 곧 <strong>각 연결 성분의 지시함수</strong>다(유도 3).
+            <strong>나</strong>는 PCA 의 논리로, <strong>큰 고유값</strong>을 쓴다 —
+            <a href="../ch02/2.9-dimensionality-reduction.html">2.9</a>와 정반대 방향이라 헷갈리기 쉽다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            완전한 잡음(균등분포)에 k-means($K=4$)를 돌리면?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>4 개의 군집이 그럴듯하게 나온다 — 알고리즘은 구조 없음을 알려 주지 않는다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>수렴하지 않는다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>모든 점이 한 군집이 된다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            k-means 는 <strong>공간을 $K$ 개 Voronoi 셀로 나누는 일</strong>을 할 뿐이라
+            구조가 없어도 <strong>깔끔해 보이는 답</strong>을 낸다(오해 5).
+            silhouette 도 0.3~0.5 정도로 <strong>애매하게 나쁘지 않은</strong> 값이 나와 속기 쉽다.
+            처방은 <strong>같은 크기의 무작위 data 와 비교</strong>하는 것 —
+            <strong>gap 통계량</strong>이나 <strong>Hopkins 통계량</strong>이 그 절차를 형식화한 것이다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="5.9-probabilistic-generative-models.html">5.9 확률적 생성 모델</a></strong> — GMM 군집화의 엔진이 EM 이다.</li>
+        <li><strong><a href="5.11-dimensionality-reduction-manifold.html">5.11 차원 축소</a></strong> — spectral clustering 과 Laplacian eigenmaps 는 같은 뿌리다.</li>
+        <li><strong><a href="5.12-anomaly-detection.html">5.12 이상치 탐지</a></strong> — DBSCAN 의 잡음 label 이 곧 이상치다.</li>
+        <li><strong>14장 표현학습</strong> — 대조학습의 군집 구조와 자기지도 pseudo-label.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-lloyd1982-least-squares-quantization" data-ref="lloyd1982-least-squares-quantization">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Lloyd, S. P. (1982). <em>Least Squares Quantization in PCM</em>. IEEE Transactions on Information Theory, 28(2), 129–137.</span>
+          <span class="ref__where">§II — 양자화 오차를 최소화하는 조건으로 <strong>(a) 각 점은 가장 가까운 대표점에, (b) 대표점은 담당 구역의 중심(무게중심)에</strong> 라는 두 필요조건을 유도한 부분이 곧 k-means 의 배정/갱신 두 단계다(유도 1). §III — 두 조건을 번갈아 적용하는 반복 절차와 그 수렴</span>
+          <a class="ref__link" href="https://doi.org/10.1109/TIT.1982.1056489">doi.org</a>
+        </li>
+        <li class="ref" id="ref-arthur2007-kmeanspp" data-ref="arthur2007-kmeanspp">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Arthur, D. &amp; Vassilvitskii, S. (2007). <em>k-means++: The Advantages of Careful Seeding</em>. SODA 2007.</span>
+          <span class="ref__where">§2 — 초기 중심을 <strong>$D(\mathbf{x})^2$ 에 비례한 확률로 뽑는</strong> seeding 절차(예제 ②의 마지막 두 줄). 정리 1.1 — 그 초기화만으로 <strong>기대 목적값이 최적의 $O(\log K)$ 배 이내</strong> 라는 보장. §5 — 무작위 초기화 대비 목적값과 수렴 속도가 모두 개선된다는 실험</span>
+          <a class="ref__link" href="https://dl.acm.org/doi/10.5555/1283383.1283494">dl.acm.org</a>
+        </li>
+        <li class="ref" id="ref-ester1996-dbscan" data-ref="ester1996-dbscan">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Ester, M., Kriegel, H.-P., Sander, J. &amp; Xu, X. (1996). <em>A Density-Based Algorithm for Discovering Clusters in Large Spatial Databases with Noise</em>. KDD '96.</span>
+          <span class="ref__where">§3 — <strong>core / border / noise</strong> 세 유형과 density-reachable·density-connected 의 정의(식 4, '점의 유형' 표). §4 — 알고리즘과 <strong>$k$-거리 그래프의 elbow 로 $\epsilon$ 을 고르는 휴리스틱</strong>(오해 3). §4.2 — minPts 를 $2d$ 정도로 두라는 권고. §5 — 임의 모양의 군집을 찾고 잡음을 분리하는 실험</span>
+          <a class="ref__link" href="https://dl.acm.org/doi/10.5555/3001460.3001507">dl.acm.org</a>
+        </li>
+        <li class="ref" id="ref-ng2001-spectral-clustering" data-ref="ng2001-spectral-clustering">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Ng, A. Y., Jordan, M. I. &amp; Weiss, Y. (2001). <em>On Spectral Clustering: Analysis and an Algorithm</em>. NeurIPS 2001.</span>
+          <span class="ref__where">§2 — 유사도 그래프 → 정규화 Laplacian → 상위 $K$ 개 고유vector → 행 정규화 → k-means 라는 <strong>네 단계 알고리즘</strong>(식 5, '단계' 표). §3 — 군집이 잘 분리되어 있으면 고유vector 좌표에서 각 군집이 <strong>거의 한 점으로 모인다</strong>는 섭동 분석(유도 3 의 마지막 두 줄, 위젯 6)</span>
+          <a class="ref__link" href="https://papers.nips.cc/paper_files/paper/2001/hash/801272ee79cfde7fa5960571fee36b9b-Abstract.html">papers.nips.cc</a>
+        </li>
+        <li class="ref" id="ref-rousseeuw1987-silhouettes" data-ref="rousseeuw1987-silhouettes">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Rousseeuw, P. J. (1987). <em>Silhouettes: a graphical aid to the interpretation and validation of cluster analysis</em>. Journal of Computational and Applied Mathematics, 20, 53–65.</span>
+          <span class="ref__where">§2 — $a(i)$, $b(i)$ 의 정의와 $s(i)=(b-a)/\max(a,b)$ 라는 정규화(식 6, 예제 ④). <strong>$s(i)<0$ 이면 그 점이 이웃 군집에 더 가깝다</strong>는 해석과, 평균 silhouette 으로 $K$ 를 고르는 절차. §4 — 실루엣 그림으로 군집별 품질을 한눈에 비교하는 방법</span>
+          <a class="ref__link" href="https://doi.org/10.1016/0377-0427(87)90125-7">doi.org</a>
+        </li>
+        <li class="ref" id="ref-bishop2006-prml" data-ref="bishop2006-prml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Bishop, C. M. (2006). <em>Pattern Recognition and Machine Learning</em>. Springer.</span>
+          <span class="ref__where">9.1절 — k-means 의 목적함수 $J$ 와 <strong>두 단계가 각각 $J$ 를 줄이므로 수렴한다</strong>는 논증(유도 1). 9.3.2절 — <strong>$\boldsymbol{\Sigma}=\epsilon\mathbf{I}$ 로 두고 $\epsilon\to0$ 극한을 보내면 GMM 의 EM 이 정확히 k-means 가 된다</strong>는 유도가 접힌 상자의 내용 그대로다. 9.1.1절 — 이미지 분할·벡터 양자화 응용</span>
+          <a class="ref__link" href="https://www.microsoft.com/en-us/research/publication/pattern-recognition-machine-learning/">microsoft.com</a>
+        </li>
+        <li class="ref" id="ref-sklearn-docs" data-ref="sklearn-docs">
+          <span class="ref__type" data-type="doc">문서</span>
+          <span class="ref__cite">scikit-learn developers. <em>User Guide — 2.3 Clustering · 2.3.11 Clustering performance evaluation</em>.</span>
+          <span class="ref__where">2.3 도입부의 <strong>알고리즘 비교표와 "각 방법이 잘 맞는 data 모양" 그림</strong>('여섯 방법 비교' 표, 위젯 1). 2.3.2절 — k-means 가 <strong>등방·비슷한 크기의 군집을 가정</strong>한다는 명시와 k-means++ 기본값. 2.3.7절 — DBSCAN 의 <code>eps</code>·<code>min_samples</code> 실무 조언. 2.3.11절 — silhouette 이 <strong>볼록한 군집에 높은 점수를 주므로 DBSCAN 결과에는 불리하다</strong>는 경고(오해 4)와 ARI 의 우연 보정</span>
+          <a class="ref__link" href="https://scikit-learn.org/stable/modules/clustering.html">scikit-learn.org</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+function panel(p) {
+  p.add(VIZ.el('rect', {
+    x: p.pad.l, y: p.pad.t, width: p.iw, height: p.ih,
+    fill: 'var(--ink-3)', 'fill-opacity': 0.03, stroke: 'none'
+  }));
+  return p;
+}
+function mkRand(seed) {
+  var s = seed || 12345;
+  return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+}
+function gauss(rnd) {
+  var u = Math.max(1e-9, rnd()), v = rnd();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+var CLS = ['var(--jade)', 'var(--seal)', 'var(--amber)', 'var(--ink-2)'];
+
+function d2(a, b) { var dx = a[0] - b[0], dy = a[1] - b[1]; return dx * dx + dy * dy; }
+
+/* 표준 k-means */
+function kmeans(X, K, seed, iters) {
+  var rnd = mkRand(seed), n = X.length, mu = [], i, k;
+  var used = {};
+  for (k = 0; k < K; k++) {
+    var idx;
+    do { idx = Math.floor(rnd() * n); } while (used[idx] && Object.keys(used).length < n);
+    used[idx] = 1;
+    mu.push([X[idx][0], X[idx][1]]);
+  }
+  var lab = new Array(n).fill(0), J = 0;
+  for (var t = 0; t < iters; t++) {
+    J = 0;
+    for (i = 0; i < n; i++) {
+      var best = 0, bd = 1e18;
+      for (k = 0; k < K; k++) { var d = d2(X[i], mu[k]); if (d < bd) { bd = d; best = k; } }
+      lab[i] = best; J += bd;
+    }
+    for (k = 0; k < K; k++) {
+      var sx = 0, sy = 0, c = 0;
+      for (i = 0; i < n; i++) if (lab[i] === k) { sx += X[i][0]; sy += X[i][1]; c++; }
+      if (c) mu[k] = [sx / c, sy / c];
+    }
+  }
+  return { lab: lab, mu: mu, J: J };
+}
+
+/* DBSCAN */
+function dbscan(X, eps, minPts) {
+  var n = X.length, lab = new Array(n).fill(-2), e2 = eps * eps, i, j;
+  var nb = [];
+  for (i = 0; i < n; i++) {
+    var row = [];
+    for (j = 0; j < n; j++) if (d2(X[i], X[j]) <= e2) row.push(j);
+    nb.push(row);
+  }
+  var cid = 0;
+  for (i = 0; i < n; i++) {
+    if (lab[i] !== -2) continue;
+    if (nb[i].length < minPts) { lab[i] = -1; continue; }
+    lab[i] = cid;
+    var q = nb[i].slice();
+    for (var h = 0; h < q.length; h++) {
+      var u = q[h];
+      if (lab[u] === -1) lab[u] = cid;
+      if (lab[u] !== -2) continue;
+      lab[u] = cid;
+      if (nb[u].length >= minPts) for (j = 0; j < nb[u].length; j++) q.push(nb[u][j]);
+    }
+    cid++;
+  }
+  return { lab: lab, k: cid, core: nb.map(function (r) { return r.length >= minPts; }) };
+}
+
+/* silhouette (유클리드) */
+function silhouette(X, lab) {
+  var n = X.length, ks = {}, i, j;
+  for (i = 0; i < n; i++) if (lab[i] >= 0) ks[lab[i]] = 1;
+  var keys = Object.keys(ks);
+  if (keys.length < 2) return 0;
+  var s = 0, c = 0;
+  for (i = 0; i < n; i++) {
+    if (lab[i] < 0) continue;
+    var sums = {}, cnts = {};
+    for (j = 0; j < n; j++) {
+      if (j === i || lab[j] < 0) continue;
+      var L = lab[j];
+      sums[L] = (sums[L] || 0) + Math.sqrt(d2(X[i], X[j]));
+      cnts[L] = (cnts[L] || 0) + 1;
+    }
+    if (!cnts[lab[i]]) continue;
+    var a = sums[lab[i]] / cnts[lab[i]], b = 1e18;
+    for (var q = 0; q < keys.length; q++) {
+      var K2 = Number(keys[q]);
+      if (K2 === lab[i] || !cnts[K2]) continue;
+      b = Math.min(b, sums[K2] / cnts[K2]);
+    }
+    if (b > 1e17) continue;
+    s += (b - a) / Math.max(a, b); c++;
+  }
+  return c ? s / c : 0;
+}
+
+function makeShape(kind, seed) {
+  var rnd = mkRand(seed * 733 + 5), X = [], i;
+  if (kind === 'blobs') {
+    var cs = [[-1.3, 0.9], [1.4, 0.6], [0.1, -1.3]];
+    for (i = 0; i < 90; i++) {
+      var c = cs[i % 3];
+      X.push([c[0] + 0.42 * gauss(rnd), c[1] + 0.42 * gauss(rnd)]);
+    }
+  } else if (kind === 'moons') {
+    for (i = 0; i < 90; i++) {
+      var t = Math.PI * (i % 45) / 44;
+      if (i % 2 === 0) X.push([1.4 * Math.cos(t) - 0.7 + 0.11 * gauss(rnd),
+                               1.0 * Math.sin(t) - 0.3 + 0.11 * gauss(rnd)]);
+      else X.push([1.4 * Math.cos(t + Math.PI) + 0.7 + 0.11 * gauss(rnd),
+                   1.0 * Math.sin(t + Math.PI) + 0.3 + 0.11 * gauss(rnd)]);
+    }
+  } else {
+    for (i = 0; i < 90; i++) {
+      var r = i % 2 === 0 ? 0.55 + 0.14 * rnd() : 1.75 + 0.16 * rnd();
+      var th = 2 * Math.PI * rnd();
+      X.push([r * Math.cos(th), r * Math.sin(th)]);
+    }
+  }
+  return X;
+}
+
+/* ============================================================
+   위젯 1 — 모양 비교
+   ============================================================ */
+WIDGETS.register('shape-compare', function (root, ctx) {
+  var shape = 'moons', algo = 'kmeans', seed = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'a', label: '알고리즘' },
+    { key: 'k', label: '찾은 군집 수' },
+    { key: 's', label: 'silhouette', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function draw() {
+    var X = makeShape(shape, seed), lab, kfound, noise = 0;
+    if (algo === 'kmeans') {
+      var r = kmeans(X, shape === 'blobs' ? 3 : 2, seed * 7 + 1, 25);
+      lab = r.lab; kfound = shape === 'blobs' ? 3 : 2;
+    } else {
+      var eps = shape === 'blobs' ? 0.42 : (shape === 'moons' ? 0.32 : 0.38);
+      var d = dbscan(X, eps, 4);
+      lab = d.lab; kfound = d.k;
+      for (var i2 = 0; i2 < lab.length; i2++) if (lab[i2] < 0) noise++;
+    }
+
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -2.6, xmax: 2.6, ymin: -2.4, ymax: 2.4,
+      pad: { t: 30, r: 16, b: 30, l: 42 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x₁', '').ticks(1, 1);
+    p.text(-2.6, 2.4, 'x₂ · 색 = 군집 · 회색 작은 점 = 잡음으로 분류된 것', { size: 10, dy: -10 });
+
+    for (var i = 0; i < X.length; i++) {
+      var L = lab[i];
+      p.add(VIZ.el('circle', {
+        cx: p.X(X[i][0]), cy: p.Y(X[i][1]), r: L < 0 ? 2.2 : 3.6,
+        fill: L < 0 ? 'var(--ink-3)' : CLS[L % 4], 'fill-opacity': L < 0 ? 0.4 : 0.88
+      }));
+    }
+
+    out.setRaw('a', algo === 'kmeans' ? 'K-means' : 'DBSCAN');
+    out.setRaw('k', kfound + (noise ? '  (잡음 ' + noise + '개)' : ''));
+    out.set('s', silhouette(X, lab));
+    out.setRaw('note', algo === 'kmeans' && shape !== 'blobs'
+      ? '볼록 덩어리만 만든다 — 이 모양은 원리적으로 불가능 (유도 2)'
+      : (algo === 'dbscan' && shape !== 'blobs' ? '밀도로 이어 임의 모양을 찾았다'
+      : (algo === 'dbscan' ? 'blobs 는 둘 다 잘 된다' : '볼록 덩어리라 k-means 에 딱 맞다')));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: 'data 모양',
+    options: [
+      { value: 'moons', label: '초승달' },
+      { value: 'circles', label: '동심원' },
+      { value: 'blobs', label: '덩어리' }
+    ],
+    value: 'moons', onChange: function (v) { shape = v; draw(); }
+  });
+  WIDGETS.toggle({
+    host: ctx.controls, label: '알고리즘',
+    options: [{ value: 'kmeans', label: 'K-means' }, { value: 'dbscan', label: 'DBSCAN' }],
+    value: 'kmeans', onChange: function (v) { algo = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — dendrogram
+   ============================================================ */
+WIDGETS.register('dendro', function (root, ctx) {
+  var link = 'ward', cut = 3, seed = 6;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'l', label: 'linkage' },
+    { key: 'k', label: '이 높이에서 자르면 군집 수' },
+    { key: 'h', label: '자르는 높이', digits: 3 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function draw() {
+    var rnd = mkRand(seed * 401 + 3), pts = [], i;
+    for (i = 0; i < 14; i++) {
+      var c = i < 5 ? -1.4 : (i < 10 ? 1.2 : 0.0);
+      var cy = i < 5 ? 0.8 : (i < 10 ? 0.6 : -1.3);
+      pts.push([c + 0.35 * gauss(rnd), cy + 0.35 * gauss(rnd)]);
+    }
+    var n = pts.length;
+    /* 상향식 병합 */
+    var groups = [], i2;
+    for (i2 = 0; i2 < n; i2++) groups.push({ ids: [i2], x: 0, h: 0 });
+    var merges = [];
+    function dist(A, B) {
+      var best = link === 'single' ? 1e18 : (link === 'complete' ? -1 : 0), cnt = 0;
+      for (var a = 0; a < A.ids.length; a++) for (var b = 0; b < B.ids.length; b++) {
+        var d = Math.sqrt(d2(pts[A.ids[a]], pts[B.ids[b]]));
+        if (link === 'single') best = Math.min(best, d);
+        else if (link === 'complete') best = Math.max(best, d);
+        else { best += d; cnt++; }
+      }
+      if (link === 'average') return best / Math.max(1, cnt);
+      if (link === 'ward') {
+        /* Ward: 병합 시 SSE 증가량 */
+        function ctr(G) {
+          var sx = 0, sy = 0;
+          for (var q = 0; q < G.ids.length; q++) { sx += pts[G.ids[q]][0]; sy += pts[G.ids[q]][1]; }
+          return [sx / G.ids.length, sy / G.ids.length];
+        }
+        var ca = ctr(A), cb = ctr(B), na = A.ids.length, nb = B.ids.length;
+        return Math.sqrt(na * nb / (na + nb) * d2(ca, cb));
+      }
+      return best;
+    }
+    while (groups.length > 1) {
+      var bi = 0, bj = 1, bd = 1e18;
+      for (i2 = 0; i2 < groups.length; i2++) for (var j2 = i2 + 1; j2 < groups.length; j2++) {
+        var d = dist(groups[i2], groups[j2]);
+        if (d < bd) { bd = d; bi = i2; bj = j2; }
+      }
+      var A2 = groups[bi], B2 = groups[bj];
+      merges.push({ a: A2, b: B2, h: bd });
+      var merged = { ids: A2.ids.concat(B2.ids), h: bd, kids: [A2, B2] };
+      groups.splice(bj, 1); groups.splice(bi, 1); groups.push(merged);
+    }
+    var root2 = groups[0];
+
+    /* 잎 순서 */
+    var order = [];
+    (function walk(g) {
+      if (!g.kids) { order.push(g.ids[0]); return; }
+      walk(g.kids[0]); walk(g.kids[1]);
+    })(root2);
+    var pos = {};
+    for (i2 = 0; i2 < order.length; i2++) pos[order[i2]] = i2;
+
+    var hmax = root2.h * 1.1;
+    var cutH = cut / 10 * hmax;
+    var W = 460, H0 = 275, padL = 46, padB = 34, padT = 28;
+    var svg = VIZ.el('svg', { viewBox: '0 0 ' + W + ' ' + H0, role: 'img' });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(svg);
+    svg.appendChild(VIZ.el('text', { x: 12, y: 17, class: 'viz-label', 'font-size': 11,
+      text: '세로 = 병합 거리 · 가로 점선 = 자르는 높이 · 아래 = 개별 표본' }));
+    function XX(i3) { return padL + (W - padL - 16) * (i3 + 0.5) / n; }
+    function YY(h) { return H0 - padB - (H0 - padB - padT) * (h / hmax); }
+
+    var kcount = 1;
+    (function drawG(g) {
+      if (!g.kids) return { x: XX(pos[g.ids[0]]), y: YY(0) };
+      var a = drawG(g.kids[0]), b = drawG(g.kids[1]);
+      var y = YY(g.h);
+      var col = g.h > cutH ? 'var(--ink-3)' : 'var(--jade)';
+      [[a.x, a.y, a.x, y], [b.x, b.y, b.x, y], [a.x, y, b.x, y]].forEach(function (L) {
+        svg.appendChild(VIZ.el('line', { x1: L[0], y1: L[1], x2: L[2], y2: L[3],
+          stroke: col, 'stroke-width': 1.8, 'stroke-opacity': 0.85 }));
+      });
+      if (g.h > cutH) kcount++;
+      return { x: (a.x + b.x) / 2, y: y };
+    })(root2);
+
+    svg.appendChild(VIZ.el('line', { x1: padL - 8, y1: YY(cutH), x2: W - 12, y2: YY(cutH),
+      stroke: 'var(--seal)', 'stroke-width': 2, 'stroke-dasharray': '5 4' }));
+    for (i2 = 0; i2 < n; i2++) {
+      svg.appendChild(VIZ.el('circle', { cx: XX(i2), cy: YY(0), r: 3,
+        fill: 'var(--ink-2)', 'fill-opacity': 0.7 }));
+    }
+
+    out.setRaw('l', link);
+    out.setRaw('k', String(kcount));
+    out.set('h', cutH);
+    out.setRaw('note', link === 'single' ? '한 점씩 늘어붙는 사슬 효과가 보인다'
+      : (link === 'ward' ? '크기가 고른 덩어리 — k-means 와 같은 목적' : '중간 성격'));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: 'linkage',
+    options: [
+      { value: 'ward', label: 'Ward' },
+      { value: 'complete', label: '완전' },
+      { value: 'average', label: '평균' },
+      { value: 'single', label: '단일' }
+    ],
+    value: 'ward', onChange: function (v) { link = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '자르는 높이 (최대의 1/10 단위)', min: 1, max: 9, step: 1, value: 3, digits: 0,
+    onInput: function (v) { cut = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 6, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — DBSCAN
+   ============================================================ */
+WIDGETS.register('dbscan-lab', function (root, ctx) {
+  var eps = 0.32, minPts = 4, shape = 'moons', seed = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'k', label: '찾은 군집 수' },
+    { key: 'core', label: 'core 점 수' },
+    { key: 'noise', label: '잡음 점 수' },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function draw() {
+    var X = makeShape(shape, seed);
+    var d = dbscan(X, eps, minPts);
+    var nc = 0, nn = 0, i;
+    for (i = 0; i < X.length; i++) { if (d.core[i]) nc++; if (d.lab[i] < 0) nn++; }
+
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -2.6, xmax: 2.6, ymin: -2.4, ymax: 2.4,
+      pad: { t: 30, r: 16, b: 30, l: 42 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x₁', '').ticks(1, 1);
+    p.text(-2.6, 2.4, 'x₂ · 큰 점 = core · 중간 = border · 작은 회색 = 잡음 · 원 = ε 반경 예시',
+      { size: 10, dy: -10 });
+
+    /* ε 반경 하나를 예시로 */
+    var ex = X[0];
+    var rr = [];
+    for (var t = 0; t <= 40; t++) {
+      var a = 2 * Math.PI * t / 40;
+      rr.push([ex[0] + eps * Math.cos(a), ex[1] + eps * Math.sin(a)]);
+    }
+    p.line(rr, { dash: '3 3', width: 1.6 });
+
+    for (i = 0; i < X.length; i++) {
+      var L = d.lab[i];
+      p.add(VIZ.el('circle', {
+        cx: p.X(X[i][0]), cy: p.Y(X[i][1]),
+        r: L < 0 ? 2.2 : (d.core[i] ? 4.4 : 3.2),
+        fill: L < 0 ? 'var(--ink-3)' : CLS[L % 4],
+        'fill-opacity': L < 0 ? 0.4 : 0.88
+      }));
+    }
+
+    out.setRaw('k', String(d.k));
+    out.setRaw('core', String(nc));
+    out.setRaw('noise', String(nn));
+    out.setRaw('note', d.k === 0 ? 'ε 가 너무 작다 — 전부 잡음'
+      : (d.k === 1 && shape !== 'blobs' ? 'ε 가 커서 두 군집이 하나로 붙었다'
+      : (nn > X.length * 0.3 ? '잡음이 많다 — ε 를 키우거나 minPts 를 줄인다' : '적당하다')));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: 'data 모양',
+    options: [
+      { value: 'moons', label: '초승달' },
+      { value: 'circles', label: '동심원' },
+      { value: 'blobs', label: '덩어리' }
+    ],
+    value: 'moons', onChange: function (v) { shape = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'ε', min: 0.08, max: 1.2, step: 0.01, value: 0.32, digits: 2,
+    onInput: function (v) { eps = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'minPts', min: 2, max: 12, step: 1, value: 4, digits: 0,
+    onInput: function (v) { minPts = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — silhouette 과 K
+   ============================================================ */
+WIDGETS.register('silhouette-view', function (root, ctx) {
+  var Kat = 3, shape = 'blobs', seed = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'k', label: '지금 K' },
+    { key: 's', label: 'silhouette', digits: 4 },
+    { key: 'j', label: 'inertia J', digits: 3 },
+    { key: 'best', label: 'silhouette 이 최대인 K' }
+  ]);
+
+  function draw() {
+    var X = makeShape(shape, seed);
+    var ss = [], js = [], k;
+    for (k = 2; k <= 8; k++) {
+      var r = kmeans(X, k, seed * 7 + 1, 25);
+      ss.push(silhouette(X, r.lab));
+      js.push(r.J);
+    }
+    var bi = 0;
+    for (k = 1; k < ss.length; k++) if (ss[k] > ss[bi]) bi = k;
+
+    var p1 = VIZ.plot({ w: 460, h: 160, xmin: 2, xmax: 8, ymin: 0, ymax: 0.9,
+      pad: { t: 26, r: 16, b: 24, l: 46 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p1.svg);
+    panel(p1).grid(1, 0.2).axes('K', '').ticks(1, 0.2);
+    p1.text(2, 0.9, 'silhouette (높을수록 좋다 · 최댓값이 존재한다)', { size: 10, dy: -8 });
+    var a = [];
+    for (k = 0; k < ss.length; k++) a.push([k + 2, Math.max(0, ss[k])]);
+    p1.line(a, { width: 2.4 });
+    p1.dot(Kat, Math.max(0, ss[Kat - 2]), 5);
+
+    var jm = Math.max.apply(null, js);
+    var p2 = VIZ.plot({ w: 460, h: 150, xmin: 2, xmax: 8, ymin: 0, ymax: jm * 1.12,
+      pad: { t: 26, r: 16, b: 26, l: 52 } });
+    ctx.stage.appendChild(p2.svg);
+    panel(p2).grid(1, jm / 3).axes('K', '').ticks(1, jm / 3);
+    p2.text(2, jm * 1.12, 'inertia J (K 가 늘면 언제나 줄어든다 — 최솟값을 못 고른다)',
+      { size: 10, dy: -8 });
+    var b = [];
+    for (k = 0; k < js.length; k++) b.push([k + 2, js[k]]);
+    p2.line(b, { alt: true, width: 2.4 });
+    p2.dot(Kat, js[Kat - 2], 5);
+
+    out.setRaw('k', String(Kat));
+    out.set('s', ss[Kat - 2]);
+    out.set('j', js[Kat - 2]);
+    out.setRaw('best', String(bi + 2) + (shape === 'blobs' ? '  (참값 3)' : '  (참값 2)'));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: 'data 모양',
+    options: [
+      { value: 'blobs', label: '덩어리 (참 K=3)' },
+      { value: 'moons', label: '초승달 (참 K=2)' }
+    ],
+    value: 'blobs', onChange: function (v) { shape = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'K', min: 2, max: 8, step: 1, value: 3, digits: 0,
+    onInput: function (v) { Kat = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — k-means 반복
+   ============================================================ */
+WIDGETS.register('kmeans-run', function (root, ctx) {
+  var K = 3, seed = 4, init = 1;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'it', label: '반복' },
+    { key: 'J', label: 'inertia J', digits: 4 },
+    { key: 'd', label: '직전 대비 변화', digits: 6 },
+    { key: 'move', label: '배정이 바뀐 점 수' }
+  ]);
+
+  var X = null, prevLab = null;
+  function run(steps) {
+    var rnd = mkRand(init === 1 ? seed * 91 + 7 : 4242), n = X.length, mu = [], i, k;
+    for (k = 0; k < K; k++) {
+      if (init === 0) mu.push([-2.2 + 0.12 * k, -2.0 + 0.12 * k]);
+      else { var idx = Math.floor(rnd() * n); mu.push([X[idx][0], X[idx][1]]); }
+    }
+    var lab = new Array(n).fill(0), Js = [], moved = 0;
+    for (var t = 0; t <= steps; t++) {
+      var J = 0, mv = 0;
+      for (i = 0; i < n; i++) {
+        var best = 0, bd = 1e18;
+        for (k = 0; k < K; k++) { var d = d2(X[i], mu[k]); if (d < bd) { bd = d; best = k; } }
+        if (t > 0 && lab[i] !== best) mv++;
+        lab[i] = best; J += bd;
+      }
+      Js.push(J); moved = mv;
+      if (t === steps) break;
+      for (k = 0; k < K; k++) {
+        var sx = 0, sy = 0, c = 0;
+        for (i = 0; i < n; i++) if (lab[i] === k) { sx += X[i][0]; sy += X[i][1]; c++; }
+        if (c) mu[k] = [sx / c, sy / c];
+      }
+    }
+    return { lab: lab, mu: mu, Js: Js, moved: moved };
+  }
+
+  function draw(step) {
+    if (!X) X = makeShape('blobs', seed);
+    var r = run(step);
+
+    var p1 = VIZ.plot({ w: 460, h: 200, xmin: -2.6, xmax: 2.6, ymin: -2.4, ymax: 2.4,
+      pad: { t: 26, r: 14, b: 22, l: 40 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p1.svg);
+    panel(p1).grid(1, 1).axes('x₁', '').ticks(1, 1);
+    p1.text(-2.6, 2.4, 'x₂ · 큰 점 = 중심', { size: 10, dy: -8 });
+    for (var i = 0; i < X.length; i++) p1.add(VIZ.el('circle', {
+      cx: p1.X(X[i][0]), cy: p1.Y(X[i][1]), r: 3.2,
+      fill: CLS[r.lab[i] % 4], 'fill-opacity': 0.85 }));
+    for (var k = 0; k < K; k++) p1.add(VIZ.el('circle', {
+      cx: p1.X(r.mu[k][0]), cy: p1.Y(r.mu[k][1]), r: 7,
+      fill: CLS[k % 4], stroke: 'var(--amber)', 'stroke-width': 2.4 }));
+
+    var jm = Math.max.apply(null, r.Js), jl = Math.min.apply(null, r.Js);
+    if (jm - jl < 1e-9) jm = jl + 1;
+    var p2 = VIZ.plot({ w: 460, h: 128, xmin: 0, xmax: Math.max(1, step),
+      ymin: jl - 0.08 * (jm - jl), ymax: jm + 0.12 * (jm - jl),
+      pad: { t: 24, r: 14, b: 22, l: 52 } });
+    ctx.stage.appendChild(p2.svg);
+    panel(p2).grid(Math.max(1, Math.round(step / 4)), (jm - jl) / 3 + 1e-9)
+      .axes('반복', '').ticks(Math.max(1, Math.round(step / 4)), (jm - jl) / 3 + 1e-9);
+    p2.text(0, jm + 0.12 * (jm - jl), 'inertia J (단조 감소)', { size: 10, dy: -8 });
+    var pts = [];
+    for (var t = 0; t < r.Js.length; t++) pts.push([t, r.Js[t]]);
+    if (pts.length > 1) p2.line(pts, { width: 2.2 });
+    p2.dot(step, r.Js[r.Js.length - 1], 4.5);
+
+    out.setRaw('it', String(step));
+    out.set('J', r.Js[r.Js.length - 1]);
+    out.set('d', r.Js.length > 1 ? r.Js[r.Js.length - 1] - r.Js[r.Js.length - 2] : 0);
+    out.setRaw('move', String(r.moved));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'K', min: 2, max: 5, step: 1, value: 3, digits: 0,
+    onInput: function (v) { K = v; draw(pl ? pl.at() : 0); }
+  });
+  WIDGETS.toggle({
+    host: ctx.controls, label: '초기화',
+    options: [{ value: 1, label: '표본에서 무작위' }, { value: 0, label: '한쪽 구석에 몰아서' }],
+    value: 1, onChange: function (v) { init = Number(v); draw(pl ? pl.at() : 0); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; X = null; draw(pl ? pl.at() : 0); }
+  });
+  var pl = WIDGETS.player({ host: ctx.controls, steps: 13, fps: 2, label: '반복', onStep: draw });
+});
+
+/* ============================================================
+   위젯 6 — spectral
+   ============================================================ */
+WIDGETS.register('spectral-view', function (root, ctx) {
+  var gam = 6, view = 'orig', seed = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'v', label: '보고 있는 공간' },
+    { key: 'g', label: 'γ (유사도 폭)', digits: 2 },
+    { key: 's', label: '고유vector 좌표에서의 silhouette', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  /* 야코비 회전으로 대칭행렬의 고유분해 (작은 n 이므로 충분) */
+  function jacobiEig(Ain, n) {
+    var A = [], i, j, k;
+    for (i = 0; i < n; i++) { A.push(Ain[i].slice()); }
+    var V = [];
+    for (i = 0; i < n; i++) { V.push(new Array(n).fill(0)); V[i][i] = 1; }
+    for (var sweep = 0; sweep < 40; sweep++) {
+      var off = 0;
+      for (i = 0; i < n; i++) for (j = i + 1; j < n; j++) off += A[i][j] * A[i][j];
+      if (off < 1e-12) break;
+      for (i = 0; i < n; i++) for (j = i + 1; j < n; j++) {
+        if (Math.abs(A[i][j]) < 1e-14) continue;
+        var th = 0.5 * Math.atan2(2 * A[i][j], A[j][j] - A[i][i]);
+        var c = Math.cos(th), s = Math.sin(th);
+        for (k = 0; k < n; k++) {
+          var aik = A[i][k], ajk = A[j][k];
+          A[i][k] = c * aik - s * ajk; A[j][k] = s * aik + c * ajk;
+        }
+        for (k = 0; k < n; k++) {
+          var aki = A[k][i], akj = A[k][j];
+          A[k][i] = c * aki - s * akj; A[k][j] = s * aki + c * akj;
+          var vki = V[k][i], vkj = V[k][j];
+          V[k][i] = c * vki - s * vkj; V[k][j] = s * vki + c * vkj;
+        }
+      }
+    }
+    var ev = [];
+    for (i = 0; i < n; i++) ev.push({ v: A[i][i], i: i });
+    ev.sort(function (a, b) { return a.v - b.v; });
+    return { ev: ev, V: V };
+  }
+
+  function draw() {
+    var rnd = mkRand(seed * 313 + 3), X = [], i, j;
+    for (i = 0; i < 56; i++) {
+      var r = i % 2 === 0 ? 0.55 + 0.13 * rnd() : 1.7 + 0.15 * rnd();
+      var th = 2 * Math.PI * rnd();
+      X.push([r * Math.cos(th), r * Math.sin(th)]);
+    }
+    var n = X.length;
+    var W = [], D = new Array(n).fill(0);
+    for (i = 0; i < n; i++) {
+      W.push(new Array(n).fill(0));
+    }
+    for (i = 0; i < n; i++) for (j = 0; j < n; j++) {
+      if (i === j) continue;
+      var w = Math.exp(-gam * d2(X[i], X[j]));
+      W[i][j] = w; D[i] += w;
+    }
+    var L = [];
+    for (i = 0; i < n; i++) {
+      L.push(new Array(n).fill(0));
+      for (j = 0; j < n; j++) {
+        var v = (i === j ? 1 : 0) - W[i][j] / Math.sqrt(Math.max(1e-12, D[i] * D[j]));
+        L[i][j] = v;
+      }
+    }
+    var eg = jacobiEig(L, n);
+    var Y = [];
+    for (i = 0; i < n; i++) {
+      var a = eg.V[i][eg.ev[0].i], b = eg.V[i][eg.ev[1].i];
+      var nr = Math.sqrt(a * a + b * b) || 1;
+      Y.push([a / nr, b / nr]);
+    }
+    var r2 = kmeans(Y, 2, seed * 5 + 1, 30);
+
+    var pts = view === 'orig' ? X : Y;
+    var lim = view === 'orig' ? 2.2 : 1.25;
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -lim, xmax: lim, ymin: -lim, ymax: lim,
+      pad: { t: 30, r: 16, b: 30, l: 44 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(lim / 2, lim / 2).axes(view === 'orig' ? 'x₁' : '첫 고유vector', '')
+      .ticks(lim / 2, lim / 2);
+    p.text(-lim, lim, view === 'orig' ? 'x₂ · 원래 공간 — 동심원이라 직선으로 못 가른다'
+      : '둘째 고유vector · 여기서는 두 뭉치로 갈라졌다', { size: 10, dy: -10 });
+
+    for (i = 0; i < n; i++) p.add(VIZ.el('circle', {
+      cx: p.X(Math.max(-lim * 0.98, Math.min(lim * 0.98, pts[i][0]))),
+      cy: p.Y(Math.max(-lim * 0.98, Math.min(lim * 0.98, pts[i][1]))),
+      r: 3.6, fill: CLS[r2.lab[i] % 4], 'fill-opacity': 0.88 }));
+
+    out.setRaw('v', view === 'orig' ? '원래 공간 (x₁, x₂)' : '고유vector 좌표');
+    out.set('g', gam);
+    out.set('s', silhouette(Y, r2.lab));
+    out.setRaw('note', gam < 1.5 ? 'γ 가 작다 — 그래프가 너무 촘촘히 이어져 분리가 흐리다'
+      : (gam > 20 ? 'γ 가 크다 — 그래프가 끊겨 조각이 잘게 난다' : '두 원이 잘 갈린다'));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '보는 공간',
+    options: [{ value: 'orig', label: '원래 공간' }, { value: 'eig', label: '고유vector 좌표' }],
+    value: 'orig', onChange: function (v) { view = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'γ (유사도 폭)', min: 0.5, max: 30, step: 0.5, value: 6, digits: 1,
+    onInput: function (v) { gam = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

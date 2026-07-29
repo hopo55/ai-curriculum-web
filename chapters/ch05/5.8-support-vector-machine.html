@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5.8 서포트 벡터 머신 — AI 이론 학습</title>
+<meta name="description" content="가장 넓은 길을 내는 경계를 찾는다. 그 폭을 정하는 것은 경계에 닿은 소수의 점뿐이고, kernel trick은 좌표를 계산하지 않고도 휘어진 경계를 만든다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="5.8">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">5.8</span>
+        <span>5장 · 전통적 머신러닝</span>
+      </div>
+      <h1>서포트 벡터 머신</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 75분</span>
+        <span><b>난이도</b>★★★★☆</span>
+        <span><b>선수지식</b>
+          <a href="../ch03/3.9-constraints-regularization.html">3.9 제약과 정규화</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-margin">Margin</a>
+      <a class="chip" href="#c-sv">Support Vector</a>
+      <a class="chip" href="#c-hard">Hard Margin</a>
+      <a class="chip" href="#c-soft">Soft Margin</a>
+      <a class="chip" href="#c-hinge">Hinge Loss</a>
+      <a class="chip" href="#c-kernel">Kernel Trick</a>
+      <a class="chip" href="#c-klin">Linear Kernel</a>
+      <a class="chip" href="#c-kpoly">Polynomial Kernel</a>
+      <a class="chip" href="#c-krbf">RBF Kernel</a>
+      <a class="chip" href="#c-oneclass">One-Class SVM</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        SVM 은 두 class 사이에 <strong>가장 넓은 길을 내는 경계</strong>를 찾는다.
+        그 폭을 정하는 것은 <strong>길가에 닿은 소수의 점(support vector)</strong> 뿐이고,
+        길을 조금 넘어오는 점은 <strong>hinge loss 로 값을 매겨</strong> 허용한다.
+        <strong>kernel trick</strong> 은 고차원 좌표를 계산하지 않고 내적만으로 휘어진 경계를 만든다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>margin 이 $2/\|\mathbf{w}\|$ 임을 유도하고 최대화가 왜 $\|\mathbf{w}\|^2$ 최소화가 되는지 설명할 수 있다.</li>
+        <li>Lagrange 쌍대를 세워 해가 <strong>내적으로만</strong> 표현됨을 보이고, 거기서 kernel trick 을 끌어낼 수 있다.</li>
+        <li>$C$ 와 $\gamma$ 가 각각 무엇을 바꾸는지 알고 hinge loss 를 손으로 계산할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        선형으로 분리되는 두 무리 사이에 직선을 긋는 방법은 <strong>무한히 많다</strong>.
+        <a href="5.4-logistic-regression.html">5.4</a>의 logistic regression 은 그중 하나를 고르지만,
+        "왜 하필 그것인가"에 대한 <strong>기하학적 근거는 약하다</strong>.
+      </p>
+      <p>
+        SVM 의 답은 단순하다 — <strong>양쪽에서 가장 멀리 떨어진 선</strong>을 고른다.
+        경계를 하나의 선이 아니라 <strong>폭을 가진 길</strong>로 보고, 그 길을 최대한 넓게 낸다.
+        <a href="5.2-statistical-learning-theory.html">5.2</a>에서 봤듯
+        <strong>margin 이 넓으면 일반화 상계가 좋아지므로</strong> 이론적 근거도 있다.
+      </p>
+      <p>
+        그러면 <strong>길의 폭을 정하는 것은 누구인가</strong> — 길가에 딱 닿은 점들뿐이다.
+        멀리 있는 점은 아무리 많아도, 아무리 움직여도 <strong>답이 바뀌지 않는다</strong>.
+        이 소수의 점이 <strong>support vector</strong> 이고,
+        여기서 SVM 의 성격이 전부 나온다 — <strong>희소하고, 이상치에 민감하고, 예측이 빠르다</strong>.
+      </p>
+
+      <figure class="widget" data-widget="margin-view">
+        <figcaption class="widget__bar">Margin — 가장 넓은 길을 낸다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">길에 닿지 <strong>않은 점을 아무리 움직여도</strong> 경계가 그대로입니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>두 마을 사이에 길을 낸다고 합시다. 어느 마을 집도 헐지 않으면서 <strong>가장 넓은 도로</strong>를 놓는 것이 목표입니다. 도로의 폭을 결정하는 것은 <strong>도로에 가장 가까운 집 몇 채</strong>뿐이고, 마을 안쪽 깊은 집들은 아무 영향이 없습니다.</p>
+        <p>그런데 마을 사이에 <strong>엉뚱하게 낀 집 한 채</strong>가 있으면 도로가 아주 좁아집니다. 그럴 때는 "그 집은 좀 헐어도 좋다, 대신 벌금을 물린다"고 정합니다 — 그 벌금의 크기가 <strong>$C$</strong> 입니다.</p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-margin"></span>
+      <span class="anchor" id="c-hard"></span>
+      <h3>Margin &amp; Hard Margin</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \min_{\mathbf{w},b}\ \frac12\|\mathbf{w}\|^2 \quad \text{s.t.}\quad y_i(\mathbf{w}^\top\mathbf{x}_i+b)\ \ge\ 1 \ \ \forall i $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">margin 은 <strong>경계에서 가장 가까운 점까지의 거리의 두 배</strong>인 $2/\|\mathbf{w}\|$ 이고,
+        이를 최대화하는 것은 <strong>$\|\mathbf{w}\|^2$ 를 최소화</strong>하는 것과 같다(유도 1).
+        hard margin 은 <strong>단 하나의 오분류도 허용하지 않는다</strong>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>표기</th><th>뜻</th><th>비고</th></tr></thead>
+          <tbody>
+            <tr><td>$\mathbf{w}^\top\mathbf{x}+b=0$</td><td>결정 경계 (초평면)</td><td><a href="../ch02/2.5-linear-transformation.html">2.5</a>의 초평면</td></tr>
+            <tr><td>$\mathbf{w}^\top\mathbf{x}+b=\pm1$</td><td><strong>margin 의 양쪽 가장자리</strong></td><td>$\pm1$ 은 <strong>스케일을 고정하는 관례</strong></td></tr>
+            <tr><td>$y_i\in\{-1,+1\}$</td><td>label</td><td>$\{0,1\}$ 이 아니라 <strong>$\pm1$</strong></td></tr>
+            <tr><td>$y_i(\mathbf{w}^\top\mathbf{x}_i+b)$</td><td><strong>functional margin</strong></td><td>양수면 맞힌 것</td></tr>
+            <tr><td>$\dfrac{y_i(\mathbf{w}^\top\mathbf{x}_i+b)}{\|\mathbf{w}\|}$</td><td><strong>geometric margin</strong> — 실제 거리</td><td>스케일에 불변</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        $\pm1$ 이 임의로 보이지만 그렇지 않다.
+        $(\mathbf{w},b)$ 를 두 배로 키워도 같은 경계이므로 <strong>자유도가 하나 남는데</strong>,
+        "가장 가까운 점에서 값이 정확히 1" 이라고 못 박아 그 자유도를 없앤 것이다.
+        <strong>그래야 최적화 문제가 잘 정의된다</strong>.
+      </p>
+
+      <span class="anchor" id="c-sv"></span>
+      <h3>Support Vector</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathbf{w}=\sum_{i}\alpha_i y_i\mathbf{x}_i, \qquad \alpha_i>0 \iff y_i(\mathbf{w}^\top\mathbf{x}_i+b)=1 $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        <span class="hl">해는 <strong>margin 가장자리에 놓인 점들의 선형결합</strong>이며,
+        그 점들만 $\alpha_i>0$ 을 갖는다 — <a href="../ch03/3.9-constraints-regularization.html">3.9</a>의
+        <strong>KKT 상보 여유 조건</strong>이 만드는 희소성이다(유도 2).</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>점의 위치</th><th>$\alpha_i$</th><th>$\xi_i$</th><th>부르는 이름</th></tr></thead>
+          <tbody>
+            <tr><td>margin 바깥 (안전)</td><td class="num">0</td><td class="num">0</td><td>비-support vector — <strong>지워도 답이 같다</strong></td></tr>
+            <tr><td><strong>margin 가장자리</strong></td><td>$0<\alpha_i&lt;C$</td><td class="num">0</td><td><strong>자유 support vector</strong> — $b$ 를 여기서 구한다</td></tr>
+            <tr><td>margin 안쪽 (침범)</td><td class="num">$C$</td><td>$0<\xi_i\le1$</td><td>경계 support vector</td></tr>
+            <tr><td>반대편 (오분류)</td><td class="num">$C$</td><td>$\xi_i>1$</td><td>경계 support vector</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        두 번째 줄이 실무에서 중요하다 — <strong>$b$ 는 $0<\alpha_i&lt;C$ 인 점에서만 정확히 구할 수 있다</strong>.
+        그런 점이 하나도 없으면($C$ 가 아주 작을 때 생긴다) 별도의 처리가 필요하다.
+      </p>
+
+      <span class="anchor" id="c-soft"></span>
+      <span class="anchor" id="c-hinge"></span>
+      <h3>Soft Margin &amp; Hinge Loss</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \min_{\mathbf{w},b,\boldsymbol{\xi}}\ \frac12\|\mathbf{w}\|^2+C\sum_i\xi_i \quad \text{s.t.}\quad y_i(\mathbf{w}^\top\mathbf{x}_i+b)\ge1-\xi_i,\ \ \xi_i\ge0 $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl">soft margin 은 <strong>여유 변수 $\xi_i$ 로 침범을 허용</strong>하고 그만큼 벌점을 매긴다 —
+        $C$ 가 크면 <strong>오분류를 싫어하고</strong>(좁은 margin), 작으면 <strong>넓은 margin 을 택한다</strong><a class="cite" href="#ref-cortes1995-support-vector-networks" data-ref="cortes1995-support-vector-networks">1</a>.</span>
+      </p>
+      <p>제약을 풀어 쓰면 <strong>정규화된 손실 최소화</strong> 한 줄이 된다.</p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \min_{\mathbf{w},b}\ \underbrace{\sum_i\max\bigl(0,\ 1-y_i f(\mathbf{x}_i)\bigr)}_{\text{hinge loss}}+\frac{1}{2C}\|\mathbf{w}\|^2 $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$y f(\mathbf{x})$</th><th>hinge $\max(0,1-yf)$</th><th>뜻</th></tr></thead>
+          <tbody>
+            <tr><td class="num">2.0</td><td class="num">0</td><td>여유 있게 맞음 — <strong>손실 0, 기여 없음</strong></td></tr>
+            <tr><td class="num">1.0</td><td class="num">0</td><td>정확히 가장자리 — <strong>꺾이는 점</strong></td></tr>
+            <tr><td class="num">0.5</td><td class="num">0.5</td><td>맞았지만 margin 침범</td></tr>
+            <tr><td class="num">0</td><td class="num">1.0</td><td>경계 위</td></tr>
+            <tr><td class="num">−1.0</td><td class="num">2.0</td><td>오분류 — <strong>선형으로 증가</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>$1$ 을 넘으면 손실이 정확히 0</strong> 이 되는 것이 hinge 의 핵심이다 —
+        <a href="5.4-logistic-regression.html">5.4</a>의 logistic loss 는 아무리 잘 맞혀도 <strong>0 이 되지 않아</strong>
+        모든 점이 조금씩 해에 기여하는 반면, hinge 는 <strong>정확히 0 이 되어 희소해진다</strong>.
+        <strong>이것이 support vector 가 나오는 진짜 이유</strong>다.
+      </p>
+      <p>
+        또 오분류 쪽에서 <strong>선형</strong>으로만 커지므로,
+        지수적으로 커지는 exponential loss(<a href="5.7-ensemble.html">5.7</a>의 AdaBoost)보다
+        <strong>이상치에 훨씬 강하다</strong>.
+      </p>
+
+      <figure class="widget" data-widget="loss-shapes">
+        <figcaption class="widget__bar">Hinge Loss — 어디서 0 이 되는가</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">hinge 만 <strong>정확히 0 이 되는 구간</strong>이 있습니다. 그 구간의 점이 곧 비-support vector 입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-kernel"></span>
+      <h3>Kernel Trick</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \max_{\boldsymbol{\alpha}}\ \sum_i\alpha_i-\frac12\sum_{i,j}\alpha_i\alpha_j y_iy_j\,\underbrace{K(\mathbf{x}_i,\mathbf{x}_j)}_{=\ \phi(\mathbf{x}_i)^\top\phi(\mathbf{x}_j)} \quad \text{s.t.}\ 0\le\alpha_i\le C,\ \sum_i\alpha_iy_i=0 $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        <span class="hl">쌍대 문제에서 data 는 <strong>오직 내적 $\mathbf{x}_i^\top\mathbf{x}_j$ 로만</strong> 나타난다.
+        그 자리에 kernel $K$ 를 넣으면 <strong>$\phi(\mathbf{x})$ 를 한 번도 계산하지 않고</strong>
+        고차원 공간에서 학습한 것과 같은 결과를 얻는다 — 이것이 kernel trick 이다<a class="cite" href="#ref-boser1992-optimal-margin" data-ref="boser1992-optimal-margin">2</a>.</span>
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ f(\mathbf{x})=\sum_{i\in\mathrm{SV}}\alpha_iy_iK(\mathbf{x}_i,\mathbf{x})+b $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        예측조차 <strong>support vector 와의 kernel 값</strong>만으로 이루어진다.
+        $K$ 가 유효하려면 <strong>Mercer 조건</strong> — 어떤 유한 집합에 대해서도 kernel 행렬이
+        <strong>대칭 양의 준정부호</strong>(<a href="../ch02/2.7-eigenvalues.html">2.7</a>) — 를 만족해야 하고,
+        그때 대응하는 $\phi$ 가 존재함이 보장된다.
+      </p>
+
+      <span class="anchor" id="c-klin"></span>
+      <span class="anchor" id="c-kpoly"></span>
+      <span class="anchor" id="c-krbf"></span>
+      <h3>Linear · Polynomial · RBF Kernel</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ K_{\text{lin}}=\mathbf{x}^\top\mathbf{z}, \qquad K_{\text{poly}}=(\gamma\,\mathbf{x}^\top\mathbf{z}+r)^d, \qquad K_{\text{rbf}}=\exp\bigl(-\gamma\|\mathbf{x}-\mathbf{z}\|^2\bigr) $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>kernel</th><th>$\phi$ 의 차원</th><th>hyperparameter</th><th>언제 쓰나</th></tr></thead>
+          <tbody>
+            <tr><td>Linear</td><td>$d$ (그대로)</td><td>$C$</td><td><strong>feature 가 표본보다 많을 때</strong> — 텍스트</td></tr>
+            <tr><td>Polynomial ($d$차)</td><td>$\binom{n+d}{d}$ — 유한</td><td>$C,\gamma,r,d$</td><td>상호작용이 중요할 때. <strong>$d$ 가 크면 불안정</strong></td></tr>
+            <tr><td><strong>RBF (Gaussian)</strong></td><td><strong>무한 차원</strong></td><td>$C,\gamma$</td><td><strong>기본 선택</strong> — 대개 가장 잘 된다</td></tr>
+            <tr><td>Sigmoid</td><td>—</td><td>$C,\gamma,r$</td><td>Mercer 조건을 <strong>항상 만족하지는 않는다</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <span class="hl">RBF 의 $\gamma$ 는 <strong>영향 반경의 역수</strong>다 —
+        크면 각 support vector 의 영향이 좁아져 <strong>구불구불한 경계</strong>가 되고,
+        작으면 넓게 퍼져 <strong>거의 선형</strong>이 된다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>$C$ 작다</th><th>$C$ 크다</th></tr></thead>
+          <tbody>
+            <tr><td>$\gamma$ 작다</td><td>매우 매끄럽다 — <strong>과소적합</strong></td><td>매끄럽고 오분류에 엄격</td></tr>
+            <tr><td>$\gamma$ 크다</td><td>구불하지만 침범 허용</td><td><strong>모든 점을 감싼다 — 과적합</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>$C$ 와 $\gamma$ 는 함께 튜닝해야 한다</strong> — 서로 보정하기 때문에
+        하나씩 따로 최적화하면 좋은 조합을 놓친다.
+        관례는 <strong>로그 격자</strong>($C,\gamma\in\{2^{-5},\dots,2^{15}\}$)로 함께 훑는 것이며(<a href="5.14-model-selection.html">5.14</a>),
+        <strong>SVM 은 스케일에 민감</strong>하므로 <strong>표준화가 필수</strong>다(오해 3).
+      </p>
+
+      <figure class="widget" data-widget="kernel-lab">
+        <figcaption class="widget__bar">Kernel — C 와 γ 가 경계를 어떻게 바꾸나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$\gamma$ 를 키우면 <strong>점 하나하나를 섬처럼 감싸기</strong> 시작합니다 — 전형적인 과적합입니다.</p>
+        </div>
+      </figure>
+
+      <figure class="widget" data-widget="lift-view">
+        <figcaption class="widget__bar">Kernel Trick — 한 차원 올리면 직선으로 갈린다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">1차원에서 <strong>섞여 있던 점들</strong>이 $z=x^2$ 축을 더하면 직선 하나로 갈립니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-oneclass"></span>
+      <h3>One-Class SVM</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \min_{\mathbf{w},\rho,\boldsymbol{\xi}}\ \frac12\|\mathbf{w}\|^2+\frac{1}{\nu n}\sum_i\xi_i-\rho \quad \text{s.t.}\ \mathbf{w}^\top\phi(\mathbf{x}_i)\ge\rho-\xi_i,\ \xi_i\ge0 $$</div>
+        <span class="eq__tag num">(8)</span>
+      </div>
+      <p>
+        <span class="hl">one-class SVM 은 <strong>정상 data 만 보고</strong> 그것을 원점에서 가장 멀리 떼어 놓는 초평면을 찾는다 —
+        새 점이 그 아래로 오면 <strong>이상치</strong>로 판정한다<a class="cite" href="#ref-scholkopf2001-oneclass-svm" data-ref="scholkopf2001-oneclass-svm">3</a>.</span>
+      </p>
+      <p>
+        parameter $\nu\in(0,1]$ 에는 깔끔한 해석이 있다 —
+        <strong>이상치로 판정되는 비율의 상한이자 support vector 비율의 하한</strong>이다.
+        $\nu=0.05$ 라고 두면 "훈련 data 의 약 5% 를 이상치로 본다"는 뜻이라
+        <strong>$C$ 보다 훨씬 정하기 쉽다</strong>.
+        (같은 아이디어를 분류에 적용한 것이 $\nu$-SVM 이며, $C$ 대신 $\nu$ 로 조절한다.)
+        <a href="5.12-anomaly-detection.html">5.12</a>에서 다른 이상치 탐지법들과 함께 비교한다.
+      </p>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>원 문제와 쌍대 문제 중 무엇을 풀지는 <strong>$n$ 과 $d$ 의 크기</strong>가 정한다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>원(primal) 문제</th><th>쌍대(dual) 문제</th></tr></thead>
+          <tbody>
+            <tr><td>변수</td><td>$\mathbf{w}\in\mathbb{R}^d,\ b$</td><td>$\boldsymbol{\alpha}\in\mathbb{R}^n$</td></tr>
+            <tr><td>변수 개수</td><td>$d+1$</td><td>$n$</td></tr>
+            <tr><td>유리한 경우</td><td><strong>$n\gg d$</strong> (표본이 많다)</td><td><strong>$d\gg n$ 또는 kernel</strong></td></tr>
+            <tr><td>kernel 사용</td><td><strong>불가능</strong> ($\phi$ 를 명시해야)</td><td><strong>가능</strong> — 내적만 나온다</td></tr>
+            <tr><td>학습 복잡도</td><td>$O(nd)$ 정도 (SGD)</td><td>$O(n^2)\sim O(n^3)$</td></tr>
+            <tr><td>구현</td><td><code>LinearSVC</code>, <code>SGDClassifier</code></td><td><code>SVC</code> (libsvm, SMO)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        마지막 두 줄이 실무의 갈림길이다.
+        <strong>kernel SVM 은 $n$ 이 커지면 못 쓴다</strong> — 학습이 $O(n^2)$ 이상이고
+        kernel 행렬만 $n^2$ 개의 수를 요구한다($n$=10만이면 80GB).
+        <strong>$n>10^5$ 이면 linear SVM 이나 <a href="5.7-ensemble.html">5.7</a>의 gradient boosting</strong> 으로 가는 것이 표준이다.
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$\mathbf{w}$</td><td>w · weight vector</td><td>경계의 법선 vector</td><td>$\mathbb{R}^d$</td><td>—</td></tr>
+            <tr><td>$b$</td><td>b · bias</td><td>경계의 위치 (절편)</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\|\mathbf{w}\|$</td><td>norm of w 노름</td><td>$\sqrt{\mathbf{w}^\top\mathbf{w}}$</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$2/\|\mathbf{w}\|$</td><td>—</td><td><strong>margin 의 폭</strong></td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>$y_i$</td><td>y sub i</td><td>label</td><td>scalar</td><td><strong>$\{-1,+1\}$</strong></td></tr>
+            <tr><td>$\xi_i$</td><td>xi 크시 · slack</td><td>여유 변수 — margin 을 얼마나 침범했나</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$C$</td><td>C · 규제 상수</td><td>침범에 매기는 벌점</td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>$\alpha_i$</td><td>alpha 알파</td><td><strong>Lagrange 승수</strong> — 그 점의 영향력</td><td>scalar</td><td>$[0,C]$</td></tr>
+            <tr><td>$\phi$</td><td>phi 파이 · feature map</td><td>고차원으로 보내는 사상</td><td>함수</td><td>—</td></tr>
+            <tr><td>$K(\mathbf{x},\mathbf{z})$</td><td>kernel 커널</td><td>$\phi(\mathbf{x})^\top\phi(\mathbf{z})$</td><td>scalar</td><td>—</td></tr>
+            <tr><td>$\gamma$</td><td>gamma 감마</td><td>RBF 의 폭 — <strong>영향 반경의 역수</strong></td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>$\nu$</td><td>nu 뉴</td><td>이상치 비율의 상한 (one-class)</td><td>scalar</td><td>$(0,1]$</td></tr>
+            <tr><td>$\rho$</td><td>rho 로</td><td>원점에서 초평면까지 (one-class)</td><td>scalar</td><td>—</td></tr>
+            <tr><td>SV</td><td>support vector</td><td>$\alpha_i>0$ 인 점들의 집합</td><td>집합</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">같은 것을 다르게 부른다</span>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>이 사이트</th><th>같은 뜻으로 쓰이는 말</th><th>주의할 점</th></tr></thead>
+            <tbody>
+              <tr><td>$C$</td><td>규제 상수, box constraint, penalty</td><td><strong>$\lambda$ 와 반대 방향</strong> — $C=1/(2\lambda)$ (<a href="5.3-linear-regression.html">5.3</a>)</td></tr>
+              <tr><td>$\gamma$ (RBF)</td><td>—</td><td>$\gamma=1/(2\sigma^2)$. <strong>polynomial 의 $\gamma$ 와 역할이 다르다</strong></td></tr>
+              <tr><td>margin</td><td>마진, 여백</td><td>functional / geometric 을 <strong>구분</strong>해야 한다</td></tr>
+              <tr><td>hinge loss</td><td>경첩 손실, max-margin loss</td><td>제곱 hinge($\max(0,1-yf)^2$)는 <strong>다른 손실</strong>이다</td></tr>
+              <tr><td>RBF kernel</td><td>Gaussian kernel, 방사 기저 함수</td><td>전부 같은 것</td></tr>
+              <tr><td>SVR</td><td>support vector regression</td><td>hinge 대신 <strong>$\epsilon$-insensitive loss</strong> 를 쓴다</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — margin 이 $2/\|\mathbf{w}\|$ 인 이유</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{x}_+ \text{ 는 } \mathbf{w}^\top\mathbf{x}+b=+1 \text{ 위에},\quad \mathbf{x}_- \text{ 는 } -1 \text{ 위에} $$</div>
+          <div class="derive__why">두 가장자리 위의 점을 하나씩</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{x}_+=\mathbf{x}_-+t\frac{\mathbf{w}}{\|\mathbf{w}\|} $$</div>
+          <div class="derive__why"><strong>법선 방향으로 $t$ 만큼</strong> 이동했다고 두면 $t$ 가 곧 두 평면 사이 거리</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{w}^\top\mathbf{x}_++b=\mathbf{w}^\top\mathbf{x}_-+b+t\frac{\mathbf{w}^\top\mathbf{w}}{\|\mathbf{w}\|} $$</div>
+          <div class="derive__why">대입해서 정리</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 1=-1+t\|\mathbf{w}\| \quad (\because \mathbf{w}^\top\mathbf{w}=\|\mathbf{w}\|^2) $$</div>
+          <div class="derive__why">양변의 값을 알고 있다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore\ t=\frac{2}{\|\mathbf{w}\|} $$</div>
+          <div class="derive__why"><strong>margin 의 폭</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \max\frac{2}{\|\mathbf{w}\|} \iff \min\|\mathbf{w}\| \iff \min\frac12\|\mathbf{w}\|^2 $$</div>
+          <div class="derive__why">단조 변환. $\frac12$ 과 제곱은 <strong>미분을 깔끔하게</strong> 하려는 것 — 식 (1)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{볼록 이차계획(QP) — 전역 최적해가 유일하다} $$</div>
+          <div class="derive__why"><a href="../ch03/3.5-optimization-basics.html">3.5</a>. <strong>트리·신경망과 달리 국소최적이 없다</strong></div>
+        </div>
+      </div>
+
+      <h3>유도 2 — 쌍대 문제와 kernel trick 이 나오는 자리</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ L=\frac12\|\mathbf{w}\|^2-\sum_i\alpha_i\bigl[y_i(\mathbf{w}^\top\mathbf{x}_i+b)-1\bigr],\quad \alpha_i\ge0 $$</div>
+          <div class="derive__why"><a href="../ch03/3.9-constraints-regularization.html">3.9</a>의 Lagrangian</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\partial L}{\partial\mathbf{w}}=\mathbf{w}-\sum_i\alpha_iy_i\mathbf{x}_i=0 \ \Rightarrow\ \mathbf{w}=\sum_i\alpha_iy_i\mathbf{x}_i $$</div>
+          <div class="derive__why"><strong>해가 data 점들의 선형결합</strong> — 식 (2)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\partial L}{\partial b}=-\sum_i\alpha_iy_i=0 \ \Rightarrow\ \sum_i\alpha_iy_i=0 $$</div>
+          <div class="derive__why">쌍대의 등식 제약이 여기서 나온다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ L=\sum_i\alpha_i-\frac12\sum_{i,j}\alpha_i\alpha_jy_iy_j\,\mathbf{x}_i^\top\mathbf{x}_j $$</div>
+          <div class="derive__why">대입해 $\mathbf{w},b$ 를 소거. <strong>$\mathbf{x}$ 가 내적으로만 남았다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{x}_i^\top\mathbf{x}_j\ \longrightarrow\ \phi(\mathbf{x}_i)^\top\phi(\mathbf{x}_j)=K(\mathbf{x}_i,\mathbf{x}_j) $$</div>
+          <div class="derive__why"><strong>여기가 kernel trick 이 들어가는 정확한 자리</strong> — 식 (5)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{KKT 상보 여유}:\ \alpha_i\bigl[y_if(\mathbf{x}_i)-1\bigr]=0 $$</div>
+          <div class="derive__why">둘 중 하나는 0 이어야 한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ y_if(\mathbf{x}_i)>1 \ \Rightarrow\ \alpha_i=0 \quad(\text{margin 바깥 점은 기여 없음}) $$</div>
+          <div class="derive__why"><strong>희소성의 근원</strong>. $\alpha_i>0$ 인 점만 support vector</div>
+        </div>
+      </div>
+
+      <h3>유도 3 — RBF kernel 이 무한 차원인 이유</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ K(x,z)=e^{-\gamma(x-z)^2}=e^{-\gamma x^2}e^{-\gamma z^2}e^{2\gamma xz} $$</div>
+          <div class="derive__why">1차원에서. $(x-z)^2=x^2-2xz+z^2$ 을 펼쳤다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ e^{2\gamma xz}=\sum_{k=0}^{\infty}\frac{(2\gamma)^k}{k!}x^kz^k $$</div>
+          <div class="derive__why">지수함수의 Taylor 급수 — <strong>항이 무한히 많다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ K(x,z)=\sum_{k=0}^{\infty}\Bigl[e^{-\gamma x^2}\sqrt{\tfrac{(2\gamma)^k}{k!}}x^k\Bigr]\Bigl[e^{-\gamma z^2}\sqrt{\tfrac{(2\gamma)^k}{k!}}z^k\Bigr] $$</div>
+          <div class="derive__why">각 항을 $x$ 쪽과 $z$ 쪽으로 <strong>대칭하게 쪼갰다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \phi(x)=e^{-\gamma x^2}\Bigl(1,\ \sqrt{2\gamma}\,x,\ \sqrt{\tfrac{(2\gamma)^2}{2!}}x^2,\ \dots\Bigr) $$</div>
+          <div class="derive__why"><strong>무한 차원 vector</strong> — 명시적으로는 절대 계산할 수 없다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{그런데 } K(x,z)=e^{-\gamma(x-z)^2} \text{ 는 } \textbf{뺄셈 하나와 지수 하나} $$</div>
+          <div class="derive__why"><strong>kernel trick 의 위력</strong> — 무한 차원을 $O(1)$ 에</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \|\phi(x)\|^2=K(x,x)=1 \ \Rightarrow\ \text{모든 점이 단위 구 위} $$</div>
+          <div class="derive__why">그래서 RBF 공간에서는 <strong>어떤 유한 data 도 선형 분리 가능</strong>하다 (오해 2)</div>
+        </div>
+      </div>
+
+      <details>
+        <summary>hinge loss 와 logistic loss — 무엇이 다른가</summary>
+        <p>
+          두 손실 모두 <strong>margin $m=yf(\mathbf{x})$ 의 감소함수</strong>이고, 0-1 손실의 볼록 상계다.
+          차이는 <strong>$m$ 이 클 때</strong> 나타난다.
+        </p>
+        <p>
+          hinge 는 $m\ge1$ 에서 <strong>정확히 0</strong> 이라 그런 점들의 gradient 가 0 —
+          <strong>해에 전혀 기여하지 않는다</strong>. 그 결과 해가 <strong>희소</strong>해지고
+          예측 때 support vector 만 보면 된다.
+        </p>
+        <p>
+          logistic 은 $\log(1+e^{-m})$ 이라 $m\to\infty$ 에서 0 에 <strong>접근하지만 닿지 않는다</strong>.
+          모든 점이 미약하게나마 기여하므로 <strong>희소성이 없고</strong>,
+          대신 출력이 <strong>확률로 해석된다</strong>(<a href="../ch04/4.9-uncertainty.html">4.9</a>의 보정).
+        </p>
+        <p>
+          <strong>SVM 은 확률을 주지 않는다</strong>는 것이 여기서 나오는 실무적 결론이다.
+          <code>SVC(probability=True)</code> 는 Platt scaling 이라는 <strong>사후 보정</strong>을
+          별도 교차검증으로 붙이는 것이라 <strong>학습이 몇 배 느려지고</strong>,
+          결정값과 확률의 순위가 미세하게 어긋날 수도 있다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① 점 네 개로 SVM 을 손으로 푼다</h3>
+      <p>
+        $\mathbf{x}_1=(1,1),\ \mathbf{x}_2=(2,2)$ 는 $y=+1$;
+        $\mathbf{x}_3=(-1,-1),\ \mathbf{x}_4=(-2,-2)$ 는 $y=-1$.
+      </p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{대칭이므로 } b=0,\ \mathbf{w}=(w,w) \text{ 꼴} $$</div>
+          <div class="derive__why">원점 대칭인 배치다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{가장 가까운 점}:\ \mathbf{x}_1,\mathbf{x}_3 \ \Rightarrow\ \mathbf{w}^\top(1,1)=2w=1 \ \Rightarrow\ w=0.5 $$</div>
+          <div class="derive__why">가장자리 조건 $y_if(\mathbf{x}_i)=1$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{w}=(0.5,\ 0.5),\qquad \|\mathbf{w}\|=\sqrt{0.5}=0.7071 $$</div>
+          <div class="derive__why">$0.25+0.25=0.5$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{margin}=\frac{2}{\|\mathbf{w}\|}=\frac{2}{0.7071}=2.828=2\sqrt2 $$</div>
+          <div class="derive__why">검산: $\mathbf{x}_1$ 과 $\mathbf{x}_3$ 사이 거리가 $2\sqrt2$ ✓ <strong>정확히 두 점을 잇는 거리</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{x}_2:\ f=(0.5)(2)+(0.5)(2)=2>1 \ \Rightarrow\ \alpha_2=0 $$</div>
+          <div class="derive__why"><strong>비-support vector</strong> — 지워도 답이 같다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{w}=\alpha_1(+1)(1,1)+\alpha_3(-1)(-1,-1)=(\alpha_1+\alpha_3)(1,1) $$</div>
+          <div class="derive__why">식 (2). 대칭이라 $\alpha_1=\alpha_3=\alpha$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 2\alpha=0.5 \ \Rightarrow\ \alpha_1=\alpha_3=0.25,\quad \alpha_2=\alpha_4=0 $$</div>
+          <div class="derive__why">검산: $\sum\alpha_iy_i=0.25-0.25=0$ ✓</div>
+        </div>
+      </div>
+
+      <h3>② $C$ 를 바꾸면 — 이상치 하나가 낀 경우</h3>
+      <p>①에 <strong>$\mathbf{x}_5=(0.5,\ 0.5)$, $y=-1$</strong> (반대편 깊숙이 들어온 점)을 더한다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{hard margin}:\ y_5f(\mathbf{x}_5)=-1(0.5)=-0.5<1 \ \Rightarrow\ \textbf{해가 없다} $$</div>
+          <div class="derive__why">$\mathbf{x}_5$ 를 $\mathbf{x}_1$ 과 갈라 놓을 직선이 없다 — <strong>hard margin 의 치명적 약점</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{soft margin, } C \text{ 가 매우 크다}:\ \text{경계를 억지로 밀어 } \mathbf{x}_5 \text{ 를 맞히려 한다} $$</div>
+          <div class="derive__why">margin 이 <strong>거의 0 으로 찌그러진다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{soft margin, } C \text{ 가 작다}:\ \mathbf{x}_5 \text{ 를 포기}(\xi_5>1)\text{ 하고 넓은 margin 유지} $$</div>
+          <div class="derive__why">$\xi_5$ 값 하나 물고 <strong>나머지 넷을 잘 나눈다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{손실 비교}\ (\mathbf{w}=(0.5,0.5) \text{ 유지 시}):\ \xi_5=1-y_5f=1-(-0.5)=1.5 $$</div>
+          <div class="derive__why">식 (4)의 hinge</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{목적값}=\tfrac12(0.5)+C(1.5)=0.25+1.5C $$</div>
+          <div class="derive__why">$\frac12\|\mathbf{w}\|^2=\frac12(0.5)=0.25$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ C=0.1:\ 0.25+0.15=0.40 \qquad C=10:\ 0.25+15=15.25 $$</div>
+          <div class="derive__why"><strong>$C$ 가 크면 이 해를 도저히 못 견딘다</strong> — 경계를 옮긴다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ C \text{ 는 “이상치 하나를 포기하는 값”} $$</div>
+          <div class="derive__why">$C$ 를 <strong>작게</strong> 두는 것이 잡음 있는 data 에서 안전하다</div>
+        </div>
+      </div>
+
+      <h3>③ Hinge loss 를 손으로</h3>
+      <p>다섯 점의 $f(\mathbf{x})$ 와 $y$ 가 아래와 같을 때.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$i$</th><th>$y_i$</th><th>$f(\mathbf{x}_i)$</th><th>$y_if$</th><th>hinge</th><th>상태</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td class="num">+1</td><td class="num">2.3</td><td class="num">2.3</td><td class="num">0</td><td>안전</td></tr>
+            <tr><td class="num">2</td><td class="num">+1</td><td class="num">1.0</td><td class="num">1.0</td><td class="num">0</td><td><strong>가장자리</strong> — 자유 SV</td></tr>
+            <tr><td class="num">3</td><td class="num">+1</td><td class="num">0.4</td><td class="num">0.4</td><td class="num">0.6</td><td>margin 침범</td></tr>
+            <tr><td class="num">4</td><td class="num">−1</td><td class="num">0.2</td><td class="num">−0.2</td><td class="num">1.2</td><td><strong>오분류</strong></td></tr>
+            <tr><td class="num">5</td><td class="num">−1</td><td class="num">−1.8</td><td class="num">1.8</td><td class="num">0</td><td>안전</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \sum_i\ell_{\text{hinge}}=0+0+0.6+1.2+0=1.8 $$</div>
+          <div class="derive__why">식 (4)의 첫 항</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{0-1 손실}=0+0+0+1+0=1 \quad (\text{4번만 틀렸다}) $$</div>
+          <div class="derive__why"><strong>hinge 는 0-1 의 상계</strong> — $1.8\ge1$ ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{logistic 손실}:\ \log(1+e^{-2.3})=0.0956,\ \log(1+e^{-1})=0.3133 $$</div>
+          <div class="derive__why">1번·2번도 <strong>0 이 아니다</strong> — 희소성이 없는 이유</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{합}=0.0955+0.3133+0.5130+0.7981+0.1530=1.873 $$</div>
+          <div class="derive__why">$\log(1+e^{-0.4})=0.5130$, $\log(1+e^{0.2})=0.7981$, $\log(1+e^{-1.8})=0.1530$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{SVM 은 } \{3,4\} \text{ 와 가장자리 } \{2\} \text{ 만 본다} $$</div>
+          <div class="derive__why">1번·5번은 <strong>지워도 답이 같다</strong></div>
+        </div>
+      </div>
+
+      <h3>④ Kernel 값을 손으로 — 좌표 없이 내적을 구한다</h3>
+      <p>$\mathbf{x}=(1,2),\ \mathbf{z}=(3,1)$, $\phi$ 는 2차 다항 사상.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{x}^\top\mathbf{z}=(1)(3)+(2)(1)=5 $$</div>
+          <div class="derive__why">원래 공간의 내적</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ K_{\text{poly}}=(\mathbf{x}^\top\mathbf{z})^2=25 $$</div>
+          <div class="derive__why">$\gamma=1,r=0,d=2$ — <strong>계산 두 번</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \phi(\mathbf{x})=(x_1^2,\ \sqrt2x_1x_2,\ x_2^2)=(1,\ 2\sqrt2,\ 4) $$</div>
+          <div class="derive__why">명시적 사상 — 3차원</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \phi(\mathbf{z})=(9,\ 3\sqrt2,\ 1) $$</div>
+          <div class="derive__why">$z_1^2=9$, $\sqrt2(3)(1)=3\sqrt2$, $z_2^2=1$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \phi(\mathbf{x})^\top\phi(\mathbf{z})=(1)(9)+(2\sqrt2)(3\sqrt2)+(4)(1)=9+12+4=25 $$</div>
+          <div class="derive__why"><strong>일치한다</strong> ✓ — 그런데 계산이 훨씬 많았다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ K_{\text{rbf}}:\ \|\mathbf{x}-\mathbf{z}\|^2=(1-3)^2+(2-1)^2=4+1=5 $$</div>
+          <div class="derive__why"></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \gamma=0.5:\ e^{-2.5}=0.0821 \qquad \gamma=0.1:\ e^{-0.5}=0.6065 $$</div>
+          <div class="derive__why"><strong>$\gamma$ 가 크면 조금만 멀어져도 유사도가 급락</strong>한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ d=10 \text{ 이면 } \phi \text{ 의 차원은 } \binom{2+10-1}{10}=11,\quad \text{그래도 } K \text{ 는 } (\mathbf{x}^\top\mathbf{z})^{10} $$</div>
+          <div class="derive__why">차원이 커져도 <strong>kernel 계산은 그대로</strong> — 이것이 trick</div>
+        </div>
+      </div>
+
+      <figure class="widget" data-widget="c-effect">
+        <figcaption class="widget__bar">C — 이상치 하나를 포기할 것인가</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$C$ 를 키우면 <strong>이상치를 맞히려 margin 이 찌그러집니다</strong>. 예제 ②의 상황입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>margin</strong> · <strong>손실 모양</strong> ·
+        <strong>kernel</strong> · <strong>차원 올리기</strong> · <strong>$C$</strong> — 에 이어,
+        아래에서 <strong>one-class SVM 의 경계</strong>를 본다.
+      </p>
+
+      <figure class="widget" data-widget="oneclass-view">
+        <figcaption class="widget__bar">One-Class SVM — 정상만 보고 울타리를 친다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$\nu$ 는 <strong>이상치로 판정할 비율의 상한</strong>입니다 — 울타리 밖 점의 비율이 그 근처가 됩니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"$C$ 가 크면 규제가 강해진다."</p>
+        <p>
+          <strong>실제로는 반대다.</strong>
+          식 (4)에서 $C$ 는 <strong>손실 쪽</strong>에 붙어 있고 규제항은 $\frac{1}{2C}\|\mathbf{w}\|^2$ 다 —
+          <strong>$C$ 가 크면 규제가 약해진다</strong>.
+          <a href="5.3-linear-regression.html">5.3</a>의 ridge 에서 $\lambda$ 가 클수록 규제가 강했던 것과
+          <strong>정확히 반대 방향</strong>이며, $C\approx1/(2\lambda)$ 로 대응한다.
+          이 부호를 헷갈리면 hyperparameter 탐색 범위를 반대로 잡게 된다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"RBF kernel 은 무한 차원이니 어떤 data 든 완벽히 분리할 수 있어 최고다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>완벽히 분리할 수 있다는 것이 문제</strong>다.
+          $\gamma$ 를 충분히 크게 하면 <strong>모든 훈련점을 각각 감싸는</strong> 경계가 만들어지고
+          train 정확도는 100% 가 되지만 <strong>test 는 무작위 수준</strong>이 된다 —
+          <a href="5.2-statistical-learning-theory.html">5.2</a>의 언어로 <strong>VC 차원이 무한</strong>인 가설 공간이다.
+          SVM 이 그럼에도 잘 작동하는 이유는 차원이 아니라 <strong>margin 최대화라는 규제</strong> 덕분이고,
+          그래서 <strong>$C$ 와 $\gamma$ 를 반드시 교차검증으로 골라야</strong> 한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"SVM 은 강력하니 전처리 없이 그냥 넣어도 된다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>SVM 은 스케일에 극도로 민감</strong>하다.
+          RBF kernel 은 $\|\mathbf{x}-\mathbf{z}\|^2$ 를 쓰는데,
+          한 feature 가 0~1 이고 다른 것이 0~100000 이면
+          <strong>거리가 사실상 한 feature 로만 결정</strong>된다(<a href="5.5-distance-based-learning.html">5.5</a>와 같은 함정).
+          linear kernel 도 $\|\mathbf{w}\|^2$ 벌점이 스케일에 얽혀 있어 마찬가지다.
+          <strong>표준화(StandardScaler)는 선택이 아니라 필수</strong>이며,
+          반드시 <strong>훈련 fold 에서만 fit</strong> 해야 한다 — <code>Pipeline</code> 을 쓰는 이유다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"<code>SVC</code> 의 <code>predict_proba</code> 가 SVM 이 내놓는 확률이다."</p>
+        <p>
+          <strong>실제로는</strong> SVM 은 <strong>확률을 내놓지 않는다</strong>.
+          hinge loss 는 확률적 model 이 아니라 <strong>기하학적 여백</strong>을 최적화하기 때문이다.
+          <code>probability=True</code> 는 결정값에 <strong>Platt scaling</strong>(sigmoid 를 사후에 맞추는 것)을
+          <strong>별도의 5-fold 교차검증으로</strong> 붙이는 것이라,
+          학습이 몇 배 느려지고 <strong><code>decision_function</code> 의 순위와 미세하게 어긋날 수도</strong> 있다.
+          확률이 정말 필요하면 <a href="5.4-logistic-regression.html">5.4</a>의 logistic regression 을 먼저 고려하는 편이 낫다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"kernel SVM 은 딥러닝 이전의 최강 model 이었으니 지금도 큰 data 에 쓸 만하다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>$n$ 이 커지면 쓸 수 없다</strong>.
+          kernel 행렬이 $n\times n$ 이라 $n=10^5$ 이면 <strong>메모리만 80GB</strong>,
+          학습은 $O(n^2)\sim O(n^3)$ 이다.
+          게다가 <strong>예측 비용도 support vector 수에 비례</strong>해,
+          잡음이 많으면 SV 가 표본의 절반을 넘어 <strong>추론까지 느려진다</strong>.
+          $n>10^5$ 이면 <strong>linear SVM(<code>LinearSVC</code>·<code>SGDClassifier</code>)</strong> 이나
+          <strong>Nyström·random Fourier features 로 kernel 을 근사</strong>하거나,
+          <a href="5.7-ensemble.html">5.7</a>의 gradient boosting 으로 가는 것이 현실적이다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①·③·④ 를 검산한다.</p>
+      <details>
+        <summary>NumPy — margin · hinge · kernel (18줄)</summary>
+<pre><code>import numpy as np
+
+w = np.array([0.5, 0.5]); b = 0.0                       # 예제 ①
+X = np.array([[1., 1], [2, 2], [-1, -1], [-2, -2]]); y = np.array([1., 1, -1, -1])
+print(X @ w + b, 2 / np.linalg.norm(w))                 # [1. 2. -1. -2.]  2.8284
+print(np.linalg.norm(X[0] - X[2]))                      # 2.8284 — margin 과 일치
+
+f = np.array([2.3, 1.0, 0.4, 0.2, -1.8])                # 예제 ③
+yy = np.array([1., 1, 1, -1, -1])
+hinge = np.maximum(0, 1 - yy * f)
+print(hinge, hinge.sum(), (yy * f &lt; 0).sum())           # 합 1.8, 0-1 손실 1
+print(np.log1p(np.exp(-yy * f)).sum())                  # 1.873 — 어느 점도 0 이 아니다
+
+x, z = np.array([1., 2]), np.array([3., 1])             # 예제 ④
+phi = lambda v: np.array([v[0]**2, np.sqrt(2)*v[0]*v[1], v[1]**2])
+print((x @ z)**2, phi(x) @ phi(z))                      # 25.0 25.0 — 같다
+for g in [0.5, 0.1]:
+    print(g, round(np.exp(-g * ((x - z)**2).sum()), 4)) # 0.0821 / 0.6065
+</code></pre>
+        <p>
+          <small>
+            두 번째 블록에서 <strong>hinge 합 1.8 이 0-1 손실 1 보다 크다</strong> —
+            hinge 가 상계라는 것이 확인된다.
+            세 번째 블록에서는 <strong>명시적 $\phi$ 를 거친 내적과 kernel 값이 정확히 25 로 일치</strong>한다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\mathbf{w}=(3,4)$, $b=-5$ 일 때 margin 의 폭은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>0.4</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.2</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>5</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\|\mathbf{w}\|=\sqrt{9+16}=5$ → $2/5=0.4$ (유도 1).
+            <strong>나</strong>는 한쪽 거리 $1/\|\mathbf{w}\|$ 이고, <strong>margin 은 그 두 배</strong>다.
+            <strong>$b$ 는 margin 과 무관</strong>하다 — 경계를 <strong>평행이동</strong>시킬 뿐 폭은 바꾸지 않는다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $y=-1$ 인 점의 $f(\mathbf{x})=0.6$ 이다. hinge loss 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>1.6</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.4</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0.6</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $yf=(-1)(0.6)=-0.6$ → $\max(0,\ 1-(-0.6))=1.6$.
+            <strong>나</strong>는 $y=+1$ 로 잘못 본 값이다($1-0.6=0.4$).
+            $yf<0$ 이므로 <strong>오분류</strong>이고, hinge 는 항상 <strong>1 보다 크다</strong> —
+            즉 <strong>0-1 손실의 상계</strong>임이 여기서도 확인된다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\mathbf{x}=(0,1),\ \mathbf{z}=(1,0)$, $\gamma=1$ 인 RBF kernel 값은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 0.135</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>약 0.368</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\|\mathbf{x}-\mathbf{z}\|^2=1+1=2$ → $e^{-2}=0.1353$.
+            <strong>나</strong>는 $e^{-1}$ 로, <strong>제곱을 빼먹은</strong> 값이다.
+            내적 $\mathbf{x}^\top\mathbf{z}=0$ 이라 <strong>linear kernel 로는 0</strong> 이지만
+            RBF 는 <strong>거리에 기반</strong>하므로 0 이 아니다 — 두 kernel 이 <strong>다른 유사도</strong>를 잰다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            margin 바깥에 있는 훈련점 하나를 지우면 SVM 의 해는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>전혀 바뀌지 않는다 — $\alpha_i=0$ 이므로</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>조금 바뀐다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>크게 바뀐다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            KKT 상보 여유에서 $y_if(\mathbf{x}_i)>1$ 이면 $\alpha_i=0$ 이라
+            식 (2)의 $\mathbf{w}=\sum\alpha_iy_i\mathbf{x}_i$ 에 <strong>전혀 기여하지 않는다</strong>(유도 2).
+            <a href="5.4-logistic-regression.html">5.4</a>의 logistic regression 은 <strong>모든 점이 조금씩 기여</strong>하므로
+            같은 상황에서 해가 미세하게 움직인다 — <strong>hinge 의 평평한 구간이 만드는 차이</strong>다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            kernel trick 이 절약해 주는 것은 정확히 무엇인가?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\phi(\mathbf{x})$ 의 좌표를 명시적으로 계산·저장하는 비용</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>훈련 표본의 개수</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>최적화 반복 횟수</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            쌍대 문제에 data 가 <strong>내적으로만</strong> 나타나므로(유도 2),
+            $\phi(\mathbf{x})$ 를 만들지 않고 $K$ 만 계산하면 된다 —
+            RBF 는 $\phi$ 가 <strong>무한 차원인데도</strong> $K$ 는 뺄셈과 지수 한 번이다(유도 3).
+            <strong>표본 수는 오히려 늘어난 비용</strong>이다 — kernel 행렬이 $n\times n$ 이라
+            $n$ 이 크면 kernel SVM 을 못 쓴다(오해 5).
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            RBF SVM 의 train 정확도가 100%, test 는 52% 다. 먼저 무엇을 할까?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\gamma$ 를 줄이고 $C$ 도 줄여 교차검증으로 함께 탐색한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$C$ 를 키워 더 정확히 맞힌다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>polynomial kernel 로 바꾼다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            train 100% / test 52% 는 <strong>전형적인 과적합</strong> —
+            $\gamma$ 가 너무 커서 각 점을 섬처럼 감쌌을 가능성이 높다(오해 2).
+            <strong>나</strong>는 정확히 반대 방향이다 — $C$ 를 키우면 규제가 <strong>더 약해진다</strong>(오해 1).
+            표준화를 안 했다면 그것도 함께 의심해야 하고(오해 3),
+            $C,\gamma$ 는 <strong>로그 격자에서 함께</strong> 탐색해야 한다(<a href="5.14-model-selection.html">5.14</a>).
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="5.11-dimensionality-reduction-manifold.html">5.11 차원 축소</a></strong> — 같은 kernel trick 이 kernel PCA 로 이어진다.</li>
+        <li><strong><a href="5.12-anomaly-detection.html">5.12 이상치 탐지</a></strong> — one-class SVM 을 다른 방법들과 비교한다.</li>
+        <li><strong><a href="../ch03/3.9-constraints-regularization.html">3.9 제약과 정규화</a></strong> — KKT 조건이 support vector 의 희소성을 만든다.</li>
+        <li><strong>10장 Transformer</strong> — attention 의 $QK^\top$ 도 "내적으로 유사도를 재는" 같은 발상이다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-cortes1995-support-vector-networks" data-ref="cortes1995-support-vector-networks">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Cortes, C. &amp; Vapnik, V. (1995). <em>Support-Vector Networks</em>. Machine Learning, 20(3), 273–297.</span>
+          <span class="ref__where">§2 — 최대 margin 초평면의 정식화와 margin 이 $2/\|\mathbf{w}\|$ 라는 유도(식 1, 유도 1). §3 — <strong>여유 변수 $\xi_i$ 와 벌점 $C$ 를 도입해 선형 분리 불가능한 경우로 확장</strong>한 부분(식 3)이 이 논문의 핵심 기여다. §4 — 쌍대 문제와 $0\le\alpha_i\le C$ 라는 상자 제약('점의 위치' 표). §5 — 손글씨 인식 실험</span>
+          <a class="ref__link" href="https://link.springer.com/article/10.1007/BF00994018">link.springer.com</a>
+        </li>
+        <li class="ref" id="ref-boser1992-optimal-margin" data-ref="boser1992-optimal-margin">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Boser, B. E., Guyon, I. M. &amp; Vapnik, V. N. (1992). <em>A Training Algorithm for Optimal Margin Classifiers</em>. COLT '92.</span>
+          <span class="ref__where">§3 — 쌍대 문제에서 data 가 <strong>내적으로만 나타난다</strong>는 관찰과, 그 자리에 kernel 을 넣는 <strong>kernel trick 을 처음 제시</strong>한 부분(식 5, 유도 2 의 다섯째 줄). §4 — polynomial 과 RBF 를 포함한 kernel 후보들과 Mercer 조건(식 7)</span>
+          <a class="ref__link" href="https://dl.acm.org/doi/10.1145/130385.130401">dl.acm.org</a>
+        </li>
+        <li class="ref" id="ref-scholkopf2001-oneclass-svm" data-ref="scholkopf2001-oneclass-svm">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Schölkopf, B., Platt, J. C., Shawe-Taylor, J., Smola, A. J. &amp; Williamson, R. C. (2001). <em>Estimating the Support of a High-Dimensional Distribution</em>. Neural Computation, 13(7), 1443–1471.</span>
+          <span class="ref__where">§2 — 정상 data 를 원점에서 떼어 놓는 초평면으로 정식화한 최적화 문제(식 8). 정리 5 — <strong>$\nu$ 가 이상치 비율의 상한이자 support vector 비율의 하한</strong>이라는 결과가 $\nu$ 를 $C$ 보다 정하기 쉽게 만든다. §4 — RBF kernel 을 쓸 때 경계가 data 를 감싸는 형태가 되는 이유(위젯 6)</span>
+          <a class="ref__link" href="https://doi.org/10.1162/089976601750264965">doi.org</a>
+        </li>
+        <li class="ref" id="ref-hastie2009-esl" data-ref="hastie2009-esl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em> (2nd ed.). Springer.</span>
+          <span class="ref__where">12.2절 — hard/soft margin 의 원 문제와 쌍대 문제를 나란히 세우고 KKT 로 support vector 를 규정하는 부분(유도 2). 12.3.2절 — <strong>SVM 을 "hinge loss + ridge 벌점" 으로 다시 쓴 식</strong>(식 4)과 logistic loss 와의 비교 그림('$yf$ 별 손실' 표, 접힌 상자). 12.3.4절 — $C$ 와 $\gamma$ 가 함께 만드는 곡선의 복잡도. 12.2.1절 — 커널 종류별 성질</span>
+          <a class="ref__link" href="https://hastie.su.domains/ElemStatLearn/">hastie.su.domains</a>
+        </li>
+        <li class="ref" id="ref-stanford-cs229" data-ref="stanford-cs229">
+          <span class="ref__type" data-type="lecture">강의</span>
+          <span class="ref__cite">Ng, A. &amp; Ma, T. <em>CS229: Machine Learning — Lecture Notes 3: Support Vector Machines</em>. Stanford University.</span>
+          <span class="ref__where">§1–3 — functional margin 과 geometric margin 을 구분하고 <strong>$\pm1$ 로 스케일을 고정하는 이유</strong>를 설명한 부분('표기' 표). §5–6 — Lagrangian 쌍대를 단계별로 전개해 $\mathbf{w}=\sum\alpha_iy_i\mathbf{x}_i$ 를 얻고 내적만 남는 것을 보이는 유도(유도 2). §7 — kernel 과 Mercer 정리. §8 — 여유 변수와 SMO 알고리즘</span>
+          <a class="ref__link" href="https://cs229.stanford.edu/main_notes.pdf">cs229.stanford.edu</a>
+        </li>
+        <li class="ref" id="ref-sklearn-docs" data-ref="sklearn-docs">
+          <span class="ref__type" data-type="doc">문서</span>
+          <span class="ref__cite">scikit-learn developers. <em>User Guide — 1.4 Support Vector Machines</em>.</span>
+          <span class="ref__where">1.4.3절 — <strong><code>C</code> 가 클수록 규제가 약해진다</strong>는 명시적 경고와 $C,\gamma$ 를 로그 격자로 함께 탐색하라는 조언(오해 1·2). 1.4.6절 — <strong>SVM 은 스케일에 민감하므로 표준화가 필수</strong>이고 kernel 행렬 때문에 $n$ 이 크면 확장되지 않는다는 실무 지침(오해 3·5). 1.4.1.2절 — <code>probability=True</code> 가 Platt scaling 을 별도 교차검증으로 붙이는 것이라 느리고 <code>decision_function</code> 과 어긋날 수 있다는 설명(오해 4)</span>
+          <a class="ref__link" href="https://scikit-learn.org/stable/modules/svm.html">scikit-learn.org</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+function panel(p) {
+  p.add(VIZ.el('rect', {
+    x: p.pad.l, y: p.pad.t, width: p.iw, height: p.ih,
+    fill: 'var(--ink-3)', 'fill-opacity': 0.03, stroke: 'none'
+  }));
+  return p;
+}
+function mkRand(seed) {
+  var s = seed || 12345;
+  return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+}
+function gauss(rnd) {
+  var u = Math.max(1e-9, rnd()), v = rnd();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+/* 아주 작은 kernel SVM — hinge + L2 를 부분경사하강으로 (쌍대 α 를 직접 갱신) */
+function trainKernelSVM(X, y, K, C, iters) {
+  var n = X.length, a = new Array(n).fill(0), i, t, b = 0;
+  for (t = 0; t < iters; t++) {
+    var lr = 0.5 / (1 + 0.01 * t);
+    for (i = 0; i < n; i++) {
+      var f = b, j;
+      for (j = 0; j < n; j++) if (a[j] !== 0) f += a[j] * y[j] * K(X[j], X[i]);
+      if (y[i] * f < 1) {
+        a[i] = Math.min(C, a[i] + lr);
+        b += lr * y[i] * 0.1;
+      } else {
+        a[i] = Math.max(0, a[i] - lr * 0.15);
+      }
+    }
+  }
+  return { a: a, b: b, f: function (x) {
+    var s = b, j;
+    for (j = 0; j < n; j++) if (a[j] > 1e-6) s += a[j] * y[j] * K(X[j], x);
+    return s;
+  } };
+}
+
+/* ============================================================
+   위젯 1 — margin
+   ============================================================ */
+WIDGETS.register('margin-view', function (root, ctx) {
+  var far = 2.0, tilt = 0;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'w', label: '||w||', digits: 4 },
+    { key: 'm', label: 'margin 의 폭 2/||w||', digits: 4 },
+    { key: 'sv', label: 'support vector 수' },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  /* 고정된 두 개의 SV 와 자유로이 움직이는 먼 점들 */
+  function draw() {
+    var pos = [[1, 1], [far, far - 0.3], [far + 0.6, far + 0.4]];
+    var neg = [[-1, -1], [-far, -far + 0.3], [-far - 0.6, -far - 0.4]];
+    /* 대칭 배치라 w = (c, c) 꼴, 가장 가까운 점 (1,1) 에서 f = 1 */
+    var c = 0.5, w = [c, c], nw = Math.sqrt(2 * c * c);
+
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -4, xmax: 4, ymin: -3.2, ymax: 3.2,
+      pad: { t: 30, r: 16, b: 30, l: 42 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x₁', '').ticks(1, 1);
+    p.text(-4, 3.2, 'x₂ · 굵은 선 = 경계 · 점선 = margin 가장자리 · 큰 점 = support vector',
+      { size: 10, dy: -10 });
+
+    /* 경계 x1 + x2 = 0, 가장자리 x1 + x2 = ±2 */
+    p.line([[-4, 4], [4, -4]], { width: 2.6 });
+    p.line([[-4, 4 + 2 / c * 0 + 2], [4, -4 + 2]], { dash: '5 4', width: 1.6 });
+    p.line([[-4, 4 - 2], [4, -4 - 2]], { dash: '5 4', width: 1.6 });
+
+    var i;
+    for (i = 0; i < pos.length; i++) {
+      var isSV = i === 0;
+      p.add(VIZ.el('circle', { cx: p.X(pos[i][0]), cy: p.Y(pos[i][1]), r: isSV ? 6.5 : 3.6,
+        fill: 'var(--seal)', 'fill-opacity': isSV ? 0.95 : 0.55,
+        stroke: isSV ? 'var(--amber)' : 'none', 'stroke-width': 2 }));
+    }
+    for (i = 0; i < neg.length; i++) {
+      var isSV2 = i === 0;
+      p.add(VIZ.el('circle', { cx: p.X(neg[i][0]), cy: p.Y(neg[i][1]), r: isSV2 ? 6.5 : 3.6,
+        fill: 'var(--jade)', 'fill-opacity': isSV2 ? 0.95 : 0.55,
+        stroke: isSV2 ? 'var(--amber)' : 'none', 'stroke-width': 2 }));
+    }
+    p.callout(1, 1, '이 점이 폭을 정한다', { dx: 22, dy: -24, tone: 'var(--amber)' });
+
+    out.set('w', nw);
+    out.set('m', 2 / nw);
+    out.setRaw('sv', '2  (전체 6개 중)');
+    out.setRaw('note', '먼 점을 아무리 옮겨도 경계와 폭이 그대로다 — α = 0 이기 때문');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '먼 점들을 얼마나 멀리', min: 1.6, max: 3.5, step: 0.1, value: 2, digits: 1,
+    onInput: function (v) { far = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — 손실 모양
+   ============================================================ */
+WIDGETS.register('loss-shapes', function (root, ctx) {
+  var m = 0.4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'h', label: 'hinge  max(0, 1−m)', digits: 4 },
+    { key: 'l', label: 'logistic  log(1+e^−m)', digits: 4 },
+    { key: 'e', label: 'exponential  e^−m', digits: 4 },
+    { key: 'z', label: '0-1 손실', digits: 0 }
+  ]);
+
+  function draw() {
+    var p = VIZ.plot({ w: 460, h: 285, xmin: -2, xmax: 3, ymin: 0, ymax: 3.2,
+      pad: { t: 30, r: 16, b: 34, l: 44 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('margin  m = y·f(x)', '').ticks(1, 1);
+    p.text(-2, 3.2, '손실 · 실선 = hinge · 긴점선 = logistic · 잔점선 = exponential · 계단 = 0-1',
+      { size: 10, dy: -10 });
+
+    p.curve(function (z) { return Math.max(0, 1 - z); }, { samples: 300, width: 2.4 });
+    p.curve(function (z) { return Math.log(1 + Math.exp(-z)) / Math.LN2; },
+      { samples: 300, alt: true, dash: '5 4' });
+    p.curve(function (z) { return Math.min(3.2, Math.exp(-z)); }, { samples: 300, dash: '2 3' });
+    p.line([[-2, 1], [0, 1]], { width: 1.6 });
+    p.line([[0, 0], [3, 0]], { width: 1.6 });
+
+    p.line([[m, 0], [m, 3.2]], { dash: '3 3' });
+    p.dot(m, Math.max(0, 1 - m), 5);
+    p.callout(1, 0, 'm ≥ 1 부터 hinge = 0', { dx: 26, dy: -34, tone: 'var(--amber)' });
+
+    out.set('h', Math.max(0, 1 - m));
+    out.set('l', Math.log(1 + Math.exp(-m)));
+    out.set('e', Math.exp(-m));
+    out.set('z', m < 0 ? 1 : 0);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'margin m = y·f(x)', min: -2, max: 3, step: 0.05, value: 0.4, digits: 2,
+    onInput: function (v) { m = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — kernel
+   ============================================================ */
+WIDGETS.register('kernel-lab', function (root, ctx) {
+  var kind = 'rbf', gam = 0.8, C = 1, seed = 3;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'k', label: 'kernel' },
+    { key: 'sv', label: 'support vector 수' },
+    { key: 'tr', label: 'train 오차', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  var X = null, y = null;
+  function makeData() {
+    var rnd = mkRand(seed * 617 + 5);
+    X = []; y = [];
+    for (var i = 0; i < 44; i++) {
+      var r = i % 2 === 0 ? 0.7 + 0.45 * rnd() : 1.9 + 0.5 * rnd();
+      var th = 2 * Math.PI * rnd();
+      X.push([r * Math.cos(th), r * Math.sin(th)]);
+      y.push(i % 2 === 0 ? 1 : -1);
+    }
+  }
+
+  function K(a, b) {
+    if (kind === 'lin') return a[0] * b[0] + a[1] * b[1];
+    if (kind === 'poly') return Math.pow(gam * (a[0] * b[0] + a[1] * b[1]) + 1, 3);
+    var dx = a[0] - b[0], dy = a[1] - b[1];
+    return Math.exp(-gam * (dx * dx + dy * dy));
+  }
+
+  function draw() {
+    if (!X) makeData();
+    var mdl = trainKernelSVM(X, y, K, C, 26);
+
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -2.8, xmax: 2.8, ymin: -2.5, ymax: 2.5,
+      pad: { t: 30, r: 16, b: 30, l: 42 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x₁', '').ticks(1, 1);
+    p.text(-2.8, 2.5, 'x₂ · 배경 = 예측 · 테두리 있는 점 = support vector', { size: 10, dy: -10 });
+
+    for (var gx = 0; gx < 40; gx++) {
+      for (var gy = 0; gy < 30; gy++) {
+        var x0 = -2.8 + 5.6 * (gx + 0.5) / 40, y0 = -2.5 + 5 * (gy + 0.5) / 30;
+        var v = mdl.f([x0, y0]);
+        p.add(VIZ.el('rect', {
+          x: p.X(-2.8 + 5.6 * gx / 40), y: p.Y(-2.5 + 5 * (gy + 1) / 30),
+          width: Math.max(1, 5.6 / 40 * p.iw / 5.6 + 1), height: Math.max(1, 5 / 30 * p.ih / 5 + 1),
+          fill: v > 0 ? 'var(--seal)' : 'var(--jade)',
+          'fill-opacity': 0.06 + 0.12 * Math.min(1, Math.abs(v))
+        }));
+      }
+    }
+
+    var nsv = 0, wrong = 0;
+    for (var i = 0; i < X.length; i++) {
+      var isSV = mdl.a[i] > 1e-6;
+      if (isSV) nsv++;
+      if (mdl.f(X[i]) * y[i] <= 0) wrong++;
+      p.add(VIZ.el('circle', {
+        cx: p.X(X[i][0]), cy: p.Y(X[i][1]), r: isSV ? 4.6 : 3.2,
+        fill: y[i] > 0 ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': 0.9,
+        stroke: isSV ? 'var(--amber)' : 'none', 'stroke-width': 1.6
+      }));
+    }
+
+    out.setRaw('k', kind === 'lin' ? 'Linear' : (kind === 'poly' ? 'Polynomial (3차)' : 'RBF'));
+    out.setRaw('sv', nsv + ' / ' + X.length);
+    out.set('tr', wrong / X.length);
+    out.setRaw('note', kind === 'lin' ? '동심원은 직선으로 못 가른다 — 오차가 크다'
+      : (gam > 3 ? 'γ 가 크다 — 점 하나하나를 섬처럼 감싼다 (과적합)'
+      : (gam < 0.2 ? 'γ 가 작다 — 거의 선형' : '적당하다')));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: 'kernel',
+    options: [
+      { value: 'rbf', label: 'RBF' },
+      { value: 'poly', label: 'Polynomial' },
+      { value: 'lin', label: 'Linear' }
+    ],
+    value: 'rbf', onChange: function (v) { kind = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'γ', min: 0.05, max: 6, step: 0.05, value: 0.8, digits: 2,
+    onInput: function (v) { gam = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'C', min: 0.05, max: 10, step: 0.05, value: 1, digits: 2,
+    onInput: function (v) { C = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 3, digits: 0,
+    onInput: function (v) { seed = v; X = null; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — 차원 올리기
+   ============================================================ */
+WIDGETS.register('lift-view', function (root, ctx) {
+  var thr = 1.0, lift = 1;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'sep', label: '1차원에서 직선 하나로 갈리는가' },
+    { key: 'sep2', label: '2차원(z=x²)에서는' },
+    { key: 'thr', label: '경계 z = ', digits: 3 },
+    { key: 'wrong', label: '이 경계에서의 오분류 수' }
+  ]);
+
+  var xs = [-2.4, -1.9, -1.5, -1.1, -0.6, -0.2, 0.3, 0.7, 1.2, 1.6, 2.1, 2.5];
+
+  function draw() {
+    var p = VIZ.plot({ w: 460, h: 290, xmin: -3, xmax: 3, ymin: -0.9, ymax: 7,
+      pad: { t: 30, r: 16, b: 32, l: 44 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x', '').ticks(1, 1);
+    p.text(-3, 7, 'z = x² · 아래 띠(z≈0) = 원래 1차원 · 위 = 한 축을 더한 뒤',
+      { size: 10, dy: -10 });
+
+    var wrong = 0, i;
+    for (i = 0; i < xs.length; i++) {
+      var x = xs[i], c = Math.abs(x) < 1.35 ? 1 : -1;
+      var z = lift ? x * x : 0;
+      /* 원래 1차원 배치 */
+      p.add(VIZ.el('circle', { cx: p.X(x), cy: p.Y(-0.55), r: 4,
+        fill: c > 0 ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': 0.55 }));
+      /* 올린 위치 */
+      p.add(VIZ.el('circle', { cx: p.X(x), cy: p.Y(z), r: 4.6,
+        fill: c > 0 ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': 0.95 }));
+      if (lift) {
+        p.line([[x, -0.5], [x, z]], { dash: '2 4' });
+        if ((z < thr ? 1 : -1) !== c) wrong++;
+      }
+    }
+    if (lift) {
+      p.line([[-3, thr], [3, thr]], { width: 2.6 });
+      p.callout(2.2, thr, '이 직선 하나로 갈린다', { dx: -14, dy: -22, tone: 'var(--amber)' });
+    }
+
+    out.setRaw('sep', '아니다 — 안쪽·바깥쪽이 번갈아 놓여 있다');
+    out.setRaw('sep2', lift ? '갈린다 — z 축 하나면 충분' : '(축을 올려 보세요)');
+    out.set('thr', thr);
+    out.setRaw('wrong', lift ? String(wrong) : '—');
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '한 축을 더할까',
+    options: [{ value: 0, label: '원래 1차원' }, { value: 1, label: 'z = x² 추가' }],
+    value: 1, onChange: function (v) { lift = Number(v); draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '경계 z', min: 0.2, max: 5, step: 0.05, value: 1.0, digits: 2,
+    onInput: function (v) { thr = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — C 의 효과
+   ============================================================ */
+WIDGETS.register('c-effect', function (root, ctx) {
+  var C = 1, outlier = 1;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'm', label: 'margin 의 폭', digits: 4 },
+    { key: 'obj', label: '목적값 ½||w||² + C·Σξ', digits: 4 },
+    { key: 'xi', label: '이상치의 ξ', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function draw() {
+    /* 예제 ② 를 축소해 재현 — 경계 기울기를 C 에 따라 연속적으로 움직인다 */
+    var base = [[1, 1, 1], [2, 2, 1], [-1, -1, -1], [-2, -2, -1]];
+    var pts = base.slice();
+    if (outlier) pts.push([0.5, 0.5, -1]);
+
+    /* w = (c, c) 를 C 에 대해 근사적으로 푼다 (아주 작은 격자 탐색) */
+    var bestC = null, bestObj = 1e9;
+    for (var ci = 1; ci <= 400; ci++) {
+      var c = ci * 0.01;
+      var sxi = 0;
+      for (var i = 0; i < pts.length; i++) {
+        var f = c * (pts[i][0] + pts[i][1]);
+        sxi += Math.max(0, 1 - pts[i][2] * f);
+      }
+      var obj = 0.5 * (2 * c * c) + C * sxi;
+      if (obj < bestObj) { bestObj = obj; bestC = c; }
+    }
+    var nw = Math.sqrt(2 * bestC * bestC), marg = 2 / nw;
+    var xi5 = outlier ? Math.max(0, 1 - (-1) * bestC * 1.0) : 0;
+
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -3.2, xmax: 3.2, ymin: -2.6, ymax: 2.6,
+      pad: { t: 30, r: 16, b: 30, l: 42 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x₁', '').ticks(1, 1);
+    p.text(-3.2, 2.6, 'x₂ · 굵은 선 = 경계 · 점선 = margin 가장자리 (폭이 C 에 따라 변한다)',
+      { size: 10, dy: -10 });
+
+    /* 경계 x1+x2=0, 가장자리 c(x1+x2)=±1 → x1+x2=±1/c */
+    var off = 1 / bestC;
+    p.line([[-3.2, 3.2], [3.2, -3.2]], { width: 2.6 });
+    var oc = Math.min(6.4, off);
+    p.line([[-3.2, 3.2 + oc], [3.2, -3.2 + oc]], { dash: '5 4', width: 1.6 });
+    p.line([[-3.2, 3.2 - oc], [3.2, -3.2 - oc]], { dash: '5 4', width: 1.6 });
+
+    for (var k = 0; k < pts.length; k++) {
+      var isOut = outlier && k === pts.length - 1;
+      p.add(VIZ.el('circle', {
+        cx: p.X(pts[k][0]), cy: p.Y(pts[k][1]), r: isOut ? 6 : 4.4,
+        fill: pts[k][2] > 0 ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': 0.92,
+        stroke: isOut ? 'var(--amber)' : 'none', 'stroke-width': 2
+      }));
+    }
+    if (outlier) p.callout(0.5, 0.5, '이상치', { dx: 24, dy: -26, tone: 'var(--amber)' });
+
+    out.set('m', marg);
+    out.set('obj', bestObj);
+    out.set('xi', xi5);
+    out.setRaw('note', !outlier ? '이상치가 없으면 C 를 바꿔도 해가 거의 같다'
+      : (C > 4 ? 'C 가 크다 — 이상치를 맞히려 margin 이 찌그러진다'
+      : 'C 가 작다 — 이상치를 포기하고 넓은 margin 을 지킨다'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'C', min: 0.05, max: 10, step: 0.05, value: 1, digits: 2,
+    onInput: function (v) { C = v; draw(); }
+  });
+  WIDGETS.toggle({
+    host: ctx.controls, label: '이상치',
+    options: [{ value: 1, label: '있다' }, { value: 0, label: '없다' }],
+    value: 1, onChange: function (v) { outlier = Number(v); draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 6 — one-class SVM
+   ============================================================ */
+WIDGETS.register('oneclass-view', function (root, ctx) {
+  var nu = 0.1, gam = 0.6, seed = 7;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'nu', label: 'ν (이상치 비율의 상한)', digits: 3 },
+    { key: 'frac', label: '실제로 울타리 밖에 놓인 비율', digits: 4 },
+    { key: 'sv', label: 'support vector 비율', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  var X = null;
+  function makeData() {
+    var rnd = mkRand(seed * 271 + 3);
+    X = [];
+    for (var i = 0; i < 60; i++) {
+      var cx = i % 2 === 0 ? -0.8 : 0.9, cy = i % 2 === 0 ? 0.6 : -0.5;
+      X.push([cx + 0.55 * gauss(rnd), cy + 0.55 * gauss(rnd)]);
+    }
+    for (var j = 0; j < 5; j++) X.push([-2.4 + 4.8 * rnd(), -2.2 + 4.4 * rnd()]);
+  }
+
+  function draw() {
+    if (!X) makeData();
+    var n = X.length;
+    function K(a, b) {
+      var dx = a[0] - b[0], dy = a[1] - b[1];
+      return Math.exp(-gam * (dx * dx + dy * dy));
+    }
+    /* Parzen 창 밀도로 근사하고 상위 (1-ν) 분위수를 문턱으로 삼는다 */
+    var dens = [];
+    for (var i = 0; i < n; i++) {
+      var s = 0;
+      for (var j = 0; j < n; j++) s += K(X[i], X[j]);
+      dens.push(s / n);
+    }
+    var sorted = dens.slice().sort(function (a, b) { return a - b; });
+    var thr = sorted[Math.min(n - 1, Math.floor(nu * n))];
+
+    function score(x) {
+      var s = 0;
+      for (var j = 0; j < n; j++) s += K(X[j], x);
+      return s / n - thr;
+    }
+
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -2.8, xmax: 2.8, ymin: -2.5, ymax: 2.5,
+      pad: { t: 30, r: 16, b: 30, l: 42 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x₁', '').ticks(1, 1);
+    p.text(-2.8, 2.5, 'x₂ · 진한 영역 = 정상으로 판정 · 테두리 = 이상치로 판정된 점',
+      { size: 10, dy: -10 });
+
+    for (var gx = 0; gx < 40; gx++) {
+      for (var gy = 0; gy < 30; gy++) {
+        var x0 = -2.8 + 5.6 * (gx + 0.5) / 40, y0 = -2.5 + 5 * (gy + 0.5) / 30;
+        if (score([x0, y0]) > 0) {
+          p.add(VIZ.el('rect', {
+            x: p.X(-2.8 + 5.6 * gx / 40), y: p.Y(-2.5 + 5 * (gy + 1) / 30),
+            width: Math.max(1, p.iw / 40 + 1), height: Math.max(1, p.ih / 30 + 1),
+            fill: 'var(--jade)', 'fill-opacity': 0.16
+          }));
+        }
+      }
+    }
+    var outn = 0;
+    for (var k = 0; k < n; k++) {
+      var isOut = score(X[k]) <= 0;
+      if (isOut) outn++;
+      p.add(VIZ.el('circle', {
+        cx: p.X(Math.max(-2.75, Math.min(2.75, X[k][0]))),
+        cy: p.Y(Math.max(-2.45, Math.min(2.45, X[k][1]))), r: isOut ? 5 : 3.4,
+        fill: isOut ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': 0.9,
+        stroke: isOut ? 'var(--amber)' : 'none', 'stroke-width': 1.8
+      }));
+    }
+
+    out.set('nu', nu);
+    out.set('frac', outn / n);
+    out.set('sv', Math.max(nu, outn / n));
+    out.setRaw('note', gam > 2 ? 'γ 가 크다 — 울타리가 점마다 쪼개진다'
+      : (nu > 0.3 ? 'ν 가 크다 — 정상까지 이상치로 몬다' : '적당하다'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'ν', min: 0.02, max: 0.5, step: 0.01, value: 0.1, digits: 2,
+    onInput: function (v) { nu = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'γ', min: 0.1, max: 4, step: 0.05, value: 0.6, digits: 2,
+    onInput: function (v) { gam = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 7, digits: 0,
+    onInput: function (v) { seed = v; X = null; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

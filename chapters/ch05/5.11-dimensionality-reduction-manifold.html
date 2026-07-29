@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5.11 차원 축소와 매니폴드 — AI 이론 학습</title>
+<meta name="description" content="고차원 data는 대개 훨씬 낮은 차원의 휘어진 면 위에 놓여 있다. 무엇을 보존할 것인가 — 분산·거리·이웃 — 가 방법을 가른다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="5.11">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">5.11</span>
+        <span>5장 · 전통적 머신러닝</span>
+      </div>
+      <h1>차원 축소와 매니폴드</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 75분</span>
+        <span><b>난이도</b>★★★★☆</span>
+        <span><b>선수지식</b>
+          <a href="../ch02/2.9-dimensionality-reduction.html">2.9 차원 축소</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-pca">PCA</a>
+      <a class="chip" href="#c-kpca">Kernel PCA</a>
+      <a class="chip" href="#c-ica">ICA</a>
+      <a class="chip" href="#c-mds">MDS</a>
+      <a class="chip" href="#c-isomap">Isomap</a>
+      <a class="chip" href="#c-tsne">t-SNE</a>
+      <a class="chip" href="#c-umap">UMAP</a>
+      <a class="chip" href="#c-nonlinear">Nonlinear Dimensionality Reduction</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        고차원 data 는 대개 <strong>훨씬 낮은 차원의 휘어진 면(manifold) 위</strong>에 놓여 있다.
+        <strong>무엇을 보존할 것인가</strong>가 방법을 가른다 —
+        <strong>분산</strong>(PCA) · <strong>모든 쌍의 거리</strong>(MDS) ·
+        <strong>면 위를 따라간 거리</strong>(Isomap) · <strong>가까운 이웃 관계</strong>(t-SNE·UMAP).
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>PCA 를 분산 최대화와 재구성 오차 최소화 두 관점에서 유도하고 손으로 계산할 수 있다.</li>
+        <li>kernel PCA·Isomap·MDS 가 모두 "행렬 하나를 고유분해"하는 같은 뼈대임을 설명할 수 있다.</li>
+        <li>t-SNE·UMAP 의 결과에서 <strong>무엇을 읽어도 되고 무엇을 읽으면 안 되는지</strong> 구별할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        28×28 손글씨 숫자는 784차원 vector 다.
+        그런데 <strong>784차원의 점을 무작위로 뽑으면 거의 확실히 잡음</strong>이지 숫자가 아니다.
+        실제 숫자 이미지는 <strong>"어떤 숫자인가 · 기울기 · 굵기 · 크기"</strong> 같은
+        <strong>몇 개의 요인</strong>으로 생성되며, 그 요인들이 만드는 것은
+        784차원 안의 <strong>아주 얇은 곡면</strong>이다.
+      </p>
+      <p>
+        <span class="hl">이것이 <strong>manifold 가설</strong>이다 —
+        <strong>고차원 data 는 실제로는 훨씬 낮은 차원의 (휘어진) 면 위에 있다.</strong>
+        <a href="5.5-distance-based-learning.html">5.5</a>의 차원의 저주가 실무에서 덜 치명적인 이유이기도 하다.</span>
+      </p>
+      <p>
+        평평한 면이면 <strong>PCA 로 충분</strong>하다 — 사영 하나면 된다.
+        휘어 있으면 곤란해진다. 둘둘 말린 종이(swiss roll)에서
+        <strong>직선 거리로 가까운 두 점이 종이 위에서는 아주 멀 수 있다</strong>.
+        <strong>펼쳐서 봐야</strong> 진짜 구조가 보인다.
+      </p>
+
+      <figure class="widget" data-widget="swiss-roll">
+        <figcaption class="widget__bar">Manifold — 직선 거리와 면을 따라간 거리는 다르다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">두 점의 <strong>직선 거리는 짧은데 면을 따라가면 아주 멉니다</strong> — PCA 가 실패하는 이유입니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>지구 표면은 3차원 공간 안에 있지만 실제로는 <strong>2차원 면</strong>입니다 — 위도와 경도 두 숫자면 위치가 정해집니다. 서울에서 뉴욕까지 <strong>땅을 뚫고 가는 직선 거리</strong>와 <strong>지표면을 따라가는 거리</strong>가 다른 것처럼, 휘어진 면 위에서는 두 거리가 다릅니다.</p>
+        <p>지도를 만드는 일이 곧 차원 축소입니다. 그리고 잘 알려져 있듯 <strong>지구를 평면 지도로 완벽히 옮기는 방법은 없습니다</strong> — 면적을 지키면 모양이 일그러지고, 각도를 지키면 극지방이 부풀어 오릅니다. <strong>무엇을 지키고 무엇을 포기할지</strong>를 고르는 것이 방법을 고르는 일입니다.</p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-pca"></span>
+      <h3>PCA (Principal Component Analysis)</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \max_{\|\mathbf{w}\|=1}\ \mathbf{w}^\top\mathbf{S}\mathbf{w}, \qquad \mathbf{S}=\frac1n\sum_i(\mathbf{x}_i-\bar{\mathbf{x}})(\mathbf{x}_i-\bar{\mathbf{x}})^\top \ \Rightarrow\ \mathbf{S}\mathbf{w}=\lambda\mathbf{w} $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">PCA 는 <strong>사영했을 때 분산이 가장 큰 방향</strong>을 찾으며,
+        그 답이 <strong>공분산 행렬의 고유vector</strong> 다(유도 1) —
+        <strong>재구성 오차를 최소화하는 부분공간</strong>과 정확히 같은 것이다(유도 2).</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>관점</th><th>목적</th><th>답</th></tr></thead>
+          <tbody>
+            <tr><td>분산 최대화</td><td>$\max \mathrm{Var}(\mathbf{w}^\top\mathbf{x})$</td><td>가장 큰 고유값의 고유vector</td></tr>
+            <tr><td>재구성 오차 최소화</td><td>$\min\sum\|\mathbf{x}_i-\hat{\mathbf{x}}_i\|^2$</td><td><strong>같은 것</strong></td></tr>
+            <tr><td>선형대수</td><td>$\mathbf{X}$ 의 SVD</td><td>$\mathbf{V}$ 의 열 (<a href="../ch02/2.8-svd.html">2.8</a>)</td></tr>
+            <tr><td>확률</td><td>확률적 PCA 의 MLE</td><td>같은 부분공간</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>반드시 중심화(평균 빼기)해야 한다</strong> —
+        안 하면 첫 주성분이 <strong>data 의 평균 방향</strong>을 가리키느라 낭비된다.
+        <strong>표준화(스케일 나누기)는 선택</strong>이지만,
+        단위가 다른 feature 가 섞여 있으면(키 cm vs 몸무게 kg) <strong>사실상 필수</strong>다 —
+        단위를 mm 로 바꾸는 것만으로 <strong>주성분이 통째로 바뀌기</strong> 때문이다(오해 1).
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \text{설명된 분산 비율}=\frac{\sum_{k=1}^{m}\lambda_k}{\sum_{k=1}^{d}\lambda_k} $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+
+      <span class="anchor" id="c-kpca"></span>
+      <h3>Kernel PCA</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \tilde{\mathbf{K}}=\mathbf{K}-\mathbf{1}_n\mathbf{K}-\mathbf{K}\mathbf{1}_n+\mathbf{1}_n\mathbf{K}\mathbf{1}_n, \qquad \tilde{\mathbf{K}}\boldsymbol{\alpha}=n\lambda\boldsymbol{\alpha} $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl">kernel PCA 는 <a href="5.8-support-vector-machine.html">5.8</a>의 kernel trick 을 PCA 에 적용한 것이다 —
+        <strong>$\phi(\mathbf{x})$ 를 계산하지 않고</strong> 중심화한 kernel 행렬을 고유분해해
+        <strong>고차원 공간에서의 주성분</strong>을 얻는다<a class="cite" href="#ref-scholkopf1998-kernel-pca" data-ref="scholkopf1998-kernel-pca">1</a>.</span>
+      </p>
+      <p>
+        중요한 차이가 하나 있다 —
+        <strong>$d\times d$ 공분산 대신 $n\times n$ kernel 행렬을 분해</strong>한다.
+        그래서 $d$ 가 무한이어도 되지만 <strong>$n$ 이 크면 못 쓴다</strong>.
+        또 <strong>역변환(pre-image)이 일반적으로 불가능</strong>해,
+        압축한 것을 원래 공간으로 되돌리려면 별도의 근사가 필요하다.
+      </p>
+
+      <span class="anchor" id="c-ica"></span>
+      <h3>ICA (Independent Component Analysis)</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathbf{x}=\mathbf{A}\mathbf{s} \ \Rightarrow\ \hat{\mathbf{s}}=\mathbf{W}\mathbf{x}, \qquad \mathbf{W} \text{ 는 } \hat{s}_i \text{ 들이 } \textbf{통계적으로 독립} \text{ 이 되도록} $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        <span class="hl">ICA 는 <strong>섞여 들어온 신호를 원래의 독립적인 원천으로 분리</strong>한다 —
+        PCA 가 <strong>무상관(2차 통계)</strong> 만 요구하는 데 비해
+        ICA 는 <strong>완전한 독립(고차 통계)</strong> 을 요구한다<a class="cite" href="#ref-hyvarinen2000-ica" data-ref="hyvarinen2000-ica">2</a>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>PCA</th><th>ICA</th></tr></thead>
+          <tbody>
+            <tr><td>요구 조건</td><td>무상관 + 직교</td><td><strong>독립</strong> (직교 아님)</td></tr>
+            <tr><td>쓰는 통계</td><td>2차 (공분산)</td><td><strong>고차</strong> (첨도·negentropy)</td></tr>
+            <tr><td>정규분포면</td><td>동작</td><td><strong>실패</strong> — 회전이 결정되지 않는다</td></tr>
+            <tr><td>순서</td><td>분산 크기순</td><td><strong>순서 없음</strong></td></tr>
+            <tr><td>크기·부호</td><td>결정됨</td><td><strong>결정 안 됨</strong></td></tr>
+            <tr><td>대표 용도</td><td>압축·잡음 제거</td><td><strong>칵테일 파티 문제</strong>, EEG 잡음 분리</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>"data 가 정규분포면 ICA 가 실패한다"</strong>는 것이 핵심 제약이다 —
+        정규분포는 회전에 불변이라 <strong>어느 방향이 원천인지 알 방법이 없기</strong> 때문이다.
+        역설적으로 <strong>비정규성이 클수록 ICA 가 잘 된다</strong>.
+      </p>
+
+      <figure class="widget" data-widget="pca-vs-ica">
+        <figcaption class="widget__bar">PCA vs ICA — 직교냐 독립이냐</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">평행사변형 모양 data 에서 PCA 축은 <strong>변을 따라가지 않지만</strong> ICA 축은 따라갑니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-mds"></span>
+      <h3>MDS (Multidimensional Scaling)</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathbf{B}=-\tfrac12\mathbf{J}\mathbf{D}^{(2)}\mathbf{J}, \quad \mathbf{J}=\mathbf{I}-\tfrac1n\mathbf{1}\mathbf{1}^\top \ \Rightarrow\ \mathbf{Y}=\mathbf{U}_m\boldsymbol{\Lambda}_m^{1/2} $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        <span class="hl">고전적 MDS 는 <strong>거리 행렬만 주어져도</strong> 좌표를 복원한다 —
+        제곱거리 행렬을 이중 중심화하면 <strong>내적 행렬(Gram matrix)</strong> 이 되고,
+        그것을 고유분해하면 좌표가 나온다(유도 3).</span>
+      </p>
+      <p>
+        <strong>유클리드 거리를 쓰면 고전적 MDS 는 PCA 와 정확히 같은 결과</strong>를 준다.
+        그래서 MDS 는 <strong>PCA 를 "거리만 아는 상황"으로 확장한 것</strong>으로 볼 수 있고,
+        도시 간 거리표에서 지도를 복원하는 것 같은 일이 가능해진다.
+      </p>
+      <p>
+        <strong>비계량 MDS</strong> 는 거리의 <strong>순위만</strong> 보존한다 —
+        "A-B 가 A-C 보다 가깝다"는 관계만 지키면 되므로,
+        <strong>거리가 주관적 유사도</strong>일 때(설문 응답 등) 유용하다.
+      </p>
+
+      <span class="anchor" id="c-isomap"></span>
+      <h3>Isomap</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ d_{\text{geo}}(i,j)=\text{그래프 최단경로}, \qquad \text{그 } \mathbf{D} \text{ 로 고전적 MDS} $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        <span class="hl">Isomap 은 유클리드 거리 대신 <strong>이웃 그래프의 최단경로 거리(측지 거리)</strong> 를 쓴다 —
+        <strong>MDS 의 입력만 바꾼 것</strong>인데 그것만으로 휘어진 면을 펼친다<a class="cite" href="#ref-tenenbaum2000-isomap" data-ref="tenenbaum2000-isomap">3</a>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>단계</th><th>하는 일</th><th>주의</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>$k$-NN 그래프 구성</td><td><strong>$k$ 가 성패를 가른다</strong></td></tr>
+            <tr><td>2</td><td>모든 쌍 최단경로 (Dijkstra·Floyd)</td><td>$O(n^2\log n)$</td></tr>
+            <tr><td>3</td><td>그 거리로 고전적 MDS</td><td>$O(n^3)$ 고유분해</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>$k$ 가 너무 크면 "지름길"이 생겨</strong> 말린 종이의 층끼리 이어져 버리고(short-circuit),
+        너무 작으면 <strong>그래프가 끊어져</strong> 거리가 무한이 된다.
+        Isomap 이 실패하는 대부분의 경우가 이 둘 중 하나다.
+      </p>
+
+      <span class="anchor" id="c-nonlinear"></span>
+      <h3>Nonlinear Dimensionality Reduction — LLE 와 Laplacian Eigenmaps</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \text{LLE: } \min_{\mathbf{W}}\sum_i\Bigl\|\mathbf{x}_i-\sum_{j\in N(i)}W_{ij}\mathbf{x}_j\Bigr\|^2 \ \Rightarrow\ \min_{\mathbf{Y}}\sum_i\Bigl\|\mathbf{y}_i-\sum_j W_{ij}\mathbf{y}_j\Bigr\|^2 $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        <span class="hl">LLE 는 <strong>각 점을 이웃들의 선형결합으로 표현한 가중치 $\mathbf{W}$</strong> 를 구하고,
+        저차원에서도 <strong>그 관계가 유지되도록</strong> 좌표를 찾는다 —
+        <strong>국소적으로는 평평하다</strong>는 manifold 의 성질을 그대로 쓴 것이다<a class="cite" href="#ref-roweis2000-lle" data-ref="roweis2000-lle">4</a>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>방법</th><th>보존하는 것</th><th>푸는 문제</th><th>성격</th></tr></thead>
+          <tbody>
+            <tr><td>PCA</td><td>전역 분산</td><td>공분산의 <strong>큰</strong> 고유vector</td><td>선형</td></tr>
+            <tr><td>MDS</td><td>모든 쌍 거리</td><td>Gram 행렬의 <strong>큰</strong> 고유vector</td><td>선형(유클리드면)</td></tr>
+            <tr><td>Isomap</td><td><strong>측지 거리</strong></td><td>측지 Gram 의 큰 고유vector</td><td>전역적</td></tr>
+            <tr><td>LLE</td><td><strong>국소 재구성 가중치</strong></td><td>$(\mathbf{I}-\mathbf{W})^\top(\mathbf{I}-\mathbf{W})$ 의 <strong>작은</strong> 고유vector</td><td>국소적</td></tr>
+            <tr><td>Laplacian Eigenmaps</td><td>이웃 근접성</td><td>Laplacian 의 <strong>작은</strong> 고유vector</td><td>국소적</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <span class="hl">놀랍게도 <strong>다섯 방법이 전부 "행렬 하나의 고유분해"</strong> 다 —
+        <strong>어떤 행렬을 만들고 큰 쪽을 볼지 작은 쪽을 볼지</strong>만 다르다.
+        이를 <strong>spectral embedding</strong> 이라는 하나의 틀로 묶어 볼 수 있고,
+        <a href="5.10-clustering.html">5.10</a>의 spectral clustering 도 같은 계보다.</span>
+      </p>
+
+      <span class="anchor" id="c-tsne"></span>
+      <h3>t-SNE</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ p_{j|i}\propto e^{-\|\mathbf{x}_i-\mathbf{x}_j\|^2/2\sigma_i^2}, \qquad q_{ij}\propto\bigl(1+\|\mathbf{y}_i-\mathbf{y}_j\|^2\bigr)^{-1}, \qquad \min\ \mathrm{KL}(P\,\|\,Q) $$</div>
+        <span class="eq__tag num">(8)</span>
+      </div>
+      <p>
+        <span class="hl">t-SNE 는 <strong>고차원의 이웃 관계를 확률분포 $P$ 로 만들고</strong>
+        저차원에서 그것을 닮은 $Q$ 를 찾는다 —
+        저차원에서 <strong>꼬리가 두꺼운 $t$-분포</strong> 를 쓰는 것이 결정적이다<a class="cite" href="#ref-maaten2008-tsne" data-ref="maaten2008-tsne">5</a>.</span>
+      </p>
+      <p>
+        왜 $t$-분포인가? <strong>혼잡 문제(crowding problem)</strong> 때문이다.
+        고차원에서 "중간 거리"에 있는 점들이 아주 많은데,
+        저차원에는 그 점들을 놓을 <strong>공간이 절대적으로 부족</strong>하다.
+        저차원 분포의 <strong>꼬리를 두껍게</strong> 하면 같은 $q$ 값을 <strong>더 먼 거리</strong>에서 낼 수 있어,
+        중간 거리 점들을 밀어낼 여유가 생긴다.
+      </p>
+      <p>
+        <strong>KL 의 비대칭성</strong>도 결과를 규정한다 —
+        $\mathrm{KL}(P\|Q)$ 는 <strong>$p$ 가 큰데 $q$ 가 작으면 큰 벌점</strong>을 주지만
+        그 반대는 거의 벌하지 않는다.
+        즉 <strong>가까운 점을 떼어 놓는 것은 크게 벌하고, 먼 점을 붙이는 것은 관대</strong>하다 —
+        <strong>국소 구조는 잘 보존하고 전역 구조는 신뢰할 수 없는</strong> 이유가 이것이다(오해 4).
+      </p>
+
+      <span class="anchor" id="c-umap"></span>
+      <h3>UMAP</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \min\ \sum_{(i,j)}\Bigl[v_{ij}\log\frac{v_{ij}}{w_{ij}}+(1-v_{ij})\log\frac{1-v_{ij}}{1-w_{ij}}\Bigr] \quad (\textbf{교차 엔트로피}) $$</div>
+        <span class="eq__tag num">(9)</span>
+      </div>
+      <p>
+        <span class="hl">UMAP 은 퍼지 위상 구조를 <strong>교차 엔트로피</strong>로 맞춘다 —
+        둘째 항이 있어 <strong>"멀어야 할 점을 붙이는 것"도 벌하므로</strong>
+        t-SNE 보다 <strong>전역 구조가 조금 낫고 훨씬 빠르다</strong><a class="cite" href="#ref-mcinnes2018-umap" data-ref="mcinnes2018-umap">6</a>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>t-SNE</th><th>UMAP</th></tr></thead>
+          <tbody>
+            <tr><td>손실</td><td>$\mathrm{KL}(P\|Q)$ — <strong>인력만</strong></td><td>교차 엔트로피 — <strong>인력 + 척력</strong></td></tr>
+            <tr><td>주 hyperparameter</td><td><code>perplexity</code> (5~50)</td><td><code>n_neighbors</code>, <code>min_dist</code></td></tr>
+            <tr><td>속도</td><td>느리다 ($O(n\log n)$ 근사)</td><td><strong>빠르다</strong></td></tr>
+            <tr><td>전역 구조</td><td>신뢰 어렵다</td><td>조금 낫다 (여전히 조심)</td></tr>
+            <tr><td>새 점 변환</td><td><strong>불가</strong> (재학습)</td><td><strong>가능</strong> (<code>transform</code>)</td></tr>
+            <tr><td>초기화</td><td>무작위 (PCA 권장)</td><td>spectral (결정적)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>둘 다 시각화 도구이지 전처리 도구가 아니다</strong>.
+        분류기 앞에 붙일 축소가 필요하면 <strong>PCA 나 학습된 표현</strong>을 쓰고,
+        t-SNE·UMAP 은 <strong>사람이 눈으로 보기 위한 그림</strong>으로 쓴다(오해 5).
+      </p>
+
+      <figure class="widget" data-widget="tsne-lab">
+        <figcaption class="widget__bar">t-SNE — perplexity 가 그림을 통째로 바꾼다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">perplexity 를 바꾸면 <strong>덩어리의 크기와 간격이 통째로 달라집니다</strong> — 그 크기를 해석하면 안 됩니다.</p>
+        </div>
+      </figure>
+
+      <figure class="widget" data-widget="crowding">
+        <figcaption class="widget__bar">Crowding — 왜 t-분포를 쓰는가</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$t$-분포는 <strong>같은 확률을 훨씬 먼 거리에서</strong> 냅니다 — 그만큼 밀어낼 공간이 생깁니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>여덟 방법을 목적에 따라 정리한다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>방법</th><th>선형?</th><th>보존</th><th>비용</th><th>새 점 변환</th><th>주 용도</th></tr></thead>
+          <tbody>
+            <tr><td><strong>PCA</strong></td><td>✓</td><td>분산</td><td>$O(nd^2)$</td><td><strong>✓ 행렬곱</strong></td><td>압축·전처리·잡음 제거</td></tr>
+            <tr><td>Kernel PCA</td><td>✗</td><td>kernel 공간 분산</td><td>$O(n^3)$</td><td>✓</td><td>비선형 전처리</td></tr>
+            <tr><td>ICA</td><td>✓</td><td><strong>독립성</strong></td><td>$O(nd^2)$ 반복</td><td>✓</td><td><strong>신호 분리</strong></td></tr>
+            <tr><td>MDS</td><td>✓/✗</td><td>모든 쌍 거리</td><td>$O(n^3)$</td><td>✗</td><td>거리표에서 지도 복원</td></tr>
+            <tr><td>Isomap</td><td>✗</td><td>측지 거리</td><td>$O(n^3)$</td><td>✗</td><td>말린 면 펼치기</td></tr>
+            <tr><td>LLE</td><td>✗</td><td>국소 가중치</td><td>$O(n^2)$</td><td>✗</td><td>국소 구조</td></tr>
+            <tr><td><strong>t-SNE</strong></td><td>✗</td><td>이웃 확률</td><td>$O(n\log n)$</td><td>✗</td><td><strong>시각화만</strong></td></tr>
+            <tr><td><strong>UMAP</strong></td><td>✗</td><td>퍼지 위상</td><td>$O(n^{1.14})$</td><td>✓</td><td><strong>시각화 (+ 가벼운 전처리)</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        실무 순서는 대체로 이렇다 —
+        <strong>먼저 PCA 로 50~100차원까지 줄이고</strong>(잡음 제거 + 속도),
+        <strong>그다음 t-SNE·UMAP 으로 2차원 그림</strong>을 그린다.
+        sklearn 문서와 t-SNE 원저자가 모두 권하는 방식이며,
+        <strong>계산이 빨라질 뿐 아니라 결과도 안정</strong>된다.
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$d$ / $m$</td><td>—</td><td>원래 차원 / 줄인 차원</td><td>정수</td><td>$m&lt;d$</td></tr>
+            <tr><td>$\mathbf{S}$</td><td>공분산 행렬</td><td>$\frac1n\sum(\mathbf{x}-\bar{\mathbf{x}})(\cdot)^\top$</td><td>$d\times d$</td><td>양의 준정부호</td></tr>
+            <tr><td>$\mathbf{w}_k$</td><td>주성분 · loading</td><td>$k$번째 고유vector (<strong>방향</strong>)</td><td>$\mathbb{R}^d$</td><td>$\|\mathbf{w}\|=1$</td></tr>
+            <tr><td>$\lambda_k$</td><td>lambda 람다</td><td>그 방향의 <strong>분산</strong></td><td>scalar</td><td>$\ge0$, 내림차순</td></tr>
+            <tr><td>$z_{ik}$</td><td>score 점수</td><td>$\mathbf{w}_k^\top(\mathbf{x}_i-\bar{\mathbf{x}})$ — <strong>새 좌표</strong></td><td>scalar</td><td>—</td></tr>
+            <tr><td>$\mathbf{J}$</td><td>centering matrix</td><td>$\mathbf{I}-\frac1n\mathbf{1}\mathbf{1}^\top$</td><td>$n\times n$</td><td>멱등</td></tr>
+            <tr><td>$\mathbf{B}$</td><td>Gram matrix 그람 행렬</td><td>중심화한 내적 행렬</td><td>$n\times n$</td><td>대칭</td></tr>
+            <tr><td>$d_{\text{geo}}$</td><td>geodesic 측지 거리</td><td><strong>면을 따라간 거리</strong></td><td>scalar</td><td>$\ge$ 직선 거리</td></tr>
+            <tr><td>$W_{ij}$ (LLE)</td><td>재구성 가중치</td><td>$\mathbf{x}_i$ 를 이웃으로 재현하는 계수</td><td>$n\times n$ 희소</td><td>행 합 1</td></tr>
+            <tr><td>$p_{j|i}$</td><td>조건부 이웃 확률</td><td>고차원의 이웃 관계</td><td>scalar</td><td>합 1</td></tr>
+            <tr><td>$\sigma_i$</td><td>sigma 시그마</td><td>점 $i$ 의 <strong>적응적</strong> 폭</td><td>scalar</td><td>perplexity 로 결정</td></tr>
+            <tr><td>perplexity</td><td>—</td><td><strong>유효 이웃 수</strong> $2^{H(P_i)}$</td><td>scalar</td><td>보통 5~50</td></tr>
+            <tr><td><code>min_dist</code></td><td>—</td><td>UMAP 에서 점끼리 최소 간격</td><td>scalar</td><td>$[0,1]$</td></tr>
+            <tr><td>$\mathbf{A}$ / $\mathbf{W}$ (ICA)</td><td>혼합 / 분리 행렬</td><td>$\mathbf{x}=\mathbf{As}$, $\hat{\mathbf{s}}=\mathbf{Wx}$</td><td>$d\times d$</td><td>$\mathbf{W}\approx\mathbf{A}^{-1}$</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">같은 것을 다르게 부른다</span>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>이 사이트</th><th>같은 뜻으로 쓰이는 말</th><th>주의할 점</th></tr></thead>
+            <tbody>
+              <tr><td>$\mathbf{w}_k$ (방향)</td><td>loading, 주성분, 고유vector</td><td><strong>score(좌표)와 혼동하기 쉽다</strong></td></tr>
+              <tr><td>$z_{ik}$ (좌표)</td><td>score, 주성분 점수, 사영값</td><td>"주성분"이 <strong>둘 다</strong>를 가리켜 혼란스럽다</td></tr>
+              <tr><td>고전적 MDS</td><td>PCoA, Torgerson scaling</td><td>비계량 MDS 와 <strong>다른 것</strong></td></tr>
+              <tr><td>측지 거리</td><td>geodesic distance, 그래프 거리</td><td>Isomap 의 핵심</td></tr>
+              <tr><td>spectral embedding</td><td>Laplacian eigenmaps</td><td>sklearn 에서는 같은 클래스</td></tr>
+              <tr><td>perplexity</td><td>—</td><td><a href="../ch04/4.7-information-theory.html">4.7</a>의 언어모델 perplexity 와 <strong>공식은 같고 쓰임이 다르다</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — 분산 최대화가 고유vector 문제인 이유</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{Var}(\mathbf{w}^\top\mathbf{x})=\frac1n\sum_i\bigl(\mathbf{w}^\top(\mathbf{x}_i-\bar{\mathbf{x}})\bigr)^2=\mathbf{w}^\top\mathbf{S}\mathbf{w} $$</div>
+          <div class="derive__why">사영값의 분산을 <strong>이차형식</strong>으로 썼다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \max_{\mathbf{w}}\ \mathbf{w}^\top\mathbf{S}\mathbf{w} \quad \text{s.t.}\ \mathbf{w}^\top\mathbf{w}=1 $$</div>
+          <div class="derive__why">제약이 없으면 $\mathbf{w}$ 를 키우기만 하면 되니 <strong>단위 길이로 고정</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathcal{L}=\mathbf{w}^\top\mathbf{S}\mathbf{w}-\lambda(\mathbf{w}^\top\mathbf{w}-1) $$</div>
+          <div class="derive__why"><a href="../ch03/3.9-constraints-regularization.html">3.9</a>의 Lagrange 승수</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\partial\mathcal{L}}{\partial\mathbf{w}}=2\mathbf{S}\mathbf{w}-2\lambda\mathbf{w}=0 \ \Rightarrow\ \mathbf{S}\mathbf{w}=\lambda\mathbf{w} $$</div>
+          <div class="derive__why"><strong>정확히 고유값 방정식</strong> — 식 (1)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{w}^\top\mathbf{S}\mathbf{w}=\mathbf{w}^\top(\lambda\mathbf{w})=\lambda $$</div>
+          <div class="derive__why"><strong>고유값이 곧 그 방향의 분산</strong> — 그래서 최대는 <strong>최대 고유값</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{둘째 성분}:\ \mathbf{w}_2\perp\mathbf{w}_1 \text{ 제약을 추가} \ \Rightarrow\ \text{둘째로 큰 고유값} $$</div>
+          <div class="derive__why"><strong>$\mathbf{S}$ 가 대칭이라 고유vector 들이 자동으로 직교</strong> (<a href="../ch02/2.7-eigenvalues.html">2.7</a>)</div>
+        </div>
+      </div>
+
+      <h3>유도 2 — 재구성 오차 최소화도 같은 답인 이유</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat{\mathbf{x}}_i=\bar{\mathbf{x}}+\sum_{k=1}^{m}(\mathbf{w}_k^\top\tilde{\mathbf{x}}_i)\mathbf{w}_k, \qquad \tilde{\mathbf{x}}_i=\mathbf{x}_i-\bar{\mathbf{x}} $$</div>
+          <div class="derive__why">$m$차원 부분공간으로 사영해 되돌린 것</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \|\tilde{\mathbf{x}}_i\|^2=\underbrace{\sum_{k=1}^{m}(\mathbf{w}_k^\top\tilde{\mathbf{x}}_i)^2}_{\text{보존}}+\underbrace{\sum_{k=m+1}^{d}(\mathbf{w}_k^\top\tilde{\mathbf{x}}_i)^2}_{\text{잃은 것}} $$</div>
+          <div class="derive__why">직교 기저에서의 <strong>Pythagoras</strong> — 전체가 두 조각으로 갈린다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac1n\sum_i\|\tilde{\mathbf{x}}_i-\hat{\mathbf{x}}_i+\bar{\mathbf{x}}\|^2=\sum_{k=m+1}^{d}\mathbf{w}_k^\top\mathbf{S}\mathbf{w}_k=\sum_{k=m+1}^{d}\lambda_k $$</div>
+          <div class="derive__why"><strong>재구성 오차 = 버린 고유값들의 합</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{전체 } \sum_{k=1}^{d}\lambda_k=\mathrm{tr}(\mathbf{S}) \text{ 는 } \textbf{고정} $$</div>
+          <div class="derive__why">기저를 어떻게 잡든 <strong>대각합은 불변</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \min\sum_{k>m}\lambda_k \iff \max\sum_{k\le m}\lambda_k \iff \textbf{분산 최대화} \ \blacksquare $$</div>
+          <div class="derive__why"><strong>두 관점이 완전히 같은 문제</strong>다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{설명된 분산 비율}=\frac{\sum_{k\le m}\lambda_k}{\sum_k\lambda_k}=1-\frac{\text{재구성 오차}}{\text{전체 분산}} $$</div>
+          <div class="derive__why">식 (2)의 의미가 여기서 나온다</div>
+        </div>
+      </div>
+
+      <h3>유도 3 — 거리 행렬에서 좌표를 복원하는 법 (MDS)</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ d_{ij}^2=\|\mathbf{y}_i-\mathbf{y}_j\|^2=\|\mathbf{y}_i\|^2-2\mathbf{y}_i^\top\mathbf{y}_j+\|\mathbf{y}_j\|^2 $$</div>
+          <div class="derive__why">전개. <strong>내적 $b_{ij}=\mathbf{y}_i^\top\mathbf{y}_j$ 를 알고 싶다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ b_{ij}=-\tfrac12\bigl(d_{ij}^2-\|\mathbf{y}_i\|^2-\|\mathbf{y}_j\|^2\bigr) $$</div>
+          <div class="derive__why">그런데 $\|\mathbf{y}_i\|^2$ 를 모른다 — 거리만 주어졌으니</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sum_i\mathbf{y}_i=0 \text{ 으로 두면 (중심화)}\quad \frac1n\sum_j d_{ij}^2=\|\mathbf{y}_i\|^2+\frac1n\sum_j\|\mathbf{y}_j\|^2 $$</div>
+          <div class="derive__why">교차항 $\sum_j\mathbf{y}_j=0$ 이라 <strong>사라진다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \|\mathbf{y}_i\|^2=\frac1n\sum_j d_{ij}^2-\frac{1}{2n^2}\sum_{k,l}d_{kl}^2 $$</div>
+          <div class="derive__why"><strong>거리만으로 노름을 복원했다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \mathbf{B}=-\tfrac12\mathbf{J}\mathbf{D}^{(2)}\mathbf{J},\qquad \mathbf{J}=\mathbf{I}-\tfrac1n\mathbf{1}\mathbf{1}^\top $$</div>
+          <div class="derive__why">위 세 줄을 행렬로 쓰면 <strong>이중 중심화</strong> — 식 (5)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{B}=\mathbf{Y}\mathbf{Y}^\top=\mathbf{U}\boldsymbol{\Lambda}\mathbf{U}^\top \ \Rightarrow\ \mathbf{Y}=\mathbf{U}_m\boldsymbol{\Lambda}_m^{1/2} $$</div>
+          <div class="derive__why">고유분해해서 <strong>제곱근을 취하면 좌표</strong> ∎</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{음의 고유값이 나오면} \Rightarrow \text{그 } \mathbf{D} \text{ 는 } \textbf{유클리드 거리가 아니다} $$</div>
+          <div class="derive__why">Isomap 의 측지 거리에서 실제로 일어난다 — <strong>버리고 진행</strong>한다</div>
+        </div>
+      </div>
+
+      <details>
+        <summary>PCA · MDS · Isomap · kernel PCA 가 왜 같은 뼈대인가</summary>
+        <p>
+          네 방법 모두 <strong>$n\times n$ 대칭 행렬 하나를 만들어 고유분해</strong>한다.
+          다른 것은 <strong>그 행렬을 무엇으로 채우는가</strong>뿐이다.
+        </p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>방법</th><th>고유분해하는 행렬</th></tr></thead>
+            <tbody>
+              <tr><td>고전적 MDS</td><td>$-\frac12\mathbf{J}\mathbf{D}^{(2)}\mathbf{J}$ (유클리드 거리)</td></tr>
+              <tr><td>PCA</td><td>같은 것 — <strong>유클리드 거리면 MDS = PCA</strong></td></tr>
+              <tr><td>Isomap</td><td>같은 식에 <strong>$\mathbf{D}$ 를 측지 거리로</strong></td></tr>
+              <tr><td>Kernel PCA</td><td>중심화한 kernel 행렬 $\tilde{\mathbf{K}}$</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          더 나아가 <strong>$-\frac12\mathbf{J}\mathbf{D}^{(2)}\mathbf{J}$ 자체가 하나의 kernel</strong> 로 볼 수 있다 —
+          거리를 내적으로 바꾸는 변환이기 때문이다.
+          그래서 <strong>Isomap 은 "측지 kernel 을 쓴 kernel PCA"</strong> 라고 부르기도 한다.
+        </p>
+        <p>
+          LLE 와 Laplacian eigenmaps 는 <strong>작은 고유값</strong>을 쓴다는 점이 다르지만,
+          "행렬 하나를 만들고 스펙트럼을 본다"는 뼈대는 같다.
+          이 통일된 관점이 <strong>spectral embedding</strong> 이고,
+          <a href="5.10-clustering.html">5.10</a>의 spectral clustering 도 정확히 그 안에 있다.
+        </p>
+        <p>
+          <strong>t-SNE 와 UMAP 만 다르다</strong> — 이들은 고유분해가 아니라
+          <strong>손실함수를 경사하강으로 최소화</strong>한다.
+          그래서 <strong>답이 유일하지 않고 seed 마다 달라진다</strong>.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① PCA 를 손으로 — 4개 점</h3>
+      <p>$\mathbf{x}=(1,1),\ (2,2),\ (3,3),\ (2,0)$.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \bar{\mathbf{x}}=\Bigl(\frac{1+2+3+2}{4},\ \frac{1+2+3+0}{4}\Bigr)=(2,\ 1.5) $$</div>
+          <div class="derive__why"><strong>중심화가 첫 단계</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \tilde{\mathbf{x}}=(-1,-0.5),\ (0,0.5),\ (1,1.5),\ (0,-1.5) $$</div>
+          <div class="derive__why">평균을 뺐다. 검산: 각 열의 합이 0 ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ S_{11}=\frac{1+0+1+0}{4}=0.5,\qquad S_{22}=\frac{0.25+0.25+2.25+2.25}{4}=1.25 $$</div>
+          <div class="derive__why">$\frac1n$ 로 나누는 관례를 썼다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ S_{12}=\frac{(-1)(-0.5)+0+1(1.5)+0}{4}=\frac{0.5+1.5}{4}=0.5 $$</div>
+          <div class="derive__why">$\mathbf{S}=\begin{pmatrix}0.5&0.5\\0.5&1.25\end{pmatrix}$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \det(\mathbf{S}-\lambda\mathbf{I})=(0.5-\lambda)(1.25-\lambda)-0.25=\lambda^2-1.75\lambda+0.375=0 $$</div>
+          <div class="derive__why">$0.625-0.25=0.375$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lambda=\frac{1.75\pm\sqrt{3.0625-1.5}}{2}=\frac{1.75\pm\sqrt{1.5625}}{2}=\frac{1.75\pm1.25}{2} $$</div>
+          <div class="derive__why">$\sqrt{1.5625}=1.25$ — <strong>깔끔하게 떨어진다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lambda_1=1.5,\qquad \lambda_2=0.25 $$</div>
+          <div class="derive__why">검산: 합 $1.75=\mathrm{tr}(\mathbf{S})=0.5+1.25$ ✓, 곱 $0.375=\det$ ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ (\mathbf{S}-1.5\mathbf{I})\mathbf{w}=0:\ \begin{pmatrix}-1&0.5\\0.5&-0.25\end{pmatrix}\mathbf{w}=0 \ \Rightarrow\ w_2=2w_1 $$</div>
+          <div class="derive__why">첫 행에서 $-w_1+0.5w_2=0$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{w}_1=\frac{(1,2)}{\sqrt5}=(0.4472,\ 0.8944) $$</div>
+          <div class="derive__why">단위 길이로 정규화</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{설명된 분산}=\frac{1.5}{1.75}=0.8571 \quad (85.7\%) $$</div>
+          <div class="derive__why">식 (2). <strong>1차원으로 줄여도 86% 를 지킨다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ z_3=\mathbf{w}_1^\top(1,1.5)=0.4472+1.3416=1.7889 $$</div>
+          <div class="derive__why">셋째 점의 새 좌표. 재구성 오차는 $\lambda_2=0.25$ (유도 2)</div>
+        </div>
+      </div>
+
+      <h3>② 스케일을 바꾸면 주성분이 바뀐다</h3>
+      <p>같은 data 에서 <strong>둘째 좌표만 10배</strong>로 하면.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ S_{11}=0.5,\quad S_{22}=1.25\times100=125,\quad S_{12}=0.5\times10=5 $$</div>
+          <div class="derive__why">분산은 $c^2$배, 공분산은 $c$배</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lambda_1\approx125.2,\qquad \mathbf{w}_1\approx(0.0399,\ 0.9992) $$</div>
+          <div class="derive__why"><strong>거의 둘째 축 그 자체</strong>가 되어 버렸다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{원래}:\ \mathbf{w}_1=(0.447,\ 0.894) \ \Rightarrow\ \textbf{완전히 다른 방향} $$</div>
+          <div class="derive__why">단위를 cm→mm 로 바꾼 것만으로 결과가 달라졌다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{상관행렬로 하면}:\ R_{12}=\frac{0.5}{\sqrt{0.5}\sqrt{1.25}}=\frac{0.5}{0.7906}=0.6325 $$</div>
+          <div class="derive__why"><strong>스케일에 불변</strong> — 10배로 해도 같다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{R}=\begin{pmatrix}1&0.6325\\0.6325&1\end{pmatrix} \Rightarrow\ \lambda=1\pm0.6325 \Rightarrow\ \mathbf{w}_1=\frac{(1,1)}{\sqrt2} $$</div>
+          <div class="derive__why">$2\times2$ 상관행렬의 고유vector 는 <strong>항상 $(1,\pm1)/\sqrt2$</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{단위가 다른 feature 는 } \textbf{표준화 후 PCA} \ (=\text{상관행렬 PCA}) $$</div>
+          <div class="derive__why">오해 1</div>
+        </div>
+      </div>
+
+      <h3>③ MDS 로 거리에서 좌표 복원하기</h3>
+      <p>세 점의 거리 $d_{12}=3,\ d_{13}=4,\ d_{23}=5$ (직각삼각형).</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{D}^{(2)}=\begin{pmatrix}0&9&16\\9&0&25\\16&25&0\end{pmatrix} $$</div>
+          <div class="derive__why">제곱거리 행렬</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{행 평균}=\Bigl(\frac{25}{3},\ \frac{34}{3},\ \frac{41}{3}\Bigr)=(8.333,\ 11.333,\ 13.667) $$</div>
+          <div class="derive__why">$0+9+16=25$ 등</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{전체 평균}=\frac{25+34+41}{9}=\frac{100}{9}=11.111 $$</div>
+          <div class="derive__why"></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ b_{ij}=-\tfrac12\bigl(d_{ij}^2-\bar{d}^2_{i\cdot}-\bar{d}^2_{\cdot j}+\bar{d}^2_{\cdot\cdot}\bigr) $$</div>
+          <div class="derive__why">유도 3 의 이중 중심화를 성분으로 쓴 것</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ b_{11}=-\tfrac12(0-8.333-8.333+11.111)=-\tfrac12(-5.556)=2.778 $$</div>
+          <div class="derive__why">$\|\mathbf{y}_1\|^2=2.778$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ b_{22}=-\tfrac12(0-11.333-11.333+11.111)=5.778,\quad b_{33}=-\tfrac12(0-13.667\cdot2+11.111)=8.111 $$</div>
+          <div class="derive__why">검산: $\mathrm{tr}(\mathbf{B})=2.778+5.778+8.111=16.667$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ b_{12}=-\tfrac12(9-8.333-11.333+11.111)=-\tfrac12(0.444)=-0.222 $$</div>
+          <div class="derive__why">$\mathbf{y}_1^\top\mathbf{y}_2=-0.222$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ b_{13}=-\tfrac12(16-8.333-13.667+11.111)=-\tfrac12(5.111)=-2.556 $$</div>
+          <div class="derive__why"></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ b_{23}=-\tfrac12(25-11.333-13.667+11.111)=-\tfrac12(11.111)=-5.556 $$</div>
+          <div class="derive__why">검산: 각 행의 합이 0 이어야 — $2.778-0.222-2.556=0$ ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{B} \text{ 의 고유값}:\ \lambda_1=12.964,\ \lambda_2=3.703,\ \lambda_3=0 $$</div>
+          <div class="derive__why"><strong>0 이 하나</strong> — 중심화 때문에 언제나 나온다. <strong>랭크 2 = 2차원으로 정확히 표현</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{검산}:\ \lambda_1+\lambda_2=12.964+3.703=16.667=\mathrm{tr}(\mathbf{B}) \ ✓ $$</div>
+          <div class="derive__why">3-4-5 직각삼각형이니 <strong>2차원에 오차 없이</strong> 놓인다 — 당연한 결과</div>
+        </div>
+      </div>
+
+      <h3>④ 측지 거리 vs 직선 거리</h3>
+      <p>반지름 1 인 원 위의 다섯 점, 각도 $0°,\ 72°,\ 144°,\ 216°,\ 288°$.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{직선 거리}(0°,144°)=2\sin(72°)=2(0.9511)=1.9021 $$</div>
+          <div class="derive__why">현의 길이 $=2R\sin(\theta/2)$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{그래프 거리}(k=2 \text{ 이웃}):\ 0°\to72°\to144° $$</div>
+          <div class="derive__why">이웃끼리만 이어진 그래프에서 <strong>두 걸음</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ =2\times\bigl[2\sin(36°)\bigr]=2\times2(0.5878)=2.3511 $$</div>
+          <div class="derive__why">한 변의 현 길이가 $2\sin36°=1.1756$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{참 호 길이}=\frac{144}{180}\pi=2.5133 $$</div>
+          <div class="derive__why">그래프 거리 2.351 이 <strong>호 길이 2.513 에 훨씬 가깝다</strong> (직선 1.902 보다)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{점을 } 20 \text{ 개로 늘리면}:\ 20\times2\sin(9°)\times\frac{8}{20}=\dots\ \to\ \textbf{호 길이로 수렴} $$</div>
+          <div class="derive__why"><strong>점이 촘촘할수록 그래프 거리 → 측지 거리</strong> — Isomap 이 통하는 조건</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ k=4 \text{ (모두 이웃)}:\ \text{그래프 거리}=\text{직선 거리}=1.902 \ \Rightarrow\ \textbf{지름길} $$</div>
+          <div class="derive__why"><strong>$k$ 가 크면 Isomap 이 PCA 로 퇴화</strong>한다</div>
+        </div>
+      </div>
+
+      <figure class="widget" data-widget="pca-scree">
+        <figcaption class="widget__bar">PCA — 몇 차원까지 남길 것인가</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">누적 설명 분산이 <strong>꺾이는 지점</strong>이 신호와 잡음의 경계입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>manifold</strong> · <strong>PCA vs ICA</strong> ·
+        <strong>t-SNE</strong> · <strong>crowding</strong> · <strong>scree</strong> — 에 이어,
+        아래에서 <strong>Isomap 의 $k$ 가 만드는 지름길 문제</strong>를 직접 만들어 본다.
+      </p>
+
+      <figure class="widget" data-widget="isomap-k">
+        <figcaption class="widget__bar">Isomap — k 를 키우면 지름길이 생긴다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$k$ 를 키우면 <strong>말린 층끼리 이어지는 선</strong>이 나타나고, 그 순간 펼치기가 실패합니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"PCA 는 전처리 없이 그냥 돌리면 된다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>중심화는 필수, 표준화는 상황에 따라 필수</strong>다.
+          중심화를 빼먹으면 첫 주성분이 <strong>평균 방향을 가리키느라</strong> 낭비된다
+          (sklearn 의 <code>PCA</code> 는 자동으로 해 주지만 직접 SVD 를 쓸 때는 아니다).
+          표준화는 더 미묘하다 — 예제 ②에서 봤듯 <strong>한 feature 의 단위만 바꿔도 주성분이 통째로 달라진다</strong>.
+          <strong>단위가 다르면 반드시 표준화</strong>(= 상관행렬 PCA)하고,
+          <strong>같은 단위이고 분산 크기 자체가 의미 있으면</strong>(픽셀 값 등) 하지 않는다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"PCA 로 줄이면 분류 성능이 좋아진다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>PCA 는 label 을 전혀 보지 않는다</strong>.
+          분산이 큰 방향이 <strong>class 를 가르는 방향과 무관할 수 있고</strong>,
+          최악의 경우 <strong>판별에 필요한 방향을 정확히 버린다</strong> —
+          두 class 가 분산이 작은 축을 따라 나뉘어 있으면 그렇다.
+          label 을 쓰는 축소가 필요하면 <strong>LDA</strong>(<a href="5.9-probabilistic-generative-models.html">5.9</a>)를 쓰거나,
+          축소 자체를 <strong>교차검증 안에서</strong> 평가해야 한다.
+          PCA 가 도움이 되는 것은 <strong>잡음 제거와 계산 절감</strong> 쪽이지 판별력 향상이 아니다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"주성분은 해석 가능한 의미를 가진다."</p>
+        <p>
+          <strong>실제로는</strong> 주성분은 <strong>모든 원래 feature 의 선형결합</strong>이라
+          "이 축은 X 를 뜻한다"고 말하기 어렵다.
+          게다가 <strong>고유값이 비슷하면 방향이 불안정</strong>해
+          표본을 조금만 바꿔도 두 성분이 <strong>서로 회전해 버린다</strong>.
+          <strong>부호도 임의</strong>다 — $\mathbf{w}$ 와 $-\mathbf{w}$ 가 똑같이 유효해
+          라이브러리 버전에 따라 그림이 뒤집힌다.
+          해석이 목적이면 <strong>sparse PCA</strong> 나 <strong>factor rotation(varimax)</strong> 를 쓰거나,
+          애초에 <strong>ICA 처럼 해석을 겨냥한 방법</strong>을 고려해야 한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"t-SNE 그림에서 덩어리 크기와 덩어리 사이 거리를 읽을 수 있다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>둘 다 의미가 없다</strong>.
+          $\sigma_i$ 가 <strong>점마다 적응적으로 정해지므로</strong>
+          성긴 무리는 부풀려지고 조밀한 무리는 압축된다 —
+          <strong>덩어리 크기는 원래 무리의 퍼짐과 무관</strong>하다.
+          그리고 $\mathrm{KL}(P\|Q)$ 는 <strong>먼 점을 붙이는 것을 거의 벌하지 않아</strong>
+          <strong>덩어리 사이 거리도 신뢰할 수 없다</strong>.
+          게다가 <strong>perplexity 를 바꾸면 그림이 통째로 달라진다</strong>.
+          읽어도 되는 것은 <strong>"어떤 점들이 같은 덩어리에 모였는가"</strong> 뿐이고,
+          그것도 <strong>여러 perplexity 와 seed 에서 재현될 때만</strong>이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"UMAP 으로 2차원 축소한 뒤 그 좌표로 분류기를 학습하면 된다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>t-SNE·UMAP 은 시각화 도구</strong>다.
+          2차원은 정보 대부분을 버린 것이고, 무엇보다
+          <strong>t-SNE 는 새 점을 변환하는 방법이 없다</strong> —
+          test data 를 넣으려면 <strong>전체를 다시 학습</strong>해야 하고,
+          그러면 그 좌표는 train 때와 다른 공간이 된다.
+          UMAP 은 <code>transform</code> 이 있지만
+          <strong>train/test 를 함께 fit 하면 곧바로 leakage</strong> 다(<a href="../ch01/1.5-data-split-evaluation.html">1.5</a>).
+          분류 전처리에는 <strong>PCA 로 50~100차원</strong> 정도가 안전한 기본값이다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①·②·③·④ 를 검산한다.</p>
+      <details>
+        <summary>NumPy — PCA · 스케일 효과 · MDS · 측지 거리 (20줄)</summary>
+<pre><code>import numpy as np
+
+X = np.array([[1., 1], [2, 2], [3, 3], [2, 0]])                 # 예제 ①
+Xc = X - X.mean(0)
+S = Xc.T @ Xc / len(X)
+w, V = np.linalg.eigh(S)
+print(np.round(S, 4)); print(np.round(w[::-1], 4))              # [1.5 0.25]
+print(np.round(np.abs(V[:, -1]), 4), round(w[-1] / w.sum(), 4)) # [0.4472 0.8944] 0.8571
+
+X2 = X * np.array([1., 10])                                      # 예제 ②
+S2 = (X2 - X2.mean(0)).T @ (X2 - X2.mean(0)) / len(X2)
+w2, V2 = np.linalg.eigh(S2)
+print(np.round(np.abs(V2[:, -1]), 4))                            # [0.0399 0.9992] — 완전히 다르다
+R = S / np.outer(np.sqrt(np.diag(S)), np.sqrt(np.diag(S)))
+print(np.round(R, 4), np.round(np.abs(np.linalg.eigh(R)[1][:, -1]), 4))  # 0.7071 0.7071
+
+D2 = np.array([[0., 9, 16], [9, 0, 25], [16, 25, 0]])            # 예제 ③
+J = np.eye(3) - np.ones((3, 3)) / 3
+B = -0.5 * J @ D2 @ J
+print(np.round(B, 4)); print(np.round(np.linalg.eigvalsh(B)[::-1], 4))   # [12.9641 3.7025 0.]
+
+th = np.deg2rad(np.array([0., 72, 144]))                         # 예제 ④
+print(round(2 * np.sin(np.deg2rad(72)), 4),                      # 직선 1.9021
+      round(2 * 2 * np.sin(np.deg2rad(36)), 4),                  # 그래프 2.3511
+      round(np.deg2rad(144), 4))                                 # 호 2.5133
+</code></pre>
+        <p>
+          <small>
+            두 번째 블록이 오해 1 의 근거다 — <strong>둘째 좌표만 10배로 했더니 주성분이 $(0.447,0.894)$ 에서
+            $(0.040,0.999)$ 로 완전히 바뀌었다</strong>. 상관행렬로 하면 $(0.707,0.707)$ 로 스케일에 무관해진다.
+            세 번째 블록에서 <strong>고유값 하나가 정확히 0</strong> 인 것은 이중 중심화의 필연적 결과다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            고유값이 $(6,\ 3,\ 1)$ 이다. 2차원으로 줄이면 설명된 분산 비율은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>0.9</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.6</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0.667</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\frac{6+3}{6+3+1}=\frac{9}{10}=0.9$ (식 2).
+            <strong>나</strong>는 첫 성분만 센 것이다.
+            유도 2 에 따라 <strong>재구성 오차는 버린 고유값의 합 = 1</strong> 이고,
+            전체 분산 10 의 <strong>10% 를 잃는다</strong>는 뜻이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\mathbf{S}=\begin{pmatrix}4&2\\2&4\end{pmatrix}$ 의 첫 주성분 방향은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$(1,1)/\sqrt2$, 고유값 6</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$(1,-1)/\sqrt2$, 고유값 6</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$(1,0)$, 고유값 4</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\begin{pmatrix}4&2\\2&4\end{pmatrix}\begin{pmatrix}1\\1\end{pmatrix}=\begin{pmatrix}6\\6\end{pmatrix}=6\begin{pmatrix}1\\1\end{pmatrix}$ ✓
+            <strong>나</strong>도 고유vector 지만 고유값이 <strong>2</strong> 라 둘째 성분이다.
+            대각 성분이 같은 $2\times2$ 대칭행렬의 고유vector 는 <strong>언제나 $(1,\pm1)$</strong> 이고,
+            <strong>공분산이 양수면 $(1,1)$ 이 첫째</strong>다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            MDS 로 얻은 $\mathbf{B}$ 의 고유값이 $(10,\ 4,\ 0,\ -0.5)$ 다. 무엇을 뜻하나?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>거리 행렬이 유클리드가 아니다 — 음수는 버리고 2차원에 놓는다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>계산이 잘못됐다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>4차원이 필요하다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\mathbf{B}=\mathbf{Y}\mathbf{Y}^\top$ 이면 <strong>양의 준정부호</strong>여야 하는데
+            음수가 있다는 것은 그런 $\mathbf{Y}$ 가 <strong>존재하지 않는다</strong>는 뜻이다(유도 3 의 마지막 줄).
+            <strong>Isomap 의 측지 거리에서 실제로 자주 일어나며</strong>,
+            관례는 <strong>음의 고유값을 버리고 양수 쪽만 쓰는 것</strong>이다.
+            고유값 0 은 <strong>중심화 때문에 언제나 하나 나온다</strong>.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            data 가 다변량 정규분포일 때 ICA 를 돌리면?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>원천을 찾지 못한다 — 회전이 결정되지 않는다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>PCA 와 같은 결과가 나온다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>가장 잘 작동한다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            정규분포는 <strong>회전에 불변</strong>이라, 백색화한 뒤 어떤 방향으로 돌려도
+            여전히 독립인 정규분포다 — <strong>원래 방향을 알아낼 정보가 없다</strong>.
+            그래서 ICA 는 <strong>비정규성을 최대화</strong>하는 방향으로 찾으며,
+            <strong>data 가 정규에서 멀수록 잘 된다</strong>는 역설적인 성질을 갖는다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            t-SNE 가 저차원에서 $t$-분포를 쓰는 이유는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>혼잡 문제 — 꼬리가 두꺼워야 중간 거리 점들을 놓을 공간이 생긴다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>계산이 빠르기 때문</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>표본 수가 적을 때 쓰는 분포라서</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            고차원에서 "중간 거리"에 있는 점이 아주 많은데
+            2차원에는 그것들을 담을 <strong>공간이 절대적으로 부족</strong>하다.
+            $t$-분포는 <strong>같은 $q$ 값을 훨씬 먼 거리에서</strong> 내므로 밀어낼 여유가 생긴다(위젯 4).
+            <strong>나</strong>도 부수적 효과는 있지만($1/(1+d^2)$ 이 지수보다 싸다) 본질이 아니다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            t-SNE 그림에서 두 덩어리가 멀리 떨어져 있다. 무엇을 결론지을 수 있나?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>거의 아무것도 — 덩어리 사이 거리는 신뢰할 수 없다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>두 무리가 원래 공간에서도 멀다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>두 무리의 크기 차이가 크다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\mathrm{KL}(P\|Q)$ 는 <strong>가까운 점을 떼어 놓는 것만 크게 벌하고</strong>
+            먼 점을 어디에 두든 거의 벌하지 않는다 — 그래서 <strong>전역 배치는 임의에 가깝다</strong>(오해 4).
+            <strong>덩어리 크기도</strong> $\sigma_i$ 가 점마다 적응적이라 <strong>의미가 없다</strong>.
+            읽어도 되는 것은 <strong>"누가 누구와 같은 덩어리에 있는가"</strong> 뿐이고,
+            그마저 <strong>여러 perplexity 와 seed 에서 재현될 때</strong>다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="../ch02/2.9-dimensionality-reduction.html">2.9 차원 축소</a></strong> — PCA 의 선형대수 기초와 SVD 와의 관계.</li>
+        <li><strong><a href="5.10-clustering.html">5.10 군집화</a></strong> — spectral clustering 과 Laplacian eigenmaps 는 같은 뼈대다.</li>
+        <li><strong><a href="5.12-anomaly-detection.html">5.12 이상치 탐지</a></strong> — PCA 재구성 오차가 이상치 점수가 된다.</li>
+        <li><strong>14장 표현학습</strong> — autoencoder 는 비선형 PCA 로 볼 수 있다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-scholkopf1998-kernel-pca" data-ref="scholkopf1998-kernel-pca">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Schölkopf, B., Smola, A. &amp; Müller, K.-R. (1998). <em>Nonlinear Component Analysis as a Kernel Eigenvalue Problem</em>. Neural Computation, 10(5), 1299–1319.</span>
+          <span class="ref__where">§2 — 특징공간의 공분산을 직접 다루지 않고 <strong>$n\times n$ kernel 행렬의 고유값 문제로 바꾸는</strong> 유도(식 3). §2.2 — <strong>특징공간에서 중심화하는 방법</strong>($\tilde{\mathbf{K}}$ 의 이중 중심화 공식). §4 — 다항·RBF kernel 로 비선형 주성분을 뽑은 예와 <strong>pre-image 를 일반적으로 구할 수 없다</strong>는 지적</span>
+          <a class="ref__link" href="https://doi.org/10.1162/089976698300017467">doi.org</a>
+        </li>
+        <li class="ref" id="ref-hyvarinen2000-ica" data-ref="hyvarinen2000-ica">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Hyvärinen, A. &amp; Oja, E. (2000). <em>Independent Component Analysis: Algorithms and Applications</em>. Neural Networks, 13(4–5), 411–430.</span>
+          <span class="ref__where">§3 — <strong>독립성과 무상관성의 차이</strong>, 그리고 <strong>원천이 정규분포면 ICA 가 불가능하다</strong>는 논증('PCA vs ICA' 표, 퀴즈 4). §4 — 비정규성 척도로 첨도와 negentropy 를 쓰는 근거. §6 — FastICA 알고리즘. §2 — 칵테일 파티 문제와 <strong>크기·순서가 결정되지 않는다</strong>는 근본적 모호성</span>
+          <a class="ref__link" href="https://doi.org/10.1016/S0893-6080(00)00026-5">doi.org</a>
+        </li>
+        <li class="ref" id="ref-tenenbaum2000-isomap" data-ref="tenenbaum2000-isomap">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Tenenbaum, J. B., de Silva, V. &amp; Langford, J. C. (2000). <em>A Global Geometric Framework for Nonlinear Dimensionality Reduction</em>. Science, 290(5500), 2319–2323.</span>
+          <span class="ref__where">본문 — <strong>$k$-NN 그래프 → 모든 쌍 최단경로 → 고전적 MDS</strong> 세 단계 절차(식 6, '단계' 표). Figure 3 — swiss roll 에서 <strong>직선 거리로는 가까운 두 점이 면을 따라가면 멀다</strong>는 그림이 위젯 1 의 원형이다. 보충자료 — 점이 촘촘할수록 <strong>그래프 거리가 참 측지 거리로 수렴한다</strong>는 보장(예제 ④)과 $k$ 선택의 민감성</span>
+          <a class="ref__link" href="https://doi.org/10.1126/science.290.5500.2319">doi.org</a>
+        </li>
+        <li class="ref" id="ref-roweis2000-lle" data-ref="roweis2000-lle">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Roweis, S. T. &amp; Saul, L. K. (2000). <em>Nonlinear Dimensionality Reduction by Locally Linear Embedding</em>. Science, 290(5500), 2323–2326.</span>
+          <span class="ref__where">본문 — <strong>각 점을 이웃의 선형결합으로 재구성하는 가중치 $W_{ij}$ 를 구하고, 저차원에서 그 가중치를 유지</strong>하는 두 단계(식 7). 그 가중치가 <strong>회전·평행이동·크기 변환에 불변</strong>이라 국소 기하를 그대로 옮긴다는 논거. 두 번째 단계가 <strong>$(\mathbf{I}-\mathbf{W})^\top(\mathbf{I}-\mathbf{W})$ 의 작은 고유vector</strong> 문제가 된다는 유도('방법 비교' 표)</span>
+          <a class="ref__link" href="https://doi.org/10.1126/science.290.5500.2323">doi.org</a>
+        </li>
+        <li class="ref" id="ref-maaten2008-tsne" data-ref="maaten2008-tsne">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">van der Maaten, L. &amp; Hinton, G. (2008). <em>Visualizing Data using t-SNE</em>. Journal of Machine Learning Research, 9, 2579–2605.</span>
+          <span class="ref__where">§2 — SNE 의 조건부 확률 $p_{j|i}$ 와 perplexity 로 $\sigma_i$ 를 이진탐색해 정하는 절차(식 8, '기호표'). §3.2 — <strong>혼잡 문제(crowding problem)</strong> 를 정식화하고 <strong>저차원에 자유도 1 의 $t$-분포를 써서 해결</strong>하는 핵심 아이디어(위젯 4, 퀴즈 5). §4.2 — perplexity 5~50 권장과 <strong>PCA 로 먼저 30차원 정도로 줄이라</strong>는 조언. §5 — 결과가 seed 에 따라 달라진다는 한계(오해 4)</span>
+          <a class="ref__link" href="https://www.jmlr.org/papers/v9/vandermaaten08a.html">jmlr.org</a>
+        </li>
+        <li class="ref" id="ref-mcinnes2018-umap" data-ref="mcinnes2018-umap">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">McInnes, L., Healy, J. &amp; Melville, J. (2018). <em>UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction</em>. arXiv:1802.03426.</span>
+          <span class="ref__where">§2–3 — 퍼지 단체 집합으로 위상 구조를 세우는 이론적 뼈대. §3.2 — <strong>손실을 교차 엔트로피로 두어 인력뿐 아니라 척력까지 포함</strong>시킨 부분(식 9)이 t-SNE 와의 결정적 차이다. §4 — <code>n_neighbors</code> 와 <code>min_dist</code> 의 역할('t-SNE vs UMAP' 표). §5 — spectral 초기화와 음성 표본추출로 얻는 속도 이득</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1802.03426">arXiv:1802.03426</a>
+        </li>
+        <li class="ref" id="ref-bishop2006-prml" data-ref="bishop2006-prml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Bishop, C. M. (2006). <em>Pattern Recognition and Machine Learning</em>. Springer.</span>
+          <span class="ref__where">12.1.1절 — <strong>분산 최대화 관점</strong>의 PCA 를 Lagrange 승수로 유도(유도 1). 12.1.2절 — <strong>재구성 오차 최소화 관점</strong>과 그것이 같은 답임을 보이는 부분(유도 2). 12.1.4절 — $n&lt;d$ 일 때 $d\times d$ 대신 $n\times n$ 을 분해하는 요령(kernel PCA 로 이어진다). 12.2절 — 확률적 PCA 와 그 MLE. 12.4절 — 비선형 잠재변수 모형 개관</span>
+          <a class="ref__link" href="https://www.microsoft.com/en-us/research/publication/pattern-recognition-machine-learning/">microsoft.com</a>
+        </li>
+        <li class="ref" id="ref-sklearn-docs" data-ref="sklearn-docs">
+          <span class="ref__type" data-type="doc">문서</span>
+          <span class="ref__cite">scikit-learn developers. <em>User Guide — 2.5 Decomposing signals (PCA, ICA) · 2.2 Manifold learning</em>.</span>
+          <span class="ref__where">2.5.1절 — <code>PCA</code> 가 자동으로 중심화하지만 <strong>표준화는 하지 않는다</strong>는 점과 <code>whiten</code> 옵션(오해 1). 2.5.5절 — FastICA 예제(칵테일 파티 신호 분리). 2.2절 도입부 — <strong>여러 manifold 방법을 같은 data 에 적용한 비교 그림</strong>('방법 비교' 표). 2.2.9절 — <strong>t-SNE 는 시각화 전용이며 덩어리 크기와 간격을 해석하지 말라</strong>는 경고와 <strong>먼저 PCA 로 줄이라</strong>는 권고(오해 4·5)</span>
+          <a class="ref__link" href="https://scikit-learn.org/stable/modules/manifold.html">scikit-learn.org</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+function panel(p) {
+  p.add(VIZ.el('rect', {
+    x: p.pad.l, y: p.pad.t, width: p.iw, height: p.ih,
+    fill: 'var(--ink-3)', 'fill-opacity': 0.03, stroke: 'none'
+  }));
+  return p;
+}
+function mkRand(seed) {
+  var s = seed || 12345;
+  return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+}
+function gauss(rnd) {
+  var u = Math.max(1e-9, rnd()), v = rnd();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+function d2(a, b) { var dx = a[0] - b[0], dy = a[1] - b[1]; return dx * dx + dy * dy; }
+
+/* 2×2 대칭행렬의 고유분해 */
+function eig2(a, b, c) {          /* [[a,b],[b,c]] */
+  var tr = a + c, det = a * c - b * b;
+  var disc = Math.sqrt(Math.max(0, tr * tr / 4 - det));
+  var l1 = tr / 2 + disc, l2 = tr / 2 - disc;
+  var v1;
+  if (Math.abs(b) > 1e-12) v1 = [b, l1 - a];
+  else v1 = (a >= c) ? [1, 0] : [0, 1];
+  var n1 = Math.sqrt(v1[0] * v1[0] + v1[1] * v1[1]) || 1;
+  v1 = [v1[0] / n1, v1[1] / n1];
+  return { l1: l1, l2: l2, v1: v1, v2: [-v1[1], v1[0]] };
+}
+
+/* ============================================================
+   위젯 1 — swiss roll
+   ============================================================ */
+WIDGETS.register('swiss-roll', function (root, ctx) {
+  var turns = 2.2, view = 'roll', seed = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'a', label: '표시한 두 점의 직선 거리', digits: 4 },
+    { key: 'g', label: '면을 따라간 거리 (측지)', digits: 4 },
+    { key: 'r', label: '비율 (측지 / 직선)', digits: 3 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function draw() {
+    var rnd = mkRand(seed * 271 + 3), n = 140, ts = [], P = [];
+    for (var i = 0; i < n; i++) {
+      var t = 0.6 + turns * 2 * Math.PI * (i / (n - 1));
+      ts.push(t);
+      var r = 0.16 * t;
+      P.push([r * Math.cos(t) + 0.045 * gauss(rnd), r * Math.sin(t) + 0.045 * gauss(rnd)]);
+    }
+    /* 표시할 두 점: 반 바퀴 차이 나는 가까운 두 점 */
+    var ia = Math.floor(n * 0.42), ib = ia;
+    var bestGap = 1e18;
+    for (var k = 0; k < n; k++) {
+      if (Math.abs(ts[k] - ts[ia]) < Math.PI * 1.4) continue;
+      var d = d2(P[ia], P[k]);
+      if (d < bestGap) { bestGap = d; ib = k; }
+    }
+    var straight = Math.sqrt(bestGap);
+    /* 측지 = 이웃끼리 이은 경로 길이 */
+    var geo = 0, lo = Math.min(ia, ib), hi = Math.max(ia, ib);
+    for (var q = lo; q < hi; q++) geo += Math.sqrt(d2(P[q], P[q + 1]));
+
+    var lim = 0.16 * (0.6 + turns * 2 * Math.PI) * 1.15;
+    var p;
+    if (view === 'roll') {
+      p = VIZ.plot({ w: 460, h: 300, xmin: -lim, xmax: lim, ymin: -lim * 0.82, ymax: lim * 0.82,
+        pad: { t: 30, r: 16, b: 30, l: 44 } });
+      ctx.stage.innerHTML = '';
+      ctx.stage.appendChild(p.svg);
+      panel(p).grid(lim / 2, lim / 2).axes('x₁', '').ticks(lim / 2, lim / 2);
+      p.text(-lim, lim * 0.82, 'x₂ · 말린 면 · 색 = 면 위에서의 위치 · 점선 = 직선 거리',
+        { size: 10, dy: -10 });
+      for (var j = 0; j < n - 1; j++) p.line([P[j], P[j + 1]], { width: 1.2 });
+      for (var m = 0; m < n; m++) {
+        var frac = m / (n - 1);
+        p.add(VIZ.el('circle', { cx: p.X(P[m][0]), cy: p.Y(P[m][1]), r: 2.8,
+          fill: frac < 0.5 ? 'var(--jade)' : 'var(--seal)',
+          'fill-opacity': 0.35 + 0.6 * Math.abs(frac - 0.5) * 2 }));
+      }
+      p.line([P[ia], P[ib]], { dash: '4 3', width: 2 });
+      p.dot(P[ia][0], P[ia][1], 6);
+      p.dot(P[ib][0], P[ib][1], 6);
+    } else {
+      /* 펼친 좌표: (면 위 누적 길이, 0) 을 세로로 흩뿌려 보이게 */
+      var cum = [0];
+      for (var z = 1; z < n; z++) cum.push(cum[z - 1] + Math.sqrt(d2(P[z - 1], P[z])));
+      var mx = cum[n - 1];
+      p = VIZ.plot({ w: 460, h: 300, xmin: 0, xmax: mx * 1.02, ymin: -1, ymax: 1,
+        pad: { t: 30, r: 16, b: 30, l: 44 } });
+      ctx.stage.innerHTML = '';
+      ctx.stage.appendChild(p.svg);
+      panel(p).grid(mx / 4, 0.5).axes('면을 따라간 위치 (측지 좌표)', '').ticks(mx / 4, 0.5);
+      p.text(0, 1, '펼친 뒤 · 색이 순서대로 늘어선다 = 성공적으로 펼쳤다', { size: 10, dy: -10 });
+      for (var m2 = 0; m2 < n; m2++) {
+        var f2 = m2 / (n - 1);
+        p.add(VIZ.el('circle', { cx: p.X(cum[m2]), cy: p.Y(0.35 * gauss(mkRand(m2 * 17 + 3))), r: 2.8,
+          fill: f2 < 0.5 ? 'var(--jade)' : 'var(--seal)',
+          'fill-opacity': 0.35 + 0.6 * Math.abs(f2 - 0.5) * 2 }));
+      }
+      p.dot(cum[ia], 0, 6);
+      p.dot(cum[ib], 0, 6);
+      p.line([[cum[Math.min(ia, ib)], -0.75], [cum[Math.max(ia, ib)], -0.75]], { width: 2.6 });
+      p.callout((cum[ia] + cum[ib]) / 2, -0.75, '실제로는 이만큼 멀다',
+        { dx: 0, dy: -22, tone: 'var(--seal)' });
+    }
+
+    out.set('a', straight);
+    out.set('g', geo);
+    out.set('r', geo / Math.max(1e-9, straight));
+    out.setRaw('note', geo / straight > 3
+      ? '측지가 직선의 3배 이상 — PCA 는 이 구조를 절대 못 본다'
+      : '아직 덜 말렸다 — turns 를 키워 보라');
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '보기',
+    options: [{ value: 'roll', label: '말린 상태' }, { value: 'flat', label: '펼친 뒤' }],
+    value: 'roll', onChange: function (v) { view = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '감은 바퀴 수', min: 1, max: 3.5, step: 0.1, value: 2.2, digits: 1,
+    onInput: function (v) { turns = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — PCA vs ICA
+   ============================================================ */
+WIDGETS.register('pca-vs-ica', function (root, ctx) {
+  var dist = 'uniform', ang = 35, seed = 5;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'p1', label: 'PCA 첫 축' },
+    { key: 'i1', label: 'ICA 첫 축 (첨도 최대 방향)' },
+    { key: 'kur', label: '그 방향의 첨도 (정규분포 = 0)', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function draw() {
+    var rnd = mkRand(seed * 419 + 7), n = 260, S = [], i;
+    for (i = 0; i < n; i++) {
+      var s1, s2;
+      if (dist === 'uniform') { s1 = 2 * (rnd() - 0.5) * 1.7; s2 = 2 * (rnd() - 0.5) * 1.7; }
+      else { s1 = gauss(rnd); s2 = gauss(rnd); }
+      S.push([s1, s2]);
+    }
+    var th = ang * Math.PI / 180;
+    var A = [[Math.cos(th), -0.55 * Math.sin(th)], [Math.sin(th), 0.55 * Math.cos(th)]];
+    var X = S.map(function (s) {
+      return [A[0][0] * s[0] + A[0][1] * s[1], A[1][0] * s[0] + A[1][1] * s[1]];
+    });
+    var mx = 0, my = 0;
+    for (i = 0; i < n; i++) { mx += X[i][0] / n; my += X[i][1] / n; }
+    var sxx = 0, syy = 0, sxy = 0;
+    for (i = 0; i < n; i++) {
+      sxx += (X[i][0] - mx) * (X[i][0] - mx) / n;
+      syy += (X[i][1] - my) * (X[i][1] - my) / n;
+      sxy += (X[i][0] - mx) * (X[i][1] - my) / n;
+    }
+    var E = eig2(sxx, sxy, syy);
+
+    /* ICA 근사: 백색화 후 |첨도| 가 최대인 방향을 격자 탐색 */
+    var ex = E.v1, ey = E.v2;
+    function whiten(pt) {
+      var a = (pt[0] - mx) * ex[0] + (pt[1] - my) * ex[1];
+      var b = (pt[0] - mx) * ey[0] + (pt[1] - my) * ey[1];
+      return [a / Math.sqrt(Math.max(1e-9, E.l1)), b / Math.sqrt(Math.max(1e-9, E.l2))];
+    }
+    var Z = X.map(whiten);
+    var bestA = 0, bestK = -1e18, kurAt = 0;
+    for (var deg = 0; deg < 180; deg += 1) {
+      var t2 = deg * Math.PI / 180, m4 = 0;
+      for (i = 0; i < n; i++) {
+        var u = Z[i][0] * Math.cos(t2) + Z[i][1] * Math.sin(t2);
+        m4 += u * u * u * u / n;
+      }
+      var kur = m4 - 3;
+      if (Math.abs(kur) > bestK) { bestK = Math.abs(kur); bestA = t2; kurAt = kur; }
+    }
+    /* 백색화 공간의 방향을 원래 공간으로 되돌린다 */
+    var wa = [Math.cos(bestA) * Math.sqrt(E.l1), Math.sin(bestA) * Math.sqrt(E.l2)];
+    var icaDir = [ex[0] * wa[0] + ey[0] * wa[1], ex[1] * wa[0] + ey[1] * wa[1]];
+    var nn = Math.sqrt(icaDir[0] * icaDir[0] + icaDir[1] * icaDir[1]) || 1;
+    icaDir = [icaDir[0] / nn, icaDir[1] / nn];
+
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -3.2, xmax: 3.2, ymin: -2.6, ymax: 2.6,
+      pad: { t: 30, r: 16, b: 30, l: 42 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x₁', '').ticks(1, 1);
+    p.text(-3.2, 2.6, 'x₂ · 굵은 실선 = PCA 축 · 점선 = ICA 축', { size: 10, dy: -10 });
+
+    for (i = 0; i < n; i++) p.add(VIZ.el('circle', {
+      cx: p.X(Math.max(-3.15, Math.min(3.15, X[i][0]))),
+      cy: p.Y(Math.max(-2.55, Math.min(2.55, X[i][1]))), r: 2.4,
+      fill: 'var(--ink-2)', 'fill-opacity': 0.55 }));
+
+    var L = 2.6;
+    p.line([[mx - E.v1[0] * L, my - E.v1[1] * L], [mx + E.v1[0] * L, my + E.v1[1] * L]],
+      { width: 2.8 });
+    p.line([[mx - E.v2[0] * L * 0.6, my - E.v2[1] * L * 0.6],
+            [mx + E.v2[0] * L * 0.6, my + E.v2[1] * L * 0.6]], { width: 1.6 });
+    p.line([[mx - icaDir[0] * L, my - icaDir[1] * L], [mx + icaDir[0] * L, my + icaDir[1] * L]],
+      { dash: '5 4', width: 2.4 });
+
+    out.setRaw('p1', '(' + E.v1[0].toFixed(3) + ', ' + E.v1[1].toFixed(3) + ')');
+    out.setRaw('i1', '(' + icaDir[0].toFixed(3) + ', ' + icaDir[1].toFixed(3) + ')');
+    out.set('kur', kurAt);
+    out.setRaw('note', dist === 'gauss'
+      ? '정규분포 — ICA 축이 무의미하게 흔들린다 (회전이 결정되지 않는다)'
+      : '균등분포 — ICA 가 평행사변형의 변을 찾아낸다');
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '원천 분포',
+    options: [{ value: 'uniform', label: '균등 (비정규)' }, { value: 'gauss', label: '정규' }],
+    value: 'uniform', onChange: function (v) { dist = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '혼합 각도 (도)', min: 0, max: 80, step: 1, value: 35, digits: 0,
+    onInput: function (v) { ang = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 5, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — t-SNE
+   ============================================================ */
+WIDGETS.register('tsne-lab', function (root, ctx) {
+  var perp = 15, seed = 4, steps = 240;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'p', label: 'perplexity' },
+    { key: 'sep', label: '덩어리 사이 평균 거리', digits: 3 },
+    { key: 'size', label: '덩어리 내부 평균 퍼짐', digits: 3 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  var X = null, lab = null;
+  function makeData() {
+    var rnd = mkRand(seed * 331 + 5);
+    X = []; lab = [];
+    /* 퍼짐이 서로 다른 세 덩어리 — 그림에서 크기가 왜곡되는 것을 보이기 위해 */
+    var cs = [{ c: [-2.4, 0.4], s: 0.22 }, { c: [2.2, 0.9], s: 0.75 }, { c: [0.2, -2.3], s: 0.45 }];
+    for (var i = 0; i < 66; i++) {
+      var g = cs[i % 3];
+      X.push([g.c[0] + g.s * gauss(rnd), g.c[1] + g.s * gauss(rnd)]);
+      lab.push(i % 3);
+    }
+  }
+
+  function run() {
+    var n = X.length, i, j;
+    /* P: perplexity 로 σ_i 를 이진탐색 */
+    var P = [];
+    for (i = 0; i < n; i++) P.push(new Array(n).fill(0));
+    for (i = 0; i < n; i++) {
+      var lo = 1e-4, hi = 50, sig = 1;
+      for (var it = 0; it < 40; it++) {
+        sig = (lo + hi) / 2;
+        var s = 0, H = 0, row = [];
+        for (j = 0; j < n; j++) {
+          var v = i === j ? 0 : Math.exp(-d2(X[i], X[j]) / (2 * sig * sig));
+          row.push(v); s += v;
+        }
+        s = Math.max(s, 1e-300);
+        for (j = 0; j < n; j++) { row[j] /= s; if (row[j] > 1e-12) H -= row[j] * Math.log(row[j]); }
+        var pp = Math.exp(H);
+        if (pp > perp) hi = sig; else lo = sig;
+        if (it === 39) for (j = 0; j < n; j++) P[i][j] = row[j];
+      }
+    }
+    /* 대칭화 */
+    var Ps = [];
+    for (i = 0; i < n; i++) Ps.push(new Array(n).fill(0));
+    for (i = 0; i < n; i++) for (j = 0; j < n; j++) Ps[i][j] = (P[i][j] + P[j][i]) / (2 * n);
+
+    /* Y 초기화 + 경사하강 */
+    var rnd2 = mkRand(seed * 77 + 13), Y = [];
+    for (i = 0; i < n; i++) Y.push([0.0004 * gauss(rnd2), 0.0004 * gauss(rnd2)]);
+    var mom = [];
+    for (i = 0; i < n; i++) mom.push([0, 0]);
+    for (var t = 0; t < steps; t++) {
+      var ex = t < 60 ? 4 : 1;                      /* early exaggeration */
+      var Q = [], Znorm = 0, num = [];
+      for (i = 0; i < n; i++) num.push(new Array(n).fill(0));
+      for (i = 0; i < n; i++) for (j = i + 1; j < n; j++) {
+        var v2 = 1 / (1 + d2(Y[i], Y[j]));
+        num[i][j] = v2; num[j][i] = v2; Znorm += 2 * v2;
+      }
+      Znorm = Math.max(Znorm, 1e-12);
+      var lr = 60;
+      for (i = 0; i < n; i++) {
+        var gx = 0, gy = 0;
+        for (j = 0; j < n; j++) {
+          if (i === j) continue;
+          var q = num[i][j] / Znorm;
+          var mul = (ex * Ps[i][j] - q) * num[i][j];
+          gx += mul * (Y[i][0] - Y[j][0]);
+          gy += mul * (Y[i][1] - Y[j][1]);
+        }
+        mom[i][0] = 0.6 * mom[i][0] + lr * 4 * gx;
+        mom[i][1] = 0.6 * mom[i][1] + lr * 4 * gy;
+        /* 발산 방지 — 한 걸음의 크기에 상한을 둔다 */
+        var mg = Math.sqrt(mom[i][0] * mom[i][0] + mom[i][1] * mom[i][1]);
+        if (mg > 0.4) { mom[i][0] *= 0.4 / mg; mom[i][1] *= 0.4 / mg; }
+        Y[i][0] += mom[i][0];
+        Y[i][1] += mom[i][1];
+      }
+      /* 중심화 */
+      var cx = 0, cy = 0;
+      for (i = 0; i < n; i++) { cx += Y[i][0] / n; cy += Y[i][1] / n; }
+      for (i = 0; i < n; i++) { Y[i][0] -= cx; Y[i][1] -= cy; }
+    }
+    /* 축에는 단위가 없으므로 최대 반경 1 로 정규화한다 (비율은 그대로) */
+    var mx = 1e-9;
+    for (i = 0; i < n; i++) mx = Math.max(mx, Math.abs(Y[i][0]), Math.abs(Y[i][1]));
+    for (i = 0; i < n; i++) { Y[i][0] /= mx; Y[i][1] /= mx; }
+    return Y;
+  }
+
+  function draw() {
+    if (!X) makeData();
+    var Y = run(), n = X.length, i;
+    var lim = 0;
+    for (i = 0; i < n; i++) lim = Math.max(lim, Math.abs(Y[i][0]), Math.abs(Y[i][1]));
+    lim = Math.max(lim * 1.15, 1e-3);
+
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -lim, xmax: lim, ymin: -lim * 0.82, ymax: lim * 0.82,
+      pad: { t: 30, r: 16, b: 30, l: 50 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(lim / 2, lim / 2).axes('t-SNE 1', '').ticks(lim / 2, lim / 2);
+    p.text(-lim, lim * 0.82, 't-SNE 2 · 축에는 단위가 없다 · 색 = 참 무리 (원래 퍼짐이 서로 다르다)',
+      { size: 10, dy: -10 });
+
+    var CLS = ['var(--jade)', 'var(--seal)', 'var(--amber)'];
+    for (i = 0; i < n; i++) p.add(VIZ.el('circle', {
+      cx: p.X(Y[i][0]), cy: p.Y(Y[i][1]), r: 3.4,
+      fill: CLS[lab[i]], 'fill-opacity': 0.88 }));
+
+    /* 덩어리 통계 */
+    var cent = [[0, 0], [0, 0], [0, 0]], cnt = [0, 0, 0];
+    for (i = 0; i < n; i++) { cent[lab[i]][0] += Y[i][0]; cent[lab[i]][1] += Y[i][1]; cnt[lab[i]]++; }
+    for (i = 0; i < 3; i++) { cent[i][0] /= cnt[i]; cent[i][1] /= cnt[i]; }
+    var spread = 0;
+    for (i = 0; i < n; i++) spread += Math.sqrt(d2(Y[i], cent[lab[i]])) / n;
+    var sep = (Math.sqrt(d2(cent[0], cent[1])) + Math.sqrt(d2(cent[0], cent[2]))
+             + Math.sqrt(d2(cent[1], cent[2]))) / 3;
+
+    out.setRaw('p', String(perp));
+    out.set('sep', sep);
+    out.set('size', spread);
+    out.setRaw('note', perp < 8 ? 'perplexity 가 작다 — 잘게 쪼개진 조각이 생긴다'
+      : (perp > 30 ? 'perplexity 가 크다 — 덩어리가 뭉개진다'
+      : '원래 퍼짐이 3배 이상 다른데 그림에서는 비슷해 보인다 — 크기를 읽으면 안 된다'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'perplexity', min: 3, max: 40, step: 1, value: 15, digits: 0,
+    onInput: function (v) { perp = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 12, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; X = null; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — crowding
+   ============================================================ */
+WIDGETS.register('crowding', function (root, ctx) {
+  var qv = 0.05;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'g', label: '가우시안이 이 값을 내는 거리', digits: 4 },
+    { key: 't', label: 't-분포가 같은 값을 내는 거리', digits: 4 },
+    { key: 'r', label: '몇 배 멀리 놓을 수 있나', digits: 3 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function draw() {
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 0, xmax: 6, ymin: 0, ymax: 1.08,
+      pad: { t: 30, r: 16, b: 34, l: 48 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 0.25).axes('저차원에서의 거리 d', '').ticks(1, 0.25);
+    p.text(0, 1.08, '정규화하지 않은 유사도 · 실선 = t-분포 1/(1+d²) · 점선 = 가우시안 e^(−d²/2)',
+      { size: 10, dy: -10 });
+
+    p.curve(function (d) { return 1 / (1 + d * d); }, { samples: 300, width: 2.6 });
+    p.curve(function (d) { return Math.exp(-d * d / 2); }, { samples: 300, alt: true, dash: '5 4' });
+
+    var dg = Math.sqrt(Math.max(0, -2 * Math.log(Math.min(0.999, qv))));
+    var dt = Math.sqrt(Math.max(0, 1 / qv - 1));
+    p.line([[0, qv], [6, qv]], { dash: '2 3' });
+    if (dg <= 6) p.dot(dg, qv, 5);
+    if (dt <= 6) p.dot(dt, qv, 5.5);
+    p.text(0.15, 0.92, '가우시안이 이 값을 내는 거리 ' + dg.toFixed(2)
+      + '   ·   t-분포는 ' + (dt <= 6 ? dt.toFixed(2) : '6 이상'), { size: 10 });
+
+    out.set('g', dg);
+    out.set('t', dt);
+    out.set('r', dt / Math.max(1e-9, dg));
+    out.setRaw('note', dt / dg > 2
+      ? '같은 유사도를 ' + (dt / dg).toFixed(1) + '배 먼 거리에서 낸다 — 그만큼 밀어낼 공간이 생긴다'
+      : '유사도가 클 때는 두 분포가 비슷하다 (가까운 이웃은 똑같이 다룬다)');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '목표 유사도 값', min: 0.01, max: 0.9, step: 0.01, value: 0.05, digits: 2,
+    onInput: function (v) { qv = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — scree
+   ============================================================ */
+WIDGETS.register('pca-scree', function (root, ctx) {
+  var sig = 3, noise = 0.35, keep = 3, seed = 6;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'k', label: '남긴 성분 수' },
+    { key: 'cum', label: '누적 설명 분산', digits: 4 },
+    { key: 'err', label: '재구성 오차 (버린 고유값의 합)', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function draw() {
+    /* 신호 sig 개 + 잡음으로 이루어진 고유값 스펙트럼을 직접 만든다 */
+    var d = 12, ev = [], i;
+    var rnd = mkRand(seed * 191 + 3);
+    for (i = 0; i < d; i++) {
+      if (i < sig) ev.push(6 - 1.4 * i + 0.25 * rnd());
+      else ev.push(noise * (0.6 + 0.8 * rnd()));
+    }
+    ev.sort(function (a, b) { return b - a; });
+    var tot = 0;
+    for (i = 0; i < d; i++) tot += ev[i];
+    var cum = [], s = 0;
+    for (i = 0; i < d; i++) { s += ev[i]; cum.push(s / tot); }
+
+    var p1 = VIZ.plot({ w: 460, h: 160, xmin: 0.5, xmax: d + 0.5, ymin: 0,
+      ymax: Math.max.apply(null, ev) * 1.15, pad: { t: 26, r: 16, b: 24, l: 46 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p1.svg);
+    panel(p1).grid(2, 1.5).axes('성분 번호', '').ticks(2, 1.5);
+    p1.text(0.5, Math.max.apply(null, ev) * 1.15, '고유값 (scree plot) · 꺾이는 곳이 신호/잡음 경계',
+      { size: 10, dy: -8 });
+    for (i = 0; i < d; i++) {
+      p1.add(VIZ.el('rect', {
+        x: p1.X(i + 0.68), y: p1.Y(ev[i]),
+        width: Math.max(2, p1.X(i + 1.32) - p1.X(i + 0.68)),
+        height: Math.max(1, p1.Y(0) - p1.Y(ev[i])), rx: 2,
+        fill: i < keep ? 'var(--jade)' : 'var(--ink-3)',
+        'fill-opacity': i < keep ? 0.55 : 0.28
+      }));
+    }
+
+    var p2 = VIZ.plot({ w: 460, h: 150, xmin: 0.5, xmax: d + 0.5, ymin: 0, ymax: 1.08,
+      pad: { t: 26, r: 16, b: 26, l: 46 } });
+    ctx.stage.appendChild(p2.svg);
+    panel(p2).grid(2, 0.25).axes('남긴 성분 수', '').ticks(2, 0.25);
+    p2.text(0.5, 1.08, '누적 설명 분산 · 가로 점선 = 0.9', { size: 10, dy: -8 });
+    var pts = [];
+    for (i = 0; i < d; i++) pts.push([i + 1, cum[i]]);
+    p2.line(pts, { width: 2.4 });
+    p2.line([[0.5, 0.9], [d + 0.5, 0.9]], { dash: '4 3', width: 1.6 });
+    p2.dot(keep, cum[keep - 1], 5);
+
+    var err = tot - ev.slice(0, keep).reduce(function (a, b) { return a + b; }, 0);
+    out.setRaw('k', keep + ' / ' + d);
+    out.set('cum', cum[keep - 1]);
+    out.set('err', err);
+    out.setRaw('note', keep < sig ? '신호 성분을 버리고 있다'
+      : (keep === sig ? '정확히 신호만 남겼다' : '잡음 성분까지 남기고 있다'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '참 신호 성분 수', min: 1, max: 6, step: 1, value: 3, digits: 0,
+    onInput: function (v) { sig = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '잡음 크기', min: 0.05, max: 2, step: 0.05, value: 0.35, digits: 2,
+    onInput: function (v) { noise = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '남길 성분 수', min: 1, max: 12, step: 1, value: 3, digits: 0,
+    onInput: function (v) { keep = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 6, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 6 — Isomap 의 k
+   ============================================================ */
+WIDGETS.register('isomap-k', function (root, ctx) {
+  var kk = 3, turns = 2.0, seed = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'k', label: 'k (이웃 수)' },
+    { key: 'sc', label: '지름길 간선 수 (다른 층을 잇는 것)' },
+    { key: 'conn', label: '그래프가 하나로 이어졌는가' },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function draw() {
+    var rnd = mkRand(seed * 233 + 5), n = 90, P = [], ts = [], i, j;
+    for (i = 0; i < n; i++) {
+      var t = 0.7 + turns * 2 * Math.PI * (i / (n - 1));
+      ts.push(t);
+      var r = 0.17 * t;
+      P.push([r * Math.cos(t) + 0.05 * gauss(rnd), r * Math.sin(t) + 0.05 * gauss(rnd)]);
+    }
+    /* k-NN 간선 */
+    var edges = [], deg = new Array(n).fill(0), shortcut = 0;
+    for (i = 0; i < n; i++) {
+      var ds = [];
+      for (j = 0; j < n; j++) if (j !== i) ds.push({ j: j, d: d2(P[i], P[j]) });
+      ds.sort(function (a, b) { return a.d - b.d; });
+      for (var q = 0; q < Math.min(kk, ds.length); q++) {
+        var jj = ds[q].j;
+        if (jj < i) continue;
+        edges.push([i, jj]);
+        deg[i]++; deg[jj]++;
+        if (Math.abs(ts[i] - ts[jj]) > Math.PI) shortcut++;
+      }
+    }
+    /* 연결성 (union-find) */
+    var par = [];
+    for (i = 0; i < n; i++) par.push(i);
+    function find(a) { while (par[a] !== a) { par[a] = par[par[a]]; a = par[a]; } return a; }
+    for (i = 0; i < edges.length; i++) {
+      var ra = find(edges[i][0]), rb = find(edges[i][1]);
+      if (ra !== rb) par[ra] = rb;
+    }
+    var comps = {};
+    for (i = 0; i < n; i++) comps[find(i)] = 1;
+    var ncomp = Object.keys(comps).length;
+
+    var lim = 0.17 * (0.7 + turns * 2 * Math.PI) * 1.15;
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -lim, xmax: lim, ymin: -lim * 0.82, ymax: lim * 0.82,
+      pad: { t: 30, r: 16, b: 30, l: 44 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(lim / 2, lim / 2).axes('x₁', '').ticks(lim / 2, lim / 2);
+    p.text(-lim, lim * 0.82, 'x₂ · 선 = k-NN 간선 · 굵은 선 = 다른 층을 잇는 지름길',
+      { size: 10, dy: -10 });
+
+    for (i = 0; i < edges.length; i++) {
+      var a = edges[i][0], b = edges[i][1];
+      var isSc = Math.abs(ts[a] - ts[b]) > Math.PI;
+      p.line([P[a], P[b]], { width: isSc ? 2.6 : 0.9, dash: isSc ? null : '2 2' });
+    }
+    for (i = 0; i < n; i++) {
+      var f = i / (n - 1);
+      p.add(VIZ.el('circle', { cx: p.X(P[i][0]), cy: p.Y(P[i][1]), r: 2.8,
+        fill: f < 0.5 ? 'var(--jade)' : 'var(--seal)', 'fill-opacity': 0.85 }));
+    }
+
+    out.setRaw('k', String(kk));
+    out.setRaw('sc', String(shortcut));
+    out.setRaw('conn', ncomp === 1 ? '예 (성분 1개)' : '아니다 — 성분 ' + ncomp + '개, 거리가 무한이 된다');
+    out.setRaw('note', shortcut > 0 ? '지름길이 생겼다 — 측지 거리가 무너져 Isomap 이 실패한다'
+      : (ncomp > 1 ? 'k 가 작아 그래프가 끊겼다 — k 를 키워야 한다' : '적당하다 — 층을 따라서만 이어졌다'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'k (이웃 수)', min: 1, max: 12, step: 1, value: 3, digits: 0,
+    onInput: function (v) { kk = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '감은 바퀴 수', min: 1, max: 3, step: 0.1, value: 2, digits: 1,
+    onInput: function (v) { turns = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

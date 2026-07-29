@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5.7 앙상블 — AI 이론 학습</title>
+<meta name="description" content="여러 model을 합치는 두 갈래. bagging은 서로 다르게 만들어 평균 내 분산을 줄이고, boosting은 앞의 실수를 이어받아 순차적으로 편향을 줄인다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="5.7">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">5.7</span>
+        <span>5장 · 전통적 머신러닝</span>
+      </div>
+      <h1>앙상블</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 80분</span>
+        <span><b>난이도</b>★★★☆☆</span>
+        <span><b>선수지식</b>
+          <a href="5.6-decision-trees.html">5.6 결정트리</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-vote">Voting</a>
+      <a class="chip" href="#c-bag">Bagging</a>
+      <a class="chip" href="#c-rf">Random Forest</a>
+      <a class="chip" href="#c-et">Extra Trees</a>
+      <a class="chip" href="#c-boost">Boosting</a>
+      <a class="chip" href="#c-ada">AdaBoost</a>
+      <a class="chip" href="#c-gbm">Gradient Boosting</a>
+      <a class="chip" href="#c-xgb">XGBoost</a>
+      <a class="chip" href="#c-lgbm">LightGBM</a>
+      <a class="chip" href="#c-cat">CatBoost</a>
+      <a class="chip" href="#c-stack">Stacking</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        여러 model 을 합치는 길은 두 갈래다.
+        <strong>bagging</strong> 은 서로 다르게 만들어 <strong>평균 내 분산을 줄이고</strong>(병렬),
+        <strong>boosting</strong> 은 앞의 실수를 이어받아 <strong>순차적으로 편향을 줄인다</strong>.
+        전자의 열쇠는 <strong>구성원 사이의 상관 $\rho$</strong>, 후자의 열쇠는 <strong>학습률과 트리 수</strong>다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>$\mathrm{Var}=\rho\sigma^2+\frac{1-\rho}{M}\sigma^2$ 를 유도하고, random forest 가 무엇을 건드리는지 설명할 수 있다.</li>
+        <li>AdaBoost 의 $\alpha_t$ 를 유도하고 가중치 갱신을 손으로 한 라운드 계산할 수 있다.</li>
+        <li>gradient boosting 이 "잔차에 트리를 맞추는 경사하강"임을 설명하고 XGBoost·LightGBM·CatBoost 의 차이를 말할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        <a href="5.6-decision-trees.html">5.6</a>에서 트리의 가장 큰 약점이 <strong>불안정성</strong>이었다 —
+        표본을 조금만 바꿔도 트리가 통째로 달라진다.
+        <a href="5.2-statistical-learning-theory.html">5.2</a>의 언어로는 <strong>분산이 크다</strong>는 뜻이고,
+        예제 ①에서 봤듯 <strong>분산이 큰 추정량은 평균 내면 좋아진다</strong>.
+      </p>
+      <p>
+        그런데 같은 data 로 같은 알고리즘을 돌리면 <strong>똑같은 트리</strong>가 나온다 — 평균 낼 것이 없다.
+        그래서 <strong>일부러 다르게 만든다</strong>. 표본을 다시 뽑거나(bagging),
+        feature 를 무작위로 골라 보게 하거나(random forest), 분할점까지 무작위로 두거나(extra trees).
+        <strong>다양성이 곧 자산</strong>이 되는 것이다.
+      </p>
+      <p>
+        전혀 다른 길도 있다. 하나를 만들고 <strong>그것이 틀린 곳을 다음 model 이 집중적으로 보게</strong> 하는 것 —
+        boosting 이다. 여기서는 구성원들이 <strong>독립적이지 않고 앞사람에게 의존</strong>하며,
+        약한 학습기를 순차적으로 쌓아 <strong>편향을 깎아 나간다</strong>.
+      </p>
+
+      <figure class="widget" data-widget="bag-vs-boost">
+        <figcaption class="widget__bar">Bagging vs Boosting — 나란히 vs 이어받아</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">bagging 은 <strong>순서를 바꿔도 결과가 같고</strong>, boosting 은 <strong>앞의 결과가 뒤를 바꿉니다</strong>.</p>
+        </div>
+      </figure>
+
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>어려운 문제를 여럿이 푼다고 합시다. <strong>bagging</strong> 은 각자 <strong>따로 풀게 하고 답을 모아 다수결</strong>합니다 — 서로 다른 실수를 하면 그 실수들이 상쇄됩니다. 다만 <strong>다들 똑같이 생각하면</strong> 백 명을 모아도 한 명과 다를 게 없습니다.</p>
+        <p><strong>boosting</strong> 은 이어달리기입니다. 첫 사람이 푼 뒤 <strong>틀린 문제에 표시</strong>를 해서 넘기고, 다음 사람은 <strong>거기에 집중</strong>합니다. 각자는 서툴러도 <strong>앞사람의 실수를 계속 메워</strong> 전체가 좋아집니다. 대신 <strong>순서를 바꾸면 결과가 달라지고</strong>, 표시가 잘못된 문제(잘못 매겨진 label)에 매달리면 오히려 나빠집니다.</p>
+      </div>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          <strong>bagging 은 분산을, boosting 은 편향을 겨냥한다.</strong>
+          그래서 bagging 의 구성원은 <strong>깊고 강한</strong> model(완전히 자란 트리)이 좋고,
+          boosting 의 구성원은 <strong>얕고 약한</strong> model(깊이 3~6 정도)이 좋다.
+          이 대비를 기억하면 hyperparameter 를 어느 방향으로 돌려야 할지가 바로 나온다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-vote"></span>
+      <h3>Voting 투표</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \hat{y}_{\text{hard}}=\arg\max_c\sum_{m=1}^{M}\mathbb{1}[h_m(\mathbf{x})=c], \qquad \hat{y}_{\text{soft}}=\arg\max_c\frac1M\sum_{m=1}^{M}\hat{p}_m(c\mid\mathbf{x}) $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">hard voting 은 <strong>예측 class 를 세고</strong>, soft voting 은 <strong>확률을 평균</strong>한다 —
+        확률이 잘 보정되어 있다면 soft 쪽이 대개 낫다(확신의 정도까지 반영하므로).</span>
+      </p>
+      <p>
+        왜 이것이 통하는가는 <strong>Condorcet 배심원 정리</strong>가 설명한다.
+        정확도 $p>0.5$ 인 분류기 $M$개가 <strong>독립적으로</strong> 틀린다면, 다수결의 정확도는
+        $M$ 이 커질수록 <strong>1 로 수렴</strong>한다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ P(\text{다수결이 맞음})=\sum_{j>M/2}\binom{M}{j}p^j(1-p)^{M-j} \ \xrightarrow{M\to\infty}\ 1 \quad (p>0.5) $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        전제 두 가지가 결정적이다 — <strong>각자가 무작위보다 낫고($p>0.5$)</strong>,
+        <strong>실수가 서로 독립</strong>이어야 한다.
+        $p<0.5$ 이면 다수결이 오히려 <strong>더 빨리 나빠지고</strong>,
+        전부 같은 실수를 하면 <strong>아무 이득이 없다</strong>(오해 1).
+        앙상블 설계의 전부가 이 두 조건을 만드는 일이다.
+      </p>
+
+      <span class="anchor" id="c-bag"></span>
+      <h3>Bagging (Bootstrap Aggregating)</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \hat{h}_{\text{bag}}(\mathbf{x})=\frac1M\sum_{m=1}^{M}h_m(\mathbf{x}), \qquad h_m \text{ 은 } S \text{ 에서 복원추출한 } S_m \text{ 으로 학습} $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl">bagging 은 <strong>bootstrap(복원추출) + aggregating(평균)</strong> 이며,
+        서로 다른 표본으로 학습해 만든 다양성으로 <strong>분산을 줄인다</strong> — 편향은 거의 그대로다<a class="cite" href="#ref-breiman1996-bagging" data-ref="breiman1996-bagging">1</a>.</span>
+      </p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathrm{Var}\Bigl(\frac1M\sum_m h_m\Bigr)=\rho\,\sigma^2+\frac{1-\rho}{M}\,\sigma^2 \ \xrightarrow{M\to\infty}\ \rho\,\sigma^2 $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        식 (4)가 이 절 전체의 열쇠다.
+        <strong>$M$ 을 아무리 키워도 $\rho\sigma^2$ 아래로는 못 내려간다</strong> —
+        구성원들이 서로 닮아 있으면($\rho$ 가 크면) 몇 개를 모으든 소용없다.
+        <span class="hl">그래서 <strong>"더 많이"보다 "더 다르게"가 중요하다</strong>는 결론이 나오고,
+        random forest 가 정확히 그 지점을 공략한다.</span>
+      </p>
+      <p>
+        bagging 에는 공짜 검증 장치도 딸려 온다. 복원추출을 하면
+        각 표본이 어떤 bootstrap 에서 <strong>빠질 확률이 약 36.8%</strong> 이므로(유도 2),
+        그 표본을 못 본 model 들만 모아 예측하면 <strong>hold-out 없이 일반화 성능을 추정</strong>할 수 있다 —
+        <strong>out-of-bag(OOB) 오차</strong>다.
+      </p>
+
+      <span class="anchor" id="c-rf"></span>
+      <h3>Random Forest</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \text{bagging} \ + \ \text{각 분할마다 } m_{\text{try}}\ (&lt;d) \text{ 개의 feature 만 무작위로 후보에 올린다} $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        <span class="hl">random forest 는 bagging 에 <strong>feature 무작위 선택</strong>을 더해
+        식 (4)의 <strong>$\rho$ 를 직접 낮춘다</strong> — 강한 feature 하나가 모든 트리의 뿌리를 차지하는 것을 막기 때문이다<a class="cite" href="#ref-breiman2001-random-forests" data-ref="breiman2001-random-forests">2</a>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$m_{\text{try}}$</th><th>$\rho$</th><th>개별 트리</th><th>결과</th></tr></thead>
+          <tbody>
+            <tr><td>$d$ (전부)</td><td>높다</td><td>강하다</td><td>= 그냥 bagging</td></tr>
+            <tr><td>$\sqrt{d}$ (분류 기본값)</td><td>낮다</td><td>조금 약해진다</td><td><strong>대개 최적</strong></td></tr>
+            <tr><td>$d/3$ (회귀 기본값)</td><td>낮다</td><td>조금 약해진다</td><td>회귀에서 무난</td></tr>
+            <tr><td>1</td><td>가장 낮다</td><td><strong>매우 약하다</strong></td><td>$\sigma^2$ 가 커져 손해</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>$m_{\text{try}}$ 를 줄이면 $\rho$ 도 줄지만 개별 트리의 $\sigma^2$ 는 커진다</strong> —
+        식 (4)의 두 항을 반대로 움직이므로 중간에 최적점이 생긴다.
+        트리 수 $M$ 은 <strong>많을수록 좋고 과적합하지 않는다</strong>(식 4 의 둘째 항만 줄인다) —
+        멈추는 이유는 <strong>계산 비용</strong>뿐이다(오해 2).
+      </p>
+
+      <span class="anchor" id="c-et"></span>
+      <h3>Extra Trees (Extremely Randomized Trees)</h3>
+      <p>
+        <span class="hl">extra trees 는 무작위성을 한 단계 더 밀어 <strong>분할점까지 무작위로 뽑고</strong>
+        그중 가장 좋은 것을 고른다 — $\rho$ 가 더 낮아지고 <strong>학습이 훨씬 빠르다</strong><a class="cite" href="#ref-geurts2006-extremely-randomized" data-ref="geurts2006-extremely-randomized">3</a>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>Bagging</th><th>Random Forest</th><th>Extra Trees</th></tr></thead>
+          <tbody>
+            <tr><td>표본</td><td>bootstrap</td><td>bootstrap</td><td><strong>전체 (기본)</strong></td></tr>
+            <tr><td>feature 후보</td><td>전부</td><td><strong>무작위 $m_{\text{try}}$개</strong></td><td>무작위 $m_{\text{try}}$개</td></tr>
+            <tr><td>분할점</td><td>최적 탐색</td><td>최적 탐색</td><td><strong>무작위 뽑기</strong></td></tr>
+            <tr><td>$\rho$</td><td>높다</td><td>낮다</td><td><strong>가장 낮다</strong></td></tr>
+            <tr><td>개별 편향</td><td>낮다</td><td>조금 높다</td><td><strong>더 높다</strong></td></tr>
+            <tr><td>학습 속도</td><td>보통</td><td>보통</td><td><strong>가장 빠르다</strong> (정렬 불필요)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <figure class="widget" data-widget="bagging-variance">
+        <figcaption class="widget__bar">Variance Reduction — ρ 가 바닥을 정한다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$M$ 을 100 으로 키워도 <strong>$\rho\sigma^2$ 아래로는 못 내려갑니다</strong>. $\rho$ 를 낮추는 편이 훨씬 효과가 큽니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-boost"></span>
+      <span class="anchor" id="c-ada"></span>
+      <h3>Boosting &amp; AdaBoost</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ H(\mathbf{x})=\mathrm{sign}\Bigl(\sum_{t=1}^{T}\alpha_t\,h_t(\mathbf{x})\Bigr), \qquad \alpha_t=\frac12\ln\frac{1-\varepsilon_t}{\varepsilon_t} $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        <span class="hl">AdaBoost 는 매 라운드 <strong>틀린 표본의 가중치를 키워</strong> 다음 학습기가 거기에 집중하게 하고,
+        각 학습기에는 <strong>정확도에 따른 발언권 $\alpha_t$</strong> 를 준다<a class="cite" href="#ref-freund1997-adaboost" data-ref="freund1997-adaboost">4</a>.</span>
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ w_i^{(t+1)}\ \propto\ w_i^{(t)}\exp\bigl(-\alpha_t\,y_i\,h_t(\mathbf{x}_i)\bigr) $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$\varepsilon_t$ (가중 오차)</th><th>$\alpha_t$</th><th>뜻</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0.01</td><td class="num">2.30</td><td>거의 완벽 — <strong>큰 발언권</strong></td></tr>
+            <tr><td class="num">0.30</td><td class="num">0.42</td><td>쓸 만하다</td></tr>
+            <tr><td class="num">0.50</td><td class="num"><strong>0</strong></td><td>동전 던지기 — <strong>발언권 없음</strong></td></tr>
+            <tr><td class="num">0.70</td><td class="num">−0.42</td><td>반대로 맞다 — <strong>뒤집어서 쓴다</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        갱신에는 놀랍도록 깔끔한 성질이 있다 —
+        <strong>재가중 후 틀린 표본들의 총 가중치가 정확히 $1/2$ 이 된다</strong>(유도 3).
+        즉 다음 학습기는 <strong>"이미 맞힌 것"과 "틀린 것"을 정확히 반씩 보게</strong> 되며,
+        이것이 AdaBoost 가 앞의 실수에 집중하는 정확한 메커니즘이다.
+      </p>
+
+      <figure class="widget" data-widget="adaboost-steps">
+        <figcaption class="widget__bar">AdaBoost — 틀린 표본이 커진다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">라운드를 넘길 때마다 <strong>틀린 점이 커집니다</strong>. 그 총 가중치는 언제나 정확히 0.5 입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-gbm"></span>
+      <h3>Gradient Boosting</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ F_m(\mathbf{x})=F_{m-1}(\mathbf{x})+\eta\,h_m(\mathbf{x}), \qquad h_m \approx -\left[\frac{\partial L(y,F)}{\partial F}\right]_{F=F_{m-1}} $$</div>
+        <span class="eq__tag num">(8)</span>
+      </div>
+      <p>
+        <span class="hl">gradient boosting 은 <strong>함수 공간에서의 경사하강</strong>이다 —
+        매 단계 손실의 <strong>음의 gradient(제곱손실이면 잔차)</strong> 에 트리를 맞추고 학습률 $\eta$ 만큼 더한다<a class="cite" href="#ref-friedman2001-gradient-boosting" data-ref="friedman2001-gradient-boosting">5</a>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>손실 $L$</th><th>음의 gradient (= 맞출 대상)</th><th>용도</th></tr></thead>
+          <tbody>
+            <tr><td>제곱오차 $\frac12(y-F)^2$</td><td><strong>$y-F$ — 잔차 그대로</strong></td><td>회귀</td></tr>
+            <tr><td>절대오차 $|y-F|$</td><td>$\mathrm{sign}(y-F)$</td><td>이상치에 강한 회귀</td></tr>
+            <tr><td>logistic $\log(1+e^{-yF})$</td><td>$y/(1+e^{yF})$</td><td>이진분류</td></tr>
+            <tr><td>cross-entropy</td><td>$y-p$ (<a href="5.4-logistic-regression.html">5.4</a>와 같은 꼴)</td><td>다중분류</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>손실만 바꾸면 어떤 문제로든 확장된다</strong>는 것이 이 틀의 힘이다 —
+        AdaBoost 는 사실 <strong>지수손실 $e^{-yF}$ 에 대한 gradient boosting</strong> 의 특수한 경우로 볼 수 있다.
+      </p>
+      <p>
+        $\eta$ (학습률·shrinkage)와 $M$ (트리 수)은 <strong>서로 맞물린다</strong> —
+        $\eta$ 를 절반으로 줄이면 비슷한 성능에 트리가 대략 두 배 필요하다.
+        <strong>작은 $\eta$ + 많은 트리</strong>가 대체로 더 좋은 일반화를 준다(예제 ⑤).
+      </p>
+
+      <figure class="widget" data-widget="gbm-residual">
+        <figcaption class="widget__bar">Gradient Boosting — 잔차에 트리를 얹어 간다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">위는 현재 예측, 아래는 남은 잔차입니다. <strong>잔차가 평평해질수록</strong> 더 배울 것이 없어집니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-xgb"></span>
+      <span class="anchor" id="c-lgbm"></span>
+      <span class="anchor" id="c-cat"></span>
+      <h3>XGBoost · LightGBM · CatBoost</h3>
+      <p>
+        <span class="hl">셋 다 gradient boosting 의 구현이며, 각각 <strong>다른 병목</strong>을 공략했다 —
+        XGBoost 는 <strong>정규화와 2차 근사</strong>, LightGBM 은 <strong>속도</strong>, CatBoost 는 <strong>범주형과 누출</strong>이다.</span>
+      </p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathcal{L}^{(m)}\approx\sum_i\Bigl[g_i h_m(\mathbf{x}_i)+\tfrac12 h_i h_m(\mathbf{x}_i)^2\Bigr]+\gamma|\tilde{T}|+\tfrac12\lambda\|\mathbf{w}\|^2 $$</div>
+        <span class="eq__tag num">(9)</span>
+      </div>
+      <p>
+        XGBoost 는 손실을 <strong>2차까지 Taylor 전개</strong>해($g$ = 1차, $h$ = 2차 도함수)
+        각 잎의 최적값을 <strong>닫힌 형태로</strong> 구한다 — Newton 법을 트리에 적용한 셈이다<a class="cite" href="#ref-chen2016-xgboost-a-scalable" data-ref="chen2016-xgboost-a-scalable">6</a>.
+        여기에 <strong>잎 개수 벌점 $\gamma$ 와 잎 값 벌점 $\lambda$</strong> 를 목적함수에 직접 넣은 것이
+        <a href="5.2-statistical-learning-theory.html">5.2</a>의 SRM 을 그대로 구현한 부분이다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>XGBoost</th><th>LightGBM</th><th>CatBoost</th></tr></thead>
+          <tbody>
+            <tr><td>핵심 아이디어</td><td>2차 근사 + 정규화</td><td><strong>leaf-wise 성장 + 히스토그램</strong></td><td><strong>ordered boosting</strong></td></tr>
+            <tr><td>트리 성장</td><td>level-wise (균형)</td><td>leaf-wise (이득이 큰 잎부터)</td><td>oblivious (같은 깊이에 같은 분할)</td></tr>
+            <tr><td>속도</td><td>보통</td><td><strong>가장 빠르다</strong></td><td>보통</td></tr>
+            <tr><td>범주형</td><td>직접 지원 약함</td><td>네이티브 지원</td><td><strong>target statistics 로 강력</strong></td></tr>
+            <tr><td>주된 위험</td><td>—</td><td>깊어져 과적합 (<code>num_leaves</code> 제한 필요)</td><td>학습이 느릴 수 있다</td></tr>
+            <tr><td>특기</td><td>희소 data 처리 · 결측치 자동 분기</td><td>GOSS·EFB 로 큰 data<a class="cite" href="#ref-ke2017-lightgbm" data-ref="ke2017-lightgbm">7</a></td><td><strong>target leakage 를 구조적으로 차단</strong><a class="cite" href="#ref-prokhorenkova2017-catboost-unbiased-boosting" data-ref="prokhorenkova2017-catboost-unbiased-boosting">8</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        CatBoost 의 문제의식이 특히 배울 만하다.
+        범주형을 <strong>"그 범주의 평균 target"</strong> 으로 인코딩하면 강력하지만
+        <strong>자기 자신의 $y$ 가 인코딩에 들어가</strong> 미묘한 누출이 생긴다.
+        ordered boosting 은 <strong>표본에 인위적 순서를 매기고 자기 앞의 것만 써서</strong> 이를 막는다 —
+        <a href="../ch01/1.5-data-split-evaluation.html">1.5</a>의 data leakage 를 알고리즘 수준에서 해결한 사례다.
+      </p>
+      <p>
+        표 형태 data 에서는 <strong>이 세 계열이 여전히 딥러닝을 앞서는 경우가 많다</strong>는 것이
+        여러 벤치마크에서 반복 확인되었다<a class="cite" href="#ref-gorishniy2021-revisiting-deep-learning" data-ref="gorishniy2021-revisiting-deep-learning">9</a> —
+        <a href="5.1-ml-problem-definition.html">5.1</a>의 No Free Lunch 를 실감하는 자리다.
+      </p>
+
+      <span class="anchor" id="c-stack"></span>
+      <h3>Stacking 스태킹</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \hat{y}=g\bigl(h_1(\mathbf{x}),\ h_2(\mathbf{x}),\ \dots,\ h_M(\mathbf{x})\bigr), \qquad g \text{ 는 메타 학습기} $$</div>
+        <span class="eq__tag num">(10)</span>
+      </div>
+      <p>
+        <span class="hl">stacking 은 합치는 규칙(평균·다수결)까지 <strong>학습으로 정한다</strong> —
+        기반 model 들의 예측을 새 feature 로 삼아 메타 학습기를 얹는 것이다<a class="cite" href="#ref-wolpert1992-stacked-generalization" data-ref="wolpert1992-stacked-generalization">10</a>.</span>
+      </p>
+      <p>
+        <strong>결정적인 절차 하나</strong> — 메타 학습기의 훈련 data 는 반드시
+        <strong>교차검증의 out-of-fold 예측</strong>으로 만들어야 한다.
+        기반 model 이 자기가 학습한 표본에 대해 낸 예측을 쓰면 <strong>비현실적으로 좋아 보여</strong>
+        메타 학습기가 그 model 을 과신하게 된다 — <strong>가장 흔한 stacking 실패</strong>다(오해 5).
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>Voting</th><th>Bagging</th><th>Boosting</th><th>Stacking</th></tr></thead>
+          <tbody>
+            <tr><td>구성원</td><td>서로 다른 알고리즘</td><td>같은 알고리즘 · 다른 표본</td><td>같은 알고리즘 · 순차</td><td>서로 다른 알고리즘</td></tr>
+            <tr><td>합치는 법</td><td>고정 (평균·다수결)</td><td>고정 (평균)</td><td>가중합 (학습된 $\alpha$)</td><td><strong>학습된 함수</strong></td></tr>
+            <tr><td>병렬화</td><td>✓</td><td>✓</td><td><strong>✗</strong></td><td>기반 model 은 ✓</td></tr>
+            <tr><td>겨냥</td><td>둘 다 조금</td><td><strong>분산</strong></td><td><strong>편향</strong></td><td>둘 다</td></tr>
+            <tr><td>과적합 위험</td><td>낮다</td><td>낮다</td><td><strong>있다</strong> (트리 수)</td><td><strong>높다</strong> (누출 주의)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>실무에서 손대는 hyperparameter 를 방향과 함께 정리한다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>알고리즘</th><th>가장 중요한 것</th><th>과적합하면</th><th>과소적합하면</th></tr></thead>
+          <tbody>
+            <tr><td>Random Forest</td><td><code>max_features</code>($m_{\text{try}}$)</td><td><code>min_samples_leaf</code>↑ · <code>max_depth</code>↓</td><td><code>max_features</code>↑</td></tr>
+            <tr><td></td><td><code>n_estimators</code></td><td colspan="2"><strong>많을수록 좋다 — 과적합하지 않는다</strong></td></tr>
+            <tr><td>Gradient Boosting</td><td><code>learning_rate</code> × <code>n_estimators</code></td><td><code>learning_rate</code>↓ + early stopping</td><td><code>n_estimators</code>↑ · <code>max_depth</code>↑</td></tr>
+            <tr><td></td><td><code>max_depth</code> (3~8)</td><td><code>subsample</code>&lt;1 · <code>colsample</code>&lt;1</td><td>깊이↑</td></tr>
+            <tr><td>XGBoost</td><td><code>lambda</code>·<code>gamma</code>·<code>min_child_weight</code></td><td>셋 다 ↑</td><td>셋 다 ↓</td></tr>
+            <tr><td>LightGBM</td><td><code>num_leaves</code></td><td><code>num_leaves</code>↓ (<strong>$2^{\text{depth}}$ 보다 작게</strong>)</td><td>↑</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>random forest 와 gradient boosting 의 <code>n_estimators</code> 는 성격이 정반대</strong>다.
+        전자는 많을수록 좋고(식 4 의 둘째 항만 줄인다), 후자는 <strong>많으면 과적합한다</strong>
+        (매 트리가 잔차를 더 줄이므로 train 오차가 계속 내려간다) —
+        그래서 boosting 에는 <strong>early stopping 이 사실상 필수</strong>다.
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$M$, $T$</td><td>M · T</td><td>앙상블 구성원(트리)의 수</td><td>정수</td><td>$\ge1$</td></tr>
+            <tr><td>$h_m$</td><td>h sub m</td><td>$m$ 번째 기반 학습기</td><td>함수</td><td>—</td></tr>
+            <tr><td>$\rho$</td><td>rho 로</td><td><strong>구성원 예측 사이의 상관</strong></td><td>scalar</td><td>$[0,1]$</td></tr>
+            <tr><td>$\sigma^2$</td><td>sigma squared</td><td>개별 학습기 예측의 분산</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$m_{\text{try}}$</td><td>m try · <code>max_features</code></td><td>분할마다 후보에 올릴 feature 수</td><td>정수</td><td>$1\le m_{\text{try}}\le d$</td></tr>
+            <tr><td>OOB</td><td>out-of-bag</td><td>bootstrap 에서 빠진 표본</td><td>—</td><td>약 36.8%</td></tr>
+            <tr><td>$\varepsilon_t$</td><td>epsilon t</td><td>$t$ 라운드의 <strong>가중</strong> 오차율</td><td>scalar</td><td>$[0,1]$</td></tr>
+            <tr><td>$\alpha_t$</td><td>alpha t</td><td>$t$ 번째 학습기의 발언권</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$w_i^{(t)}$</td><td>w i at t</td><td>표본 $i$ 의 $t$ 라운드 가중치</td><td>scalar</td><td>합이 1</td></tr>
+            <tr><td>$\eta$</td><td>eta 에타 · learning rate</td><td>shrinkage — 각 트리를 얼마나 반영할지</td><td>scalar</td><td>보통 0.01~0.3</td></tr>
+            <tr><td>$g_i$, $h_i$</td><td>g · h</td><td>손실의 1차·2차 도함수 (XGBoost)</td><td>scalar</td><td>—</td></tr>
+            <tr><td>$\gamma$</td><td>gamma 감마</td><td>잎 하나당 벌점 (XGBoost)</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$F_m$</td><td>F sub m</td><td>$m$ 단계까지 누적한 예측 함수</td><td>함수</td><td>—</td></tr>
+            <tr><td>oblivious tree</td><td>대칭 트리</td><td>같은 깊이에서 모두 같은 분할 (CatBoost)</td><td>—</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">같은 것을 다르게 부른다</span>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>이 사이트</th><th>같은 뜻으로 쓰이는 말</th><th>주의할 점</th></tr></thead>
+            <tbody>
+              <tr><td>$\eta$ (boosting)</td><td>learning rate, shrinkage, <code>eta</code></td><td><a href="../ch03/3.6-gradient-descent.html">3.6</a>의 학습률과 <strong>역할이 같다</strong></td></tr>
+              <tr><td>$m_{\text{try}}$</td><td><code>max_features</code>, <code>mtry</code>(R), <code>colsample_bynode</code></td><td>비율로 주는 라이브러리와 개수로 주는 것이 섞여 있다</td></tr>
+              <tr><td>GBM</td><td>gradient boosting machine, GBDT, GBRT</td><td>전부 같은 것</td></tr>
+              <tr><td>bagging</td><td>bootstrap aggregating</td><td>bagging ≠ random forest (feature 무작위가 없다)</td></tr>
+              <tr><td>soft voting</td><td>확률 평균, averaging</td><td>확률이 <strong>보정되어 있어야</strong> 의미가 있다 (<a href="../ch04/4.9-uncertainty.html">4.9</a>)</td></tr>
+              <tr><td>stacking</td><td>stacked generalization, blending</td><td>blending 은 <strong>hold-out 한 벌만 쓰는</strong> 변형이라 조금 다르다</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — 평균의 분산과 $\rho$ 의 바닥</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{Var}\Bigl(\frac1M\sum_{m}Z_m\Bigr)=\frac{1}{M^2}\Bigl[\sum_m\mathrm{Var}(Z_m)+\sum_{m\ne m'}\mathrm{Cov}(Z_m,Z_{m'})\Bigr] $$</div>
+          <div class="derive__why"><a href="../ch04/4.3-expectation-variance.html">4.3</a> 유도 2 — <strong>교차항이 남는다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{Var}(Z_m)=\sigma^2,\qquad \mathrm{Cov}(Z_m,Z_{m'})=\rho\sigma^2 \ (m\ne m') $$</div>
+          <div class="derive__why">구성원들이 동일 분포이고 서로 상관 $\rho$ 라고 두었다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ =\frac{1}{M^2}\bigl[M\sigma^2+M(M-1)\rho\sigma^2\bigr] $$</div>
+          <div class="derive__why">교차항이 $M(M-1)$개</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ =\rho\sigma^2+\frac{1-\rho}{M}\sigma^2 $$</div>
+          <div class="derive__why">정리했다 — 식 (4)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ M\to\infty:\ \to\rho\sigma^2 \qquad (\text{둘째 항만 사라진다}) $$</div>
+          <div class="derive__why"><strong>$\rho$ 가 바닥을 정한다</strong> — 개수로는 뚫을 수 없다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \rho=0:\ \frac{\sigma^2}{M} \quad(\text{완전 독립 — } 4.3 \text{ 의 } \sigma^2/n) \qquad \rho=1:\ \sigma^2 \quad(\text{전혀 이득 없음}) $$</div>
+          <div class="derive__why">두 극단. <strong>random forest 는 $\rho$ 를 낮추는 장치</strong>다</div>
+        </div>
+      </div>
+
+      <h3>유도 2 — OOB 는 왜 36.8% 인가</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ P(\text{한 번 뽑을 때 표본 } i \text{ 가 안 뽑힘})=1-\frac1n $$</div>
+          <div class="derive__why">$n$개 중 하나를 균등하게 뽑는다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P(n \text{ 번 모두 안 뽑힘})=\Bigl(1-\frac1n\Bigr)^{n} $$</div>
+          <div class="derive__why">복원추출이라 매번 독립 — $n$번 반복</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lim_{n\to\infty}\Bigl(1-\frac1n\Bigr)^{n}=e^{-1}=0.36788 $$</div>
+          <div class="derive__why">$e$ 의 정의 (<a href="../ch04/4.4-common-distributions.html">4.4</a> 유도 2 와 같은 극한)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ n=10:\ 0.9^{10}=0.3487,\quad n=100:\ 0.99^{100}=0.3660,\quad n=1000:\ 0.3677 $$</div>
+          <div class="derive__why"><strong>$n$ 이 작아도 이미 0.37 근처</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{각 표본은 평균적으로 } M \text{ 개 중 } 0.368M \text{ 개 트리에게 “처음 보는 것”} $$</div>
+          <div class="derive__why">그 트리들만 모아 예측하면 <strong>공짜 hold-out</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{단, } M \text{ 이 작으면 OOB 추정의 분산이 크다} $$</div>
+          <div class="derive__why">$M=10$ 이면 표본당 약 3.7개 트리로만 평가 — <strong>$M$ 을 충분히 키워야</strong></div>
+        </div>
+      </div>
+
+      <h3>유도 3 — AdaBoost 의 $\alpha_t$ 와 "정확히 절반"</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ Z_t=\sum_i w_i e^{-\alpha y_i h(\mathbf{x}_i)}=(1-\varepsilon)e^{-\alpha}+\varepsilon e^{\alpha} $$</div>
+          <div class="derive__why">맞으면 $y_ih=+1$, 틀리면 $-1$. <strong>가중치 합이 1</strong> 이라 이렇게 갈린다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{dZ}{d\alpha}=-(1-\varepsilon)e^{-\alpha}+\varepsilon e^{\alpha}=0 $$</div>
+          <div class="derive__why">$Z_t$ 를 최소로 하는 $\alpha$ 를 고른다 (지수손실의 한 스텝 최적화)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ e^{2\alpha}=\frac{1-\varepsilon}{\varepsilon} \ \Rightarrow\ \alpha=\frac12\ln\frac{1-\varepsilon}{\varepsilon} $$</div>
+          <div class="derive__why">식 (6). <strong>$\varepsilon=0.5$ 이면 $\alpha=0$</strong> — 쓸모없는 학습기는 발언권 0</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ e^{-\alpha}=\sqrt{\tfrac{\varepsilon}{1-\varepsilon}},\qquad e^{\alpha}=\sqrt{\tfrac{1-\varepsilon}{\varepsilon}} $$</div>
+          <div class="derive__why">대입해 두면 다음 줄이 깔끔해진다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ Z_t=(1-\varepsilon)\sqrt{\tfrac{\varepsilon}{1-\varepsilon}}+\varepsilon\sqrt{\tfrac{1-\varepsilon}{\varepsilon}}=2\sqrt{\varepsilon(1-\varepsilon)} $$</div>
+          <div class="derive__why">두 항이 <strong>모두 $\sqrt{\varepsilon(1-\varepsilon)}$</strong> 로 같아진다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{틀린 것들의 새 총 가중치}=\frac{\varepsilon e^{\alpha}}{Z_t}=\frac{\sqrt{\varepsilon(1-\varepsilon)}}{2\sqrt{\varepsilon(1-\varepsilon)}}=\frac12 $$</div>
+          <div class="derive__why"><strong>$\varepsilon$ 이 무엇이든 정확히 1/2</strong> — 다음 학습기는 반반을 본다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{train 오차} \le \prod_t Z_t=\prod_t 2\sqrt{\varepsilon_t(1-\varepsilon_t)}\ \le\ e^{-2\sum_t(1/2-\varepsilon_t)^2} $$</div>
+          <div class="derive__why">각 라운드가 <strong>무작위보다 조금만 나아도 지수적으로</strong> 줄어든다</div>
+        </div>
+      </div>
+      <p>
+        <span class="hl">마지막 줄이 boosting 의 이론적 핵심이다 —
+        <strong>$\varepsilon_t\le0.5-\gamma$ 인 약한 학습기만 있으면 train 오차를 원하는 만큼 낮출 수 있다.</strong>
+        "약한 학습기를 모아 강한 학습기를 만들 수 있는가"라는 질문에 대한 구성적 답이었다.</span>
+      </p>
+
+      <details>
+        <summary>gradient boosting 이 왜 "함수 공간의 경사하강" 인가</summary>
+        <p>
+          <a href="../ch03/3.6-gradient-descent.html">3.6</a>의 경사하강은 parameter 를 움직였다:
+          $\theta\leftarrow\theta-\eta\nabla_\theta L$.
+          gradient boosting 은 <strong>함수 자체를 움직인다</strong>:
+          $F\leftarrow F-\eta\nabla_F L$.
+        </p>
+        <p>
+          훈련점 $\mathbf{x}_i$ 에서 $\partial L/\partial F(\mathbf{x}_i)$ 는 계산할 수 있지만,
+          그것은 <strong>$n$개 점에서의 값</strong>일 뿐 함수가 아니다.
+          그래서 <strong>그 값들에 트리를 맞춰 함수로 만든 뒤</strong> 더한다 —
+          $h_m$ 이 하는 일이 정확히 "gradient 를 함수로 근사하기"다.
+        </p>
+        <p>
+          제곱손실이면 $-\partial L/\partial F=y-F$ 로 <strong>잔차 그대로</strong>라
+          "잔차에 트리를 맞춘다"는 직관적 설명이 나온다.
+          다른 손실에서는 잔차가 아니라 <strong>일반화된 잔차(pseudo-residual)</strong> 를 맞추며,
+          그래서 <strong>어떤 미분 가능한 손실로도 확장</strong>된다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① Condorcet — 60% 짜리 여럿이 모이면</h3>
+      <p>정확도 $p=0.6$ 인 분류기가 <strong>독립적으로</strong> 틀린다고 하자.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$M$</th><th>다수결 정확도</th><th>계산</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td class="num">0.6000</td><td>—</td></tr>
+            <tr><td class="num">3</td><td class="num">0.6480</td><td>$3(0.36)(0.4)+0.216$</td></tr>
+            <tr><td class="num">5</td><td class="num">0.6826</td><td>$P(X\ge3)$</td></tr>
+            <tr><td class="num">9</td><td class="num">0.7334</td><td>$P(X\ge5)$</td></tr>
+            <tr><td class="num">101</td><td class="num">0.9787</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ M=3:\ \binom32(0.6)^2(0.4)+\binom33(0.6)^3=3(0.36)(0.4)+0.216=0.432+0.216=0.648 $$</div>
+          <div class="derive__why">2개 이상이 맞으면 다수결이 맞는다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ M=5:\ 10(0.216)(0.16)+5(0.1296)(0.4)+0.07776=0.3456+0.2592+0.0778=0.6826 $$</div>
+          <div class="derive__why">$P(X=3)+P(X=4)+P(X=5)$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ p=0.4 \text{ 였다면 } M=5:\ 1-0.6826=0.3174 \ \text{— 더 나빠진다} $$</div>
+          <div class="derive__why"><strong>$p<0.5$ 이면 다수결이 오히려 독</strong> (오해 1)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{완전히 같은 실수를 한다면 } (\rho=1):\ \text{언제나 } 0.6 $$</div>
+          <div class="derive__why"><strong>독립성이 깨지면 이득이 0</strong> — 식 (4)의 $\rho\sigma^2$ 와 같은 이야기</div>
+        </div>
+      </div>
+
+      <h3>② 분산 감소 — $M$ 과 $\rho$ 중 무엇이 중요한가</h3>
+      <p>$\sigma^2=1$ 로 두고 식 (4)를 계산한다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$M$</th><th>$\rho=0.9$</th><th>$\rho=0.5$</th><th>$\rho=0.1$</th><th>$\rho=0$</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td class="num">1.000</td><td class="num">1.000</td><td class="num">1.000</td><td class="num">1.000</td></tr>
+            <tr><td class="num">10</td><td class="num">0.910</td><td class="num">0.550</td><td class="num">0.190</td><td class="num">0.100</td></tr>
+            <tr><td class="num">100</td><td class="num">0.901</td><td class="num">0.505</td><td class="num">0.109</td><td class="num">0.010</td></tr>
+            <tr><td class="num">$\infty$</td><td class="num"><strong>0.900</strong></td><td class="num"><strong>0.500</strong></td><td class="num"><strong>0.100</strong></td><td class="num"><strong>0</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \rho=0.5,\ M=10:\ 0.5+\frac{0.5}{10}=0.5+0.05=0.55 $$</div>
+          <div class="derive__why">식 (4) 그대로</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ M:10\to100 \ \Rightarrow\ 0.550\to0.505 \quad (\text{겨우 } 8\% \text{ 개선}) $$</div>
+          <div class="derive__why">트리를 <strong>10배</strong> 늘렸는데 이득이 거의 없다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \rho:0.5\to0.1 \ (M=10) \ \Rightarrow\ 0.550\to0.190 \quad (65\% \text{ 개선}) $$</div>
+          <div class="derive__why"><strong>같은 노력이라면 $\rho$ 를 낮추는 쪽이 압도적</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{random forest 의 } m_{\text{try}} \text{ 가 } n\_estimators \text{ 보다 중요한 이유} $$</div>
+          <div class="derive__why">식 (5)가 정확히 $\rho$ 를 겨냥한다</div>
+        </div>
+      </div>
+
+      <h3>③ OOB 비율</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ n=10:\ (1-0.1)^{10}=0.9^{10}=0.34868 $$</div>
+          <div class="derive__why">$0.9^{10}$: $0.9^2=0.81$, $0.9^5=0.59049$, 제곱해서 $0.34868$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ n=100:\ 0.99^{100}=e^{100\ln0.99}=e^{-1.00503}=0.36603 $$</div>
+          <div class="derive__why">$\ln0.99=-0.0100503$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ n\to\infty:\ e^{-1}=0.36788 $$</div>
+          <div class="derive__why">유도 2</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ n=1000,\ M=500:\ \text{표본 하나당 평균 } 0.368\times500=184 \text{ 개 트리로 평가} $$</div>
+          <div class="derive__why"><strong>충분히 안정적인 추정</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ M=20 \text{ 이라면 } 7.4 \text{ 개 트리뿐} \ \Rightarrow\ \text{OOB 추정이 크게 흔들린다} $$</div>
+          <div class="derive__why">$M$ 이 작으면 OOB 를 <strong>믿을 수 없다</strong></div>
+        </div>
+      </div>
+
+      <h3>④ AdaBoost 한 라운드를 손으로</h3>
+      <p>표본 5개, 초기 가중치 각 $0.2$. 약한 학습기가 <strong>2개를 틀렸다</strong>.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \varepsilon=0.2+0.2=0.4 $$</div>
+          <div class="derive__why">틀린 표본들의 <strong>가중치 합</strong> (개수 비율이 아니다)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \alpha=\frac12\ln\frac{1-0.4}{0.4}=\frac12\ln1.5=\frac12(0.40546)=0.20273 $$</div>
+          <div class="derive__why">식 (6)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ e^{-\alpha}=0.81650,\qquad e^{\alpha}=1.22474 $$</div>
+          <div class="derive__why">검산: $\sqrt{0.4/0.6}=0.8165$ ✓, $\sqrt{0.6/0.4}=1.2247$ ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{맞은 3개}:\ 0.2\times0.81650=0.16330 \qquad \text{틀린 2개}:\ 0.2\times1.22474=0.24495 $$</div>
+          <div class="derive__why">식 (7)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ Z=3(0.16330)+2(0.24495)=0.48990+0.48990=0.97980 $$</div>
+          <div class="derive__why">$2\sqrt{0.4\times0.6}=2\sqrt{0.24}=2(0.48990)=0.97980$ ✓ (유도 3)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{정규화}:\ \text{맞은 것}=\frac{0.16330}{0.97980}=0.16667=\tfrac16,\quad \text{틀린 것}=\frac{0.24495}{0.97980}=0.25=\tfrac14 $$</div>
+          <div class="derive__why">깔끔한 분수가 나온다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{틀린 것 총합}=2\times0.25=0.5 \qquad \text{맞은 것 총합}=3\times\tfrac16=0.5 $$</div>
+          <div class="derive__why"><strong>정확히 반반</strong> — 유도 3 의 결과 ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \varepsilon=0.2 \text{ 였다면}:\ \alpha=\tfrac12\ln4=0.69315,\ e^{-\alpha}=0.5,\ e^{\alpha}=2 $$</div>
+          <div class="derive__why">4개 맞음 $0.2\to0.1$, 1개 틀림 $0.2\to0.4$. $Z=0.8$ → 정규화 $0.125\times4=0.5$, $0.5$ ✓ <strong>또 반반</strong></div>
+        </div>
+      </div>
+
+      <h3>⑤ Gradient Boosting 의 학습률과 트리 수</h3>
+      <p>가장 단순한 경우 — 표본 하나, $y=10$, 시작 $F_0=5$ (평균), 매 트리가 잔차를 완벽히 맞힌다고 하자.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ r_1=y-F_0=10-5=5,\qquad F_1=5+\eta(5) $$</div>
+          <div class="derive__why">식 (8). 제곱손실이라 <strong>음의 gradient = 잔차</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \eta=0.1:\ F_1=5.5,\quad r_2=4.5,\quad F_2=5.95,\quad r_3=4.05 $$</div>
+          <div class="derive__why">잔차가 매번 $0.9$ 배</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ r_m=5(1-\eta)^{m},\qquad F_m=10-5(1-\eta)^{m} $$</div>
+          <div class="derive__why">등비수열 — <a href="../ch03/3.6-gradient-descent.html">3.6</a>의 $(1-\eta\lambda)^k$ 와 같은 구조</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \eta=0.1,\ m=10:\ F=10-5(0.9)^{10}=10-5(0.34868)=8.257 $$</div>
+          <div class="derive__why">아직 멀었다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \eta=0.1,\ m=50:\ F=10-5(0.9)^{50}=10-5(0.00515)=9.974 $$</div>
+          <div class="derive__why">거의 도달</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \eta=0.3,\ m=17:\ F=10-5(0.7)^{17}=10-5(0.00233)=9.988 $$</div>
+          <div class="derive__why"><strong>$\eta$ 를 3배로 하면 트리가 약 1/3</strong> — $\eta M$ 이 대략 일정</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{그런데 } \eta \text{ 가 작을수록 일반화가 대개 낫다} $$</div>
+          <div class="derive__why">작은 걸음이 <strong>잡음을 덜 따라간다</strong> — 그래서 $\eta=0.05$ + 트리 1000 개가 흔한 설정</div>
+        </div>
+      </div>
+
+      <figure class="widget" data-widget="boosting-lr">
+        <figcaption class="widget__bar">Learning Rate × Trees — 둘은 맞물려 있다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$\eta$ 를 절반으로 줄이면 <strong>비슷한 지점에 가는 데 트리가 두 배</strong> 필요합니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>두 갈래</strong> · <strong>분산 감소</strong> ·
+        <strong>AdaBoost</strong> · <strong>잔차 적합</strong> · <strong>학습률</strong> — 에 이어,
+        아래에서 <strong>random forest 와 단일 트리의 결정경계</strong>를 비교한다.
+      </p>
+
+      <figure class="widget" data-widget="rf-vs-tree">
+        <figcaption class="widget__bar">Random Forest — 여러 트리를 평균 내면 경계가 부드러워진다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">단일 트리의 <strong>계단 모양이 평균으로 뭉개지며</strong> 비스듬한 경계에 가까워집니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"model 을 여러 개 합치면 언제나 좋아진다."</p>
+        <p>
+          <strong>실제로는</strong> 두 조건이 필요하다 —
+          각자가 <strong>무작위보다 나아야</strong> 하고($p>0.5$), <strong>실수가 서로 달라야</strong> 한다.
+          $p<0.5$ 인 분류기를 모으면 다수결이 <strong>더 빨리 나빠지고</strong>(예제 ①),
+          전부 같은 실수를 하면($\rho=1$) 식 (4)에서 <strong>이득이 정확히 0</strong> 이다.
+          같은 알고리즘을 같은 data 로 seed 만 바꿔 돌린 것들은 대개 $\rho$ 가 높아
+          <strong>기대만큼 좋아지지 않는다</strong>.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"트리를 많이 만들수록 과적합하니 <code>n_estimators</code> 를 교차검증으로 골라야 한다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>random forest 와 gradient boosting 이 정반대</strong>다.
+          random forest 에서 $M$ 은 식 (4)의 <strong>둘째 항만 줄이므로 많을수록 좋고</strong>,
+          늘려서 나빠지지 않는다 — 멈추는 이유는 <strong>계산 비용</strong>뿐이다.
+          반면 gradient boosting 은 매 트리가 잔차를 더 줄이므로
+          <strong>계속 쌓으면 반드시 과적합</strong>한다 — early stopping 이 사실상 필수다.
+          같은 이름의 hyperparameter 가 <strong>정반대로 행동한다</strong>는 것을 기억해야 한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"boosting 이 bagging 보다 항상 성능이 좋다."</p>
+        <p>
+          <strong>실제로는</strong> 겨냥하는 대상이 다르다 —
+          <strong>boosting 은 편향, bagging 은 분산</strong>을 줄인다.
+          <strong>label 잡음이 큰 data 에서는 boosting 이 오히려 나쁘다</strong> —
+          틀린 label 을 "어려운 표본"으로 오인해 가중치를 계속 키우고,
+          결국 <strong>잡음에 집중해 학습</strong>한다(AdaBoost 가 특히 취약하다).
+          그런 상황에서는 random forest 가 훨씬 안정적이다.
+          <strong>data 를 보고 고르는 것</strong>이지 서열이 있는 것이 아니다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"LightGBM 이 XGBoost 보다 빠르니 기본 설정 그대로 바꿔 쓰면 된다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>트리를 키우는 방식이 달라</strong> 같은 설정이 다른 결과를 낸다.
+          XGBoost 는 <strong>level-wise</strong>(층을 고르게 채움), LightGBM 은 <strong>leaf-wise</strong>(이득이 큰 잎부터 계속 쪼갬)라
+          같은 <code>max_depth</code> 여도 <strong>LightGBM 이 훨씬 복잡한 트리</strong>를 만든다.
+          그래서 LightGBM 에서는 <code>num_leaves</code> 를 <strong>$2^{\text{max\_depth}}$ 보다 작게</strong> 잡아야 하고,
+          그러지 않으면 <strong>작은 data 에서 곧바로 과적합</strong>한다.
+          "빠른 대체품"이 아니라 <strong>다시 튜닝해야 하는 다른 알고리즘</strong>이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"stacking 의 메타 학습기는 기반 model 의 예측으로 학습하면 된다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>어떤 예측을 쓰느냐</strong>가 전부다.
+          기반 model 이 <strong>자기가 학습한 표본</strong>에 대해 낸 예측을 쓰면
+          그 예측이 비현실적으로 정확해 보이고(과적합한 model 일수록 더),
+          메타 학습기가 <strong>가장 과적합한 기반 model 에 가장 큰 가중치</strong>를 준다.
+          반드시 <strong>교차검증의 out-of-fold 예측</strong>으로 메타 훈련 data 를 만들어야 하며,
+          scikit-learn 의 <code>StackingClassifier</code> 가 기본으로 그렇게 한다.
+          <a href="../ch01/1.5-data-split-evaluation.html">1.5</a>의 leakage 가 가장 교묘하게 나타나는 자리다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–⑤ 를 검산한다.</p>
+      <details>
+        <summary>NumPy — Condorcet · 분산 · OOB · AdaBoost (20줄)</summary>
+<pre><code>import numpy as np
+from math import comb, log, sqrt, exp
+
+p = 0.6
+for M in [1, 3, 5, 9, 101]:
+    print(M, round(sum(comb(M, j) * p**j * (1-p)**(M-j)
+                       for j in range(M//2 + 1, M + 1)), 4))   # 0.6 .648 .6826 .7334 .9787
+
+for rho in [0.9, 0.5, 0.1, 0.0]:
+    print(rho, [round(rho + (1-rho)/M, 3) for M in [1, 10, 100, 10**9]])
+
+for n in [10, 100, 1000]:
+    print(n, round((1 - 1/n)**n, 5), round(exp(-1), 5))        # 0.34868 0.36603 0.36770
+
+for eps in [0.4, 0.2]:                                          # AdaBoost 한 라운드
+    a = 0.5 * log((1-eps)/eps)
+    Z = (1-eps)*exp(-a) + eps*exp(a)
+    print(eps, round(a,5), round(Z,5), round(2*sqrt(eps*(1-eps)),5),
+          round(eps*exp(a)/Z, 5))                               # 마지막이 항상 0.5
+
+y, F, out = 10.0, 5.0, []
+for eta in [0.3, 0.1, 0.05]:
+    F, hist = 5.0, []
+    for m in range(60):
+        F += eta * (y - F); hist.append(F)
+    print(eta, round(hist[9],3), round(hist[16],3), round(hist[49],3))
+</code></pre>
+        <p>
+          <small>
+            네 번째 블록의 마지막 열이 유도 3 의 결과다 —
+            <strong>$\varepsilon$ 이 0.4 든 0.2 든 재가중 후 틀린 표본의 총 가중치가 정확히 0.5</strong> 다.
+            $Z$ 가 $2\sqrt{\varepsilon(1-\varepsilon)}$ 와 일치하는 것도 확인된다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\sigma^2=1$, $\rho=0.4$ 일 때 $M=25$ 인 앙상블의 분산은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>0.424</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.040</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0.400</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\rho+\frac{1-\rho}{M}=0.4+\frac{0.6}{25}=0.4+0.024=0.424$ (식 4).
+            <strong>나</strong>는 $\sigma^2/M$ 만 본 것으로, <strong>상관이 0 일 때만</strong> 맞다.
+            <strong>다</strong>는 $M\to\infty$ 의 극한값이다 —
+            $M=25$ 에서 이미 <strong>극한의 94% 까지 왔다</strong>는 뜻이라, 더 늘려도 이득이 거의 없다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            AdaBoost 에서 가중 오차 $\varepsilon=0.25$ 일 때 $\alpha$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 0.549</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>약 1.099</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0.25</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\alpha=\frac12\ln\frac{0.75}{0.25}=\frac12\ln3=\frac12(1.0986)=0.5493$.
+            <strong>나</strong>는 $\frac12$ 를 빼먹은 값이다.
+            검산: $e^{-\alpha}=\sqrt{0.25/0.75}=0.5774$, $e^{\alpha}=1.7321$ →
+            $Z=0.75(0.5774)+0.25(1.7321)=0.4330+0.4330=0.866=2\sqrt{0.1875}$ ✓
+            <strong>틀린 것의 새 총 가중치는 $0.4330/0.866=0.5$</strong> — 언제나 반반이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\eta=0.1$ 로 100 그루를 쓴 결과와 비슷하게 하려면 $\eta=0.2$ 에서 대략 몇 그루?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 50 그루</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>약 200 그루</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>똑같이 100 그루</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            잔차가 $(1-\eta)^m$ 로 줄어드니 $(0.9)^{100}=(0.8)^m$ 을 풀면
+            $m=100\frac{\ln0.9}{\ln0.8}=100\frac{-0.1054}{-0.2231}=47.2$ → <strong>약 50</strong>.
+            대략 <strong>$\eta M$ 이 일정</strong>하다는 어림이 잘 맞는다(예제 ⑤).
+            다만 <strong>작은 $\eta$ 쪽이 일반화가 대개 낫다</strong> — 같은 지점에 가더라도 경로가 다르다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            random forest 가 bagging 에 더한 것은 무엇이고 왜 효과가 있나?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>분할마다 feature 를 무작위로 제한해 트리 사이 상관 $\rho$ 를 낮춘다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>트리를 더 깊게 키워 편향을 줄인다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>표본을 더 많이 뽑아 분산을 줄인다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            식 (4)에서 $M$ 을 아무리 키워도 <strong>$\rho\sigma^2$ 가 바닥</strong>이므로,
+            개선하려면 $\rho$ 자체를 낮춰야 한다.
+            강한 feature 하나가 있으면 <strong>모든 bagging 트리가 그것을 뿌리에 놓아</strong> $\rho$ 가 높아지는데,
+            feature 를 무작위로 가리면 그 쏠림이 깨진다(예제 ②).
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            gradient boosting 에서 제곱손실을 쓸 때 각 트리가 맞추는 대상은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>현재까지의 예측이 남긴 잔차 $y-F_{m-1}$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>원래 label $y$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>가중치가 조정된 $y$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            제곱손실의 음의 gradient 가 정확히 $y-F$ 라(식 8 아래 표)
+            <strong>"잔차에 트리를 맞춘다"</strong>가 된다.
+            <strong>다</strong>는 AdaBoost 의 방식이다 — 둘은 <strong>다른 메커니즘</strong>이며,
+            AdaBoost 는 지수손실에 대한 gradient boosting 의 특수한 경우로 볼 수 있다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            stacking 을 했더니 교차검증 점수는 아주 좋은데 test 에서 무너졌다. 가장 흔한 원인은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>메타 학습기를 기반 model 의 in-fold 예측으로 학습시켰다 (out-of-fold 를 써야 한다)</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>기반 model 이 너무 적다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>메타 학습기가 너무 단순하다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            기반 model 이 자기 훈련 표본에 대해 낸 예측은 <strong>비현실적으로 정확</strong>하다.
+            메타 학습기는 그것을 보고 <strong>가장 과적합한 기반 model 을 가장 신뢰</strong>하게 되고,
+            새 data 에서는 그 model 이 가장 먼저 무너진다(오해 5).
+            처방은 <strong>out-of-fold 예측으로 메타 훈련 행렬을 만드는 것</strong>이고,
+            메타 학습기는 오히려 <strong>단순할수록</strong>(정규화된 선형 model) 안전하다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="5.6-decision-trees.html">5.6 결정트리</a></strong> — 앙상블의 기본 부품. 그 불안정성이 곧 재료다.</li>
+        <li><strong><a href="5.2-statistical-learning-theory.html">5.2 통계적 학습이론</a></strong> — 편향-분산 분해가 두 갈래를 가르는 기준이다.</li>
+        <li><strong><a href="../ch04/4.9-uncertainty.html">4.9 불확실성</a></strong> — deep ensemble 이 같은 원리를 신경망에 적용한 것.</li>
+        <li><strong><a href="5.13-model-evaluation.html">5.13 모델 평가</a></strong> — OOB 와 교차검증의 관계.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-breiman1996-bagging" data-ref="breiman1996-bagging">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Breiman, L. (1996). <em>Bagging Predictors</em>. Machine Learning, 24(2), 123–140.</span>
+          <span class="ref__where">§2 — bootstrap 표본으로 학습한 예측기를 평균하는 절차(식 3)와 <strong>불안정한 학습기에서만 이득이 크다</strong>는 핵심 관찰. §4 — 트리·선형회귀·부분집합 선택에 적용한 실험으로, <strong>안정적인 $k$-NN 에서는 이득이 없다</strong>는 결과가 오해 1 의 근거다. §6.1 — bootstrap 에서 표본이 빠질 확률이 약 37% 라는 계산(유도 2)</span>
+          <a class="ref__link" href="https://link.springer.com/article/10.1007/BF00058655">link.springer.com</a>
+        </li>
+        <li class="ref" id="ref-breiman2001-random-forests" data-ref="breiman2001-random-forests">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Breiman, L. (2001). <em>Random Forests</em>. Machine Learning, 45(1), 5–32.</span>
+          <span class="ref__where">§2 — 일반화 오차가 <strong>트리 사이 상관 $\bar\rho$ 와 개별 강도 $s$ 로 $\bar\rho/s^2$ 에 의해 상계</strong>된다는 정리 2.3 이 식 (4)와 예제 ②의 이론적 뿌리다. §5 — feature 를 무작위로 제한하면 $\bar\rho$ 가 낮아지고 그 대가로 $s$ 가 조금 떨어진다는 맞바꿈($m_{\text{try}}$ 표). §3.1 — <strong>트리를 늘려도 과적합하지 않는다</strong>는 수렴 결과(오해 2). §4 — OOB 추정</span>
+          <a class="ref__link" href="https://link.springer.com/article/10.1023/A:1010933404324">link.springer.com</a>
+        </li>
+        <li class="ref" id="ref-geurts2006-extremely-randomized" data-ref="geurts2006-extremely-randomized">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Geurts, P., Ernst, D. &amp; Wehenkel, L. (2006). <em>Extremely Randomized Trees</em>. Machine Learning, 63(1), 3–42.</span>
+          <span class="ref__where">§2 — 분할점까지 무작위로 뽑는 절차와 <strong>bootstrap 없이 전체 표본을 쓰는</strong> 기본 설정('세 방법 비교' 표). §3 — 편향·분산 분해로 <strong>분산은 더 줄고 편향은 조금 는다</strong>는 분석. §5 — 정렬이 필요 없어 <strong>계산량이 크게 줄어든다</strong>는 결과</span>
+          <a class="ref__link" href="https://link.springer.com/article/10.1007/s10994-006-6226-1">link.springer.com</a>
+        </li>
+        <li class="ref" id="ref-freund1997-adaboost" data-ref="freund1997-adaboost">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Freund, Y. &amp; Schapire, R. E. (1997). <em>A Decision-Theoretic Generalization of On-Line Learning and an Application to Boosting</em>. Journal of Computer and System Sciences, 55(1), 119–139.</span>
+          <span class="ref__where">§3 — AdaBoost 알고리즘의 정의(식 6·7)와 $\alpha_t=\frac12\ln\frac{1-\varepsilon}{\varepsilon}$ 의 유도. 정리 6 — <strong>train 오차가 $\prod_t 2\sqrt{\varepsilon_t(1-\varepsilon_t)}$ 이하</strong>라 각 라운드가 무작위보다 조금만 나아도 지수적으로 줄어든다는 결과(유도 3 의 마지막 줄). §4 — 다중분류와 회귀로의 확장</span>
+          <a class="ref__link" href="https://doi.org/10.1006/jcss.1997.1504">doi.org</a>
+        </li>
+        <li class="ref" id="ref-friedman2001-gradient-boosting" data-ref="friedman2001-gradient-boosting">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Friedman, J. H. (2001). <em>Greedy Function Approximation: A Gradient Boosting Machine</em>. The Annals of Statistics, 29(5), 1189–1232.</span>
+          <span class="ref__where">§3 — <strong>함수 공간에서의 경사하강</strong>으로 boosting 을 재해석하고, 음의 gradient 에 기반 학습기를 맞추는 일반 알고리즘을 세운 부분(식 8, 접힌 상자). §4 — 제곱·절대·Huber·logistic 손실별 pseudo-residual 표('손실별 gradient' 표). §5 — <strong>shrinkage $\eta$ 를 작게 하고 트리를 늘리면 일반화가 좋아진다</strong>는 실험(예제 ⑤)</span>
+          <a class="ref__link" href="https://projecteuclid.org/journals/annals-of-statistics/volume-29/issue-5/Greedy-function-approximation-A-gradient-boosting-machine/10.1214/aos/1013203451.full">projecteuclid.org</a>
+        </li>
+        <li class="ref" id="ref-chen2016-xgboost-a-scalable" data-ref="chen2016-xgboost-a-scalable">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Chen, T. &amp; Guestrin, C. (2016). <em>XGBoost: A Scalable Tree Boosting System</em>. KDD 2016.</span>
+          <span class="ref__where">§2.1 — 목적함수에 <strong>잎 개수 벌점 $\gamma$ 와 잎 값 L2 벌점 $\lambda$</strong> 를 명시적으로 넣은 정규화(식 9). §2.2 — 손실을 2차까지 전개해 잎의 최적값과 분할 이득을 <strong>닫힌 형태</strong>로 얻는 유도. §3 — 결측치를 자동으로 한쪽 가지로 보내는 sparsity-aware 분할. §4 — 히스토그램 기반 근사 분할과 캐시 최적화</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1603.02754">arXiv:1603.02754</a>
+        </li>
+        <li class="ref" id="ref-ke2017-lightgbm" data-ref="ke2017-lightgbm">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Ke, G. et al. (2017). <em>LightGBM: A Highly Efficient Gradient Boosting Decision Tree</em>. NeurIPS 2017.</span>
+          <span class="ref__where">§3 — <strong>GOSS</strong>(gradient 가 큰 표본은 남기고 작은 것은 표본추출)로 표본 수를 줄이는 기법. §4 — <strong>EFB</strong>(배타적인 희소 feature 를 묶기)로 feature 수를 줄이는 기법. §2 — 히스토그램 기반 분할과 <strong>leaf-wise 성장</strong>이 level-wise 보다 같은 잎 수에서 손실을 더 줄이지만 <strong>깊어져 과적합 위험이 있다</strong>는 지적(오해 4)</span>
+          <a class="ref__link" href="https://papers.nips.cc/paper_files/paper/2017/hash/6449f44a102fde848669bdd9eb6b76fa-Abstract.html">papers.nips.cc</a>
+        </li>
+        <li class="ref" id="ref-prokhorenkova2017-catboost-unbiased-boosting" data-ref="prokhorenkova2017-catboost-unbiased-boosting">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Prokhorenkova, L. et al. (2018). <em>CatBoost: Unbiased Boosting with Categorical Features</em>. NeurIPS 2018.</span>
+          <span class="ref__where">§3 — target statistics 로 범주형을 인코딩할 때 <strong>자기 자신의 $y$ 가 섞여 들어가는 누출(target leakage)</strong> 을 정식화하고, 표본에 인위적 순서를 매겨 앞의 것만 쓰는 <strong>ordered target statistics</strong> 로 해결하는 부분. §4 — 같은 논리를 gradient 추정에 적용한 <strong>ordered boosting</strong> 과 그것이 편향을 없앤다는 분석. §5 — oblivious tree 구조</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1706.09516">arXiv:1706.09516</a>
+        </li>
+        <li class="ref" id="ref-wolpert1992-stacked-generalization" data-ref="wolpert1992-stacked-generalization">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Wolpert, D. H. (1992). <em>Stacked Generalization</em>. Neural Networks, 5(2), 241–259.</span>
+          <span class="ref__where">§2 — 기반 model 들의 출력을 새 입력으로 삼아 상위 model 을 학습시키는 구조(식 10)와, <strong>그 훈련 data 는 반드시 교차검증으로 남긴 예측이어야 한다</strong>는 절차적 요구(오해 5). §4 — 이것이 교차검증의 일반화로 볼 수 있다는 논의</span>
+          <a class="ref__link" href="https://doi.org/10.1016/S0893-6080(05)80023-1">doi.org</a>
+        </li>
+        <li class="ref" id="ref-gorishniy2021-revisiting-deep-learning" data-ref="gorishniy2021-revisiting-deep-learning">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Gorishniy, Y., Rubachev, I., Khrulkov, V. &amp; Babenko, A. (2021). <em>Revisiting Deep Learning Models for Tabular Data</em>. NeurIPS 2021.</span>
+          <span class="ref__where">§4–5 — 여러 표 형태 dataset 에서 <strong>gradient boosting 계열과 딥러닝을 공정하게 튜닝해 비교</strong>한 결과로, <strong>보편적 승자가 없고 dataset 마다 갈린다</strong>는 결론이 이 절의 마지막 문단과 <a href="5.1-ml-problem-definition.html">5.1</a>의 No Free Lunch 를 실증한다. §3 — 잘 튜닝된 ResNet 이 강력한 baseline 이라는 지적도 함께 읽을 만하다</span>
+          <a class="ref__link" href="https://arxiv.org/abs/2106.11959">arXiv:2106.11959</a>
+        </li>
+        <li class="ref" id="ref-hastie2009-esl" data-ref="hastie2009-esl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em> (2nd ed.). Springer.</span>
+          <span class="ref__where">15.2절 — 식 (4) $\rho\sigma^2+\frac{1-\rho}{M}\sigma^2$ 의 유도와 <strong>$\rho$ 가 바닥을 정한다</strong>는 해석이 그대로 실려 있다(유도 1, 예제 ②). 15.3.4절 — $m_{\text{try}}$ 를 줄이면 $\rho$ 와 개별 정확도가 함께 떨어지는 맞바꿈. 10.1–10.4절 — AdaBoost 를 <strong>지수손실에 대한 전진 단계별 가법 모형</strong>으로 재해석한 부분(유도 3 과 식 8 의 관계). 10.12절 — shrinkage $\eta$ 와 트리 수의 맞물림. 16.3절 — bagging·boosting 을 <strong>정규화 경로</strong>로 보는 관점</span>
+          <a class="ref__link" href="https://hastie.su.domains/ElemStatLearn/">hastie.su.domains</a>
+        </li>
+        <li class="ref" id="ref-sklearn-docs" data-ref="sklearn-docs">
+          <span class="ref__type" data-type="doc">문서</span>
+          <span class="ref__cite">scikit-learn developers. <em>User Guide — 1.11 Ensembles: Gradient boosting, random forests, bagging, voting, stacking</em>.</span>
+          <span class="ref__where">1.11.2절 — random forest 의 <code>max_features</code> 기본값이 분류 $\sqrt{d}$·회귀 $d/3$ 인 근거와 <strong><code>n_estimators</code> 는 클수록 좋다</strong>는 명시('hyperparameter 방향' 표, 오해 2). 1.11.5절 — <code>learning_rate</code> 와 <code>n_estimators</code> 의 맞물림과 early stopping. 1.11.7절 — <code>StackingClassifier</code> 가 메타 훈련 행렬을 <strong>교차검증 out-of-fold 예측으로 만든다</strong>는 설명(오해 5)</span>
+          <a class="ref__link" href="https://scikit-learn.org/stable/modules/ensemble.html">scikit-learn.org</a>
+        </li>
+        <li class="ref" id="ref-statquest" data-ref="statquest">
+          <span class="ref__type" data-type="video">영상</span>
+          <span class="ref__cite">Starmer, J. <em>Random Forests Part 1–2</em> · <em>AdaBoost</em> · <em>Gradient Boost Part 1–4</em> · <em>XGBoost Part 1–4</em>. StatQuest.</span>
+          <span class="ref__where">'Random Forests' 편 — bootstrap 표본과 feature 무작위 선택을 표로 따라가고 <strong>OOB 오차</strong>를 직접 세어 보이는 부분(유도 2, 예제 ③). 'AdaBoost' 편 — 그루터기의 발언권 $\alpha$ 와 가중치 재조정을 표본 8개로 손계산하는 과정(예제 ④, 위젯 3). 'Gradient Boost' 편 — 평균에서 시작해 잔차에 트리를 얹는 과정을 단계별로 그린다(위젯 4). 'XGBoost' 편 — 유사잔차·similarity score·$\lambda$·$\gamma$ 를 손으로 계산(식 9)</span>
+          <a class="ref__link" href="https://statquest.org/video-index/">statquest.org</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+function panel(p) {
+  p.add(VIZ.el('rect', {
+    x: p.pad.l, y: p.pad.t, width: p.iw, height: p.ih,
+    fill: 'var(--ink-3)', 'fill-opacity': 0.03, stroke: 'none'
+  }));
+  return p;
+}
+function mkRand(seed) {
+  var s = seed || 12345;
+  return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+}
+function gauss(rnd) {
+  var u = Math.max(1e-9, rnd()), v = rnd();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+/* 아주 작은 결정 그루터기(stump) — 축 정렬 1단 분할 */
+function fitStump(pts, w) {
+  var best = null;
+  for (var j = 0; j < 2; j++) {
+    var vals = pts.map(function (q) { return q[j]; }).slice().sort(function (a, b) { return a - b; });
+    for (var i = 0; i < vals.length - 1; i++) {
+      var s = (vals[i] + vals[i + 1]) / 2;
+      for (var sgn = -1; sgn <= 1; sgn += 2) {
+        var e = 0;
+        for (var k = 0; k < pts.length; k++) {
+          var pred = ((pts[k][j] <= s) ? -sgn : sgn);
+          if (pred !== pts[k][2]) e += w[k];
+        }
+        if (!best || e < best.e) best = { j: j, s: s, sgn: sgn, e: e };
+      }
+    }
+  }
+  return best;
+}
+function stumpPred(st, x, y) {
+  return ((st.j === 0 ? x : y) <= st.s) ? -st.sgn : st.sgn;
+}
+
+/* ============================================================
+   위젯 1 — bagging vs boosting
+   ============================================================ */
+WIDGETS.register('bag-vs-boost', function (root, ctx) {
+  var mode = 'bag', M = 5;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'kind', label: '방식' },
+    { key: 'par', label: '병렬화 가능한가' },
+    { key: 'aim', label: '겨냥하는 것' },
+    { key: 'mem', label: '구성원은 어떤 model 이 좋은가' }
+  ]);
+
+  function draw() {
+    var W = 460, H0 = 250, padL = 40, cy = 120, bw = 54, gap = 22;
+    var svg = VIZ.el('svg', { viewBox: '0 0 ' + W + ' ' + H0, role: 'img' });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(svg);
+    svg.appendChild(VIZ.el('text', { x: 12, y: 20, class: 'viz-label', 'font-size': 11,
+      text: mode === 'bag' ? 'bagging — 원본에서 각자 표본을 뽑아 나란히 학습한 뒤 평균'
+                           : 'boosting — 앞 model 의 실수를 다음 model 이 이어받는다' }));
+
+    /* 원본 data 상자 */
+    svg.appendChild(VIZ.el('rect', { x: 12, y: cy - 22, width: 44, height: 44, rx: 4,
+      fill: 'var(--ink-3)', 'fill-opacity': 0.16, stroke: 'var(--ink-3)', 'stroke-width': 1 }));
+    svg.appendChild(VIZ.el('text', { x: 34, y: cy + 5, 'text-anchor': 'middle',
+      class: 'viz-label', 'font-size': 11, text: 'data' }));
+
+    for (var m = 0; m < M; m++) {
+      var x = padL + 36 + m * (bw + gap);
+      var yy = mode === 'bag' ? cy - 22 : cy - 22 + (m % 2 === 0 ? -14 : 14);
+      svg.appendChild(VIZ.el('rect', { x: x, y: yy, width: bw, height: 44, rx: 4,
+        fill: 'var(--jade)', 'fill-opacity': 0.22, stroke: 'var(--jade)', 'stroke-width': 1 }));
+      svg.appendChild(VIZ.el('text', { x: x + bw / 2, y: yy + 27, 'text-anchor': 'middle',
+        class: 'viz-label', 'font-size': 11, text: 'h' + (m + 1) }));
+      if (mode === 'bag') {
+        svg.appendChild(VIZ.el('line', { x1: 58, y1: cy, x2: x - 2, y2: yy + 22,
+          stroke: 'var(--ink-3)', 'stroke-width': 1, 'stroke-opacity': 0.45, 'stroke-dasharray': '3 3' }));
+      } else if (m > 0) {
+        var px = padL + 36 + (m - 1) * (bw + gap);
+        var py = cy - 22 + ((m - 1) % 2 === 0 ? -14 : 14);
+        svg.appendChild(VIZ.el('line', { x1: px + bw, y1: py + 22, x2: x, y2: yy + 22,
+          stroke: 'var(--seal)', 'stroke-width': 1.8, 'stroke-opacity': 0.75 }));
+      } else {
+        svg.appendChild(VIZ.el('line', { x1: 58, y1: cy, x2: x, y2: yy + 22,
+          stroke: 'var(--seal)', 'stroke-width': 1.8, 'stroke-opacity': 0.75 }));
+      }
+    }
+    svg.appendChild(VIZ.el('text', { x: 12, y: H0 - 16, class: 'viz-label', 'font-size': 11,
+      text: mode === 'bag' ? '점선 = 서로 독립 (순서를 바꿔도 같다)'
+                           : '실선 = 순차 의존 (앞이 바뀌면 뒤가 전부 바뀐다)' }));
+
+    out.setRaw('kind', mode === 'bag' ? 'Bagging / Random Forest' : 'Boosting');
+    out.setRaw('par', mode === 'bag' ? '가능 — 완전 병렬' : '불가능 — 순서가 의미를 갖는다');
+    out.setRaw('aim', mode === 'bag' ? '분산' : '편향');
+    out.setRaw('mem', mode === 'bag' ? '깊고 강한 model (완전히 자란 트리)'
+                                     : '얕고 약한 model (깊이 3~6)');
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '방식',
+    options: [{ value: 'bag', label: 'Bagging' }, { value: 'boost', label: 'Boosting' }],
+    value: 'bag', onChange: function (v) { mode = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '구성원 수', min: 2, max: 5, step: 1, value: 5, digits: 0,
+    onInput: function (v) { M = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — 분산 감소
+   ============================================================ */
+WIDGETS.register('bagging-variance', function (root, ctx) {
+  var rho = 0.5, Mat = 10;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'v', label: '지금 M 에서의 분산', digits: 4 },
+    { key: 'floor', label: '아무리 늘려도 못 넘는 바닥 ρσ²', digits: 4 },
+    { key: 'gap', label: '바닥까지 남은 몫', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function v(M) { return rho + (1 - rho) / M; }
+
+  function draw() {
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 1, xmax: 100, ymin: 0, ymax: 1.08,
+      pad: { t: 30, r: 16, b: 34, l: 50 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(20, 0.25).axes('구성원 수 M', '').ticks(20, 0.25);
+    p.text(1, 1.08, '앙상블 예측의 분산 (σ² = 1) · 가로 점선 = 바닥 ρσ²', { size: 10, dy: -10 });
+
+    p.curve(v, { samples: 300 });
+    p.line([[1, rho], [100, rho]], { dash: '4 3', width: 1.8 });
+    /* 비교용 ρ=0 */
+    p.curve(function (M) { return 1 / M; }, { samples: 300, alt: true, dash: '2 3' });
+
+    p.dot(Mat, v(Mat), 5.5);
+    p.callout(Mat, v(Mat), 'M = ' + Mat + ' → ' + v(Mat).toFixed(3),
+      { dx: 20, dy: 24, tone: 'var(--seal)' });
+
+    out.set('v', v(Mat));
+    out.set('floor', rho);
+    out.set('gap', v(Mat) - rho);
+    out.setRaw('note', rho > 0.7 ? 'ρ 가 높다 — M 을 늘려도 거의 소용없다'
+      : (rho < 0.15 ? 'ρ 가 낮다 — M 을 늘린 만큼 곧바로 이득' : '중간'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '구성원 사이 상관 ρ', min: 0, max: 0.95, step: 0.01, value: 0.5, digits: 2,
+    onInput: function (v2) { rho = v2; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '구성원 수 M', min: 1, max: 100, step: 1, value: 10, digits: 0,
+    onInput: function (v2) { Mat = v2; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — AdaBoost 가중치
+   ============================================================ */
+WIDGETS.register('adaboost-steps', function (root, ctx) {
+  var seed = 4;
+
+  var pts = null;
+  function makeData() {
+    var rnd = mkRand(seed * 733 + 11), out2 = [];
+    for (var i = 0; i < 24; i++) {
+      var c = i % 2 === 0 ? -1 : 1;
+      var cx = c > 0 ? 0.9 : -0.9, cy = c > 0 ? 0.6 : -0.5;
+      out2.push([cx + 0.85 * gauss(rnd), cy + 0.85 * gauss(rnd), c]);
+    }
+    return out2;
+  }
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'r', label: '라운드' },
+    { key: 'eps', label: '이 라운드의 가중 오차 ε', digits: 4 },
+    { key: 'a', label: '발언권 α', digits: 4 },
+    { key: 'half', label: '재가중 후 틀린 것들의 총 가중치', digits: 6 }
+  ]);
+
+  function draw(step) {
+    if (!pts) pts = makeData();
+    var n = pts.length, w = new Array(n).fill(1 / n), i, st = null, eps = 0, alpha = 0, half = 0;
+    var models = [];
+    for (var t = 0; t <= step; t++) {
+      st = fitStump(pts, w);
+      eps = Math.min(0.499, Math.max(1e-6, st.e));
+      alpha = 0.5 * Math.log((1 - eps) / eps);
+      models.push({ st: st, a: alpha });
+      if (t < step) {
+        var Z = 0, nw = new Array(n);
+        for (i = 0; i < n; i++) {
+          var ok = stumpPred(st, pts[i][0], pts[i][1]) === pts[i][2];
+          nw[i] = w[i] * Math.exp(ok ? -alpha : alpha);
+          Z += nw[i];
+        }
+        for (i = 0; i < n; i++) w[i] = nw[i] / Z;
+      } else {
+        var Z2 = 0, tot = 0, nw2 = new Array(n);
+        for (i = 0; i < n; i++) {
+          var ok2 = stumpPred(st, pts[i][0], pts[i][1]) === pts[i][2];
+          nw2[i] = w[i] * Math.exp(ok2 ? -alpha : alpha);
+          Z2 += nw2[i];
+          if (!ok2) tot += nw2[i];
+        }
+        half = tot / Z2;
+      }
+    }
+
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -3.2, xmax: 3.2, ymin: -2.6, ymax: 2.6,
+      pad: { t: 30, r: 16, b: 30, l: 42 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x₁', '').ticks(1, 1);
+    p.text(-3.2, 2.6, 'x₂ · 점의 크기 = 가중치 · 선 = 이 라운드의 그루터기',
+      { size: 10, dy: -10 });
+
+    /* 누적 예측 영역 */
+    for (var gx = 0; gx < 28; gx++) {
+      for (var gy = 0; gy < 22; gy++) {
+        var x0 = -3.2 + 6.4 * gx / 28, x1 = -3.2 + 6.4 * (gx + 1) / 28;
+        var y0 = -2.6 + 5.2 * gy / 22, y1 = -2.6 + 5.2 * (gy + 1) / 22;
+        var s = 0;
+        for (var q = 0; q < models.length; q++) {
+          s += models[q].a * stumpPred(models[q].st, (x0 + x1) / 2, (y0 + y1) / 2);
+        }
+        p.add(VIZ.el('rect', {
+          x: p.X(x0), y: p.Y(y1),
+          width: Math.max(1, p.X(x1) - p.X(x0)), height: Math.max(1, p.Y(y0) - p.Y(y1)),
+          fill: s > 0 ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': 0.13
+        }));
+      }
+    }
+    /* 이번 그루터기 선 */
+    if (st.j === 0) p.line([[st.s, -2.6], [st.s, 2.6]], { width: 2.4 });
+    else p.line([[-3.2, st.s], [3.2, st.s]], { width: 2.4 });
+
+    for (i = 0; i < n; i++) {
+      p.add(VIZ.el('circle', {
+        cx: p.X(Math.max(-3.1, Math.min(3.1, pts[i][0]))),
+        cy: p.Y(Math.max(-2.5, Math.min(2.5, pts[i][1]))),
+        r: 2.4 + 26 * w[i], fill: pts[i][2] > 0 ? 'var(--seal)' : 'var(--jade)',
+        'fill-opacity': 0.85
+      }));
+    }
+
+    out.setRaw('r', (step + 1) + ' / 12');
+    out.set('eps', eps);
+    out.set('a', alpha);
+    out.set('half', half);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; pts = null; draw(pl ? pl.at() : 0); }
+  });
+  var pl = WIDGETS.player({ host: ctx.controls, steps: 12, fps: 1.6, label: '라운드', onStep: draw });
+});
+
+/* ============================================================
+   위젯 4 — gradient boosting 잔차
+   ============================================================ */
+WIDGETS.register('gbm-residual', function (root, ctx) {
+  var eta = 0.3, leaves = 3, seed = 8;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'm', label: '지금까지 더한 트리 수' },
+    { key: 'sse', label: 'train SSE', digits: 4 },
+    { key: 'rmax', label: '남은 잔차의 최대 절댓값', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  var xs = null, ys = null;
+  function makeData() {
+    var rnd = mkRand(seed * 419 + 3);
+    xs = []; ys = [];
+    for (var i = 0; i < 40; i++) {
+      var x = -2 + 4 * i / 39;
+      xs.push(x); ys.push(Math.sin(1.6 * x) + 0.3 * x + 0.18 * gauss(rnd));
+    }
+  }
+
+  /* 잔차에 아주 작은 회귀트리(구간 상수) 를 맞춘다 */
+  function fitStumpReg(res, k) {
+    var segs = [{ lo: -9, hi: 9, idx: xs.map(function (_, i) { return i; }) }];
+    function sse(idx) {
+      if (!idx.length) return 0;
+      var m = 0, t;
+      for (t = 0; t < idx.length; t++) m += res[idx[t]] / idx.length;
+      var s = 0;
+      for (t = 0; t < idx.length; t++) s += Math.pow(res[idx[t]] - m, 2);
+      return s;
+    }
+    while (segs.length < k) {
+      var bi = -1, bs = null, bg = 1e-12;
+      for (var si = 0; si < segs.length; si++) {
+        var idx = segs[si].idx;
+        if (idx.length < 4) continue;
+        var base = sse(idx);
+        var so = idx.slice().sort(function (a, b) { return xs[a] - xs[b]; });
+        for (var c = 2; c < so.length - 1; c++) {
+          var s = (xs[so[c - 1]] + xs[so[c]]) / 2;
+          var g = base - sse(so.slice(0, c)) - sse(so.slice(c));
+          if (g > bg) { bg = g; bi = si; bs = { s: s, L: so.slice(0, c), R: so.slice(c) }; }
+        }
+      }
+      if (bi < 0) break;
+      var old = segs[bi];
+      segs.splice(bi, 1, { lo: old.lo, hi: bs.s, idx: bs.L }, { lo: bs.s, hi: old.hi, idx: bs.R });
+    }
+    segs.forEach(function (sg) {
+      var m = 0;
+      for (var t = 0; t < sg.idx.length; t++) m += res[sg.idx[t]] / Math.max(1, sg.idx.length);
+      sg.mean = m;
+    });
+    return function (x) {
+      for (var i = 0; i < segs.length; i++) if (x > segs[i].lo && x <= segs[i].hi) return segs[i].mean;
+      return segs[segs.length - 1].mean;
+    };
+  }
+
+  function draw(step) {
+    if (!xs) makeData();
+    var n = xs.length, F = new Array(n).fill(0), i;
+    var m0 = 0;
+    for (i = 0; i < n; i++) m0 += ys[i] / n;
+    for (i = 0; i < n; i++) F[i] = m0;
+    var fns = [];
+    for (var t = 0; t < step; t++) {
+      var res = [];
+      for (i = 0; i < n; i++) res.push(ys[i] - F[i]);
+      var f = fitStumpReg(res, leaves);
+      fns.push(f);
+      for (i = 0; i < n; i++) F[i] += eta * f(xs[i]);
+    }
+    var sse = 0, rmax = 0;
+    for (i = 0; i < n; i++) {
+      var r = ys[i] - F[i];
+      sse += r * r;
+      rmax = Math.max(rmax, Math.abs(r));
+    }
+
+    /* 위 패널: 예측 */
+    var p1 = VIZ.plot({ w: 460, h: 172, xmin: -2.2, xmax: 2.2, ymin: -2, ymax: 2,
+      pad: { t: 26, r: 14, b: 20, l: 40 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p1.svg);
+    panel(p1).grid(1, 1).axes('x', '').ticks(1, 1);
+    p1.text(-2.2, 2, 'y · 점 = data · 선 = 지금까지의 예측 F', { size: 10, dy: -8 });
+    var line = [];
+    for (i = 0; i < n; i++) line.push([xs[i], Math.max(-1.95, Math.min(1.95, F[i]))]);
+    p1.line(line, { width: 2.2 });
+    for (i = 0; i < n; i++) p1.dot(xs[i], Math.max(-1.95, Math.min(1.95, ys[i])), 2.8);
+
+    /* 아래 패널: 잔차 */
+    var p2 = VIZ.plot({ w: 460, h: 128, xmin: -2.2, xmax: 2.2, ymin: -1.3, ymax: 1.3,
+      pad: { t: 24, r: 14, b: 22, l: 40 } });
+    ctx.stage.appendChild(p2.svg);
+    panel(p2).grid(1, 0.5).axes('x', '').ticks(1, 0.5);
+    p2.text(-2.2, 1.3, '남은 잔차 y − F', { size: 10, dy: -8 });
+    p2.line([[-2.2, 0], [2.2, 0]], { width: 1.6 });
+    for (i = 0; i < n; i++) {
+      var rr = Math.max(-1.25, Math.min(1.25, ys[i] - F[i]));
+      p2.dot(xs[i], rr, 2.8);
+      p2.line([[xs[i], 0], [xs[i], rr]], { dash: '2 3' });
+    }
+
+    out.setRaw('m', String(step));
+    out.set('sse', sse);
+    out.set('rmax', rmax);
+    out.setRaw('note', step === 0 ? '아직 평균만 — 잔차가 곧 원래 신호'
+      : (rmax < 0.5 ? '잔차가 거의 잡음만 남았다' : '아직 구조가 남아 있다'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '학습률 η', min: 0.05, max: 1, step: 0.05, value: 0.3, digits: 2,
+    onInput: function (v) { eta = v; draw(pl ? pl.at() : 0); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '각 트리의 잎 수', min: 2, max: 8, step: 1, value: 3, digits: 0,
+    onInput: function (v) { leaves = v; draw(pl ? pl.at() : 0); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 8, digits: 0,
+    onInput: function (v) { seed = v; xs = null; draw(pl ? pl.at() : 0); }
+  });
+  var pl = WIDGETS.player({ host: ctx.controls, steps: 21, fps: 2.5, label: '트리 수', onStep: draw });
+});
+
+/* ============================================================
+   위젯 5 — 학습률과 트리 수
+   ============================================================ */
+WIDGETS.register('boosting-lr', function (root, ctx) {
+  var eta = 0.1, Mat = 20;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'F', label: '지금 예측값 (참값 10)', digits: 4 },
+    { key: 'r', label: '남은 잔차', digits: 5 },
+    { key: 'need', label: '잔차를 0.05 아래로 만드는 데 필요한 트리 수' },
+    { key: 'prod', label: 'η × M' }
+  ]);
+
+  function F(m) { return 10 - 5 * Math.pow(1 - eta, m); }
+
+  function draw() {
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 0, xmax: 120, ymin: 4.5, ymax: 10.5,
+      pad: { t: 30, r: 16, b: 34, l: 48 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(20, 1.5).axes('트리 수 m', '').ticks(20, 1.5);
+    p.text(0, 10.5, '예측값 F_m · 가로선 = 참값 10 · 점선들 = 다른 η', { size: 10, dy: -10 });
+    p.line([[0, 10], [120, 10]], { width: 2 });
+
+    [0.05, 0.1, 0.3].forEach(function (e, k) {
+      p.curve(function (m) { return 10 - 5 * Math.pow(1 - e, m); },
+        { samples: 240, alt: k % 2 === 1, dash: Math.abs(e - eta) < 1e-9 ? null : '3 3' });
+    });
+    p.curve(F, { samples: 240, width: 2.6 });
+    p.dot(Mat, F(Mat), 5.5);
+    p.callout(Mat, F(Mat), 'η=' + eta.toFixed(2) + ', m=' + Mat,
+      { dx: 20, dy: 24, tone: 'var(--seal)' });
+
+    var need = Math.ceil(Math.log(0.05 / 5) / Math.log(1 - eta));
+    out.set('F', F(Mat));
+    out.set('r', 10 - F(Mat));
+    out.setRaw('need', String(need) + ' 그루');
+    out.setRaw('prod', (eta * need).toFixed(2) + '  (η 를 바꿔도 대략 일정)');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '학습률 η', min: 0.02, max: 0.5, step: 0.01, value: 0.1, digits: 2,
+    onInput: function (v) { eta = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '트리 수 m', min: 1, max: 120, step: 1, value: 20, digits: 0,
+    onInput: function (v) { Mat = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 6 — random forest vs 단일 트리
+   ============================================================ */
+WIDGETS.register('rf-vs-tree', function (root, ctx) {
+  var M = 1, seed = 6, mtry = 1;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'M', label: '트리 수' },
+    { key: 'mtry', label: '분할마다 보는 feature 수' },
+    { key: 'tr', label: 'train 오차', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  var pts = null;
+  function makeData() {
+    var rnd = mkRand(seed * 907 + 5);
+    pts = [];
+    for (var i = 0; i < 60; i++) {
+      var x = -2.6 + 5.2 * rnd(), y = -2.2 + 4.4 * rnd();
+      var c = (0.9 * x + y > 0.2) ? 1 : 0;
+      if (rnd() < 0.07) c = 1 - c;
+      pts.push([x, y, c]);
+    }
+  }
+
+  /* bootstrap + feature 무작위로 얕은 트리 하나 */
+  function growTree(rnd) {
+    var samp = [];
+    for (var i = 0; i < pts.length; i++) samp.push(pts[Math.floor(rnd() * pts.length)]);
+    function rec(sub, depth) {
+      var c0 = 0, c1 = 0, k;
+      for (k = 0; k < sub.length; k++) (sub[k][2] ? c1++ : c0++);
+      var node = { leaf: true, cls: c1 > c0 ? 1 : 0 };
+      if (depth >= 5 || sub.length < 6 || c0 === 0 || c1 === 0) return node;
+      var feats = mtry >= 2 ? [0, 1] : [rnd() < 0.5 ? 0 : 1];
+      var best = null;
+      for (var fi = 0; fi < feats.length; fi++) {
+        var j = feats[fi];
+        var vals = sub.map(function (q) { return q[j]; }).slice().sort(function (a, b) { return a - b; });
+        for (var t = 1; t < vals.length; t++) {
+          if (vals[t] - vals[t - 1] < 1e-9) continue;
+          var s = (vals[t] + vals[t - 1]) / 2, L = [], R = [];
+          for (k = 0; k < sub.length; k++) (sub[k][j] <= s ? L : R).push(sub[k]);
+          if (L.length < 3 || R.length < 3) continue;
+          function gi(a) {
+            var n0 = 0, n1 = 0, q;
+            for (q = 0; q < a.length; q++) (a[q][2] ? n1++ : n0++);
+            var n = n0 + n1;
+            if (!n) return 0;
+            var pp = n0 / n;
+            return 1 - pp * pp - (1 - pp) * (1 - pp);
+          }
+          var w = (L.length * gi(L) + R.length * gi(R)) / sub.length;
+          if (!best || w < best.w) best = { j: j, s: s, w: w, L: L, R: R };
+        }
+      }
+      if (!best) return node;
+      return { leaf: false, j: best.j, s: best.s, L: rec(best.L, depth + 1), R: rec(best.R, depth + 1) };
+    }
+    return rec(samp, 0);
+  }
+  function pred(t, x, y) {
+    while (!t.leaf) t = ((t.j === 0 ? x : y) <= t.s) ? t.L : t.R;
+    return t.cls;
+  }
+
+  function draw() {
+    if (!pts) makeData();
+    var rnd = mkRand(seed * 31 + 17), forest = [];
+    for (var m = 0; m < M; m++) forest.push(growTree(rnd));
+    function vote(x, y) {
+      var s = 0;
+      for (var m2 = 0; m2 < forest.length; m2++) s += pred(forest[m2], x, y);
+      return s * 2 > forest.length ? 1 : 0;
+    }
+
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -2.8, xmax: 2.8, ymin: -2.4, ymax: 2.4,
+      pad: { t: 30, r: 16, b: 30, l: 42 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x₁', '').ticks(1, 1);
+    p.text(-2.8, 2.4, 'x₂ · 참 경계는 비스듬한 직선 · 배경 = 앙상블의 예측', { size: 10, dy: -10 });
+
+    for (var gx = 0; gx < 34; gx++) {
+      for (var gy = 0; gy < 26; gy++) {
+        var x0 = -2.8 + 5.6 * gx / 34, x1 = -2.8 + 5.6 * (gx + 1) / 34;
+        var y0 = -2.4 + 4.8 * gy / 26, y1 = -2.4 + 4.8 * (gy + 1) / 26;
+        var c = vote((x0 + x1) / 2, (y0 + y1) / 2);
+        p.add(VIZ.el('rect', {
+          x: p.X(x0), y: p.Y(y1),
+          width: Math.max(1, p.X(x1) - p.X(x0)), height: Math.max(1, p.Y(y0) - p.Y(y1)),
+          fill: c ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': 0.14
+        }));
+      }
+    }
+    p.line([[-2.8, 0.2 + 0.9 * 2.8], [2.8, 0.2 - 0.9 * 2.8]], { dash: '4 3', width: 1.6 });
+    var wrong = 0;
+    for (var i = 0; i < pts.length; i++) {
+      if (vote(pts[i][0], pts[i][1]) !== pts[i][2]) wrong++;
+      p.add(VIZ.el('circle', {
+        cx: p.X(pts[i][0]), cy: p.Y(pts[i][1]), r: 3.2,
+        fill: pts[i][2] ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': 0.9
+      }));
+    }
+
+    out.setRaw('M', String(M));
+    out.setRaw('mtry', mtry >= 2 ? '2 (= bagging)' : '1 (= random forest)');
+    out.set('tr', wrong / pts.length);
+    out.setRaw('note', M === 1 ? '단일 트리 — 계단이 뚜렷하다'
+      : (M >= 25 ? '평균이 충분히 부드럽다' : '아직 계단이 보인다'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '트리 수 M', min: 1, max: 60, step: 1, value: 1, digits: 0,
+    onInput: function (v) { M = v; draw(); }
+  });
+  WIDGETS.toggle({
+    host: ctx.controls, label: '분할마다 보는 feature',
+    options: [{ value: 1, label: '1개 (random forest)' }, { value: 2, label: '2개 전부 (bagging)' }],
+    value: 1, onChange: function (v) { mtry = Number(v); draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 6, digits: 0,
+    onInput: function (v) { seed = v; pts = null; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

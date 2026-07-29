@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5.2 통계적 학습이론 — AI 이론 학습</title>
+<meta name="description" content="경험적 위험이 기대 위험에 가까우려면 가설 공간 전체에서 동시에 가까워야 한다. 그 균등수렴의 대가가 VC dimension이고, 분포에 맞춰 잰 것이 Rademacher complexity다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="5.2">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">5.2</span>
+        <span>5장 · 전통적 머신러닝</span>
+      </div>
+      <h1>통계적 학습이론</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 75분</span>
+        <span><b>난이도</b>★★★★☆</span>
+        <span><b>선수지식</b>
+          <a href="5.1-ml-problem-definition.html">5.1 머신러닝 문제 정의</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-bv">Bias-Variance Tradeoff</a>
+      <a class="chip" href="#c-erm">Empirical Risk Minimization</a>
+      <a class="chip" href="#c-srm">Structural Risk Minimization</a>
+      <a class="chip" href="#c-pac">PAC Learning</a>
+      <a class="chip" href="#c-vc">VC Dimension</a>
+      <a class="chip" href="#c-rad">Rademacher Complexity</a>
+      <a class="chip" href="#c-bound">Generalization Bound</a>
+      <a class="chip" href="#c-unif">Uniform Convergence</a>
+      <a class="chip" href="#c-margin">Margin Theory</a>
+      <a class="chip" href="#c-samp">Sample Complexity</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        $\hat{R}$ 을 줄여 $R$ 을 줄이려면 <strong>가설 공간 전체에서 동시에</strong> 둘이 가까워야 한다(균등수렴).
+        그 대가로 치르는 값이 <strong>가설 공간의 복잡도</strong>이고,
+        분포와 무관하게 잰 것이 <strong>VC dimension</strong>, 실제 data 에 맞춰 잰 것이 <strong>Rademacher complexity</strong>,
+        여백까지 본 것이 <strong>margin theory</strong> 다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>제곱손실의 편향-분산 분해를 유도하고 세 항을 수치로 계산할 수 있다.</li>
+        <li>Hoeffding + union bound 로 유한 가설 공간의 일반화 상계를 세우고, 왜 $\sqrt{\ln|\mathcal{H}|/n}$ 이 나오는지 설명할 수 있다.</li>
+        <li>VC dimension 을 shatter 정의로 직접 구하고, 그것이 parameter 수와 다르다는 것을 반례로 보일 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        가설 하나를 <strong>미리 정해 놓고</strong> data 를 뽑으면, $\hat{R}$ 은 $R$ 의 정직한 추정이다 —
+        동전 던지기의 비율 추정과 같다(<a href="../ch04/4.5-statistical-estimation.html">4.5</a>).
+        표본이 $n$개면 오차가 $1/\sqrt{n}$ 정도다.
+      </p>
+      <p>
+        문제는 우리가 <strong>가설을 data 를 보고 고른다</strong>는 데 있다.
+        후보가 1,000개면 그중 하나쯤은 <strong>순전히 운으로</strong> $\hat{R}$ 이 낮게 나온다.
+        <a href="../ch04/4.8-hypothesis-testing.html">4.8</a>의 다중검정과 정확히 같은 상황이다 —
+        20번 검정하면 하나는 유의하게 나오듯, 후보가 많으면 하나는 잘 맞는 것처럼 보인다.
+      </p>
+      <p>
+        그래서 필요한 것은 <strong>"어떤 가설을 고르든 안전하다"</strong>는 보증,
+        즉 <strong>$\mathcal{H}$ 안의 모든 $h$ 에 대해 동시에</strong> $\hat{R}(h)\approx R(h)$ 라는 성질이다.
+        이것이 <strong>균등수렴</strong>이고, 그 대가로 <strong>$\mathcal{H}$ 가 얼마나 큰지를 재는 수</strong>가 상계에 등장한다.
+        이 절은 그 수를 세는 세 가지 방법을 다룬다.
+      </p>
+
+      <figure class="widget" data-widget="uniform-conv">
+        <figcaption class="widget__bar">Uniform Convergence — 후보가 많으면 '운 좋은 하나'가 생긴다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">후보 수를 늘리면 <strong>최솟값이 참값보다 훨씬 아래로 내려갑니다</strong>. 개별 추정은 모두 정직한데도 그렇습니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          통계적 학습이론의 상계는 전부 같은 모양이다.
+          <strong>$R(h)\le\hat{R}(h)+(\text{복잡도}/n \text{ 꼴의 항})$</strong> —
+          왼쪽은 알고 싶은 것, 오른쪽 첫 항은 볼 수 있는 것, 둘째 항이 <strong>"후보를 많이 봤으니 그만큼 깎아 두라"</strong>는 벌금이다.
+          이론들이 다른 것은 그 벌금을 어떻게 매기느냐뿐이다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-erm"></span>
+      <h3>Empirical Risk Minimization 경험적 위험 최소화</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \hat h_{\text{ERM}}=\arg\min_{h\in\mathcal{H}}\ \hat{R}_S(h)=\arg\min_{h\in\mathcal{H}}\ \frac1n\sum_{i=1}^{n}\ell\bigl(h(x_i),y_i\bigr) $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">ERM 은 <strong>볼 수 있는 것을 최소화해 볼 수 없는 것을 최소화하려는</strong> 전략이며,
+        $\mathcal{H}$ 를 제한하지 않으면 <a href="5.1-ml-problem-definition.html">5.1</a>에서 본 대로 곧바로 무너진다.</span>
+        선형회귀·로지스틱 회귀·SVM·신경망 학습이 전부 ERM 이고, 다른 것은 $\mathcal{H}$ 와 $\ell$ 뿐이다.
+      </p>
+
+      <span class="anchor" id="c-unif"></span>
+      <h3>Uniform Convergence 균등수렴</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \sup_{h\in\mathcal{H}}\bigl|R(h)-\hat{R}_S(h)\bigr|\ \le\ \varepsilon \quad\Longrightarrow\quad R(\hat h_{\text{ERM}})\ \le\ \inf_{h\in\mathcal{H}}R(h)+2\varepsilon $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        <span class="hl">한 가설이 아니라 <strong>$\mathcal{H}$ 안의 모든 가설에 대해 동시에</strong> 경험적 위험이 참 위험에 가까우면,
+        ERM 이 고른 것도 최선에서 $2\varepsilon$ 이내다 — 이것이 학습을 보증하는 표준적인 논법이다.</span>
+        $\sup$ 이 핵심이다. 최악의 $h$ 까지 붙잡아야 <strong>"어느 것을 고르든"</strong> 이 성립한다.
+      </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>1,000명이 각자 동전을 100번씩 던집니다. 한 사람만 놓고 보면 앞면이 90번 나올 일은 거의 없습니다. 그런데 <strong>1,000명 중 가장 잘 나온 사람</strong>을 뽑으면 꽤 높은 비율이 나옵니다.</p>
+        <p>그 사람이 특별한 게 아니라 <strong>많이 뽑았기 때문</strong>입니다. 그래서 "가장 잘한 사람"의 기록을 그대로 믿으면 안 되고, <strong>몇 명 중에서 뽑았는지만큼 깎아서</strong> 봐야 합니다. 깎는 양이 곧 복잡도 항입니다.</p>
+      </div>
+
+      <span class="anchor" id="c-bound"></span>
+      <h3>Generalization Bound 일반화 상계</h3>
+      <p>유한한 $\mathcal{H}$ 에서는 Hoeffding 부등식과 union bound 만으로 상계가 나온다(유도 2).</p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \Pr\left[\ \forall h\in\mathcal{H}:\ R(h)\ \le\ \hat{R}_S(h)+\sqrt{\frac{\ln|\mathcal{H}|+\ln\frac{2}{\delta}}{2n}}\ \right]\ \ge\ 1-\delta $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        구조를 읽는 것이 중요하다. 복잡도는 <strong>$\ln|\mathcal{H}|$ 로 로그</strong>, 표본은 <strong>$\sqrt{n}$ 으로 제곱근</strong>,
+        신뢰도는 <strong>$\ln\frac1\delta$ 로 로그</strong> 다.
+        <a href="5.1-ml-problem-definition.html">5.1</a>의 식 (7)과 지수가 다른 것은 그쪽이 <strong>실현 가능한 경우</strong>($\hat R=0$ 인 $h$ 가 존재)를 가정했기 때문이다 —
+        그때는 $1/\varepsilon$, 일반적인(agnostic) 경우에는 $1/\varepsilon^2$ 이다.
+      </p>
+
+      <span class="anchor" id="c-pac"></span>
+      <h3>PAC Learning 확률적 근사 정확 학습</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \forall P,\ \forall\varepsilon,\delta>0:\quad n\ge n_{\mathcal{H}}(\varepsilon,\delta) \ \Longrightarrow\ \Pr_S\Bigl[R(\hat h)\le\inf_{h\in\mathcal{H}}R(h)+\varepsilon\Bigr]\ge1-\delta $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        <span class="hl">PAC(Probably Approximately Correct) 은 <strong>"높은 확률로($1-\delta$) 거의 정확하게($\varepsilon$ 이내)"</strong>
+        배울 수 있으면 학습 가능하다고 정의한다 — 완벽함도 확실함도 요구하지 않는 것이 요점이다<a class="cite" href="#ref-valiant1984-theory-of-learnable" data-ref="valiant1984-theory-of-learnable">1</a>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>realizable PAC</th><th>agnostic PAC</th></tr></thead>
+          <tbody>
+            <tr><td>가정</td><td>정답이 $\mathcal{H}$ 안에 있다</td><td>아무 가정 없음</td></tr>
+            <tr><td>목표</td><td>$R(\hat h)\le\varepsilon$</td><td>$R(\hat h)\le\inf_{h}R(h)+\varepsilon$</td></tr>
+            <tr><td>표본 복잡도</td><td>$O\!\left(\frac{d_{\text{VC}}\ln\frac1\varepsilon+\ln\frac1\delta}{\varepsilon}\right)$</td><td>$O\!\left(\frac{d_{\text{VC}}+\ln\frac1\delta}{\varepsilon^2}\right)$</td></tr>
+            <tr><td>$\varepsilon$ 의존</td><td>$1/\varepsilon$</td><td><strong>$1/\varepsilon^2$ — 훨씬 비싸다</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>"어떤 $P$ 에 대해서도"</strong>($\forall P$)라는 조건이 이 틀의 강점이자 약점이다.
+        분포를 몰라도 보증이 된다는 점은 강력하지만, <strong>최악의 분포에 맞춘 값</strong>이라 실제 문제에서는 심하게 느슨해진다(오해 1).
+      </p>
+
+      <span class="anchor" id="c-vc"></span>
+      <h3>VC Dimension</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ d_{\text{VC}}(\mathcal{H})=\max\bigl\{m:\ \exists\,\{x_1,\dots,x_m\}\ \text{를 } \mathcal{H} \text{ 가 shatter 한다}\bigr\} $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        <span class="hl">점 $m$개를 $\mathcal{H}$ 가 <strong>shatter 한다</strong>는 것은 그 점들에 붙일 수 있는
+        $2^m$ 가지 label 조합을 <strong>모두</strong> 만들어 낼 수 있다는 뜻이고,
+        VC dimension 은 그렇게 할 수 있는 <strong>가장 큰 $m$</strong> 이다<a class="cite" href="#ref-vapnik1971-uniform-convergence" data-ref="vapnik1971-uniform-convergence">2</a>.</span>
+      </p>
+      <p>
+        정의에 $\exists$ 와 $\forall$ 가 섞여 있어 헷갈리기 쉽다 —
+        <strong>어떤 $m$개 배치 하나만 shatter 하면 되고</strong>(모든 배치가 아니다),
+        $d_{\text{VC}}=m$ 을 보이려면 <strong>$m$개는 되고 $m+1$개는 어떤 배치로도 안 된다</strong>를 보여야 한다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>가설 공간</th><th>$d_{\text{VC}}$</th><th>parameter 수</th></tr></thead>
+          <tbody>
+            <tr><td>1차원 임계값 $\mathbb{1}[x>\theta]$</td><td class="num">1</td><td class="num">1</td></tr>
+            <tr><td>1차원 구간 $\mathbb{1}[a\le x\le b]$</td><td class="num">2</td><td class="num">2</td></tr>
+            <tr><td>$\mathbb{R}^d$ 의 선형 분류기 (절편 포함)</td><td class="num">$d+1$</td><td class="num">$d+1$</td></tr>
+            <tr><td>2차원 축 정렬 직사각형</td><td class="num">4</td><td class="num">4</td></tr>
+            <tr><td>깊이 $D$ 인 이진 결정트리 ($d$차원)</td><td>$O(2^D\log d)$</td><td>노드 수</td></tr>
+            <tr><td>$\mathbb{1}[\sin(\theta x)>0]$</td><td class="num"><strong>$\infty$</strong></td><td class="num"><strong>1</strong></td></tr>
+            <tr><td>1-nearest neighbor</td><td class="num"><strong>$\infty$</strong></td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        아래 두 줄이 <strong>"VC dimension = parameter 수"가 아니라는 결정적 반례</strong>다(오해 2).
+        $\sin(\theta x)$ 는 parameter 가 <strong>하나</strong>인데 임의 개수의 점을 shatter 한다 —
+        $\theta$ 를 아주 크게 잡으면 부호가 촘촘히 바뀌기 때문이다.
+      </p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ R(h)\ \le\ \hat{R}_S(h)+\sqrt{\frac{8}{n}\left(d_{\text{VC}}\ln\frac{2en}{d_{\text{VC}}}+\ln\frac{4}{\delta}\right)} \qquad (\text{확률 } 1-\delta) $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        무한한 $\mathcal{H}$ 에서도 상계가 세워진다는 것이 이 이론의 성취다 —
+        식 (3)의 $\ln|\mathcal{H}|$ 자리에 $d_{\text{VC}}\ln n$ 이 들어왔다.
+        그리고 <strong>$d_{\text{VC}}$ 가 유한하면 PAC 학습 가능, 무한하면 불가능</strong>하다는 동치가 성립한다.
+      </p>
+
+      <figure class="widget" data-widget="vc-shatter">
+        <figcaption class="widget__bar">Shattering — 이 가설 공간은 몇 개를 흩뜨릴 수 있나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">임계값은 2개에서, 구간은 3개에서 <strong>못 만드는 label 조합</strong>이 나옵니다. 그 직전 개수가 VC dimension 입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-rad"></span>
+      <h3>Rademacher Complexity</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \hat{\mathfrak{R}}_S(\mathcal{H})=\mathbb{E}_{\boldsymbol\sigma}\left[\sup_{h\in\mathcal{H}}\frac1n\sum_{i=1}^{n}\sigma_i\,h(x_i)\right], \qquad \sigma_i\overset{\text{i.i.d.}}{\sim}\mathrm{Uniform}\{-1,+1\} $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        <span class="hl">Rademacher complexity 는 <strong>"이 가설 공간이 무작위 잡음을 얼마나 잘 맞힐 수 있는가"</strong>를 재고,
+        VC 와 달리 <strong>실제 표본에 맞춰</strong> 계산되므로 훨씬 촘촘한 상계를 준다<a class="cite" href="#ref-bartlett2002-rademacher" data-ref="bartlett2002-rademacher">3</a>.</span>
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ R(h)\ \le\ \hat{R}_S(h)+2\,\hat{\mathfrak{R}}_S(\mathcal{H})+3\sqrt{\frac{\ln\frac{2}{\delta}}{2n}} $$</div>
+        <span class="eq__tag num">(8)</span>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>VC dimension</th><th>Rademacher complexity</th></tr></thead>
+          <tbody>
+            <tr><td>무엇에 의존</td><td>$\mathcal{H}$ 만</td><td><strong>$\mathcal{H}$ + 실제 표본</strong></td></tr>
+            <tr><td>분포</td><td>분포 무관 (최악 기준)</td><td>분포에 맞춤</td></tr>
+            <tr><td>값의 종류</td><td>정수</td><td>실수 — 연속적으로 변한다</td></tr>
+            <tr><td>계산</td><td>조합적 논증</td><td>무작위 label 로 <strong>실측 가능</strong></td></tr>
+            <tr><td>상계의 촘촘함</td><td>느슨하다</td><td>더 촘촘하다</td></tr>
+            <tr><td>관계</td><td colspan="2">$\hat{\mathfrak{R}}_S(\mathcal{H})\le\sqrt{2d_{\text{VC}}\ln(en/d_{\text{VC}})/n}$ — VC 가 Rademacher 의 상계</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        "무작위 label 을 얼마나 잘 맞히나"는 실제로 <strong>돌려서 잴 수 있다</strong>.
+        이 실험이 딥러닝 이론의 전환점이 되었다 — 신경망이 무작위 label 도 완전히 외운다는 것은
+        $\hat{\mathfrak{R}}_S\approx1$ 이라는 뜻이고, 그러면 상계 (8)이 <strong>아무 정보도 주지 못한다</strong>(오해 4).
+      </p>
+
+      <span class="anchor" id="c-margin"></span>
+      <h3>Margin Theory 여백 이론</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ R(h)\ \le\ \hat{R}_\gamma(h)+O\!\left(\sqrt{\frac{R^2/\gamma^2}{n}}\right), \qquad \hat{R}_\gamma(h)=\frac1n\sum_i \mathbb{1}\bigl[y_i h(x_i)<\gamma\bigr] $$</div>
+        <span class="eq__tag num">(9)</span>
+      </div>
+      <p>
+        <span class="hl">여백 $\gamma$ 를 크게 두고 분류하면 상계가 <strong>차원이 아니라 $R^2/\gamma^2$ 에만</strong> 의존한다 —
+        무한 차원 kernel 을 써도 여백이 크면 일반화가 보증된다.</span>
+        SVM 이 왜 되는지에 대한 이론적 답이 이것이다(<a href="5.8-support-vector-machine.html">5.8</a>).
+      </p>
+      <p>
+        $\hat{R}_\gamma$ 는 <strong>"$\gamma$ 만큼의 여유를 두고도 맞혔는가"</strong>를 세는 것이라 보통의 train 오차보다 크다.
+        <strong>여백을 키우면 벌금은 줄지만 train 항이 늘어나는</strong> 맞바꿈이 있고, 이것이 SVM 의 $C$ 조절과 대응한다.
+        boosting 이 train 오차가 0 이 된 뒤에도 test 오차가 계속 줄어드는 현상도 <strong>여백이 계속 커지기 때문</strong>으로 설명된다.
+      </p>
+
+      <span class="anchor" id="c-bv"></span>
+      <h3>Bias-Variance Tradeoff 편향-분산 맞바꿈</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathbb{E}_S\Bigl[\bigl(y-\hat h_S(x_0)\bigr)^2\Bigr] = \underbrace{\bigl(\bar h(x_0)-f(x_0)\bigr)^2}_{\text{편향}^2} + \underbrace{\mathbb{E}_S\bigl[(\hat h_S(x_0)-\bar h(x_0))^2\bigr]}_{\text{분산}} + \underbrace{\sigma^2}_{\text{잡음}} $$</div>
+        <span class="eq__tag num">(10)</span>
+      </div>
+      <p>
+        <span class="hl">제곱손실의 예측오차는 <strong>편향² · 분산 · 잡음</strong> 세 조각으로 정확히 갈리며,
+        $\bar h=\mathbb{E}_S[\hat h_S]$ 는 <strong>훈련집합을 여러 번 다시 뽑았을 때의 평균 예측</strong>이다.</span>
+        <a href="../ch04/4.5-statistical-estimation.html">4.5</a>의 $\mathrm{MSE}=\mathrm{Bias}^2+\mathrm{Var}$ 에
+        <strong>잡음 항 $\sigma^2$ 이 하나 더 붙은 형태</strong>다 — 예측오차는 추정오차와 달리 $y$ 의 잡음까지 떠안기 때문이다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>편향</th><th>분산</th></tr></thead>
+          <tbody>
+            <tr><td>뜻</td><td>평균적으로 빗나간 정도</td><td>훈련집합이 바뀌면 흔들리는 정도</td></tr>
+            <tr><td>model 복잡도를 키우면</td><td><strong>줄어든다</strong></td><td><strong>늘어난다</strong></td></tr>
+            <tr><td>$n$ 을 키우면</td><td>그대로</td><td>줄어든다</td></tr>
+            <tr><td>5.1 의 용어로</td><td>근사오차에 대응</td><td>추정오차에 대응</td></tr>
+            <tr><td>줄이는 법</td><td>표현력 · feature 추가</td><td>정규화 · bagging · data 추가</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <figure class="widget" data-widget="bias-var-sim">
+        <figcaption class="widget__bar">Bias &amp; Variance — 훈련집합을 여러 번 다시 뽑으면</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">차수를 올리면 곡선 다발이 <strong>참 함수를 감싸지만 넓게 퍼집니다</strong>. 편향이 줄고 분산이 느는 그림입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-srm"></span>
+      <h3>Structural Risk Minimization 구조적 위험 최소화</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathcal{H}_1\subset\mathcal{H}_2\subset\cdots, \qquad \hat h_{\text{SRM}}=\arg\min_{k,\ h\in\mathcal{H}_k}\ \Bigl[\hat{R}_S(h)+\mathrm{pen}(k,n)\Bigr] $$</div>
+        <span class="eq__tag num">(11)</span>
+      </div>
+      <p>
+        <span class="hl">SRM 은 가설 공간을 <strong>복잡도 순으로 층층이 쌓아 놓고</strong>,
+        경험적 위험과 복잡도 벌점의 <strong>합</strong>을 최소화한다 — 상계 (6)을 그대로 목적함수로 삼은 것이다.</span>
+        ERM 이 "$\mathcal{H}$ 를 고정하고 그 안에서 최소화"라면 SRM 은 <strong>"$\mathcal{H}$ 자체도 함께 고른다"</strong>.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>실무의 형태</th><th>$\mathrm{pen}$ 에 해당하는 것</th></tr></thead>
+          <tbody>
+            <tr><td>정규화 $\hat R+\lambda\|\mathbf{w}\|^2$</td><td>$\lambda\|\mathbf{w}\|^2$ (<a href="../ch04/4.6-likelihood-estimation.html">4.6</a> — prior 의 로그)</td></tr>
+            <tr><td>AIC / BIC</td><td>$2k$ / $k\ln n$ — parameter 수에 비례</td></tr>
+            <tr><td>MDL (최소기술길이)</td><td>model 을 적는 데 드는 비트 수 (<a href="../ch04/4.7-information-theory.html">4.7</a>)</td></tr>
+            <tr><td>교차검증</td><td>벌점을 <strong>추정</strong>으로 대체 (<a href="5.14-model-selection.html">5.14</a>)</td></tr>
+            <tr><td>결정트리 가지치기</td><td>$\alpha\times(\text{잎 노드 수})$ (<a href="5.6-decision-trees.html">5.6</a>)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        마지막 줄이 실무의 현실이다 — <strong>이론적 벌점은 너무 느슨해서 그대로 쓰지 않고
+        교차검증으로 갈음한다</strong>. SRM 은 그 절차의 <em>정당화</em>이지 계산법이 아니다.
+      </p>
+
+      <span class="anchor" id="c-samp"></span>
+      <h3>Sample Complexity 표본 복잡도</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ n_{\mathcal{H}}(\varepsilon,\delta)=\Theta\!\left(\frac{d_{\text{VC}}+\ln\frac{1}{\delta}}{\varepsilon^2}\right) \qquad (\text{agnostic PAC}) $$</div>
+        <span class="eq__tag num">(12)</span>
+      </div>
+      <p>
+        <span class="hl">$\Theta$ 라는 것이 강한 결과다 — 상계뿐 아니라 <strong>하계도 같은 형태</strong>라,
+        VC dimension 이 표본 복잡도를 <strong>정확히</strong> 특징짓는다.</span>
+        어떤 알고리즘도 이보다 적은 표본으로는 안 된다는 뜻이므로,
+        <a href="5.1-ml-problem-definition.html">5.1</a>의 No Free Lunch 를 정량화한 결과로 읽을 수 있다.
+      </p>
+
+      <figure class="widget" data-widget="bound-vs-n">
+        <figcaption class="widget__bar">Generalization Bound — 상계는 언제 쓸모가 있나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">VC 상계가 <strong>1 아래로 내려오는 데만도</strong> 표본이 아주 많이 필요합니다. 실제 간극(점선)은 훨씬 작습니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>상계들을 한 표로 모은다. <strong>전부 $\hat R+(\text{복잡도}/n \text{ 꼴})$ 이고 복잡도를 재는 방식만 다르다.</strong></p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>상계</th><th>복잡도 항</th><th>필요한 것</th><th>촘촘함</th></tr></thead>
+          <tbody>
+            <tr><td>단일 가설 (Hoeffding)</td><td>$\sqrt{\ln\frac{2}{\delta}/(2n)}$</td><td>$h$ 를 미리 고정</td><td>가장 촘촘 — 그러나 학습에 못 씀</td></tr>
+            <tr><td>유한 $\mathcal{H}$</td><td>$\sqrt{(\ln|\mathcal{H}|+\ln\frac2\delta)/(2n)}$</td><td>$|\mathcal{H}|<\infty$</td><td>보통</td></tr>
+            <tr><td>VC</td><td>$\sqrt{8(d_{\text{VC}}\ln\frac{2en}{d_{\text{VC}}}+\ln\frac4\delta)/n}$</td><td>$d_{\text{VC}}$</td><td>느슨 (분포 무관)</td></tr>
+            <tr><td>Rademacher</td><td>$2\hat{\mathfrak{R}}_S(\mathcal{H})+3\sqrt{\ln\frac2\delta/(2n)}$</td><td>표본 · 무작위 label 실험</td><td>더 촘촘 (분포 의존)</td></tr>
+            <tr><td>Margin</td><td>$O(\sqrt{R^2/(\gamma^2 n)})$</td><td>여백 $\gamma$ · data 반지름 $R$</td><td>고차원에서 유용 — <strong>차원 무관</strong></td></tr>
+            <tr><td>PAC-Bayes</td><td>$\sqrt{(D_{\mathrm{KL}}(Q\|P)+\ln\frac{n}{\delta})/(2n)}$</td><td>사후 $Q$ · 사전 $P$</td><td>딥러닝에서 유일하게 <strong>비공허한</strong> 축</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        마지막 줄이 오늘날의 연구 전선이다. VC·Rademacher 상계는 현대 신경망에서
+        <strong>1 을 훌쩍 넘어(=아무 정보 없음) 공허해지는데</strong>,
+        PAC-Bayes 계열은 학습된 가중치 분포를 이용해 <strong>실제로 의미 있는 수</strong>를 내놓는 경우가 있다.
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$\sup$</td><td>supremum 수프리멈 · 상한</td><td>최댓값 (없으면 그 극한)</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$\inf$</td><td>infimum 인피멈 · 하한</td><td>최솟값 (없으면 그 극한)</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$d_{\text{VC}}$</td><td>VC dimension 브이씨 차원</td><td>shatter 가능한 최대 점 개수</td><td>정수 또는 $\infty$</td><td>$\ge0$</td></tr>
+            <tr><td>shatter</td><td>섀터 · 흩뜨리다</td><td>$2^m$ 개 label 조합을 모두 실현</td><td>관계</td><td>—</td></tr>
+            <tr><td>$\hat{\mathfrak{R}}_S$</td><td>Rademacher complexity</td><td>무작위 label 과의 최대 상관</td><td>scalar</td><td>$[0,1]$ (이진일 때)</td></tr>
+            <tr><td>$\sigma_i$</td><td>sigma i · Rademacher 변수</td><td>$\pm1$ 을 반반 확률로</td><td>$\{-1,+1\}$</td><td>—</td></tr>
+            <tr><td>$\gamma$</td><td>gamma 감마</td><td>여백 (margin)</td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>$\hat{R}_\gamma$</td><td>margin error</td><td>여백 $\gamma$ 미만인 비율</td><td>scalar</td><td>$[0,1]$</td></tr>
+            <tr><td>$\bar h$</td><td>h bar</td><td>훈련집합에 대한 평균 예측 $\mathbb{E}_S[\hat h_S]$</td><td>함수</td><td>—</td></tr>
+            <tr><td>$\sigma^2$</td><td>sigma squared</td><td>$y$ 의 잡음 분산 (줄일 수 없음)</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$\mathrm{pen}(k,n)$</td><td>penalty 페널티</td><td>복잡도 벌점</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$\Theta(\cdot)$</td><td>big theta</td><td>상계와 하계가 같은 차수</td><td>점근 기호</td><td>—</td></tr>
+            <tr><td>$e$</td><td>e · 자연상수</td><td>$2.71828\ldots$</td><td>scalar</td><td>—</td></tr>
+            <tr><td>$\delta$</td><td>delta 델타</td><td>보증이 깨질 확률</td><td>scalar</td><td>$(0,1)$</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">같은 것을 다르게 부른다</span>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>이 사이트</th><th>같은 뜻으로 쓰이는 말</th><th>주의할 점</th></tr></thead>
+            <tbody>
+              <tr><td>편향 (bias)</td><td>approximation error, model bias</td><td><a href="5.1-ml-problem-definition.html">5.1</a>의 <strong>귀납적 편향과 전혀 다른 말</strong>이다</td></tr>
+              <tr><td>$d_{\text{VC}}$</td><td>VC 차원, Vapnik–Chervonenkis dimension</td><td><strong>parameter 수가 아니다</strong> (오해 2)</td></tr>
+              <tr><td>일반화 상계</td><td>generalization bound, risk bound, PAC bound</td><td>대부분 <strong>상계</strong>일 뿐 — 실제 값이 아니다</td></tr>
+              <tr><td>margin</td><td>여백, 마진, 함수적 여백 / 기하적 여백</td><td>둘의 정의가 다르다 (<a href="5.8-support-vector-machine.html">5.8</a>)</td></tr>
+              <tr><td>SRM</td><td>구조적 위험 최소화, 벌점화 ERM</td><td>정규화·AIC·MDL 이 전부 같은 틀의 사례다</td></tr>
+              <tr><td>growth function</td><td>$\Pi_{\mathcal{H}}(n)$, shattering coefficient</td><td>$d_{\text{VC}}$ 를 정의하는 중간 도구</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — 편향-분산-잡음 분해</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ y=f(x_0)+\varepsilon,\quad \mathbb{E}[\varepsilon]=0,\ \mathrm{Var}(\varepsilon)=\sigma^2,\quad \bar h=\mathbb{E}_S[\hat h_S(x_0)] $$</div>
+          <div class="derive__why">잡음은 훈련집합과 독립이라고 둔다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}\bigl[(y-\hat h_S)^2\bigr]=\mathbb{E}\bigl[(\varepsilon+f-\hat h_S)^2\bigr]=\sigma^2+\mathbb{E}\bigl[(f-\hat h_S)^2\bigr] $$</div>
+          <div class="derive__why">$\varepsilon$ 이 독립이라 <strong>교차항이 0</strong> 이 된다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}\bigl[(f-\hat h_S)^2\bigr]=\mathbb{E}\bigl[((f-\bar h)+(\bar h-\hat h_S))^2\bigr] $$</div>
+          <div class="derive__why">$\bar h$ 를 <strong>더했다 뺐다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}\bigl[\bar h-\hat h_S\bigr]=0 \ \Rightarrow\ \text{교차항} = 2(f-\bar h)\cdot 0 = 0 $$</div>
+          <div class="derive__why">$\bar h$ 의 정의 — 여기서도 <strong>교차항이 사라진다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore\ \mathbb{E}\bigl[(y-\hat h_S)^2\bigr]=\underbrace{(f-\bar h)^2}_{\text{편향}^2}+\underbrace{\mathbb{E}[(\hat h_S-\bar h)^2]}_{\text{분산}}+\underbrace{\sigma^2}_{\text{잡음}} $$</div>
+          <div class="derive__why">식 (10). <strong>세 항이 모두 음수가 아니라</strong> 총오차의 하한이 $\sigma^2$ 이다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathcal{H} \text{ 를 키우면}:\ (f-\bar h)^2\downarrow,\quad \mathbb{E}[(\hat h_S-\bar h)^2]\uparrow $$</div>
+          <div class="derive__why">평균 예측은 참값에 가까워지지만 <strong>표본마다 더 흔들린다</strong></div>
+        </div>
+      </div>
+
+      <h3>유도 2 — 유한 가설 공간의 일반화 상계</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \Pr\bigl[|R(h)-\hat{R}_S(h)|>\varepsilon\bigr]\ \le\ 2e^{-2n\varepsilon^2} \qquad (h \text{ 고정}) $$</div>
+          <div class="derive__why"><strong>Hoeffding 부등식</strong> — $\ell\in[0,1]$ 인 $n$개 독립 항의 평균에 대한 집중 부등식</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Pr\Bigl[\exists h\in\mathcal{H}:\ |R(h)-\hat{R}_S(h)|>\varepsilon\Bigr]\ \le\ \sum_{h\in\mathcal{H}}2e^{-2n\varepsilon^2}=2|\mathcal{H}|e^{-2n\varepsilon^2} $$</div>
+          <div class="derive__why"><strong>union bound</strong> — "하나라도 벗어날 확률"을 각각의 합으로 눌렀다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 2|\mathcal{H}|e^{-2n\varepsilon^2}=\delta \ \Longrightarrow\ \varepsilon=\sqrt{\frac{\ln|\mathcal{H}|+\ln\frac{2}{\delta}}{2n}} $$</div>
+          <div class="derive__why">$\delta$ 로 놓고 $\varepsilon$ 에 대해 풀었다 — 식 (3)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ R(\hat h)\le\hat{R}(\hat h)+\varepsilon\le\hat{R}(h^\star)+\varepsilon\le R(h^\star)+2\varepsilon $$</div>
+          <div class="derive__why">균등수렴 → ERM 의 정의($\hat R(\hat h)\le\hat R(h^\star)$) → 다시 균등수렴. <strong>식 (2)</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \varepsilon\propto\frac{1}{\sqrt{n}} \ \ \text{vs} \ \ \varepsilon\propto\frac{1}{n} \ (\text{실현 가능한 경우}) $$</div>
+          <div class="derive__why">유도 2 는 <strong>제곱근</strong>, 5.1 유도 2 는 <strong>1차</strong> — 가정이 지수를 바꾼다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{무한 } \mathcal{H}: \ |\mathcal{H}| \to \Pi_{\mathcal{H}}(2n)\le\left(\frac{2en}{d_{\text{VC}}}\right)^{d_{\text{VC}}} $$</div>
+          <div class="derive__why"><strong>Sauer–Shelah 보조정리</strong> — 서로 다른 label 패턴의 수가 $d_{\text{VC}}$ 차 <strong>다항식</strong>으로 억제된다. 식 (6)의 출처</div>
+        </div>
+      </div>
+      <p>
+        마지막 줄이 이 이론의 심장이다.
+        <span class="hl">$\mathcal{H}$ 가 무한해도 <strong>$n$개 점 위에서 구별되는 함수의 개수는 유한</strong>하고,
+        그 개수가 $d_{\text{VC}}$ 를 넘으면 지수가 아니라 <strong>다항식</strong>으로만 자란다 —
+        그래서 $e^{-2n\varepsilon^2}$ 를 이길 수 있다.</span>
+      </p>
+
+      <h3>유도 3 — 1차원 구간의 VC dimension 은 2</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathcal{H}=\bigl\{h_{a,b}(x)=\mathbb{1}[a\le x\le b]\bigr\} $$</div>
+          <div class="derive__why">구간 안이면 1, 밖이면 0</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ m=2:\ x_1=1,\ x_2=2 \ \Rightarrow\ (0,0):[5,6],\ (1,0):[0.5,1.5],\ (0,1):[1.5,2.5],\ (1,1):[0.5,2.5] $$</div>
+          <div class="derive__why"><strong>네 조합을 모두 만들었다</strong> → 2개는 shatter 가능</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ m=3:\ x_1&lt;x_2&lt;x_3 \ \text{에 대해 } (1,0,1) \text{ 을 만들려면} $$</div>
+          <div class="derive__why">어떤 배치를 잡아도 이 조합이 문제가 된다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ a\le x_1 \text{ 이고 } x_3\le b \ \Rightarrow\ a\le x_1&lt;x_2&lt;x_3\le b \ \Rightarrow\ h(x_2)=1 $$</div>
+          <div class="derive__why">구간이 양 끝을 담으면 <strong>가운데도 반드시 담는다</strong> — 볼록성</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore\ (1,0,1) \text{ 은 불가능} \ \Rightarrow\ d_{\text{VC}}=2 $$</div>
+          <div class="derive__why">$8$ 개 중 $7$ 개만 만들 수 있다. <strong>parameter 수와 우연히 같다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{반면 } \mathbb{1}[\sin(\theta x)>0]:\ x_i=2^{-i} \ \text{로 두면 임의의 } m \text{ 을 shatter} $$</div>
+          <div class="derive__why">$\theta$ 를 이진 전개로 골라 부호를 원하는 대로 맞춘다 → <strong>parameter 1개인데 $d_{\text{VC}}=\infty$</strong></div>
+        </div>
+      </div>
+
+      <details>
+        <summary>왜 상계가 딥러닝을 설명하지 못하는가</summary>
+        <p>
+          신경망은 parameter 가 표본 수보다 훨씬 많고, <strong>무작위로 섞은 label 도 완전히 외운다</strong>.
+          외운다는 것은 그 표본 위에서 $\hat{\mathfrak{R}}_S(\mathcal{H})\approx1$ 이라는 뜻이고,
+          식 (8)의 상계가 $R\le\hat R+2$ 가 되어 <strong>아무 정보도 주지 않는다</strong>(공허한 상계).
+        </p>
+        <p>
+          그런데 같은 network 가 진짜 label 로 학습하면 잘 일반화한다.
+          <strong>$\mathcal{H}$ 의 크기만으로는 설명이 안 된다</strong>는 뜻이고,
+          설명은 <strong>$\mathcal{H}$ 밖</strong>에서 찾아야 한다 —
+          SGD 가 어떤 해를 고르는가(암묵적 정규화, <a href="../ch03/3.9-constraints-regularization.html">3.9</a>),
+          도달한 최소점이 얼마나 평평한가(<a href="../ch03/3.10-deep-learning-optimization.html">3.10</a>),
+          data 자체의 구조가 어떤가 하는 것들이다.
+        </p>
+        <p>
+          이 절의 이론이 틀렸다는 뜻은 아니다. 상계는 <strong>여전히 참</strong>이고,
+          최악의 경우에 대한 보증으로서 유효하다. 다만 <strong>느슨해서 실무의 model 선택에는 못 쓴다</strong> —
+          그래서 실제로는 교차검증으로 갈음한다(<a href="5.14-model-selection.html">5.14</a>).
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① 편향-분산을 손으로 — 어느 model 이 나은가</h3>
+      <p>
+        점 $x_0$ 에서 참값이 $f(x_0)=3.0$, 잡음 분산 $\sigma^2=0.20$ 이다.
+        훈련집합을 세 번 다시 뽑아 두 model 의 예측을 얻었다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>model</th><th>표본 1</th><th>표본 2</th><th>표본 3</th><th>평균 $\bar h$</th></tr></thead>
+          <tbody>
+            <tr><td>A — 단순 (상수)</td><td class="num">2.0</td><td class="num">2.1</td><td class="num">1.9</td><td class="num">2.0</td></tr>
+            <tr><td>B — 복잡 (고차)</td><td class="num">1.5</td><td class="num">3.2</td><td class="num">4.3</td><td class="num">3.0</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{A}:\ \bar h=\frac{2.0+2.1+1.9}{3}=\frac{6.0}{3}=2.0,\qquad \text{편향}=2.0-3.0=-1.0 $$</div>
+          <div class="derive__why">평균이 참값에서 <strong>1.0 만큼</strong> 빗나갔다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{A 분산}=\frac{0^2+0.1^2+(-0.1)^2}{3}=\frac{0+0.01+0.01}{3}=0.00667 $$</div>
+          <div class="derive__why">표본이 바뀌어도 <strong>거의 안 흔들린다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{A 총오차}=(-1.0)^2+0.00667+0.20=1.0+0.00667+0.20=1.20667 $$</div>
+          <div class="derive__why">식 (10). <strong>편향이 거의 전부</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{B}:\ \bar h=\frac{1.5+3.2+4.3}{3}=\frac{9.0}{3}=3.0,\qquad \text{편향}=0 $$</div>
+          <div class="derive__why"><strong>평균적으로는 정확하다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{B 분산}=\frac{(-1.5)^2+0.2^2+1.3^2}{3}=\frac{2.25+0.04+1.69}{3}=\frac{3.98}{3}=1.32667 $$</div>
+          <div class="derive__why">표본마다 <strong>크게 널뛴다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{B 총오차}=0+1.32667+0.20=1.52667\ >\ 1.20667 $$</div>
+          <div class="derive__why"><strong>편향이 있는 A 가 낫다</strong> — 불편성이 목표가 아니라는 4.5 오해 2 의 재연</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{두 model 을 평균하면}:\ \frac{2.0+1.5}{2},\ \frac{2.1+3.2}{2},\ \frac{1.9+4.3}{2}=1.75,\ 2.65,\ 3.10 $$</div>
+          <div class="derive__why">$\bar h=2.5$, 편향 $-0.5$, 분산 $\frac{0.5625+0.0225+0.36}{3}=0.315$ → 총 $0.25+0.315+0.20=0.765$</div>
+        </div>
+      </div>
+      <p>
+        <span class="hl">평균을 내니 총오차가 <strong>0.765 로 둘 다보다 작아졌다</strong> —
+        분산이 크게 줄었기 때문이며, 이것이 <a href="5.7-ensemble.html">5.7</a> 앙상블의 원리다.</span>
+      </p>
+
+      <h3>② VC dimension 을 정의대로 구하기</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>가설 공간</th><th>$m$개 shatter 되는가</th><th>안 되는 label</th><th>$d_{\text{VC}}$</th></tr></thead>
+          <tbody>
+            <tr><td>임계값 $\mathbb{1}[x>\theta]$</td><td>$m=1$ ✓ &nbsp; $m=2$ ✗</td><td>$x_1&lt;x_2$ 에서 $(1,0)$</td><td class="num">1</td></tr>
+            <tr><td>구간 $\mathbb{1}[a\le x\le b]$</td><td>$m=2$ ✓ &nbsp; $m=3$ ✗</td><td>$(1,0,1)$</td><td class="num">2</td></tr>
+            <tr><td>$\mathbb{R}^2$ 직선</td><td>$m=3$ ✓ &nbsp; $m=4$ ✗</td><td>XOR 배치의 대각 label</td><td class="num">3</td></tr>
+            <tr><td>축 정렬 직사각형</td><td>$m=4$ ✓ &nbsp; $m=5$ ✗</td><td>가장 바깥 4개를 1, 안쪽을 0</td><td class="num">4</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{임계값},\ x_1=1&lt;x_2=2:\ (1,0) \text{ 은 } x_1>\theta \text{ 이고 } x_2\le\theta $$</div>
+          <div class="derive__why">$\theta<1$ 이면서 $\theta\ge2$ — <strong>모순</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{만들 수 있는 것은 } (0,0),(0,1),(1,1) \ \text{— } 4 \text{ 중 } 3 $$</div>
+          <div class="derive__why"><strong>하나만 못 만들어도 shatter 실패</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{R}^2 \text{ 직선},\ m=3:\ \text{삼각형 배치면 } 2^3=8 \text{ 가지 모두 가능} $$</div>
+          <div class="derive__why">한 점만 떼어 내는 직선은 언제나 그릴 수 있다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ m=4:\ \text{정사각형 배치에서 대각선끼리 같은 label 은 불가능} $$</div>
+          <div class="derive__why">XOR — 직선 하나로는 못 가른다. <strong>어떤 4점 배치로도 안 된다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore\ d_{\text{VC}}(\mathbb{R}^2 \text{ 직선})=3=d+1 $$</div>
+          <div class="derive__why">일반적으로 $\mathbb{R}^d$ 선형 분류기는 $d+1$</div>
+        </div>
+      </div>
+
+      <h3>③ 상계를 숫자로 — 언제 쓸모가 있나</h3>
+      <p>$d_{\text{VC}}=10$, $\delta=0.05$ 로 두고 식 (6)의 복잡도 항을 계산한다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$n$</th><th>$\ln\frac{2en}{d}$</th><th>괄호 안</th><th>$\times\frac8n$</th><th>복잡도 항</th><th>쓸모</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1,000</td><td class="num">6.298</td><td class="num">67.37</td><td class="num">0.5389</td><td class="num">0.734</td><td><strong>무의미</strong> (오차율이 0.734 이하?)</td></tr>
+            <tr><td class="num">10,000</td><td class="num">8.601</td><td class="num">90.39</td><td class="num">0.0723</td><td class="num">0.269</td><td>거의 무의미</td></tr>
+            <tr><td class="num">100,000</td><td class="num">10.903</td><td class="num">113.41</td><td class="num">0.00907</td><td class="num">0.095</td><td>쓸 만하다</td></tr>
+            <tr><td class="num">1,000,000</td><td class="num">13.206</td><td class="num">136.44</td><td class="num">0.00109</td><td class="num">0.033</td><td>촘촘하다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ n=1000:\ \frac{2en}{d}=\frac{2(2.71828)(1000)}{10}=543.66,\quad \ln543.66=6.298 $$</div>
+          <div class="derive__why">먼저 로그 안을 계산한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 10\times6.298+\ln\tfrac{4}{0.05}=62.98+\ln80=62.98+4.382=67.37 $$</div>
+          <div class="derive__why">$\ln80=4.382$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sqrt{\frac{8}{1000}\times67.37}=\sqrt{0.53892}=0.734 $$</div>
+          <div class="derive__why">이진분류에서 <strong>0.5 만 넘어도 무작위 추측보다 못한 보증</strong>이다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ n \text{ 을 } 100 \text{배 키우니 항이 } 0.734\to0.095 \ (\text{약 } 1/7.7) $$</div>
+          <div class="derive__why">$1/\sqrt{n}$ 이면 1/10 인데 <strong>로그 항 때문에 덜 줄었다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{유한 } \mathcal{H} \text{ 판},\ |\mathcal{H}|=1000,\ n=1000:\ \sqrt{\tfrac{6.908+3.689}{2000}}=0.0728 $$</div>
+          <div class="derive__why">같은 $n$ 에서 <strong>10배 촘촘하다</strong> — 상수 8 과 로그 항의 차이</div>
+        </div>
+      </div>
+      <p>
+        <span class="hl">VC 상계는 <strong>모든 분포에 대해 동시에</strong> 성립해야 하므로 최악의 경우에 맞춰져 있고,
+        그 대가로 실무 규모의 $n$ 에서는 <strong>공허해진다</strong>(오해 1).</span>
+      </p>
+
+      <h3>④ 여백 상계 — 차원이 사라진다</h3>
+      <p>data 가 반지름 $R=1$ 인 공 안에 있고 $n=1000$ 이다. 식 (9)의 항을 여백별로 본다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>여백 $\gamma$</th><th>$R^2/\gamma^2$</th><th>$\sqrt{\cdot/n}$</th><th>차원 $d$ 의 영향</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0.1</td><td class="num">100</td><td class="num">0.316</td><td><strong>없음</strong></td></tr>
+            <tr><td class="num">0.2</td><td class="num">25</td><td class="num">0.158</td><td>없음</td></tr>
+            <tr><td class="num">0.5</td><td class="num">4</td><td class="num">0.063</td><td>없음</td></tr>
+            <tr><td class="num">1.0</td><td class="num">1</td><td class="num">0.032</td><td>없음</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \gamma:0.1\to0.2 \ \Rightarrow\ 0.316\to0.158 \quad (\text{정확히 절반}) $$</div>
+          <div class="derive__why">$1/\gamma$ 에 비례하므로 <strong>여백을 2배로 하면 벌금이 절반</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{VC 판으로 같은 값을 얻으려면}:\ d_{\text{VC}}\approx\frac{R^2}{\gamma^2}=25 \ (\gamma=0.2) $$</div>
+          <div class="derive__why">차원이 백만이어도 <strong>여백이 크면 실효 차원이 25</strong> 인 셈</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{RBF kernel}:\ d_{\text{VC}}=\infty \ \text{인데도 상계가 유한하다} $$</div>
+          <div class="derive__why"><strong>SVM 이 무한 차원에서도 되는 이유</strong> (<a href="5.8-support-vector-machine.html">5.8</a>)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{대가}:\ \hat{R}_\gamma \ \text{는 } \gamma \text{ 가 클수록 커진다} $$</div>
+          <div class="derive__why">여유를 많이 요구하면 <strong>"맞혔다"고 인정되는 점이 줄어든다</strong> — 맞바꿈</div>
+        </div>
+      </div>
+
+      <figure class="widget" data-widget="margin-bound">
+        <figcaption class="widget__bar">Margin Theory — 여백을 키우면 벌금이 줄지만 train 항이 는다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$\gamma$ 를 키우면 두 항이 <strong>반대로</strong> 움직여 합에 최솟값이 생깁니다. SVM 의 $C$ 조절이 이 저울입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>균등수렴</strong> · <strong>shattering</strong> ·
+        <strong>편향-분산</strong> · <strong>상계와 $n$</strong> · <strong>여백</strong> — 에 이어,
+        아래에서 <strong>SRM 이 고르는 복잡도</strong>를 직접 움직여 본다.
+      </p>
+
+      <figure class="widget" data-widget="srm-curve">
+        <figcaption class="widget__bar">Structural Risk Minimization — 경험적 위험 + 벌점</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">벌점 계수를 키우면 고르는 복잡도가 <strong>왼쪽으로</strong> 옮겨 갑니다. $n$ 을 키우면 오른쪽으로 갑니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"VC 상계가 0.73 이라고 나왔으니 이 model 의 test 오차는 0.73 근처일 것이다."</p>
+        <p>
+          <strong>실제로는</strong> 상계는 <strong>실제 값의 추정치가 아니라 넘지 않는 선</strong>이다.
+          예제 ③에서 $n=1000$, $d_{\text{VC}}=10$ 일 때 항이 0.734 였는데,
+          이진분류에서 오차 0.5 는 <strong>동전 던지기</strong>이므로 이 보증은 아무것도 말해 주지 않는다(공허한 상계).
+          실제 test 오차는 0.05 일 수도 있다.
+          상계가 유용한 것은 <strong>"어떻게 스케일하는가"</strong>($\sqrt{d/n}$)를 알려 줄 때이고,
+          구체적인 성능 예측에는 쓰지 않는다 — 그건 hold-out set 의 일이다(<a href="5.13-model-evaluation.html">5.13</a>).
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"VC dimension 은 parameter 개수와 같다."</p>
+        <p>
+          <strong>실제로는</strong> 우연히 같은 경우가 많을 뿐이다.
+          $\mathbb{1}[\sin(\theta x)>0]$ 는 <strong>parameter 가 하나인데 $d_{\text{VC}}=\infty$</strong> 다(유도 3) —
+          $\theta$ 를 크게 잡으면 부호가 촘촘히 바뀌어 어떤 label 이든 맞출 수 있다.
+          반대로 parameter 는 많지만 강하게 묶여 있어 $d_{\text{VC}}$ 가 작은 경우도 있다(가중치 공유·저랭크 제약).
+          <strong>세는 것은 parameter 가 아니라 "구별할 수 있는 label 패턴의 다양성"</strong> 이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"편향-분산 분해는 모든 loss 에서 성립한다."</p>
+        <p>
+          <strong>실제로는</strong> 식 (10)의 깔끔한 <strong>덧셈 분해는 제곱손실의 성질</strong>이다.
+          유도 1 에서 교차항이 사라진 것은 제곱을 전개했기 때문이고,
+          0-1 loss 에서는 그 구조가 나오지 않는다 — 대신 곱셈 꼴이나 부등식 형태의 변형된 분해를 쓴다.
+          그래서 분류 문제에서 "편향-분산"을 말할 때는 <strong>비유로 쓰는 것인지 정확한 분해인지</strong> 구분해야 하고,
+          KL divergence 같은 다른 손실에는 또 다른 형태가 필요하다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"parameter 가 표본보다 많으면 반드시 과적합한다."</p>
+        <p>
+          <strong>실제로는</strong> 그 진술은 <strong>균등수렴 관점의 결론</strong>이고, 현대 딥러닝이 그 반례다.
+          parameter 가 표본의 수백 배인 network 가 잘 일반화하며,
+          같은 network 가 <strong>무작위 label 도 완전히 외운다</strong> —
+          즉 $\mathcal{H}$ 는 충분히 크고 Rademacher complexity 는 1 에 가깝다.
+          $\mathcal{H}$ 의 크기만으로는 설명이 안 되므로 설명은 <strong>$\mathcal{H}$ 밖</strong>에서 와야 한다:
+          SGD 가 어떤 해를 고르는가, 도달한 최소점이 평평한가, data 에 구조가 있는가.
+          <strong>이론이 틀린 것이 아니라 상계가 느슨한 것</strong>이며, 이 간극을 메우는 것이 현재 진행형 연구다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"이론적 벌점(AIC·VC penalty)을 목적함수에 넣으면 교차검증을 안 해도 된다."</p>
+        <p>
+          <strong>실제로는</strong> SRM 의 벌점은 <strong>정성적 방향</strong>은 맞지만 <strong>정량적으로는 너무 크다</strong>.
+          VC 벌점을 그대로 쓰면 지나치게 단순한 model 이 뽑히고,
+          AIC·BIC 는 특정 가정(우도 기반·점근) 아래에서만 정당화된다.
+          그래서 실무는 <strong>벌점의 <em>모양</em>만 빌리고 계수는 교차검증으로 정한다</strong> —
+          ridge 의 $\lambda$, 트리의 $\alpha$, SVM 의 $C$ 가 전부 그렇게 정해진다(<a href="5.14-model-selection.html">5.14</a>).
+          SRM 은 <strong>왜 그래도 되는지에 대한 정당화</strong>이지 계산 절차가 아니다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–③ 을 검산한다.</p>
+      <details>
+        <summary>NumPy — 편향-분산 · shattering · 상계 (20줄)</summary>
+<pre><code>import numpy as np
+from itertools import product
+
+f0, s2 = 3.0, 0.20
+for name, pr in [("A", [2.0, 2.1, 1.9]), ("B", [1.5, 3.2, 4.3])]:
+    pr = np.array(pr); bias = pr.mean() - f0; var = pr.var()
+    print(name, round(bias, 3), round(var, 5), round(bias**2 + var + s2, 5))
+ens = (np.array([2.0, 2.1, 1.9]) + np.array([1.5, 3.2, 4.3])) / 2
+print("앙상블", round(ens.mean() - f0, 3), round(ens.var(), 4),
+      round((ens.mean() - f0)**2 + ens.var() + s2, 4))      # 1.207 / 1.527 / 0.765
+
+xs = np.array([1.0, 2.0, 3.0])                              # 구간 가설의 VC 차원
+made = {tuple(((xs &gt;= a) &amp; (xs &lt;= b)).astype(int))
+        for a in np.arange(0, 4, .5) for b in np.arange(0, 4, .5)}
+print(len(made), "/ 8 ·", set(product([0, 1], repeat=3)) - made)   # 7/8, (1,0,1) 이 빠진다
+
+for n in [1e3, 1e4, 1e5, 1e6]:
+    d, dl = 10, 0.05
+    print(int(n), round(np.sqrt(8 / n * (d * np.log(2 * np.e * n / d) + np.log(4 / dl))), 3))
+# 1000 0.734 / 10000 0.269 / 100000 0.095 / 1000000 0.033
+</code></pre>
+        <p>
+          <small>
+            두 번째 블록이 유도 3 의 확인이다 — 구간 가설로 만들 수 있는 label 조합은 8개 중 7개이고
+            빠지는 것이 정확히 <strong>(1,0,1)</strong> 이다.
+            마지막 루프는 VC 상계가 <strong>표본 10만 개는 되어야 쓸 만해진다</strong>는 것을 보여 준다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\mathbb{R}^5$ 의 선형 분류기(절편 포함)의 VC dimension 은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>6</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>5</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>32</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\mathbb{R}^d$ 선형 분류기는 $d_{\text{VC}}=d+1=6$ 이다 — 절편이 자유도 하나를 더한다.
+            <strong>나</strong>는 절편을 빼먹은 값(원점을 지나는 초평면이면 $d$ 가 맞다),
+            <strong>다</strong>는 $2^5$ 로 <strong>label 조합의 개수</strong>를 답한 것이다.
+            VC dimension 은 조합의 개수가 아니라 <strong>shatter 되는 점의 개수</strong>다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            예측이 $\{4, 6, 5\}$, 참값 5, 잡음 분산 0.5 일 때 총 예측오차는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>1.1667</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.6667</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0.5</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\bar h=5$ → 편향 0. 분산 $=\frac{1+1+0}{3}=0.6667$. 총합 $=0+0.6667+0.5=1.1667$.
+            <strong>나</strong>는 잡음 항을 빼먹은 것이다 —
+            <a href="../ch04/4.5-statistical-estimation.html">4.5</a>의 MSE 와 달리
+            <strong>예측오차에는 $\sigma^2$ 이 반드시 붙는다</strong>(유도 1).
+            편향이 0 이어도 총오차는 0 이 아니다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $|\mathcal{H}|=10^4$, $n=2500$, $\delta=0.05$ 일 때 식 (3)의 복잡도 항은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 0.048</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>약 2.0</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>약 0.0023</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\ln10^4=9.210$, $\ln\frac{2}{0.05}=\ln40=3.689$ →
+            $\sqrt{\frac{9.210+3.689}{2\times2500}}=\sqrt{\frac{12.899}{5000}}=\sqrt{0.002580}=0.0508$.
+            <strong>다</strong>는 제곱근을 안 씌운 값이다.
+            <strong>후보가 1만 개인데 벌금이 5%p 밖에 안 된다</strong> — 로그가 들어오는 덕이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            균등수렴($\sup$ 을 쓰는 것)이 필요한 이유는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>가설을 data 를 보고 고르므로, 어느 것을 고르든 안전해야 하기 때문</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>Hoeffding 부등식이 최댓값에만 적용되기 때문</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>가설 공간이 무한하기 때문</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $h$ 를 미리 고정하면 Hoeffding 하나로 충분하다. 문제는 <strong>$\hat h$ 가 $S$ 의 함수</strong>라는 것이다 —
+            $S$ 를 보고 가장 잘 맞는 것을 골랐으므로 그 $\hat R$ 은 낙관적이다(직관 절의 동전 비유).
+            <strong>다</strong>는 무관하다 — 유한한 $\mathcal{H}$ 에서도 균등수렴이 필요하며,
+            식 (3)이 정확히 그 경우다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            RBF kernel SVM 은 $d_{\text{VC}}=\infty$ 인데도 잘 일반화한다. 이론적 설명은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>margin 상계는 차원이 아니라 $R^2/\gamma^2$ 에 의존한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>실제로는 $d_{\text{VC}}$ 가 유한하다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>VC 이론이 틀렸다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            식 (9)에는 <strong>차원이 등장하지 않는다</strong> — data 반지름 $R$ 과 여백 $\gamma$ 만 있다.
+            여백을 크게 유지하면 실효 복잡도가 $R^2/\gamma^2$ 로 억제되고, 그것이 SVM 의 이론적 근거다(예제 ④).
+            <strong>다</strong>는 틀리다 — VC 상계는 <strong>여전히 참</strong>이고 단지 이 경우 공허할 뿐이다.
+            <strong>같은 대상에 여러 상계를 세울 수 있고, 그중 촘촘한 것을 쓰면 된다.</strong>
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            어떤 network 가 무작위 label 을 100% 외웠다. 이 사실이 뜻하는 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>Rademacher complexity 가 1 에 가까워 균등수렴 상계가 공허해진다 — 일반화 여부는 별개다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>그 network 는 진짜 data 에서도 반드시 과적합한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>학습에 버그가 있다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            무작위 label 을 외운다는 것은 식 (7)의 $\sup$ 이 거의 1 이라는 뜻이고,
+            그러면 상계 (8)이 $R\le\hat R+2$ 가 되어 <strong>아무 제약도 주지 않는다</strong>.
+            그러나 같은 network 가 진짜 label 에서는 잘 일반화한다(오해 4) —
+            <strong>"상계가 공허하다"와 "일반화하지 못한다"는 다른 말</strong>이다.
+            설명은 $\mathcal{H}$ 의 크기가 아니라 <strong>최적화가 어떤 해를 고르는가</strong>에서 찾아야 한다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="5.8-support-vector-machine.html">5.8 SVM</a></strong> — margin theory 를 알고리즘으로 옮긴 것.</li>
+        <li><strong><a href="5.7-ensemble.html">5.7 앙상블</a></strong> — 예제 ①의 분산 감소가 bagging 의 원리다.</li>
+        <li><strong><a href="5.14-model-selection.html">5.14 모델 선택</a></strong> — SRM 의 벌점을 교차검증으로 갈음하는 실무.</li>
+        <li><strong><a href="../ch03/3.9-constraints-regularization.html">3.9 제약과 정규화</a></strong> — 정규화가 SRM 의 한 사례다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-vapnik1971-uniform-convergence" data-ref="vapnik1971-uniform-convergence">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Vapnik, V. N. &amp; Chervonenkis, A. Ya. (1971). <em>On the Uniform Convergence of Relative Frequencies of Events to Their Probabilities</em>. Theory of Probability and Its Applications, 16(2), 264–280.</span>
+          <span class="ref__where">§2 — 균등수렴을 학습 가능성의 조건으로 세운 정식화(식 2). §3 — growth function $\Pi_{\mathcal{H}}(n)$ 이 <strong>$2^n$ 으로 자라거나 다항식으로 자라거나 둘 중 하나</strong>라는 이분법(유도 2 의 Sauer–Shelah 부분). 이 논문의 '흩뜨림(shatter)' 개념이 뒤에 VC dimension 으로 이름 붙었다(식 5)</span>
+          <a class="ref__link" href="https://doi.org/10.1137/1116025">doi.org</a>
+        </li>
+        <li class="ref" id="ref-valiant1984-theory-of-learnable" data-ref="valiant1984-theory-of-learnable">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Valiant, L. G. (1984). <em>A Theory of the Learnable</em>. Communications of the ACM, 27(11), 1134–1142.</span>
+          <span class="ref__where">§1–2 — 학습 가능성을 <strong>"높은 확률로 거의 정확하게"</strong> 로 완화해 정의한 원전(식 4). 완벽·확실을 요구하지 않는 대신 <strong>다항 시간·다항 표본</strong>을 요구하는 구성이 PAC 라는 이름의 출처다. §4 — conjunction 같은 구체적 개념족의 학습 가능성 증명</span>
+          <a class="ref__link" href="https://dl.acm.org/doi/10.1145/1968.1972">dl.acm.org</a>
+        </li>
+        <li class="ref" id="ref-shalev2014-uml" data-ref="shalev2014-uml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Shalev-Shwartz, S. &amp; Ben-David, S. (2014). <em>Understanding Machine Learning: From Theory to Algorithms</em>. Cambridge University Press.</span>
+          <span class="ref__where">4장 — 균등수렴이 ERM 을 보증하는 논법(식 2, 유도 2 의 마지막 줄). 6장 — VC dimension 의 정의와 임계값·구간·선형 분류기의 계산(예제 ②, 유도 3), Sauer–Shelah 보조정리, 그리고 <strong>학습 가능성 ⟺ $d_{\text{VC}}<\infty$</strong> 라는 기본정리(식 12). 7장 — 실현 가능/agnostic 의 표본 복잡도 차이. 26장 — Rademacher complexity 와 식 (8)의 상계</span>
+          <a class="ref__link" href="https://www.cs.huji.ac.il/~shais/UnderstandingMachineLearning/">cs.huji.ac.il/~shais</a>
+        </li>
+        <li class="ref" id="ref-bartlett2002-rademacher" data-ref="bartlett2002-rademacher">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Bartlett, P. L. &amp; Mendelson, S. (2002). <em>Rademacher and Gaussian Complexities: Risk Bounds and Structural Results</em>. JMLR, 3, 463–482.</span>
+          <span class="ref__where">§2 — Rademacher complexity 의 정의(식 7)와 그것이 <strong>표본에 의존해 계산된다</strong>는 성질. 정리 8 — 식 (8)의 일반화 상계. §4 — 여백을 쓰는 손실로 넘어가면 상계가 $R^2/\gamma^2$ 형태가 된다는 결과(식 9, 예제 ④). §3 — VC 상계가 Rademacher 상계의 특수한 경우로 나온다는 관계('VC vs Rademacher' 표의 마지막 줄)</span>
+          <a class="ref__link" href="https://www.jmlr.org/papers/v3/bartlett02a.html">jmlr.org</a>
+        </li>
+        <li class="ref" id="ref-caltech-cs156" data-ref="caltech-cs156">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Abu-Mostafa, Y. S. <em>Learning From Data (CS156)</em>. Caltech.</span>
+          <span class="ref__where">Lecture 5–6 "Training versus Testing" · "Theory of Generalization" — growth function 에서 VC dimension 으로 넘어가는 과정을 그림으로 따라가는 구성(유도 2). Lecture 7 "The VC Dimension" — 임계값·구간·perceptron 의 $d_{\text{VC}}$ 를 정의대로 세는 예(예제 ②)와 "$d_{\text{VC}}$ 는 유효 parameter 수처럼 <em>행동하지만</em> 같지는 않다"는 경고(오해 2). Lecture 8 — 편향-분산 분해(유도 1)</span>
+          <a class="ref__link" href="https://work.caltech.edu/telecourse.html">work.caltech.edu</a>
+        </li>
+        <li class="ref" id="ref-hastie2009-esl" data-ref="hastie2009-esl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em> (2nd ed.). Springer.</span>
+          <span class="ref__where">7.3절 — 편향-분산-잡음 분해의 유도와 $k$-NN·선형회귀에서의 구체적 계산(유도 1, 예제 ①). 7.9절 — VC dimension 과 structural risk minimization 을 model 선택의 틀로 소개하고, <strong>이론적 벌점보다 교차검증이 실무에서 낫다</strong>는 평가(오해 5). 7.5–7.7절 — AIC·BIC 를 SRM 의 사례로 배치한 부분('SRM 실무의 형태' 표)</span>
+          <a class="ref__link" href="https://hastie.su.domains/ElemStatLearn/">hastie.su.domains</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+function panel(p) {
+  p.add(VIZ.el('rect', {
+    x: p.pad.l, y: p.pad.t, width: p.iw, height: p.ih,
+    fill: 'var(--ink-3)', 'fill-opacity': 0.03, stroke: 'none'
+  }));
+  return p;
+}
+function mkRand(seed) {
+  var s = seed || 12345;
+  return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+}
+function gauss(rnd) {
+  var u = Math.max(1e-9, rnd()), v = rnd();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+function polyfit(xs, ys, deg) {
+  var m = deg + 1, i, j, k, A = [], b = [];
+  for (i = 0; i < m; i++) {
+    A.push(new Array(m).fill(0)); b.push(0);
+    for (k = 0; k < xs.length; k++) {
+      for (j = 0; j < m; j++) A[i][j] += Math.pow(xs[k], i + j);
+      b[i] += Math.pow(xs[k], i) * ys[k];
+    }
+    A[i][i] += 1e-7;
+  }
+  for (i = 0; i < m; i++) {
+    var piv = i;
+    for (k = i + 1; k < m; k++) if (Math.abs(A[k][i]) > Math.abs(A[piv][i])) piv = k;
+    var t = A[i]; A[i] = A[piv]; A[piv] = t;
+    var tb = b[i]; b[i] = b[piv]; b[piv] = tb;
+    if (Math.abs(A[i][i]) < 1e-12) continue;
+    for (k = i + 1; k < m; k++) {
+      var f = A[k][i] / A[i][i];
+      for (j = i; j < m; j++) A[k][j] -= f * A[i][j];
+      b[k] -= f * b[i];
+    }
+  }
+  var c = new Array(m).fill(0);
+  for (i = m - 1; i >= 0; i--) {
+    var s2 = b[i];
+    for (j = i + 1; j < m; j++) s2 -= A[i][j] * c[j];
+    c[i] = Math.abs(A[i][i]) < 1e-12 ? 0 : s2 / A[i][i];
+  }
+  return c;
+}
+function polyval(c, x) {
+  var v = 0;
+  for (var i = c.length - 1; i >= 0; i--) v = v * x + c[i];
+  return v;
+}
+
+/* ============================================================
+   위젯 1 — 균등수렴: 후보가 많으면 '운 좋은 하나'
+   ============================================================ */
+WIDGETS.register('uniform-conv', function (root, ctx) {
+  var M = 30, n = 100, seed = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'true', label: '모든 후보의 참 위험 R(h)', digits: 3 },
+    { key: 'min', label: '가장 낮게 나온 경험적 위험', digits: 4 },
+    { key: 'gap', label: '간극 (선택 편향)', digits: 4 },
+    { key: 'bound', label: '식 (3)의 복잡도 항', digits: 4 }
+  ]);
+
+  function draw() {
+    var rnd = mkRand(seed * 4441 + 7), R0 = 0.35, vals = [];
+    for (var m = 0; m < M; m++) {
+      /* 각 후보는 참 위험 0.35 인 동전. n 번 시행의 표본평균 */
+      var s = 0;
+      for (var i = 0; i < n; i++) s += (rnd() < R0) ? 1 : 0;
+      vals.push(s / n);
+    }
+    var lo = Math.min.apply(null, vals);
+
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 0, xmax: M + 1, ymin: 0.1, ymax: 0.62,
+      pad: { t: 30, r: 16, b: 34, l: 50 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(Math.max(1, Math.round(M / 6)), 0.1).axes('후보 번호', '')
+      .ticks(Math.max(1, Math.round(M / 5)), 0.1);
+    p.text(0, 0.62, '경험적 위험 · 가로선 = 참 위험 0.35 (모든 후보가 같다)',
+      { size: 10, dy: -10 });
+    p.line([[0, R0], [M + 1, R0]], { width: 2 });
+    for (var k = 0; k < M; k++) {
+      var on = Math.abs(vals[k] - lo) < 1e-12;
+      p.add(VIZ.el('circle', {
+        cx: p.X(k + 1), cy: p.Y(Math.max(0.1, Math.min(0.62, vals[k]))), r: on ? 5.5 : 3,
+        fill: on ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': on ? 0.9 : 0.5
+      }));
+    }
+    p.callout(vals.indexOf(lo) + 1, Math.max(0.11, lo), '“가장 좋은” 후보',
+      { dx: 20, dy: -22, tone: 'var(--seal)' });
+
+    out.set('true', R0);
+    out.set('min', lo);
+    out.set('gap', R0 - lo);
+    out.set('bound', Math.sqrt((Math.log(M) + Math.log(2 / 0.05)) / (2 * n)));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '후보 개수 |H|', min: 2, max: 120, step: 1, value: 30, digits: 0,
+    onInput: function (v) { M = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '표본 수 n', min: 20, max: 1000, step: 10, value: 100, digits: 0,
+    onInput: function (v) { n = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 40, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — shattering
+   ============================================================ */
+WIDGETS.register('vc-shatter', function (root, ctx) {
+  var kind = 'thresh', m = 2;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'total', label: '만들어야 할 label 조합 수 (2^m)' },
+    { key: 'made', label: '실제로 만들 수 있는 수' },
+    { key: 'miss', label: '만들 수 없는 조합' },
+    { key: 'vc', label: '판정' }
+  ]);
+
+  /* 점은 1, 2, ..., m 위치. 가설별로 만들 수 있는 label 패턴을 전부 열거한다 */
+  function patterns() {
+    var set = {}, i, j, lab;
+    var xs = [];
+    for (i = 0; i < m; i++) xs.push(i + 1);
+    if (kind === 'thresh') {
+      for (var th = 0.5; th <= m + 0.5; th += 1) {
+        lab = xs.map(function (x) { return x > th ? 1 : 0; });
+        set[lab.join('')] = 1;
+      }
+    } else if (kind === 'interval') {
+      for (i = 0; i <= m; i++) for (j = i; j <= m; j++) {
+        var a = i + 0.5, b = j + 0.5;
+        lab = xs.map(function (x) { return (x >= a && x <= b) ? 1 : 0; });
+        set[lab.join('')] = 1;
+      }
+      set[new Array(m).fill(0).join('')] = 1;      /* 빈 구간 */
+    } else {
+      /* 2D 직선 — 점을 원 위에 놓고 모든 이분할을 직선으로 만들 수 있는지 */
+      var pts = [];
+      for (i = 0; i < m; i++) {
+        var t = Math.PI * 2 * i / m + 0.3;
+        pts.push([Math.cos(t), Math.sin(t)]);
+      }
+      for (var w1 = -1; w1 <= 1; w1 += 0.08) for (var w2 = -1; w2 <= 1; w2 += 0.08)
+        for (var b2 = -1.4; b2 <= 1.4; b2 += 0.08) {
+          lab = pts.map(function (q) { return (w1 * q[0] + w2 * q[1] + b2 > 0) ? 1 : 0; });
+          set[lab.join('')] = 1;
+        }
+    }
+    return set;
+  }
+
+  function draw() {
+    var set = patterns(), total = Math.pow(2, m), made = Object.keys(set).length;
+    var miss = [];
+    for (var v = 0; v < total; v++) {
+      var s = v.toString(2);
+      while (s.length < m) s = '0' + s;
+      if (!set[s]) miss.push(s);
+    }
+
+    var W = 460, H0 = 270, padL = 40, padT = 60;
+    var svg = VIZ.el('svg', { viewBox: '0 0 ' + W + ' ' + H0, role: 'img' });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(svg);
+    svg.appendChild(VIZ.el('text', { x: 12, y: 20, class: 'viz-label', 'font-size': 11,
+      text: kind === 'plane' ? '점을 원 위에 놓고 직선으로 가른다'
+                             : '점을 수직선 위에 놓고 ' + (kind === 'thresh' ? '임계값' : '구간') + '으로 가른다' }));
+
+    /* 모든 label 조합을 격자로 */
+    var cols = Math.min(8, total), cw = 46, rh = 34;
+    for (var v2 = 0; v2 < total; v2++) {
+      var s2 = v2.toString(2);
+      while (s2.length < m) s2 = '0' + s2;
+      var ok = !!set[s2];
+      var cx = padL + (v2 % cols) * cw, cy = padT + Math.floor(v2 / cols) * rh;
+      svg.appendChild(VIZ.el('rect', {
+        x: cx, y: cy - 14, width: cw - 6, height: rh - 8, rx: 3,
+        fill: ok ? 'var(--jade)' : 'var(--seal)', 'fill-opacity': ok ? 0.20 : 0.55,
+        stroke: ok ? 'var(--jade)' : 'var(--seal)', 'stroke-width': 1
+      }));
+      svg.appendChild(VIZ.el('text', {
+        x: cx + (cw - 6) / 2, y: cy + 2, 'text-anchor': 'middle',
+        class: 'viz-label', 'font-size': 12, text: s2
+      }));
+    }
+    svg.appendChild(VIZ.el('text', { x: 12, y: 40, class: 'viz-label', 'font-size': 11,
+      text: '초록 = 만들 수 있는 label 조합 · 빨강 = 못 만드는 조합' }));
+
+    out.setRaw('total', String(total));
+    out.setRaw('made', String(made));
+    out.setRaw('miss', miss.length ? miss.join(', ') : '없음 — 전부 만들 수 있다');
+    out.setRaw('vc', miss.length ? (m - 1) + ' 개까지만 shatter → d_VC = ' + (m - 1) + ' 이하'
+      : m + ' 개를 shatter → d_VC ≥ ' + m);
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '가설 공간',
+    options: [
+      { value: 'thresh', label: '임계값 1[x>θ]' },
+      { value: 'interval', label: '구간 1[a≤x≤b]' },
+      { value: 'plane', label: '2D 직선' }
+    ],
+    value: 'thresh', onChange: function (v) { kind = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '점의 개수 m', min: 1, max: 4, step: 1, value: 2, digits: 0,
+    onInput: function (v) { m = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — 편향-분산 시뮬레이션
+   ============================================================ */
+WIDGETS.register('bias-var-sim', function (root, ctx) {
+  var deg = 1, n = 10, reps = 12, noise = 0.3;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'bias', label: '편향² (평균 곡선과 참 함수의 차)', digits: 4 },
+    { key: 'var', label: '분산 (곡선 다발의 퍼짐)', digits: 4 },
+    { key: 'noise', label: '잡음 σ²', digits: 4 },
+    { key: 'tot', label: '총 예측오차', digits: 4 }
+  ]);
+
+  function truef(x) { return Math.sin(1.5 * x); }
+
+  function draw() {
+    var p = VIZ.plot({ w: 460, h: 290, xmin: -2.4, xmax: 2.4, ymin: -2.2, ymax: 2.2,
+      pad: { t: 30, r: 16, b: 32, l: 44 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x', '').ticks(1, 1);
+    p.text(-2.4, 2.2, 'y · 가는 선 = 훈련집합마다의 예측 · 굵은 선 = 그 평균 · 점선 = 참 함수',
+      { size: 10, dy: -10 });
+
+    var grid = [], gi;
+    for (gi = 0; gi <= 40; gi++) grid.push(-2.2 + 4.4 * gi / 40);
+    var sums = new Array(41).fill(0), sqs = new Array(41).fill(0);
+
+    for (var r = 0; r < reps; r++) {
+      var rnd = mkRand(1000 + r * 977), xs = [], ys = [], i;
+      for (i = 0; i < n; i++) {
+        var x = -2.2 + 4.4 * rnd();
+        xs.push(x); ys.push(truef(x) + noise * gauss(rnd));
+      }
+      var c = polyfit(xs, ys, deg);
+      p.curve(function (x) { return polyval(c, x); }, { samples: 90, alt: true });
+      for (gi = 0; gi <= 40; gi++) {
+        var v = polyval(c, grid[gi]);
+        sums[gi] += v / reps; sqs[gi] += v * v / reps;
+      }
+    }
+    p.curve(truef, { samples: 200, dash: '5 4' });
+    var meanCurve = [];
+    for (gi = 0; gi <= 40; gi++) meanCurve.push([grid[gi], Math.max(-2.15, Math.min(2.15, sums[gi]))]);
+    p.line(meanCurve, { width: 3 });
+
+    var b2 = 0, vr = 0;
+    for (gi = 0; gi <= 40; gi++) {
+      b2 += Math.pow(sums[gi] - truef(grid[gi]), 2) / 41;
+      vr += Math.max(0, sqs[gi] - sums[gi] * sums[gi]) / 41;
+    }
+    out.set('bias', b2);
+    out.set('var', vr);
+    out.set('noise', noise * noise);
+    out.set('tot', b2 + vr + noise * noise);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '다항식 차수 (복잡도)', min: 0, max: 9, step: 1, value: 1, digits: 0,
+    onInput: function (v) { deg = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '훈련집합 크기 n', min: 4, max: 40, step: 1, value: 10, digits: 0,
+    onInput: function (v) { n = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '훈련집합을 몇 번 다시 뽑을까', min: 3, max: 25, step: 1, value: 12, digits: 0,
+    onInput: function (v) { reps = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '잡음 σ', min: 0, max: 0.8, step: 0.05, value: 0.3, digits: 2,
+    onInput: function (v) { noise = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — 상계와 n
+   ============================================================ */
+WIDGETS.register('bound-vs-n', function (root, ctx) {
+  var dvc = 10, del = 0.05, logn = 3;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'vc', label: 'VC 상계의 복잡도 항', digits: 4 },
+    { key: 'fin', label: '유한 H 판 (|H| = 2^d_VC)', digits: 4 },
+    { key: 'real', label: '실제 간극의 전형적 크기 (참고)', digits: 4 },
+    { key: 'use', label: '판정' }
+  ]);
+
+  function vcTerm(n) {
+    return Math.sqrt(8 / n * (dvc * Math.log(2 * Math.E * n / dvc) + Math.log(4 / del)));
+  }
+  function finTerm(n) {
+    return Math.sqrt((dvc * Math.LN2 + Math.log(2 / del)) / (2 * n));
+  }
+  function realGap(n) { return Math.sqrt(dvc / n) * 0.5; }
+
+  function draw() {
+    var p = VIZ.plot({ w: 460, h: 290, xmin: 2, xmax: 7, ymin: 0, ymax: 1.15,
+      pad: { t: 30, r: 16, b: 34, l: 48 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 0.25).axes('log₁₀ n', '').ticks(1, 0.25);
+    p.text(2, 1.15, '복잡도 항 · 실선 = VC · 잔점선 = 유한 H · 점선 = 실제 간극(참고)',
+      { size: 10, dy: -10 });
+
+    p.curve(function (L) { return Math.min(1.15, vcTerm(Math.pow(10, L))); }, { samples: 200 });
+    p.curve(function (L) { return Math.min(1.15, finTerm(Math.pow(10, L))); }, { samples: 200, dash: '2 3' });
+    p.curve(function (L) { return Math.min(1.15, realGap(Math.pow(10, L))); }, { samples: 200, alt: true, dash: '5 4' });
+    p.line([[2, 0.5], [7, 0.5]], { dash: '1 3' });
+
+    var n = Math.pow(10, logn);
+    p.dot(logn, Math.min(1.13, vcTerm(n)), 5.5);
+    p.callout(logn, Math.min(1.05, vcTerm(n)), 'n = ' + Math.round(n).toLocaleString(),
+      { dx: -24, dy: -22, tone: 'var(--seal)' });
+
+    out.set('vc', vcTerm(n));
+    out.set('fin', finTerm(n));
+    out.set('real', realGap(n));
+    out.setRaw('use', vcTerm(n) > 0.5 ? '상계가 0.5 를 넘는다 — 이진분류에서 공허하다'
+      : (vcTerm(n) > 0.2 ? '아직 느슨하다' : '쓸 만하다'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'VC dimension', min: 2, max: 200, step: 2, value: 10, digits: 0,
+    onInput: function (v) { dvc = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'log₁₀ n (표본 수)', min: 2, max: 7, step: 0.1, value: 3, digits: 1,
+    onInput: function (v) { logn = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '실패 확률 δ', min: 0.001, max: 0.2, step: 0.001, value: 0.05, digits: 3,
+    onInput: function (v) { del = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — 여백 상계
+   ============================================================ */
+WIDGETS.register('margin-bound', function (root, ctx) {
+  var n = 1000, spread = 0.35;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'g', label: '최적 여백 γ', digits: 3 },
+    { key: 'emp', label: '그때의 여백 오차 R̂_γ', digits: 4 },
+    { key: 'pen', label: '그때의 벌금 항', digits: 4 },
+    { key: 'tot', label: '상계의 합', digits: 4 }
+  ]);
+
+  /* 여백 γ 를 요구하면 "맞혔다"고 인정되는 점이 줄어든다 (정규분포 꼬리로 모형화) */
+  function erf(z) {
+    var t = 1 / (1 + 0.3275911 * Math.abs(z));
+    var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-z * z);
+    return z >= 0 ? y : -y;
+  }
+  function empRisk(g) { return 0.5 * (1 - erf((0.6 - g) / (spread * Math.SQRT2))); }
+  function penalty(g) { return Math.sqrt(1 / (g * g * n)); }
+  function total(g) { return empRisk(g) + penalty(g); }
+
+  function draw() {
+    var p = VIZ.plot({ w: 460, h: 290, xmin: 0.05, xmax: 1.5, ymin: 0, ymax: 1.05,
+      pad: { t: 30, r: 16, b: 34, l: 48 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(0.25, 0.25).axes('요구하는 여백 γ', '').ticks(0.25, 0.25);
+    p.text(0.05, 1.05, '상계 · 점선 = 여백 오차 R̂_γ · 잔점선 = 벌금 · 실선 = 합',
+      { size: 10, dy: -10 });
+
+    p.curve(function (g) { return Math.min(1.05, empRisk(g)); }, { samples: 220, alt: true, dash: '5 4' });
+    p.curve(function (g) { return Math.min(1.05, penalty(g)); }, { samples: 220, dash: '2 3' });
+    p.curve(function (g) { return Math.min(1.05, total(g)); }, { samples: 240 });
+
+    var bg = 0.05, bv = 9;
+    for (var g = 0.05; g <= 1.5; g += 0.005) if (total(g) < bv) { bv = total(g); bg = g; }
+    p.dot(bg, bv, 5.5);
+    p.callout(bg, bv, '최적 γ = ' + bg.toFixed(2), { dx: 20, dy: 24, tone: 'var(--seal)' });
+
+    out.set('g', bg);
+    out.set('emp', empRisk(bg));
+    out.set('pen', penalty(bg));
+    out.set('tot', bv);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '표본 수 n', min: 100, max: 20000, step: 100, value: 1000, digits: 0,
+    onInput: function (v) { n = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'data 가 결정경계에서 떨어진 정도의 폭', min: 0.1, max: 1.0, step: 0.05, value: 0.35, digits: 2,
+    onInput: function (v) { spread = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 6 — SRM
+   ============================================================ */
+WIDGETS.register('srm-curve', function (root, ctx) {
+  var n = 200, lam = 1.0;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'k', label: 'SRM 이 고르는 복잡도' },
+    { key: 'emp', label: '그때의 경험적 위험', digits: 4 },
+    { key: 'pen', label: '그때의 벌점', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function emp(k) { return 0.5 * Math.exp(-0.45 * k) + 0.06; }
+  function pen(k) { return lam * Math.sqrt(k / n); }
+  function obj(k) { return emp(k) + pen(k); }
+
+  function draw() {
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 0, xmax: 20, ymin: 0, ymax: 0.85,
+      pad: { t: 30, r: 16, b: 34, l: 48 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(4, 0.2).axes('가설 공간 층 k (복잡도)', '').ticks(4, 0.2);
+    p.text(0, 0.85, '점선 = 경험적 위험 · 잔점선 = 벌점 · 실선 = 합 (SRM 목적함수)',
+      { size: 10, dy: -10 });
+
+    p.curve(emp, { samples: 200, alt: true, dash: '5 4' });
+    p.curve(pen, { samples: 200, dash: '2 3' });
+    p.curve(obj, { samples: 220 });
+
+    var bk = 0, bv = 9;
+    for (var k = 0.1; k <= 20; k += 0.05) if (obj(k) < bv) { bv = obj(k); bk = k; }
+    p.dot(bk, bv, 5.5);
+    p.callout(bk, bv, 'k = ' + bk.toFixed(1), { dx: 20, dy: -22, tone: 'var(--seal)' });
+
+    out.setRaw('k', bk.toFixed(1));
+    out.set('emp', emp(bk));
+    out.set('pen', pen(bk));
+    out.setRaw('note', lam > 2.5 ? '벌점이 세다 — 지나치게 단순한 model 을 고른다'
+      : (lam < 0.3 ? '벌점이 약하다 — 사실상 ERM' : '균형'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '표본 수 n', min: 30, max: 3000, step: 10, value: 200, digits: 0,
+    onInput: function (v) { n = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '벌점 계수 λ', min: 0.1, max: 4, step: 0.1, value: 1, digits: 1,
+    onInput: function (v) { lam = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

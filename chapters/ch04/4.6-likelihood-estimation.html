@@ -1131,8 +1131,9 @@ WIDGETS.register('likelihood-curve', function (root, ctx) {
 
     p.line([[mle, useLog ? lo : 0], [mle, useLog ? top : 1]], { dash: '3 3' });
     p.dot(mle, useLog ? top : 1, 5.5);
+    /* log 모드에서는 x축 눈금이 위쪽에 그려지므로 라벨을 아래로 뺀다 */
     p.callout(mle, useLog ? top : 1, 'p̂ = ' + mle.toFixed(3),
-      { dx: 20, dy: -14, tone: 'var(--seal)' });
+      { dx: useLog ? 26 : 20, dy: useLog ? 24 : -14, tone: 'var(--seal)' });
 
     /* 곡률 → Fisher 정보 → 봉우리 폭 */
     var I = mle > 0 && mle < 1 ? n / (mle * (1 - mle)) : Infinity;

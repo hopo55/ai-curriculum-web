@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5.14 모델 선택 — AI 이론 학습</title>
+<meta name="description" content="같은 data로 고르고 같은 data로 평가하면 반드시 낙관 편향이 생긴다. 고르는 자리와 평가하는 자리를 분리하는 것이 모델 선택의 전부다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="5.14">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">5.14</span>
+        <span>5장 · 전통적 머신러닝</span>
+      </div>
+      <h1>모델 선택</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 70분</span>
+        <span><b>난이도</b>★★★☆☆</span>
+        <span><b>선수지식</b>
+          <a href="5.13-model-evaluation.html">5.13 모델 평가</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-split">Train-Val-Test Split</a>
+      <a class="chip" href="#c-kfold">K-Fold Cross Validation</a>
+      <a class="chip" href="#c-strat">Stratified Sampling</a>
+      <a class="chip" href="#c-hpo">Hyperparameter Search</a>
+      <a class="chip" href="#c-grid">Grid Search</a>
+      <a class="chip" href="#c-random">Random Search</a>
+      <a class="chip" href="#c-bo">Bayesian Optimization</a>
+      <a class="chip" href="#c-nested">Nested CV</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        <strong>같은 data 로 고르고 같은 data 로 평가하면 반드시 낙관 편향이 생긴다.</strong>
+        <strong>고르는 자리(validation)와 평가하는 자리(test)를 분리하는 것</strong>이 model 선택의 전부이고,
+        <strong>교차검증</strong>은 그 분리를 여러 번 돌려 추정의 분산을 줄이는 장치다.
+        <strong>중첩 교차검증</strong>은 그 분리를 한 겹 더 두른 것이다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>$K$-fold 의 $K$ 가 편향과 분산에 어떻게 작용하는지 설명하고 적절한 값을 고를 수 있다.</li>
+        <li><strong>무작위 탐색이 격자 탐색보다 유리한 이유</strong>를 확률로 유도할 수 있다.</li>
+        <li>중첩 교차검증이 필요한 상황을 판별하고, 선택 편향의 크기를 계산할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        완전히 무작위인 동전 100개를 던져 <strong>가장 앞면이 많이 나온 것</strong>을 고르면
+        <strong>대략 63번쯤 앞면이 나온 동전</strong>을 얻는다.
+        그 동전이 <strong>정말 앞면이 잘 나오는가</strong>? 아니다 — <strong>운이 좋았을 뿐</strong>이다.
+        그런데 <strong>그 63%를 그 동전의 성능이라고 보고하면</strong> 거짓말이 된다.
+      </p>
+      <p>
+        <span class="hl">model 선택이 정확히 이 구조다.
+        <strong>여러 후보 중 validation 점수가 가장 높은 것을 고르면,
+        그 점수 안에는 "실력"과 "운"이 섞여 있고 운 쪽만 골라 뽑은 것</strong>이다.
+        그래서 <strong>선택에 쓴 점수는 이미 낙관적</strong>이며, 평가에 다시 쓸 수 없다.</span>
+      </p>
+      <p>
+        해법은 단순하다 — <strong>고르는 자리와 평가하는 자리를 나눈다</strong>.
+        그런데 나누면 <strong>data 가 줄어</strong> 추정이 불안정해진다.
+        <strong>교차검증</strong>은 <strong>모든 표본이 한 번씩 평가에 쓰이도록 돌려</strong>
+        이 손실을 줄이는 장치다.
+      </p>
+
+      <figure class="widget" data-widget="selection-bias">
+        <figcaption class="widget__bar">선택 편향 — 아무 실력이 없어도 최고점은 높다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">후보를 늘릴수록 <strong>"최고 점수"만 올라갑니다</strong> — 실제 성능은 그대로인데도요.</p>
+        </div>
+      </figure>
+
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>과녁에 화살을 쏘아 명사수를 뽑는다고 합시다. 백 명이 한 발씩 쏘고 <strong>가장 잘 맞힌 사람</strong>을 고르면, 그 한 발은 실력만이 아니라 <strong>바람이 도와준 몫</strong>도 들어 있습니다. 그 기록을 그대로 "이 사람의 실력"이라고 적으면 부풀린 것입니다.</p>
+        <p>제대로 재려면 <strong>뽑고 나서 한 발을 더 쏘게</strong> 해야 합니다. 고르는 데 쓴 화살(validation)과 실력을 적는 화살(test)은 <strong>달라야</strong> 합니다. 그리고 그 마지막 한 발을 보고 나서 <strong>"다시 쏘게 하자"고 하면</strong> 그 순간 그것도 고르는 화살이 되어 버립니다.</p>
+      </div>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          <strong>한 번 본 data 는 다시 못 본다</strong>는 것이 원칙이다.
+          hyperparameter 를 고르는 데 쓴 fold, feature 를 고르는 데 쓴 표본,
+          <strong>"이 전처리가 낫네"라고 판단한 근거가 된 data</strong> — 전부 오염된 것이다.
+          <strong>test set 은 마지막에 딱 한 번만</strong> 열어야 하며,
+          열어 본 뒤에 model 을 고치면 그 순간 test set 이 아니게 된다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-split"></span>
+      <h3>Train-Validation-Test Split</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ S=S_{\text{train}}\ \sqcup\ S_{\text{val}}\ \sqcup\ S_{\text{test}}, \qquad \text{보통 } 60\%:20\%:20\% \text{ 또는 } 80\%:10\%:10\% $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>집합</th><th>쓰는 곳</th><th>몇 번 보나</th></tr></thead>
+          <tbody>
+            <tr><td><strong>train</strong></td><td>parameter 학습 ($\mathbf{w}$, 트리 구조)</td><td>제한 없음</td></tr>
+            <tr><td><strong>validation</strong></td><td><strong>hyperparameter·model 선택</strong>, early stopping</td><td>여러 번 (그래서 오염된다)</td></tr>
+            <tr><td><strong>test</strong></td><td><strong>최종 성능 보고</strong></td><td><strong>딱 한 번</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <span class="hl">parameter 와 hyperparameter 의 구분이 이 분할의 근거다 —
+        <strong>parameter 는 train 이 정하고, hyperparameter 는 validation 이 정하며,
+        그 둘을 다 정한 뒤의 성능을 test 가 잰다</strong>.</span>
+      </p>
+      <p>
+        <strong>분할 자체가 무작위여서는 안 되는 경우</strong>가 있다.
+        <strong>시계열</strong>이면 <strong>반드시 시간순으로</strong> 잘라야 하고
+        (미래로 과거를 예측하면 leakage 다),
+        <strong>같은 환자·같은 사용자의 여러 기록</strong>이 있으면
+        <strong>그룹 단위로</strong> 나눠야 한다(<code>GroupKFold</code>).
+        <strong>표본이 독립이 아니면 무작위 분할이 곧 leakage</strong> 다.
+      </p>
+
+      <span class="anchor" id="c-kfold"></span>
+      <h3>K-Fold Cross Validation</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \widehat{\text{CV}}=\frac1K\sum_{k=1}^{K}L\bigl(h^{(-k)},\ S_k\bigr) $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        <span class="hl">$K$-fold 는 data 를 $K$ 조각으로 나눠
+        <strong>한 조각을 빼고 학습, 그 조각으로 평가</strong>를 $K$번 반복해 평균한다 —
+        <strong>모든 표본이 정확히 한 번씩 평가에 쓰인다</strong>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$K$</th><th>학습 크기</th><th>편향</th><th>분산</th><th>비용</th></tr></thead>
+          <tbody>
+            <tr><td class="num">2</td><td>$n/2$</td><td><strong>크다</strong> (data 절반만 씀)</td><td>작다</td><td>2회</td></tr>
+            <tr><td class="num">5</td><td>$0.8n$</td><td>작다</td><td>작다</td><td>5회</td></tr>
+            <tr><td class="num">10</td><td>$0.9n$</td><td><strong>더 작다</strong></td><td>보통</td><td>10회</td></tr>
+            <tr><td>$n$ (LOOCV)</td><td>$n-1$</td><td><strong>거의 없다</strong></td><td><strong>크다</strong></td><td><strong>$n$회</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>LOOCV 의 분산이 큰 이유</strong>가 직관에 반한다 —
+        $n$개의 학습 집합이 <strong>서로 $n-2$개를 공유해 거의 같으므로</strong>
+        $n$개의 오차 추정이 <strong>강하게 상관</strong>되고,
+        <a href="5.7-ensemble.html">5.7</a> 식 (4)에서 봤듯 <strong>상관된 것을 평균해도 분산이 안 줄어든다</strong>.
+        <strong>$K=5$ 또는 $10$ 이 표준</strong>인 것은 이 맞바꿈의 경험적 절충이다.
+      </p>
+      <p>
+        분산을 더 줄이려면 <strong>반복 교차검증</strong>(<code>RepeatedKFold</code>) —
+        분할 seed 를 바꿔 여러 번 돌려 평균한다.
+        비용이 배로 들지만 <strong>분할 운에 의한 흔들림</strong>을 크게 줄인다.
+      </p>
+
+      <figure class="widget" data-widget="kfold-view">
+        <figcaption class="widget__bar">K-Fold — K 가 편향과 분산을 맞바꾼다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$K$ 를 키우면 <strong>평균은 참값에 가까워지는데 fold 간 편차는 커집니다</strong>.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-strat"></span>
+      <h3>Stratified Sampling 층화 추출</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \forall k,\ c:\quad \frac{|\{i\in S_k:\ y_i=c\}|}{|S_k|}\ \approx\ \frac{|\{i\in S:\ y_i=c\}|}{|S|} $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl">층화는 <strong>각 fold 의 class 비율을 전체와 같게</strong> 유지한다 —
+        <strong>불균형일수록 필수</strong>이며, 안 하면 <strong>어떤 fold 에 소수 class 가 하나도 안 들어가는</strong> 일이 생긴다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>data 성격</th><th>써야 할 분할기</th><th>이유</th></tr></thead>
+          <tbody>
+            <tr><td>일반 분류</td><td><code>StratifiedKFold</code></td><td><strong>sklearn 의 기본값</strong> — 분산이 작아진다</td></tr>
+            <tr><td>회귀</td><td><code>KFold</code></td><td>구간화해 층화하기도 한다</td></tr>
+            <tr><td><strong>그룹 존재</strong></td><td><code>GroupKFold</code></td><td>같은 환자가 train·test 에 걸치면 leakage</td></tr>
+            <tr><td><strong>시계열</strong></td><td><code>TimeSeriesSplit</code></td><td>미래로 과거를 예측하면 안 된다</td></tr>
+            <tr><td>둘 다</td><td><code>StratifiedGroupKFold</code></td><td>비율을 지키면서 그룹도 지킨다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        층화의 효과는 <strong>불균형이 심할수록 극적</strong>이다 —
+        양성이 20개인데 10-fold 를 층화 없이 하면
+        <strong>fold 당 평균 2개</strong>이고, <strong>0개인 fold 가 나올 확률이 상당</strong>하다.
+        그 fold 에서는 recall 이 정의되지 않거나 0 이 되어 <strong>평균이 통째로 망가진다</strong>.
+      </p>
+
+      <span class="anchor" id="c-hpo"></span>
+      <span class="anchor" id="c-grid"></span>
+      <span class="anchor" id="c-random"></span>
+      <h3>Hyperparameter Search — Grid vs Random</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \lambda^\star=\arg\max_{\lambda\in\Lambda}\ \widehat{\text{CV}}(\lambda), \qquad \text{격자: } \Lambda=\prod_j\Lambda_j \quad\text{vs}\quad \text{무작위: } \lambda\sim p(\Lambda) $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        <span class="hl">격자 탐색은 <strong>모든 조합</strong>을 훑어 차원의 저주에 걸리지만,
+        무작위 탐색은 <strong>같은 예산으로 각 축을 훨씬 조밀하게</strong> 훑는다 —
+        <strong>실제로 중요한 hyperparameter 는 몇 개뿐</strong>이기 때문에 이것이 결정적이다<a class="cite" href="#ref-bergstra2012-random-search" data-ref="bergstra2012-random-search">1</a>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>Grid Search</th><th>Random Search</th></tr></thead>
+          <tbody>
+            <tr><td>시도 수</td><td>$\prod_j|\Lambda_j|$ — <strong>지수적</strong></td><td><strong>내가 정한다</strong></td></tr>
+            <tr><td>각 축의 서로 다른 값</td><td>$|\Lambda_j|$ 개뿐</td><td><strong>$N$ 개 전부 다르다</strong></td></tr>
+            <tr><td>무관한 축이 있으면</td><td><strong>낭비가 심하다</strong></td><td>낭비 없음</td></tr>
+            <tr><td>병렬화</td><td>✓</td><td>✓</td></tr>
+            <tr><td>중단 가능</td><td>✗ (격자를 다 돌아야)</td><td><strong>✓ 언제든</strong></td></tr>
+            <tr><td>재현성</td><td>완전</td><td>seed 고정 필요</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>두 번째 줄이 핵심</strong>이다.
+        $3\times3\times3=27$ 개의 격자는 <strong>각 축에서 3개 값만</strong> 시험하지만,
+        무작위로 27번 뽑으면 <strong>각 축에서 27개의 서로 다른 값</strong>을 본다.
+        <strong>세 축 중 하나만 중요하다면</strong> 격자는 <strong>3점짜리 탐색</strong>이고
+        무작위는 <strong>27점짜리 탐색</strong>이다(유도 2).
+      </p>
+      <p>
+        <strong>탐색 범위는 로그 스케일</strong>로 잡는 것이 원칙이다 —
+        학습률·규제 상수·$C$·$\gamma$ 는 모두 <strong>배수로 움직여야</strong> 의미가 있다.
+        $\{0.1,\ 0.2,\ \dots,\ 1.0\}$ 이 아니라 $\{10^{-4},\ 10^{-3},\ \dots,\ 10^{1}\}$ 이다.
+      </p>
+
+      <figure class="widget" data-widget="grid-vs-random">
+        <figcaption class="widget__bar">Grid vs Random — 중요한 축이 하나뿐일 때</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">축에 사영해 보세요 — 격자는 <strong>같은 값을 반복</strong>하고, 무작위는 <strong>전부 다릅니다</strong>.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-bo"></span>
+      <h3>Bayesian Optimization</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \lambda_{t+1}=\arg\max_{\lambda}\ \alpha(\lambda\mid\mathcal{D}_t), \qquad \alpha_{\text{EI}}=E\bigl[\max(f(\lambda)-f^\star,\ 0)\bigr] $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        <span class="hl">Bayesian optimization 은 <strong>지금까지의 시도로 목적함수의 대리 model(주로 Gaussian process)을 세우고</strong>,
+        <strong>획득 함수</strong>가 가장 큰 곳을 다음에 시도한다 —
+        <strong>과거 결과를 활용한다는 점</strong>이 격자·무작위와 근본적으로 다르다<a class="cite" href="#ref-snoek2012-practical-bayesian-optimization" data-ref="snoek2012-practical-bayesian-optimization">2</a>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>획득 함수</th><th>고르는 기준</th><th>성격</th></tr></thead>
+          <tbody>
+            <tr><td><strong>EI</strong> (expected improvement)</td><td>개선의 기댓값</td><td><strong>가장 널리 쓰인다</strong></td></tr>
+            <tr><td>UCB</td><td>$\mu+\kappa\sigma$</td><td>$\kappa$ 로 탐험 정도 조절</td></tr>
+            <tr><td>PI</td><td>개선할 확률</td><td>지나치게 활용 편향</td></tr>
+            <tr><td>Thompson sampling</td><td>사후분포에서 뽑아 최댓값</td><td>병렬화에 유리</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>탐험과 활용의 맞바꿈</strong>이 여기 그대로 나타난다 —
+        $\mu$ 가 높은 곳(활용)과 $\sigma$ 가 큰 곳(탐험) 사이에서 균형을 잡는다.
+        <strong>어디에 언제 쓰나</strong>: <strong>한 번 평가가 비쌀 때</strong>(신경망 학습 수 시간)
+        큰 이득이 있고, <strong>평가가 싸면 무작위 탐색을 더 많이 돌리는 편이 낫다</strong> —
+        BO 는 <strong>순차적이라 병렬화가 어렵고</strong> 자체 오버헤드도 있기 때문이다.
+      </p>
+      <p>
+        실무에서는 <strong>Optuna·Hyperopt</strong> 같은 도구가 이를 구현하며,
+        많은 경우 GP 대신 <strong>TPE</strong>(tree-structured Parzen estimator)를 쓴다 —
+        <strong>범주형과 조건부 탐색공간</strong>을 다루기 쉽기 때문이다.
+        여기에 <strong>가망 없는 시도를 조기에 끊는</strong> pruning(Hyperband·ASHA)을 결합하는 것이 최근의 표준이다.
+      </p>
+
+      <span class="anchor" id="c-nested"></span>
+      <h3>Nested Cross Validation 중첩 교차검증</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \widehat{\text{Nested}}=\frac{1}{K_{\text{out}}}\sum_{k=1}^{K_{\text{out}}} L\Bigl(\underbrace{\text{fit}\bigl(S_{-k},\ \lambda_k^\star\bigr)}_{\lambda_k^\star \text{ 는 내부 CV 로}},\ S_k\Bigr) $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        <span class="hl">중첩 교차검증은 <strong>hyperparameter 탐색 전체를 하나의 학습 절차로 보고</strong>
+        그것을 다시 교차검증한다 —
+        <strong>"이 절차가 새 data 에서 얼마나 잘할까"</strong> 에 대한 편향 없는 추정을 준다<a class="cite" href="#ref-cawley2010-model-selection-bias" data-ref="cawley2010-model-selection-bias">3</a>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>단순 CV (같은 fold 로 선택+평가)</th><th>중첩 CV</th></tr></thead>
+          <tbody>
+            <tr><td>내부 루프</td><td>—</td><td>hyperparameter 선택</td></tr>
+            <tr><td>외부 루프</td><td>선택 + 평가 <strong>동시에</strong></td><td><strong>평가만</strong></td></tr>
+            <tr><td>비용</td><td>$K\times|\Lambda|$</td><td><strong>$K_{\text{out}}\times K_{\text{in}}\times|\Lambda|$</strong></td></tr>
+            <tr><td>편향</td><td><strong>낙관적</strong></td><td>거의 없다</td></tr>
+            <tr><td>주는 것</td><td>최적 $\lambda$ 와 (편향된) 점수</td><td><strong>절차의 성능 추정</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>가장 흔한 오해</strong>가 여기 있다 —
+        <strong>중첩 CV 는 "최종 hyperparameter"를 주지 않는다</strong>.
+        외부 fold 마다 <strong>다른 $\lambda_k^\star$</strong> 가 나올 수 있고, 그것이 정상이다.
+        중첩 CV 가 주는 것은 <strong>성능 추정치 하나</strong>이며,
+        배포할 model 은 <strong>전체 data 에 다시 단순 CV 를 돌려</strong> 만든다(오해 4).
+      </p>
+      <p>
+        <strong>언제 필요한가</strong> — <strong>표본이 적고 후보가 많을 때</strong> 편향이 크므로 필수에 가깝다.
+        <strong>충분히 큰 별도 test set 이 있다면</strong> 그것으로 대체할 수 있어 굳이 안 해도 된다.
+      </p>
+
+      <figure class="widget" data-widget="nested-cv">
+        <figcaption class="widget__bar">Nested CV — 선택 편향이 얼마나 되나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">후보가 많고 표본이 적을수록 <strong>단순 CV 와 중첩 CV 의 격차</strong>가 벌어집니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>실무 절차를 순서대로 정리한다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>단계</th><th>하는 일</th><th>주의</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><strong>test set 을 먼저 떼어 봉인</strong></td><td>이후 절대 열지 않는다</td></tr>
+            <tr><td>2</td><td>탐색 공간 설계 (로그 스케일)</td><td>범위가 좁으면 <strong>경계에 최적값이 걸린다</strong></td></tr>
+            <tr><td>3</td><td>무작위 탐색 $30\sim60$회로 <strong>넓게</strong></td><td>전처리는 <strong>반드시 <code>Pipeline</code></strong> 안에</td></tr>
+            <tr><td>4</td><td>유망 영역에서 조밀하게 재탐색</td><td>BO 나 좁힌 격자</td></tr>
+            <tr><td>5</td><td>1-SE 규칙으로 <strong>단순한 쪽</strong> 선택</td><td>최고점은 대개 잡음이다</td></tr>
+            <tr><td>6</td><td><strong>전체 train+val 로 재학습</strong></td><td>data 를 버리지 않는다</td></tr>
+            <tr><td>7</td><td>test 를 <strong>한 번</strong> 열어 보고</td><td>여기서 고치면 처음부터 다시</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>5단계의 1-SE 규칙</strong>이 자주 빠뜨리는 장치다 —
+        <strong>최고 점수의 1 표준오차 안에 드는 후보 중 가장 단순한 것</strong>을 고른다.
+        CV 점수에는 잡음이 있어 <strong>최고점이 진짜 최적이라는 보장이 없고</strong>,
+        <strong>더 단순한 model 이 대개 더 잘 일반화</strong>하기 때문이다(<a href="5.2-statistical-learning-theory.html">5.2</a>의 SRM).
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \text{SE}=\frac{\text{std}_K}{\sqrt{K}}, \qquad \lambda_{\text{1SE}}=\max\bigl\{\lambda:\ \widehat{\text{CV}}(\lambda)\ \ge\ \widehat{\text{CV}}(\lambda^\star)-\text{SE}\bigr\} $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$\lambda$</td><td>lambda 람다</td><td><strong>hyperparameter</strong> (전체 vector)</td><td>—</td><td>탐색 공간 $\Lambda$</td></tr>
+            <tr><td>$\Lambda$</td><td>Lambda (대문자)</td><td>탐색 공간</td><td>집합</td><td>—</td></tr>
+            <tr><td>$K$</td><td>—</td><td>fold 의 개수</td><td>정수</td><td>보통 5 또는 10</td></tr>
+            <tr><td>$S_k$</td><td>S sub k</td><td>$k$번째 fold</td><td>집합</td><td>서로소, 합이 $S$</td></tr>
+            <tr><td>$h^{(-k)}$</td><td>h minus k</td><td>$S_k$ <strong>를 빼고</strong> 학습한 model</td><td>함수</td><td>—</td></tr>
+            <tr><td>$\widehat{\text{CV}}$</td><td>CV 추정치</td><td>fold 별 손실의 평균</td><td>scalar</td><td>—</td></tr>
+            <tr><td>SE</td><td>standard error 표준오차</td><td>$\text{std}_K/\sqrt{K}$</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>LOOCV</td><td>leave-one-out CV</td><td>$K=n$ 인 경우</td><td>—</td><td>—</td></tr>
+            <tr><td>$K_{\text{out}}$, $K_{\text{in}}$</td><td>—</td><td>중첩 CV 의 외부·내부 fold 수</td><td>정수</td><td>보통 5, 3~5</td></tr>
+            <tr><td>$\alpha(\lambda)$</td><td>acquisition 획득 함수</td><td>다음에 어디를 시도할지</td><td>함수</td><td>—</td></tr>
+            <tr><td>$f^\star$</td><td>f star</td><td>지금까지의 최고 점수</td><td>scalar</td><td>—</td></tr>
+            <tr><td>$\mu,\sigma$ (BO)</td><td>—</td><td>대리 model 의 예측 평균·표준편차</td><td>scalar</td><td>—</td></tr>
+            <tr><td>TPE</td><td>tree-structured Parzen estimator</td><td>GP 대신 쓰는 대리 model</td><td>—</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">같은 것을 다르게 부른다</span>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>이 사이트</th><th>같은 뜻으로 쓰이는 말</th><th>주의할 점</th></tr></thead>
+            <tbody>
+              <tr><td>validation set</td><td>개발 집합(dev set), hold-out</td><td><strong>test 와 혼용하는 글이 많다</strong> — 문맥으로 판단</td></tr>
+              <tr><td>hyperparameter</td><td>초매개변수, 조절 parameter</td><td><strong>parameter 와 명확히 구별</strong></td></tr>
+              <tr><td>중첩 CV</td><td>nested CV, double CV</td><td>외부/내부 루프의 역할이 다르다</td></tr>
+              <tr><td>1-SE 규칙</td><td>one-standard-error rule</td><td>glmnet·CART 의 관례</td></tr>
+              <tr><td>BO</td><td>Bayesian optimization, SMBO</td><td>Optuna 의 TPE 도 이 범주</td></tr>
+              <tr><td>Hyperband</td><td>successive halving, ASHA</td><td><strong>탐색이 아니라 조기 중단 전략</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — 최댓값을 고르면 왜 낙관적인가</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat{a}_j=a_j+\epsilon_j, \qquad \epsilon_j\sim\mathcal{N}(0,\sigma^2)\ \text{독립} $$</div>
+          <div class="derive__why">$M$개 후보의 CV 점수 — <strong>실력 $a_j$ + 잡음</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{모두 실력이 같다면}\ (a_j=a):\quad \max_j\hat{a}_j=a+\max_j\epsilon_j $$</div>
+          <div class="derive__why">가장 높은 점수를 고른다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ E\bigl[\max_j\epsilon_j\bigr]\ \approx\ \sigma\sqrt{2\ln M} $$</div>
+          <div class="derive__why">정규분포 최댓값의 고전적 근사 — <strong>0 이 아니다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ E\bigl[\max_j\hat{a}_j\bigr]-a\ \approx\ \sigma\sqrt{2\ln M}\ >\ 0 $$</div>
+          <div class="derive__why"><strong>실력이 전부 같아도 최고점은 반드시 위로 치우친다</strong> ∎</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ M=10,\ \sigma=0.02:\ 0.02\sqrt{2\ln10}=0.02(2.146)=0.043 $$</div>
+          <div class="derive__why"><strong>정확도가 4.3%p 부풀려진다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ M=1000:\ 0.02\sqrt{2\ln1000}=0.02(3.717)=0.074 $$</div>
+          <div class="derive__why">후보를 100배 늘려도 <strong>$\sqrt{\ln M}$ 이라 천천히 는다</strong> — 그래도 계속 는다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{편향을 줄이려면}:\ \sigma \downarrow (K \uparrow,\ n \uparrow) \ \text{또는}\ M \downarrow $$</div>
+          <div class="derive__why">그리고 <strong>선택에 쓰지 않은 data 로 평가</strong>하면 편향이 사라진다 — 중첩 CV</div>
+        </div>
+      </div>
+
+      <h3>유도 2 — 무작위 탐색이 격자를 이기는 이유</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{“좋은 영역”}=\text{상위 } p \text{ 비율의 } \lambda \ (\text{예: } p=0.05) $$</div>
+          <div class="derive__why">최적 근처 5% 안에만 들면 만족한다고 하자</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P(\text{한 번 뽑아 실패})=1-p $$</div>
+          <div class="derive__why">균등하게 뽑는다면</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P(N \text{ 번 모두 실패})=(1-p)^N \ \Rightarrow\ P(\text{성공})=1-(1-p)^N $$</div>
+          <div class="derive__why">독립 시행</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ p=0.05,\ N=60:\ 1-0.95^{60}=1-0.0461=0.954 $$</div>
+          <div class="derive__why"><strong>60번만 뽑아도 95% 확률로 상위 5% 안에 든다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ N=\frac{\ln(1-0.95)}{\ln(1-p)}=\frac{-2.996}{-0.0513}=58.4 \ \Rightarrow\ \textbf{차원과 무관하다} $$</div>
+          <div class="derive__why"><strong>$d$ 가 몇이든 60번</strong> — 격자는 $|\Lambda_j|^d$ 로 폭발한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{격자 } 3^3=27:\ \text{각 축에서 } \textbf{서로 다른 값 3개} $$</div>
+          <div class="derive__why">$x$ 축만 중요하다면 <strong>3점짜리 탐색</strong>이다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{무작위 } 27 \text{ 회}:\ \text{각 축에서 } \textbf{서로 다른 값 27개} $$</div>
+          <div class="derive__why"><strong>같은 예산으로 9배 조밀</strong> — 실제 문제는 대개 <strong>유효 차원이 낮다</strong> ∎</div>
+        </div>
+      </div>
+
+      <h3>유도 3 — 층화가 분산을 줄인다</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{단순 무작위}:\ \text{fold 의 양성 수}\ X\sim\text{Hypergeom} \ \Rightarrow\ \mathrm{Var}(X)>0 $$</div>
+          <div class="derive__why">fold 마다 class 비율이 <strong>흔들린다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{층화}:\ \text{fold 의 양성 수}=\Bigl\lfloor\frac{P}{K}\Bigr\rfloor \text{ 또는 } \Bigl\lceil\frac{P}{K}\Bigr\rceil \ \Rightarrow\ \mathrm{Var}\approx0 $$</div>
+          <div class="derive__why">식 (3) — <strong>비율을 고정</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{성능은 class 비율에 민감} \Rightarrow \mathrm{Var}(\hat{L}_k) \text{ 의 일부가 } \textbf{제거된다} $$</div>
+          <div class="derive__why"><a href="../ch04/4.3-expectation-variance.html">4.3</a>의 전분산 공식 $\mathrm{Var}=E[\mathrm{Var}(\cdot|\pi_k)]+\mathrm{Var}(E[\cdot|\pi_k])$ 에서 <strong>둘째 항</strong>이 사라진다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P=20,\ K=10 \text{ (층화 없음)}:\ E[\text{fold 당 양성}]=2 $$</div>
+          <div class="derive__why">불균형 예시</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P(\text{양성 } 0 \text{ 개인 fold})\approx\binom{20}{0}(0.9)^{20}=0.1216 $$</div>
+          <div class="derive__why">각 양성이 그 fold 에 안 들어갈 확률 $0.9$ — <strong>fold 하나당 12%</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P(\text{그런 fold 가 하나라도})\ \approx\ 1-(1-0.1216)^{10}\approx0.73 $$</div>
+          <div class="derive__why"><strong>10-fold 중 하나가 비어 있을 확률이 73%</strong> — 근사이지만 크기는 맞다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{그 fold 에서 recall 이 정의되지 않거나 } 0 \Rightarrow \textbf{평균이 망가진다} $$</div>
+          <div class="derive__why"><strong>불균형에서 층화가 필수인 이유</strong> ∎</div>
+        </div>
+      </div>
+
+      <details>
+        <summary>왜 전처리를 Pipeline 안에 넣어야 하는가</summary>
+        <p>
+          교차검증에서 가장 흔하고 가장 치명적인 실수가 <strong>전처리 leakage</strong> 다.
+        </p>
+        <p>
+          <strong>표준화를 전체 data 에 먼저 하고 CV 를 돌리면</strong>,
+          각 fold 의 "test" 부분이 <strong>이미 전체 평균과 표준편차를 통해 학습에 영향</strong>을 준 것이다.
+          이 편향은 작지만 <strong>체계적</strong>이라 언제나 낙관 쪽으로 작용한다.
+        </p>
+        <p>
+          <strong>feature 선택은 훨씬 심각하다.</strong>
+          전체 data 에서 "target 과 상관이 높은 상위 100개 feature"를 고른 뒤 CV 를 돌리면,
+          <strong>완전한 잡음 data 에서도 정확도가 크게 오른다</strong> —
+          $y$ 를 이미 본 feature 들이기 때문이다.
+          ESL 7.10.2 절이 이것을 <strong>"틀린 방식"</strong> 으로 명시적으로 다루며,
+          잡음만 있는 data 에서 CV 오차가 <strong>50% 에서 3% 로</strong> 떨어지는 예를 든다.
+        </p>
+        <p>
+          처방은 하나다 — <strong>train fold 에서 배우는 모든 것</strong>(스케일러의 평균, 결측치 대치값,
+          선택된 feature, 인코딩 사전, 오버샘플링)을 <strong><code>Pipeline</code> 안에 넣어</strong>
+          <strong>fold 마다 다시 fit 되게</strong> 하는 것이다.
+          <strong>SMOTE 같은 오버샘플링은 특히 위험</strong>하다 —
+          CV 전에 하면 <strong>합성된 표본의 원본이 test fold 에 들어가</strong> 대놓고 leakage 가 된다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① 선택 편향의 크기를 계산한다</h3>
+      <p>실력이 전부 같은 후보 $M$개, CV 점수의 표준편차 $\sigma=0.02$.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$M$</th><th>$\sqrt{2\ln M}$</th><th>기대 낙관 편향</th></tr></thead>
+          <tbody>
+            <tr><td class="num">2</td><td class="num">1.177</td><td class="num">0.024</td></tr>
+            <tr><td class="num">10</td><td class="num">2.146</td><td class="num">0.043</td></tr>
+            <tr><td class="num">100</td><td class="num">3.035</td><td class="num">0.061</td></tr>
+            <tr><td class="num">1000</td><td class="num">3.717</td><td class="num"><strong>0.074</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ M=100:\ \ln100=4.605,\quad \sqrt{2(4.605)}=\sqrt{9.210}=3.035 $$</div>
+          <div class="derive__why">유도 1</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 0.02\times3.035=0.0607 $$</div>
+          <div class="derive__why"><strong>참 정확도가 0.80 인데 CV 최고점은 0.86 으로 보인다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sigma \text{ 를 절반으로}\ (K \text{ 를 늘려}):\ 0.01\times3.035=0.030 $$</div>
+          <div class="derive__why"><strong>편향도 절반</strong> — CV 를 안정시키는 것이 직접적 처방</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ M:\ 100\to1000 \Rightarrow 0.061\to0.074 \quad (\text{겨우 } 1.2 \text{ 배}) $$</div>
+          <div class="derive__why"><strong>$\sqrt{\ln M}$ 이라 후보를 10배로 해도 편향은 22% 만 는다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{탐색을 넓게 하는 것 자체는 괜찮다} $$</div>
+          <div class="derive__why">단, <strong>그 점수를 최종 성능으로 보고하지만 않으면</strong> 된다</div>
+        </div>
+      </div>
+
+      <h3>② 무작위 탐색에 몇 번이 필요한가</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ P(\text{성공})=1-(1-p)^N \ \Rightarrow\ N=\frac{\ln(1-P)}{\ln(1-p)} $$</div>
+          <div class="derive__why">유도 2 를 $N$ 에 대해 풀었다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ p=0.05,\ P=0.95:\ N=\frac{\ln0.05}{\ln0.95}=\frac{-2.9957}{-0.05129}=58.4\ \to\ 59 $$</div>
+          <div class="derive__why"><strong>상위 5% 를 95% 확률로 — 59회</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ p=0.10,\ P=0.95:\ N=\frac{-2.9957}{-0.10536}=28.4\ \to\ 29 $$</div>
+          <div class="derive__why">상위 10% 면 <strong>29회</strong>로 충분</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ p=0.01,\ P=0.95:\ N=\frac{-2.9957}{-0.01005}=298 $$</div>
+          <div class="derive__why">상위 1% 를 노리면 <strong>300회</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{격자로 } 5 \text{ 차원을 각 } 5 \text{ 값씩}:\ 5^5=3125 \text{ 회} $$</div>
+          <div class="derive__why"><strong>그러고도 각 축은 5점뿐</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{무작위 } 59 \text{ 회}:\ \text{각 축에서 } 59 \text{ 개의 서로 다른 값} $$</div>
+          <div class="derive__why"><strong>53배 싸면서 각 축은 12배 조밀</strong> ✓</div>
+        </div>
+      </div>
+
+      <h3>③ 1-SE 규칙을 손으로</h3>
+      <p>5-fold CV 로 규제 강도 $\lambda$ 를 고른다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$\lambda$</th><th>fold 별 정확도</th><th>평균</th><th>std</th><th>SE</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0.001</td><td>0.80 0.86 0.82 0.88 0.84</td><td class="num">0.840</td><td class="num">0.0283</td><td class="num">0.0126</td></tr>
+            <tr><td class="num">0.01</td><td>0.84 0.88 0.86 0.90 0.87</td><td class="num"><strong>0.870</strong></td><td class="num">0.0200</td><td class="num"><strong>0.0089</strong></td></tr>
+            <tr><td class="num">0.1</td><td>0.85 0.87 0.84 0.88 0.86</td><td class="num">0.860</td><td class="num">0.0141</td><td class="num">0.0063</td></tr>
+            <tr><td class="num">1.0</td><td>0.78 0.80 0.79 0.81 0.77</td><td class="num">0.790</td><td class="num">0.0141</td><td class="num">0.0063</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \lambda=0.01:\ \bar{x}=\frac{0.84+0.88+0.86+0.90+0.87}{5}=\frac{4.35}{5}=0.870 $$</div>
+          <div class="derive__why">최고 평균</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{편차}=(-0.03,\ 0.01,\ -0.01,\ 0.03,\ 0)\ \Rightarrow\ \sum d^2=0.0009+0.0001+0.0001+0.0009+0=0.002 $$</div>
+          <div class="derive__why"></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{std}=\sqrt{\frac{0.002}{4}}=\sqrt{0.0005}=0.02236 $$</div>
+          <div class="derive__why">표본 표준편차 ($n-1$ 로 나눔)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{SE}=\frac{0.02236}{\sqrt5}=\frac{0.02236}{2.236}=0.0100 $$</div>
+          <div class="derive__why">식 (7)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{문턱}=0.870-0.0100=0.860 $$</div>
+          <div class="derive__why">이 이상인 후보를 찾는다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lambda=0.1:\ 0.860\ \ge\ 0.860 \ ✓\qquad \lambda=1.0:\ 0.790<0.860\ ✗ $$</div>
+          <div class="derive__why"></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \lambda_{\text{1SE}}=0.1 \quad (\textbf{더 강한 규제 = 더 단순한 model}) $$</div>
+          <div class="derive__why">평균은 0.01%p 낮지만 <strong>fold 간 편차도 작아 더 안정적</strong>이다</div>
+        </div>
+      </div>
+
+      <h3>④ 층화가 없으면 무슨 일이 생기나</h3>
+      <p>$n=200$, 양성 $P=20$ (10%), 10-fold.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{층화하면}:\ \text{모든 fold 에 양성 정확히 } 2 \text{ 개} $$</div>
+          <div class="derive__why">$20/10=2$ — 식 (3)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{안 하면}:\ P(\text{특정 양성이 fold } k \text{ 에 안 들어감})=\frac{180}{200}=0.9 $$</div>
+          <div class="derive__why">각 fold 가 20개를 가져간다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P(\text{fold } k \text{ 에 양성 } 0 \text{ 개})\approx0.9^{20}=0.1216 $$</div>
+          <div class="derive__why">근사(독립 가정) — 정확한 초기하 계산도 0.12 근처</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P(\text{양성 } 0 \text{ 인 fold 가 하나 이상})\approx1-(1-0.1216)^{10}=1-0.2724=0.728 $$</div>
+          <div class="derive__why"><strong>73% 확률로 recall 을 계산할 수 없는 fold 가 생긴다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{양성 } 5 \text{ 개 이상인 fold 도 생긴다}:\ \text{fold 간 } \pi_k \text{ 가 } 0\%\sim25\% \text{ 로 요동} $$</div>
+          <div class="derive__why"><strong>같은 model 인데 fold 마다 점수가 크게 달라진다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \sigma \uparrow \Rightarrow \text{유도 1 의 선택 편향 } \sigma\sqrt{2\ln M} \text{ 도 } \uparrow $$</div>
+          <div class="derive__why"><strong>층화를 안 하면 선택 편향까지 커진다</strong> — 두 문제가 연결되어 있다</div>
+        </div>
+      </div>
+
+      <figure class="widget" data-widget="oneseparate">
+        <figcaption class="widget__bar">1-SE 규칙 — 최고점 대신 단순한 쪽</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">오차막대가 겹치면 <strong>최고점을 고를 근거가 약합니다</strong> — 그때 더 단순한 쪽을 택합니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>선택 편향</strong> · <strong>K-fold</strong> ·
+        <strong>격자 vs 무작위</strong> · <strong>중첩 CV</strong> · <strong>1-SE</strong> — 에 이어,
+        아래에서 <strong>Bayesian optimization 이 어떻게 다음 지점을 고르는지</strong>를 본다.
+      </p>
+
+      <figure class="widget" data-widget="bo-step">
+        <figcaption class="widget__bar">Bayesian Optimization — 어디를 다음에 시도할까</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">획득 함수는 <strong>예측이 좋은 곳(활용)과 불확실한 곳(탐험)</strong> 사이에서 균형을 잡습니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"교차검증 최고 점수를 최종 성능으로 보고하면 된다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>그 점수는 반드시 낙관적</strong>이다.
+          유도 1 에서 봤듯 실력이 전부 같은 후보들이라도
+          <strong>최고점의 기대 편향이 $\sigma\sqrt{2\ln M}$</strong> 이다 —
+          $M=100$, $\sigma=0.02$ 면 <strong>6%p</strong> 나 부풀려진다.
+          <strong>선택에 쓴 점수와 보고할 점수는 반드시 달라야</strong> 하며,
+          별도 test set 이나 <strong>중첩 CV</strong> 로 재야 한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"전처리는 CV 전에 한 번만 하면 효율적이다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>leakage</strong> 다.
+          표준화 하나만 해도 test fold 의 평균이 학습에 새어 들어가고,
+          <strong>feature 선택을 전체 data 에서 하면 완전한 잡음에서도 정확도가 크게 오른다</strong>(접힌 상자).
+          <strong>SMOTE 같은 오버샘플링을 CV 전에 하는 것은 특히 치명적</strong>이다 —
+          합성 표본의 원본이 test fold 에 들어가기 때문이다.
+          <strong>train fold 에서 배우는 모든 것을 <code>Pipeline</code> 안에</strong> 넣어야 하며,
+          이것이 sklearn 이 <code>Pipeline</code> 을 만든 가장 큰 이유다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"교차검증을 쓰니 무작위 분할이 안전하다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>표본이 독립일 때만</strong> 그렇다.
+          <strong>같은 환자의 여러 촬영, 같은 사용자의 여러 세션, 같은 문서에서 나온 여러 문장</strong>이
+          train 과 test 에 걸치면 <strong>사실상 답을 보고 푸는 것</strong>이다 — <code>GroupKFold</code> 를 써야 한다.
+          <strong>시계열은 더 명확</strong>하다 — 무작위 분할은 <strong>미래로 과거를 예측</strong>하게 만들어
+          실전에서는 재현 불가능한 성능을 낸다. <code>TimeSeriesSplit</code> 으로 <strong>시간순</strong>을 지켜야 한다.
+          <strong>data 가 어떻게 생성됐는지 모르면 어떤 분할도 안전하지 않다</strong>.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"중첩 CV 를 돌리면 최적 hyperparameter 를 얻는다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>중첩 CV 는 성능 추정치만 준다</strong>.
+          외부 fold 마다 <strong>다른 $\lambda_k^\star$</strong> 가 나오는 것이 정상이고,
+          그것들을 평균하거나 다수결하는 것은 <strong>의미가 없다</strong>.
+          <strong>중첩 CV 가 답하는 질문은 "이 절차가 새 data 에서 얼마나 잘할까"</strong> 이지
+          "어떤 $\lambda$ 를 쓸까"가 아니다.
+          최종 model 은 <strong>전체 data 에 단순 CV 를 한 번 더 돌려</strong> 만들고,
+          <strong>보고할 성능만 중첩 CV 값</strong>을 쓴다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"CV 점수가 0.1%p 높으니 이 model 이 더 낫다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>CV 점수에는 잡음이 있다</strong>.
+          예제 ③에서 fold 간 표준편차가 0.022, SE 가 0.010 이었다 —
+          <strong>0.1%p 차이는 SE 의 10분의 1</strong> 로 완전히 잡음 범위다.
+          <strong>오차막대가 겹치면 우열을 가릴 수 없다</strong>고 보는 것이 맞고,
+          그때는 <strong>더 단순한 쪽·더 빠른 쪽·더 해석 가능한 쪽</strong>을 고르는 것이 합리적이다(1-SE 규칙).
+          차이를 정말 판정하려면 <strong>반복 CV 로 분산을 줄이거나</strong>
+          <strong>같은 fold 에서 짝지어 비교</strong>(<a href="../ch04/4.8-hypothesis-testing.html">4.8</a>의 대응표본)해야 한다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–④ 를 검산한다.</p>
+      <details>
+        <summary>NumPy — 선택 편향 · 탐색 횟수 · 1-SE · 층화 (20줄)</summary>
+<pre><code>import numpy as np
+rng = np.random.default_rng(0)
+
+for M in [2, 10, 100, 1000]:                                     # 예제 ①
+    emp = np.mean([rng.normal(0, .02, M).max() for _ in range(20000)])
+    print(M, round(.02 * np.sqrt(2 * np.log(M)), 4), round(emp, 4))
+# 근사식과 시뮬레이션이 같은 크기 (근사가 약간 크다)
+
+for p in [.05, .10, .01]:                                        # 예제 ②
+    print(p, int(np.ceil(np.log(.05) / np.log(1 - p))))          # 59 29 298
+
+cv = {0.001: [.80,.86,.82,.88,.84], 0.01: [.84,.88,.86,.90,.87],  # 예제 ③
+      0.1: [.85,.87,.84,.88,.86], 1.0: [.78,.80,.79,.81,.77]}
+mu = {k: np.mean(v) for k, v in cv.items()}
+best = max(mu, key=mu.get)
+se = np.std(cv[best], ddof=1) / np.sqrt(5)
+thr = mu[best] - se
+print(best, round(mu[best], 4), round(se, 4), round(thr, 4),
+      max(k for k in cv if mu[k] &gt;= thr))                        # 0.01 0.87 0.01 0.86 → 0.1
+
+hits = 0                                                          # 예제 ④
+for _ in range(20000):
+    fold = rng.permutation(200)[:20]
+    hits += (fold &lt; 20).sum() == 0            # 앞 20개를 양성으로 둔다
+print(round(hits / 20000, 4), round(0.9**20, 4))                 # ≈0.12  0.1216
+</code></pre>
+        <p>
+          <small>
+            첫 블록에서 <strong>근사식 $\sigma\sqrt{2\ln M}$ 이 시뮬레이션 평균보다 조금 크게</strong> 나온다 —
+            이 근사는 상계에 가깝지만 <strong>크기(order)는 정확</strong>하다.
+            세 번째 블록은 최고점 $\lambda=0.01$ 대신 <strong>1-SE 규칙이 $\lambda=0.1$ 을 고르는</strong> 것을 보인다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            5-fold CV 점수가 $(0.80,\ 0.84,\ 0.82,\ 0.86,\ 0.83)$ 이다. SE 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 0.010</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>약 0.022</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>약 0.005</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            평균 $0.83$, 편차 $(-0.03,0.01,-0.01,0.03,0)$ →
+            $\text{std}=\sqrt{0.002/4}=0.02236$ → $\text{SE}=0.02236/\sqrt5=0.0100$ (식 7).
+            <strong>나</strong>는 <strong>$\sqrt{K}$ 로 안 나눈</strong> 표준편차다.
+            <strong>SE 는 "평균의 흔들림"</strong>이고 std 는 "fold 간 흔들림"이라 <strong>용도가 다르다</strong>.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            상위 10% 안에 90% 확률로 들려면 무작위 탐색을 몇 번?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>22회</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>10회</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>100회</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $N=\frac{\ln0.1}{\ln0.9}=\frac{-2.3026}{-0.10536}=21.85$ → <strong>22회</strong> (유도 2).
+            <strong>탐색 공간의 차원과 무관</strong>하다는 것이 핵심이다 —
+            5차원이든 20차원이든 22번이면 된다.
+            격자로 5차원을 각 3값씩만 해도 $3^5=243$ 회다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $M=50$ 개 후보, CV 표준편차 $\sigma=0.03$ 일 때 기대 선택 편향은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 0.084</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.03</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\sigma\sqrt{2\ln50}=0.03\sqrt{2(3.912)}=0.03(2.797)=0.0839$ (유도 1).
+            <strong>참 정확도 0.80 인 후보들이 CV 에서는 0.88 로 보인다</strong>는 뜻이다.
+            <strong>다</strong>는 후보가 하나뿐일 때만 맞다 —
+            <strong>고르는 행위 자체가 편향을 만든다</strong>.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            LOOCV 의 분산이 큰 이유는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$n$ 개의 학습 집합이 거의 같아 오차 추정들이 강하게 상관되기 때문</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>각 fold 의 test 표본이 하나뿐이라서</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>계산량이 많아 수치오차가 쌓여서</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            <a href="5.7-ensemble.html">5.7</a> 식 (4)에서 봤듯
+            <strong>상관된 것을 평균하면 분산이 $\rho\sigma^2$ 아래로 안 내려간다</strong>.
+            LOOCV 의 학습 집합들은 <strong>$n-2$ 개를 공유</strong>해 $\rho$ 가 거의 1 이다.
+            <strong>나</strong>도 사실이지만 <strong>$n$ 개를 평균하므로</strong> 그것만으로는 분산이 커지지 않는다 —
+            <strong>상관이 진짜 원인</strong>이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            중첩 CV 의 외부 fold 마다 다른 $\lambda^\star$ 가 나왔다. 무엇을 해야 하나?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>정상이다 — 성능 추정치만 쓰고, 최종 model 은 전체 data 로 다시 고른다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>가장 자주 나온 $\lambda$ 를 쓴다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$\lambda$ 들의 평균을 쓴다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            중첩 CV 는 <strong>"hyperparameter 탐색을 포함한 절차 전체"</strong> 를 평가한다 —
+            외부 fold 마다 <strong>다른 학습 data 를 봤으니 다른 답이 나오는 것이 당연</strong>하다(오해 4).
+            <strong>다</strong>는 특히 위험하다 — <strong>범주형 hyperparameter</strong>(kernel 종류 등)는
+            평균 자체가 정의되지 않고, 수치형도 <strong>평균이 어느 fold 에서도 최적이 아닐 수</strong> 있다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            전체 data 에서 target 과 상관 높은 feature 100개를 고른 뒤 CV 를 돌렸다. 문제는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>feature 선택이 이미 $y$ 를 봤다 — 잡음 data 에서도 CV 점수가 크게 오른다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>feature 가 100개면 너무 많다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>문제없다. 선택은 학습이 아니다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            <strong>feature 선택도 학습</strong>이다 — $y$ 를 본 순간 그렇다(접힌 상자).
+            완전한 잡음에서도 <strong>우연히 상관이 높은 feature 를 고르면</strong>
+            그 상관이 test fold 에도 그대로 남아 CV 오차가 <strong>극적으로 낮아진다</strong>.
+            ESL 7.10.2 절이 이를 <strong>"틀린 방식"</strong> 으로 명시하며,
+            처방은 <strong>선택을 <code>Pipeline</code> 에 넣어 fold 마다 다시 하는 것</strong>이다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="5.13-model-evaluation.html">5.13 모델 평가</a></strong> — 어떤 지표로 CV 를 할 것인가.</li>
+        <li><strong><a href="5.2-statistical-learning-theory.html">5.2 통계적 학습이론</a></strong> — 1-SE 규칙은 SRM 의 실무판이다.</li>
+        <li><strong><a href="../ch01/1.5-data-split-evaluation.html">1.5 데이터 분할과 평가</a></strong> — leakage 의 기본 개념.</li>
+        <li><strong>16장 MLOps</strong> — 실험 추적과 재현성, 그리고 배포 후의 재평가.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-bergstra2012-random-search" data-ref="bergstra2012-random-search">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Bergstra, J. &amp; Bengio, Y. (2012). <em>Random Search for Hyper-Parameter Optimization</em>. Journal of Machine Learning Research, 13, 281–305.</span>
+          <span class="ref__where">§1 Figure 1 — <strong>격자는 각 축에서 몇 개 값만 시험하는 반면 무작위는 모든 시도가 다른 값</strong>이라는 그림이 이 절 위젯 3 의 원형이다. §2 — <strong>$1-(1-p)^N$ 로 필요한 시도 수를 계산</strong>하고 그것이 <strong>차원과 무관</strong>하다는 유도(유도 2, 예제 ②). §3–4 — 실제 문제의 <strong>유효 차원이 낮다</strong>는 관찰과 여러 dataset 에서 무작위 탐색이 격자를 앞서는 실험</span>
+          <a class="ref__link" href="https://www.jmlr.org/papers/v13/bergstra12a.html">jmlr.org</a>
+        </li>
+        <li class="ref" id="ref-snoek2012-practical-bayesian-optimization" data-ref="snoek2012-practical-bayesian-optimization">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Snoek, J., Larochelle, H. &amp; Adams, R. P. (2012). <em>Practical Bayesian Optimization of Machine Learning Algorithms</em>. NeurIPS 2012.</span>
+          <span class="ref__where">§2 — Gaussian process 대리 model 과 <strong>EI·PI·UCB 획득 함수</strong>의 정의 및 비교('획득 함수' 표, 식 5). §3.1 — Matérn 커널을 권하는 실무적 이유. §3.3 — <strong>평가 비용이 다를 때 비용당 개선</strong>으로 정규화하는 기법과 <strong>병렬 평가</strong>를 위한 몬테카를로 근사(BO 가 순차적이라는 한계와 그 완화)</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1206.2944">arXiv:1206.2944</a>
+        </li>
+        <li class="ref" id="ref-cawley2010-model-selection-bias" data-ref="cawley2010-model-selection-bias">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Cawley, G. C. &amp; Talbot, N. L. C. (2010). <em>On Over-fitting in Model Selection and Subsequent Selection Bias in Performance Evaluation</em>. Journal of Machine Learning Research, 11, 2079–2107.</span>
+          <span class="ref__where">§2 — <strong>model 선택 기준 자체를 과적합할 수 있다</strong>는 개념과 그 편향의 크기 분석(유도 1). §3 — <strong>중첩 교차검증</strong>이 편향 없는 성능 추정을 주는 이유와 절차(식 6). §4 — 실제 dataset 에서 <strong>단순 CV 가 성능을 체계적으로 과대평가</strong>하는 실험(위젯 4). §5 — 다수의 발표된 결과가 이 편향에 오염되어 있다는 지적(오해 1)</span>
+          <a class="ref__link" href="https://www.jmlr.org/papers/v11/cawley10a.html">jmlr.org</a>
+        </li>
+        <li class="ref" id="ref-hastie2009-esl" data-ref="hastie2009-esl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em> (2nd ed.). Springer.</span>
+          <span class="ref__where">7.10.1절 — <strong>$K$ 가 편향과 분산을 맞바꾸는</strong> 학습곡선 논거와 5~10 을 권하는 근거('$K$ 별 비교' 표). 7.10.2절 — <strong>"틀린 방식"의 교차검증</strong>: feature 를 전체 data 에서 고르면 잡음 data 에서도 CV 오차가 50%→3% 로 떨어지는 예(접힌 상자, 퀴즈 6). 7.10.3절 — <strong>1-SE 규칙</strong>의 정의와 근거(식 7, 예제 ③). 7.12절 — CV 와 부트스트랩의 비교</span>
+          <a class="ref__link" href="https://hastie.su.domains/ElemStatLearn/">hastie.su.domains</a>
+        </li>
+        <li class="ref" id="ref-caltech-cs156" data-ref="caltech-cs156">
+          <span class="ref__type" data-type="lecture">강의</span>
+          <span class="ref__cite">Abu-Mostafa, Y. S. <em>Learning From Data — Lecture 13: Validation</em>. Caltech CS156.</span>
+          <span class="ref__where">전반부 — validation 집합의 크기 $K$ 가 <strong>추정의 신뢰도와 학습에 쓸 data 사이의 맞바꿈</strong>을 만든다는 유도. 후반부 — <strong>validation 으로 model 을 고르는 순간 그 추정치가 낙관적으로 편향된다</strong>는 설명과 <strong>"validation 은 더 이상 test 가 아니다"</strong> 라는 정리가 이 절 직관 부분의 뼈대다. 교차검증의 동기와 leave-one-out 의 성질</span>
+          <a class="ref__link" href="https://work.caltech.edu/telecourse.html">work.caltech.edu</a>
+        </li>
+        <li class="ref" id="ref-sklearn-docs" data-ref="sklearn-docs">
+          <span class="ref__type" data-type="doc">문서</span>
+          <span class="ref__cite">scikit-learn developers. <em>User Guide — 3.1 Cross-validation · 3.2 Tuning hyper-parameters</em>.</span>
+          <span class="ref__where">3.1.1절 — <strong>전처리를 <code>Pipeline</code> 안에 넣어 fold 마다 다시 fit 해야</strong> 한다는 명시적 경고와 예제(오해 2). 3.1.2절 — <code>StratifiedKFold</code>·<code>GroupKFold</code>·<code>TimeSeriesSplit</code> 의 선택 기준('분할기' 표, 오해 3). 3.1.1.2절 — <strong>중첩 교차검증 예제</strong>와 단순 CV 와의 점수 차이(오해 4). 3.2.2절 — <code>RandomizedSearchCV</code> 와 <strong>로그 스케일 분포</strong>를 쓰라는 조언. 3.2.3절 — successive halving</span>
+          <a class="ref__link" href="https://scikit-learn.org/stable/modules/cross_validation.html">scikit-learn.org</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+function panel(p) {
+  p.add(VIZ.el('rect', {
+    x: p.pad.l, y: p.pad.t, width: p.iw, height: p.ih,
+    fill: 'var(--ink-3)', 'fill-opacity': 0.03, stroke: 'none'
+  }));
+  return p;
+}
+function mkRand(seed) {
+  var s = seed || 12345;
+  return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+}
+function gauss(rnd) {
+  var u = Math.max(1e-9, rnd()), v = rnd();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+/* ============================================================
+   위젯 1 — 선택 편향
+   ============================================================ */
+WIDGETS.register('selection-bias', function (root, ctx) {
+  var M = 20, sigma = 0.02, seed = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'true', label: '모든 후보의 참 성능' },
+    { key: 'max', label: '고른 후보의 CV 점수 (최고점)', digits: 4 },
+    { key: 'bias', label: '낙관 편향 (실측)', digits: 4 },
+    { key: 'pred', label: '근사식 σ√(2 ln M)', digits: 4 }
+  ]);
+
+  function draw() {
+    var rnd = mkRand(seed * 613 + 7), sc = [], i;
+    var truth = 0.80;
+    for (i = 0; i < M; i++) sc.push(truth + sigma * gauss(rnd));
+    var mx = -1e9, mi = 0;
+    for (i = 0; i < M; i++) if (sc[i] > mx) { mx = sc[i]; mi = i; }
+
+    var lo = truth - 4 * sigma, hi = truth + 4 * sigma;
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 0.5, xmax: M + 0.5, ymin: lo, ymax: hi,
+      pad: { t: 30, r: 16, b: 34, l: 52 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(Math.max(1, Math.round(M / 5)), sigma * 2)
+      .axes('후보 번호', '').ticks(Math.max(1, Math.round(M / 5)), sigma * 2);
+    p.text(0.5, hi, 'CV 점수 · 가로 실선 = 참 성능 0.80 (모든 후보가 동일) · 별 = 우리가 고르는 것',
+      { size: 10, dy: -10 });
+    p.line([[0.5, truth], [M + 0.5, truth]], { width: 2 });
+    for (i = 0; i < M; i++) {
+      p.add(VIZ.el('circle', { cx: p.X(i + 1), cy: p.Y(Math.max(lo, Math.min(hi, sc[i]))),
+        r: i === mi ? 6 : 3.2, fill: i === mi ? 'var(--seal)' : 'var(--jade)',
+        'fill-opacity': 0.88, stroke: i === mi ? 'var(--amber)' : 'none', 'stroke-width': 2.2 }));
+    }
+    p.line([[0.5, mx], [M + 0.5, mx]], { dash: '4 3', width: 1.8 });
+    p.callout(M * 0.5, mx, '고른 점수 = ' + mx.toFixed(4),
+      { dx: 0, dy: -20, tone: 'var(--seal)' });
+
+    out.setRaw('true', '0.8000  (전부 같다)');
+    out.set('max', mx);
+    out.set('bias', mx - truth);
+    out.set('pred', sigma * Math.sqrt(2 * Math.log(Math.max(2, M))));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '후보 수 M', min: 2, max: 60, step: 1, value: 20, digits: 0,
+    onInput: function (v) { M = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'CV 점수의 잡음 σ', min: 0.005, max: 0.06, step: 0.005, value: 0.02, digits: 3,
+    onInput: function (v) { sigma = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — K-fold
+   ============================================================ */
+WIDGETS.register('kfold-view', function (root, ctx) {
+  var K = 5, n = 60, seed = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'k', label: 'K / fold 당 평가 표본 수' },
+    { key: 'tr', label: '각 model 이 쓰는 학습 표본 수' },
+    { key: 'mean', label: 'CV 평균', digits: 4 },
+    { key: 'sd', label: 'fold 간 표준편차 (K 가 크면 커진다)', digits: 4 }
+  ]);
+
+  function draw() {
+    /* 학습 표본 수에 따라 성능이 오르는 학습곡선 + fold 잡음 */
+    var rnd = mkRand(seed * 811 + 5);
+    var ntr = Math.round(n * (K - 1) / K), nte = n - ntr;
+    var perf = 0.92 - 0.9 / Math.max(4, ntr);           /* 학습곡선 */
+    var scores = [], i;
+    for (i = 0; i < K; i++) {
+      /* 평가 표본이 적을수록 잡음이 크다 */
+      scores.push(perf + gauss(rnd) * 0.5 / Math.sqrt(Math.max(1, nte)));
+    }
+    var mu = 0;
+    for (i = 0; i < K; i++) mu += scores[i] / K;
+    var sd = 0;
+    for (i = 0; i < K; i++) sd += Math.pow(scores[i] - mu, 2) / Math.max(1, K - 1);
+    sd = Math.sqrt(sd);
+
+    /* fold 그림 */
+    var W = 460, H0 = 150, padL = 44;
+    var svg = VIZ.el('svg', { viewBox: '0 0 ' + W + ' ' + H0, role: 'img' });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(svg);
+    svg.appendChild(VIZ.el('text', { x: 12, y: 16, class: 'viz-label', 'font-size': 11,
+      text: '각 행 = 한 번의 학습 · 진한 칸 = 그때의 평가 fold' }));
+    var rows = Math.min(K, 8), rh = Math.min(14, (H0 - 48) / rows);
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < K; c++) {
+        var x = padL + c * ((W - padL - 16) / K);
+        svg.appendChild(VIZ.el('rect', {
+          x: x, y: 24 + r * rh, width: (W - padL - 16) / K - 2, height: rh - 2, rx: 2,
+          fill: c === r ? 'var(--seal)' : 'var(--jade)',
+          'fill-opacity': c === r ? 0.7 : 0.2 }));
+      }
+      svg.appendChild(VIZ.el('text', { x: 10, y: 24 + r * rh + rh * 0.75,
+        class: 'viz-label', 'font-size': 10, text: '#' + (r + 1) }));
+    }
+    if (K > rows) svg.appendChild(VIZ.el('text', { x: padL, y: H0 - 6,
+      class: 'viz-label', 'font-size': 10, 'fill-opacity': 0.7, text: '… 총 ' + K + '회' }));
+
+    /* 점수 그림 */
+    var lo = Math.min.apply(null, scores), hi = Math.max.apply(null, scores);
+    var pad2 = Math.max(0.01, (hi - lo) * 0.4);
+    var p = VIZ.plot({ w: 460, h: 150, xmin: 0.5, xmax: K + 0.5,
+      ymin: lo - pad2, ymax: hi + pad2, pad: { t: 26, r: 16, b: 26, l: 52 } });
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(Math.max(1, Math.round(K / 5)), (hi - lo + 2 * pad2) / 3)
+      .axes('fold', '').ticks(Math.max(1, Math.round(K / 5)), (hi - lo + 2 * pad2) / 3);
+    p.text(0.5, hi + pad2, 'fold 별 점수 · 가로선 = 평균', { size: 10, dy: -8 });
+    p.line([[0.5, mu], [K + 0.5, mu]], { width: 2 });
+    for (i = 0; i < K; i++) p.dot(i + 1, scores[i], 4);
+
+    out.setRaw('k', K + '  /  ' + nte);
+    out.setRaw('tr', String(ntr) + '  (전체의 ' + ((K - 1) / K * 100).toFixed(0) + '%)');
+    out.set('mean', mu);
+    out.set('sd', sd);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'K', min: 2, max: 30, step: 1, value: 5, digits: 0,
+    onInput: function (v) { K = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '전체 표본 수 n', min: 20, max: 200, step: 10, value: 60, digits: 0,
+    onInput: function (v) { n = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — 격자 vs 무작위
+   ============================================================ */
+WIDGETS.register('grid-vs-random', function (root, ctx) {
+  var g = 4, seed = 4, mode = 'both';
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'n', label: '시도 횟수 (양쪽 동일)' },
+    { key: 'gx', label: '격자가 x 축에서 시험한 서로 다른 값' },
+    { key: 'rx', label: '무작위가 x 축에서 시험한 서로 다른 값' },
+    { key: 'best', label: '찾은 최고 점수 (격자 / 무작위)' }
+  ]);
+
+  /* x 만 중요한 목적함수 */
+  function f(x, y) { return Math.exp(-Math.pow((x - 0.62) / 0.10, 2)) + 0.04 * y; }
+
+  function draw() {
+    var N = g * g, rnd = mkRand(seed * 331 + 11);
+    var gp = [], rp = [], i, j;
+    for (i = 0; i < g; i++) for (j = 0; j < g; j++)
+      gp.push([(i + 0.5) / g, (j + 0.5) / g]);
+    for (i = 0; i < N; i++) rp.push([rnd(), rnd()]);
+
+    var p = VIZ.plot({ w: 460, h: 300, xmin: 0, xmax: 1, ymin: -0.14, ymax: 1,
+      pad: { t: 30, r: 16, b: 34, l: 48 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(0.25, 0.25).axes('중요한 hyperparameter x', '').ticks(0.25, 0.25);
+    p.text(0, 1, '무관한 hyperparameter y · 위쪽 곡선 = x 만의 실제 성능 · 아래 띠 = x 축 사영',
+      { size: 10, dy: -10 });
+
+    /* x 방향 성능 곡선을 배경에 */
+    p.curve(function (x) { return 0.08 + 0.86 * Math.exp(-Math.pow((x - 0.62) / 0.10, 2)); },
+      { samples: 240, alt: true, dash: '4 3' });
+
+    var bg = -1, br = -1;
+    if (mode !== 'random') {
+      for (i = 0; i < gp.length; i++) {
+        bg = Math.max(bg, f(gp[i][0], gp[i][1]));
+        p.add(VIZ.el('rect', { x: p.X(gp[i][0]) - 3.4, y: p.Y(gp[i][1]) - 3.4,
+          width: 6.8, height: 6.8, fill: 'var(--jade)', 'fill-opacity': 0.85 }));
+        p.add(VIZ.el('rect', { x: p.X(gp[i][0]) - 1.4, y: p.Y(-0.05) - 5,
+          width: 2.8, height: 10, fill: 'var(--jade)', 'fill-opacity': 0.55 }));
+      }
+    }
+    if (mode !== 'grid') {
+      for (i = 0; i < rp.length; i++) {
+        br = Math.max(br, f(rp[i][0], rp[i][1]));
+        p.add(VIZ.el('circle', { cx: p.X(rp[i][0]), cy: p.Y(rp[i][1]), r: 3.6,
+          fill: 'var(--seal)', 'fill-opacity': 0.85 }));
+        p.add(VIZ.el('rect', { x: p.X(rp[i][0]) - 1.2, y: p.Y(-0.11) - 5,
+          width: 2.4, height: 10, fill: 'var(--seal)', 'fill-opacity': 0.55 }));
+      }
+    }
+    p.text(0.02, -0.05, '격자', { size: 9, dy: 16 });
+    p.text(0.02, -0.11, '무작위', { size: 9, dy: 16 });
+
+    out.setRaw('n', String(N));
+    out.setRaw('gx', String(g) + ' 개  (같은 값을 ' + g + '번씩 반복)');
+    out.setRaw('rx', String(N) + ' 개  (전부 다르다)');
+    out.setRaw('best', (bg < 0 ? '—' : bg.toFixed(4)) + '  /  ' + (br < 0 ? '—' : br.toFixed(4)));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '보기',
+    options: [
+      { value: 'both', label: '둘 다' },
+      { value: 'grid', label: '격자만' },
+      { value: 'random', label: '무작위만' }
+    ],
+    value: 'both', onChange: function (v) { mode = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '축당 격자 크기 (시도 = 이 값의 제곱)', min: 2, max: 8, step: 1,
+    value: 4, digits: 0, onInput: function (v) { g = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — 중첩 CV
+   ============================================================ */
+WIDGETS.register('nested-cv', function (root, ctx) {
+  var M = 20, n = 100, seed = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'truth', label: '참 성능' },
+    { key: 'flat', label: '단순 CV (선택+평가 같은 fold)', digits: 4 },
+    { key: 'nest', label: '중첩 CV', digits: 4 },
+    { key: 'gap', label: '낙관 편향', digits: 4 }
+  ]);
+
+  function draw() {
+    /* 모의: 후보 M개, 참 성능은 모두 truth. CV 잡음은 1/sqrt(n) 규모 */
+    var truth = 0.80, sig = 0.5 / Math.sqrt(n);
+    var rnd = mkRand(seed * 419 + 3);
+    var REP = 300, flat = 0, nest = 0, r, i;
+    for (r = 0; r < REP; r++) {
+      var inner = [], outerNoise = [];
+      for (i = 0; i < M; i++) {
+        inner.push(truth + sig * gauss(rnd));      /* 내부(선택용) 점수 */
+        outerNoise.push(truth + sig * gauss(rnd)); /* 독립된 외부 평가 */
+      }
+      var bi = 0;
+      for (i = 1; i < M; i++) if (inner[i] > inner[bi]) bi = i;
+      flat += inner[bi] / REP;                     /* 선택에 쓴 점수를 그대로 보고 */
+      nest += outerNoise[bi] / REP;                /* 독립 fold 에서 평가 */
+    }
+
+    var hiV = Math.max(flat, nest, truth);
+    var top = hiV + Math.max(0.05, (hiV - truth) * 0.45);
+    var p = VIZ.plot({ w: 460, h: 275, xmin: 0, xmax: 4, ymin: truth - 0.08, ymax: top,
+      pad: { t: 30, r: 16, b: 34, l: 52 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    var gy = Math.max(0.02, (top - truth + 0.08) / 4);
+    panel(p).grid(1, gy).axes('', '').ticks(1, gy);
+    p.text(0, top, '성능 추정 (300회 모의의 평균) · 가로선 = 참 성능',
+      { size: 10, dy: -10 });
+    p.line([[0, truth], [4, truth]], { width: 2 });
+
+    var bars = [['단순 CV', flat, 'var(--seal)'], ['중첩 CV', nest, 'var(--jade)']];
+    for (i = 0; i < 2; i++) {
+      var x0 = 0.7 + i * 1.5;
+      p.add(VIZ.el('rect', {
+        x: p.X(x0), y: p.Y(Math.max(bars[i][1], truth)),
+        width: p.X(x0 + 0.9) - p.X(x0),
+        height: Math.max(1, Math.abs(p.Y(bars[i][1]) - p.Y(truth))), rx: 3,
+        fill: bars[i][2], 'fill-opacity': 0.45, stroke: bars[i][2], 'stroke-width': 1.4 }));
+      p.text(x0 + 0.45, Math.min(top - (top - truth) * 0.06, bars[i][1] + (top - truth) * 0.08),
+        bars[i][0] + ' ' + bars[i][1].toFixed(4), { size: 11, anchor: 'middle' });
+    }
+
+    out.setRaw('truth', truth.toFixed(4));
+    out.set('flat', flat);
+    out.set('nest', nest);
+    out.set('gap', flat - nest);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '후보 수 M', min: 2, max: 100, step: 1, value: 20, digits: 0,
+    onInput: function (v) { M = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '표본 수 n (클수록 CV 잡음이 작다)', min: 30, max: 1000, step: 10,
+    value: 100, digits: 0, onInput: function (v) { n = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — 1-SE 규칙
+   ============================================================ */
+WIDGETS.register('oneseparate', function (root, ctx) {
+  var K = 5, noise = 1, seed = 4;
+
+  var lams = [0.0001, 0.001, 0.01, 0.1, 1, 10];
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'best', label: '최고 평균의 λ' },
+    { key: 'se', label: '그때의 SE', digits: 4 },
+    { key: 'thr', label: '1-SE 문턱', digits: 4 },
+    { key: 'pick', label: '1-SE 규칙이 고르는 λ (더 단순한 쪽)' }
+  ]);
+
+  function draw() {
+    var rnd = mkRand(seed * 271 + 5);
+    var mus = [], ses = [], i, k;
+    for (i = 0; i < lams.length; i++) {
+      /* 참 곡선: λ=0.01 근처가 최적인 U자 (로그 스케일) */
+      var lg = Math.log10(lams[i]);
+      var base = 0.88 - 0.012 * Math.pow(lg + 2, 2);
+      var vals = [];
+      for (k = 0; k < K; k++) vals.push(base + noise * 0.022 * gauss(rnd));
+      var m = 0;
+      for (k = 0; k < K; k++) m += vals[k] / K;
+      var s = 0;
+      for (k = 0; k < K; k++) s += Math.pow(vals[k] - m, 2) / Math.max(1, K - 1);
+      mus.push(m);
+      ses.push(Math.sqrt(s) / Math.sqrt(K));
+    }
+    var bi = 0;
+    for (i = 1; i < lams.length; i++) if (mus[i] > mus[bi]) bi = i;
+    var thr = mus[bi] - ses[bi];
+    var pick = bi;
+    for (i = lams.length - 1; i >= 0; i--) if (mus[i] >= thr) { pick = i; break; }
+
+    var lo = Math.min.apply(null, mus) - 0.05, hi = Math.max.apply(null, mus) + 0.05;
+    var p = VIZ.plot({ w: 460, h: 290, xmin: -4.6, xmax: 1.6, ymin: lo, ymax: hi,
+      pad: { t: 30, r: 16, b: 34, l: 52 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 0.05).axes('log₁₀ λ', '').ticks(1, 0.05);
+    p.text(-4.6, hi, 'CV 정확도 · 세로선 = ±1 SE · 가로 점선 = 1-SE 문턱',
+      { size: 10, dy: -10 });
+    p.line([[-4.6, thr], [1.6, thr]], { dash: '4 3', width: 1.8 });
+
+    var pts = [];
+    for (i = 0; i < lams.length; i++) {
+      var lg2 = Math.log10(lams[i]);
+      pts.push([lg2, mus[i]]);
+      p.line([[lg2, mus[i] - ses[i]], [lg2, mus[i] + ses[i]]], { width: 2 });
+      p.line([[lg2 - 0.08, mus[i] - ses[i]], [lg2 + 0.08, mus[i] - ses[i]]], { width: 1.6 });
+      p.line([[lg2 - 0.08, mus[i] + ses[i]], [lg2 + 0.08, mus[i] + ses[i]]], { width: 1.6 });
+    }
+    p.line(pts, { width: 2.2, alt: true, dash: '3 3' });
+    for (i = 0; i < lams.length; i++) {
+      var lg3 = Math.log10(lams[i]);
+      p.add(VIZ.el('circle', { cx: p.X(lg3), cy: p.Y(mus[i]),
+        r: (i === bi || i === pick) ? 6 : 3.4,
+        fill: i === pick ? 'var(--amber)' : (i === bi ? 'var(--seal)' : 'var(--jade)'),
+        'fill-opacity': 0.9 }));
+    }
+    p.text(-4.5, hi - (hi - lo) * 0.06, '최고점 λ = ' + lams[bi]
+      + '   ·   1-SE 선택 λ = ' + lams[pick], { size: 10 });
+
+    out.setRaw('best', String(lams[bi]) + '  (평균 ' + mus[bi].toFixed(4) + ')');
+    out.set('se', ses[bi]);
+    out.set('thr', thr);
+    out.setRaw('pick', String(lams[pick]) + (pick === bi ? '  (최고점과 같다)' : '  ← 더 강한 규제'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'K (fold 수)', min: 3, max: 20, step: 1, value: 5, digits: 0,
+    onInput: function (v) { K = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'CV 잡음 크기', min: 0.2, max: 3, step: 0.1, value: 1, digits: 1,
+    onInput: function (v) { noise = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 6 — Bayesian optimization
+   ============================================================ */
+WIDGETS.register('bo-step', function (root, ctx) {
+  var kappa = 2, seed = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'n', label: '지금까지 시도한 횟수' },
+    { key: 'best', label: '지금까지의 최고 점수', digits: 4 },
+    { key: 'next', label: '획득 함수가 가리키는 다음 지점', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function truef(x) {
+    return 0.55 * Math.exp(-Math.pow((x - 0.72) / 0.11, 2))
+         + 0.35 * Math.exp(-Math.pow((x - 0.24) / 0.14, 2));
+  }
+
+  function draw(step) {
+    var rnd = mkRand(seed * 331 + 7);
+    var xs = [], ys = [], i;
+    /* 초기 3점 + step 번의 BO 선택 */
+    var init = [0.08, 0.45, 0.93];
+    for (i = 0; i < 3; i++) { xs.push(init[i]); ys.push(truef(init[i])); }
+
+    var ls = 0.09, sn = 0.0008;
+    function post(x) {
+      /* 아주 작은 GP: RBF 커널 + 지터, 가우스 소거로 푼다 */
+      var n = xs.length, K = [], j;
+      for (i = 0; i < n; i++) {
+        K.push([]);
+        for (j = 0; j < n; j++) {
+          K[i].push(Math.exp(-Math.pow(xs[i] - xs[j], 2) / (2 * ls * ls)) + (i === j ? sn : 0));
+        }
+      }
+      var ks = [];
+      for (i = 0; i < n; i++) ks.push(Math.exp(-Math.pow(x - xs[i], 2) / (2 * ls * ls)));
+      /* K a = y */
+      var A = [];
+      for (i = 0; i < n; i++) A.push(K[i].slice().concat([ys[i], ks[i]]));
+      for (i = 0; i < n; i++) {
+        var piv = i;
+        for (j = i + 1; j < n; j++) if (Math.abs(A[j][i]) > Math.abs(A[piv][i])) piv = j;
+        var t = A[i]; A[i] = A[piv]; A[piv] = t;
+        var d = A[i][i] || 1e-9;
+        for (j = i; j < n + 2; j++) A[i][j] /= d;
+        for (var r2 = 0; r2 < n; r2++) {
+          if (r2 === i) continue;
+          var f2 = A[r2][i];
+          for (j = i; j < n + 2; j++) A[r2][j] -= f2 * A[i][j];
+        }
+      }
+      var mu = 0, kk = 0;
+      for (i = 0; i < n; i++) { mu += ks[i] * A[i][n]; kk += ks[i] * A[i][n + 1]; }
+      var v = Math.max(1e-6, 1 + sn - kk);
+      return { m: mu, s: Math.sqrt(v) };
+    }
+
+    var nextX = 0.5;
+    for (var t = 0; t < step; t++) {
+      var bx = 0, bv = -1e9;
+      for (var q = 0; q <= 200; q++) {
+        var x = q / 200, pp = post(x);
+        var acq = pp.m + kappa * pp.s;
+        if (acq > bv) { bv = acq; bx = x; }
+      }
+      xs.push(bx); ys.push(truef(bx));
+      nextX = bx;
+    }
+    /* 다음 후보도 계산 */
+    var bx2 = 0, bv2 = -1e9;
+    for (var q2 = 0; q2 <= 200; q2++) {
+      var x2 = q2 / 200, p2 = post(x2), a2 = p2.m + kappa * p2.s;
+      if (a2 > bv2) { bv2 = a2; bx2 = x2; }
+    }
+
+    var p = VIZ.plot({ w: 460, h: 200, xmin: 0, xmax: 1, ymin: -0.35, ymax: 1.05,
+      pad: { t: 26, r: 14, b: 22, l: 46 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(0.25, 0.25).axes('hyperparameter', '').ticks(0.25, 0.25);
+    p.text(0, 1.05, '성능 · 점선 = 참 함수 (알 수 없다) · 실선 = 대리 model 평균 · 띠 = ±σ',
+      { size: 10, dy: -8 });
+    p.curve(truef, { samples: 200, alt: true, dash: '4 3' });
+    var up = [], dn = [], mm = [];
+    for (var g = 0; g <= 120; g++) {
+      var xg = g / 120, pg = post(xg);
+      up.push([xg, Math.min(1.05, pg.m + pg.s)]);
+      dn.push([xg, Math.max(-0.34, pg.m - pg.s)]);
+      mm.push([xg, Math.max(-0.34, Math.min(1.04, pg.m))]);
+    }
+    p.line(up, { dash: '2 3', width: 1.2 });
+    p.line(dn, { dash: '2 3', width: 1.2 });
+    p.line(mm, { width: 2.2 });
+    for (i = 0; i < xs.length; i++) p.dot(xs[i], ys[i], i < 3 ? 4 : 5);
+
+    var p2b = VIZ.plot({ w: 460, h: 118, xmin: 0, xmax: 1, ymin: 0, ymax: 1,
+      pad: { t: 22, r: 14, b: 24, l: 46 } });
+    ctx.stage.appendChild(p2b.svg);
+    panel(p2b).grid(0.25, 0.5).axes('hyperparameter', '').ticks(0.25, 0.5);
+    p2b.text(0, 1, '획득 함수 μ + κσ (정규화) · 세로선 = 다음에 시도할 곳', { size: 10, dy: -8 });
+    var av = [], amax = -1e9, amin = 1e9;
+    for (var g2 = 0; g2 <= 120; g2++) {
+      var xg2 = g2 / 120, pg2 = post(xg2);
+      var a3 = pg2.m + kappa * pg2.s;
+      av.push([xg2, a3]); amax = Math.max(amax, a3); amin = Math.min(amin, a3);
+    }
+    var span = Math.max(1e-6, amax - amin);
+    p2b.line(av.map(function (v) { return [v[0], (v[1] - amin) / span]; }), { width: 2.2 });
+    p2b.line([[bx2, 0], [bx2, 1]], { dash: '4 3', width: 2 });
+
+    var best = -1e9;
+    for (i = 0; i < ys.length; i++) best = Math.max(best, ys[i]);
+    out.setRaw('n', String(xs.length));
+    out.set('best', best);
+    out.set('next', bx2);
+    out.setRaw('note', kappa > 3 ? 'κ 가 크다 — 탐험 위주로 넓게 훑는다'
+      : (kappa < 0.6 ? 'κ 가 작다 — 활용 위주라 국소 최적에 갇힐 수 있다'
+      : '탐험과 활용의 균형'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'κ (클수록 탐험)', min: 0.2, max: 5, step: 0.1, value: 2, digits: 1,
+    onInput: function (v) { kappa = v; draw(pl ? pl.at() : 0); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(pl ? pl.at() : 0); }
+  });
+  var pl = WIDGETS.player({ host: ctx.controls, steps: 11, fps: 1.6, label: 'BO 반복', onStep: draw });
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5.4 로지스틱 회귀 — AI 이론 학습</title>
+<meta name="description" content="로지스틱 회귀는 log-odds를 선형으로 모델링한다. sigmoid는 그 역함수이고, gradient는 선형회귀와 똑같은 Xᵀ(p−y) 꼴이며, 완전분리에서는 정규화 없이 계수가 발산한다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="5.4">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">5.4</span>
+        <span>5장 · 전통적 머신러닝</span>
+      </div>
+      <h1>로지스틱 회귀</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 65분</span>
+        <span><b>난이도</b>★★★☆☆</span>
+        <span><b>선수지식</b>
+          <a href="5.3-linear-regression.html">5.3 선형회귀</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-binary">Binary Classification</a>
+      <a class="chip" href="#c-logit">Logit</a>
+      <a class="chip" href="#c-sigmoid">Sigmoid</a>
+      <a class="chip" href="#c-boundary">Decision Boundary</a>
+      <a class="chip" href="#c-multi">Multiclass Classification</a>
+      <a class="chip" href="#c-softmax">Softmax Regression</a>
+      <a class="chip" href="#c-prob">Probabilistic Interpretation</a>
+      <a class="chip" href="#c-reg">Regularization</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        확률을 직접 선형으로 모델링할 수 없으니 <strong>log-odds 를 선형으로 모델링</strong>한다.
+        <strong>sigmoid 는 그 역함수</strong>이고, gradient 는 선형회귀와 똑같은
+        <strong>$\mathbf{X}^\top(\mathbf{p}-\mathbf{y})$</strong> 꼴이며,
+        완전분리에서는 <strong>정규화 없이 계수가 발산</strong>한다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>확률을 그대로 회귀하면 안 되는 이유를 말하고, logit 변환이 그 문제를 어떻게 푸는지 설명할 수 있다.</li>
+        <li>BCE 의 gradient 가 $\mathbf{X}^\top(\mathbf{p}-\mathbf{y})$ 임을 유도하고 한 스텝을 손으로 계산할 수 있다.</li>
+        <li>계수를 odds ratio 로 해석하고, softmax 가 $K-1$ 자유도만 갖는 이유를 설명할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        분류 문제에 <a href="5.3-linear-regression.html">5.3</a>의 선형회귀를 그대로 쓰면 두 가지가 깨진다.
+        첫째, $\hat{y}=\mathbf{w}^\top\mathbf{x}$ 는 <strong>1.4 나 $-0.3$ 같은 값을 아무렇지 않게 내놓는다</strong> —
+        확률로 읽을 수가 없다.
+        둘째, 멀리 떨어진 점 하나가 제곱손실 때문에 <strong>결정경계를 끌고 간다</strong>.
+      </p>
+      <p>
+        해결의 열쇠는 <strong>무엇을 선형으로 둘 것인가</strong>를 바꾸는 것이다.
+        확률 $p$ 는 $[0,1]$ 에 갇혀 있어 직선과 어울리지 않지만,
+        <strong>odds $\frac{p}{1-p}$ 는 $[0,\infty)$ 로 늘어나고, 거기에 로그를 씌운 log-odds 는 $(-\infty,\infty)$ 전체</strong>를 쓴다.
+        <strong>바로 그것을 선형으로 두면 된다.</strong>
+      </p>
+      <p>
+        되돌리는 함수가 sigmoid 다. $-\infty$ 를 0 으로, $+\infty$ 를 1 로, 0 을 0.5 로 눌러 담는 S자 곡선이다.
+        <span class="hl">그래서 로지스틱 회귀는 <strong>"확률을 억지로 짜 넣은 선형회귀"가 아니라
+        <strong>log-odds 라는 자연스러운 눈금 위의 선형회귀"</strong>다.</span>
+      </p>
+
+      <figure class="widget" data-widget="logit-ladder">
+        <figcaption class="widget__bar">Probability → Odds → Log-odds — 눈금을 펴는 두 단계</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$p$ 를 0.99 쪽으로 밀면 odds 는 <strong>급격히 폭발</strong>하고 log-odds 는 <strong>천천히 늘어납니다</strong>. 직선을 얹을 수 있는 것은 세 번째 눈금뿐입니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          로지스틱 회귀는 이름과 달리 <strong>분류 알고리즘</strong>이다.
+          "회귀"가 붙은 것은 <strong>log-odds 를 회귀</strong>하기 때문이고,
+          그 회귀 결과를 sigmoid 로 되돌려 확률로 읽는다.
+          출력이 곧 확률이라는 점 때문에 <strong>딥러닝 분류기의 마지막 층이 정확히 이 구조</strong>다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-binary"></span>
+      <span class="anchor" id="c-logit"></span>
+      <h3>Binary Classification &amp; Logit</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \underbrace{\log\frac{p}{1-p}}_{\text{logit}(p)}=z=\mathbf{w}^\top\mathbf{x}+b, \qquad p=P(y=1\mid\mathbf{x}) $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">logit 은 <strong>확률의 log-odds</strong> 이고 $[0,1]$ 을 $(-\infty,\infty)$ 로 펴 주는 함수라,
+        <strong>선형 model 을 얹을 수 있는 눈금</strong>이 된다.</span>
+        이 눈금 위에서 model 은 완전히 선형이고, 비선형성은 <strong>되돌리는 단계에만</strong> 있다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$p$</th><th>odds $\frac{p}{1-p}$</th><th>logit $\log\frac{p}{1-p}$</th><th>읽는 법</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0.10</td><td class="num">0.111</td><td class="num">−2.197</td><td>9 대 1 로 아니다</td></tr>
+            <tr><td class="num">0.25</td><td class="num">0.333</td><td class="num">−1.099</td><td>3 대 1 로 아니다</td></tr>
+            <tr><td class="num">0.50</td><td class="num">1.000</td><td class="num"><strong>0</strong></td><td>반반</td></tr>
+            <tr><td class="num">0.75</td><td class="num">3.000</td><td class="num">+1.099</td><td>3 대 1 로 맞다</td></tr>
+            <tr><td class="num">0.90</td><td class="num">9.000</td><td class="num">+2.197</td><td>9 대 1 로 맞다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        표가 <strong>0.5 를 중심으로 대칭</strong>인 것에 주목한다 —
+        $\mathrm{logit}(p)=-\mathrm{logit}(1-p)$ 이라 <strong>"맞다/아니다"를 뒤집어도 부호만 바뀐다</strong>.
+        <a href="../ch04/4.1-probability-basics.html">4.1</a> 예제 ③에서 Bayes 갱신을 odds 로 쓰면 곱셈이 되었던 것과 같은 눈금이다.
+      </p>
+
+      <span class="anchor" id="c-sigmoid"></span>
+      <h3>Sigmoid 시그모이드</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \sigma(z)=\frac{1}{1+e^{-z}}=\frac{e^z}{1+e^z}, \qquad \sigma'(z)=\sigma(z)\bigl(1-\sigma(z)\bigr) $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        <span class="hl">sigmoid 는 logit 의 <strong>역함수</strong>이고, 도함수가 자기 자신으로 적히는
+        $\sigma'=\sigma(1-\sigma)$ 라는 성질 때문에 gradient 계산이 극도로 단순해진다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$z$</th><th>$\sigma(z)$</th><th>$\sigma'(z)$</th><th>메모</th></tr></thead>
+          <tbody>
+            <tr><td class="num">−4</td><td class="num">0.0180</td><td class="num">0.0177</td><td>거의 0 — <strong>gradient 도 거의 0</strong></td></tr>
+            <tr><td class="num">−2</td><td class="num">0.1192</td><td class="num">0.1050</td><td></td></tr>
+            <tr><td class="num">0</td><td class="num">0.5000</td><td class="num"><strong>0.2500</strong></td><td>기울기 최대</td></tr>
+            <tr><td class="num">2</td><td class="num">0.8808</td><td class="num">0.1050</td><td>$\sigma(-z)=1-\sigma(z)$ 라 대칭</td></tr>
+            <tr><td class="num">4</td><td class="num">0.9820</td><td class="num">0.0177</td><td>포화 구간</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        $\sigma'$ 의 최댓값이 $0.25$ 라는 것이 딥러닝에서 중요하다 —
+        층을 쌓으면 $0.25^L$ 로 줄어 <strong>gradient 소실</strong>이 생긴다
+        (<a href="../ch03/3.10-deep-learning-optimization.html">3.10</a>).
+        그런데 <strong>로지스틱 회귀 자체에서는 이 문제가 없다</strong>. 유도 1 에서 보듯
+        BCE 의 gradient 에서 $\sigma'$ 가 <strong>약분되어 사라지기</strong> 때문이다.
+      </p>
+
+      <span class="anchor" id="c-prob"></span>
+      <h3>Probabilistic Interpretation 확률적 해석</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ y\mid\mathbf{x}\ \sim\ \mathrm{Bernoulli}\bigl(\sigma(\mathbf{w}^\top\mathbf{x}+b)\bigr), \qquad \mathcal{L}=-\frac1n\sum_i\bigl[y_i\log p_i+(1-y_i)\log(1-p_i)\bigr] $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl">로지스틱 회귀는 <strong>출력을 Bernoulli 로 가정한 MLE</strong> 이고,
+        그 negative log-likelihood 가 곧 <strong>binary cross-entropy</strong> 다
+        (<a href="../ch04/4.6-likelihood-estimation.html">4.6</a>).</span>
+        <a href="5.3-linear-regression.html">5.3</a>의 최소제곱이 Gaussian 가정의 MLE 였던 것과 같은 자리다 —
+        <strong>바뀐 것은 출력 분포뿐</strong>이다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>선형회귀</th><th>로지스틱 회귀</th></tr></thead>
+          <tbody>
+            <tr><td>출력 분포</td><td>Gaussian$(\mu,\sigma^2)$</td><td>Bernoulli$(p)$</td></tr>
+            <tr><td>연결함수 (link)</td><td>항등 $\mu=z$</td><td><strong>logit</strong> $\log\frac{p}{1-p}=z$</td></tr>
+            <tr><td>loss (= NLL)</td><td>제곱오차</td><td>binary cross-entropy</td></tr>
+            <tr><td>gradient</td><td>$\mathbf{X}^\top(\hat{\mathbf{y}}-\mathbf{y})$</td><td><strong>$\mathbf{X}^\top(\mathbf{p}-\mathbf{y})$ — 같은 꼴</strong></td></tr>
+            <tr><td>닫힌 해</td><td>있다 (정규방정식)</td><td><strong>없다</strong> — 반복 최적화</td></tr>
+            <tr><td>목적함수</td><td>convex</td><td>convex (전역 최소 보장)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        네 번째 줄의 일치는 우연이 아니다. 둘 다 <strong>generalized linear model(GLM)</strong> 이고,
+        지수족 분포에 <strong>정준연결함수(canonical link)</strong> 를 쓰면
+        <strong>gradient 가 항상 $\mathbf{X}^\top(\text{예측}-\text{관측})$ 이 된다</strong>
+        (<a href="../ch04/4.4-common-distributions.html">4.4</a>의 지수족).
+        Poisson 회귀는 link 가 $\log$, 로지스틱은 $\mathrm{logit}$ 일 뿐 나머지 구조는 같다.
+      </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>확률은 <strong>0 과 1 사이에 갇힌 답답한 눈금</strong>입니다. 0.99 와 0.999 는 숫자로는 가깝지만 실제로는 "100번에 한 번 틀림"과 "1000번에 한 번 틀림"으로 열 배 차이입니다.</p>
+        <p>odds 로 바꾸면 그 차이가 99 대 999 로 벌어지고, 로그를 씌우면 <strong>덧셈으로 다룰 수 있는 자</strong>가 됩니다. 그 자 위에서는 "이 feature 가 1 늘면 log-odds 가 0.7 늘어난다" 같은 말이 성립합니다.</p>
+      </div>
+
+      <span class="anchor" id="c-boundary"></span>
+      <h3>Decision Boundary 결정경계</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \hat{y}=1 \iff p\ge0.5 \iff z=\mathbf{w}^\top\mathbf{x}+b\ge0 $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        <span class="hl">결정경계는 $z=0$ 인 <strong>초평면</strong>이며, $\mathbf{w}$ 는 그 평면의 법선벡터,
+        $\|\mathbf{w}\|$ 는 <strong>확률이 얼마나 급하게 변하는지</strong>를 정한다 — 경계의 <em>위치</em>가 아니라 <em>가파름</em>이다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>바꾸면</th><th>경계의 위치</th><th>확률의 가파름</th></tr></thead>
+          <tbody>
+            <tr><td>$b$ 를 키운다</td><td><strong>평행이동</strong></td><td>그대로</td></tr>
+            <tr><td>$\mathbf{w}$ 를 상수배</td><td><strong>그대로</strong></td><td>비례해서 가팔라진다</td></tr>
+            <tr><td>$\mathbf{w}$ 의 방향을 튼다</td><td>회전</td><td>그대로</td></tr>
+            <tr><td>임계값을 0.5 → 0.3</td><td>평행이동 (recall 상승)</td><td>그대로</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        마지막 줄이 실무에서 중요하다 — <strong>model 을 다시 학습하지 않고 임계값만 바꿔</strong>
+        precision/recall 을 조절할 수 있다(<a href="5.13-model-evaluation.html">5.13</a>).
+        경계 자체는 선형이지만, feature 를 $x^2$·$x_1x_2$ 로 늘리면 <strong>원래 공간에서는 곡선</strong>이 된다 —
+        <a href="5.8-support-vector-machine.html">5.8</a>의 kernel trick 과 같은 발상이다.
+      </p>
+
+      <figure class="widget" data-widget="decision-boundary">
+        <figcaption class="widget__bar">Decision Boundary — w 의 방향과 크기가 각각 무엇을 정하나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$\|\mathbf{w}\|$ 를 키우면 <strong>경계는 그대로인데 색 띠가 좁아집니다</strong> — 확신만 세지는 것입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-multi"></span>
+      <span class="anchor" id="c-softmax"></span>
+      <h3>Multiclass Classification &amp; Softmax Regression</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ P(y=k\mid\mathbf{x})=\frac{\exp(\mathbf{w}_k^\top\mathbf{x}+b_k)}{\sum_{j=1}^{K}\exp(\mathbf{w}_j^\top\mathbf{x}+b_j)} $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        <span class="hl">softmax regression(다항 로지스틱 회귀)은 class 마다 점수를 매기고
+        <strong>지수를 취해 합으로 나눠</strong> 확률로 만든다 — $K=2$ 이면 정확히 sigmoid 로 돌아간다.</span>
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \text{모든 } \mathbf{w}_j \text{ 에 같은 } \mathbf{c} \text{ 를 더해도 확률이 변하지 않는다} \ \Rightarrow\ \text{자유도는 } K-1 $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        <strong>shift invariance</strong> 라 부르는 이 성질 때문에 해가 유일하지 않다 —
+        통계 소프트웨어는 한 class 를 기준(reference)으로 고정해 $K-1$ 벌만 추정하고,
+        ML 라이브러리는 <strong>$K$ 벌을 다 두고 L2 정규화로 유일하게 만든다</strong>.
+        같은 model 인데 계수 표가 달라 보이는 이유가 이것이다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>전략</th><th>model 수</th><th>확률 합</th><th>메모</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Softmax</strong> (multinomial)</td><td class="num">1</td><td>정확히 1</td><td>class 가 <strong>배타적</strong>일 때 표준</td></tr>
+            <tr><td>One-vs-Rest (OvR)</td><td class="num">$K$</td><td><strong>1 이 아니다</strong> — 재정규화 필요</td><td>구현이 쉽고 병렬화 좋다</td></tr>
+            <tr><td>One-vs-One (OvO)</td><td class="num">$K(K-1)/2$</td><td>—</td><td>각 model 이 작다. 투표로 결정</td></tr>
+            <tr><td>다중 label</td><td class="num">$K$ (독립 sigmoid)</td><td>1 일 필요 없다</td><td>class 가 <strong>동시에 참일 수 있을 때</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        마지막 줄이 자주 틀리는 곳이다 — <strong>"고양이이면서 동시에 실내 사진"</strong> 같은 문제에
+        softmax 를 쓰면 확률이 서로를 밀어내 둘 다 낮아진다. 그때는 <strong>class 별 독립 sigmoid</strong> 를 써야 한다.
+      </p>
+
+      <figure class="widget" data-widget="softmax-lab">
+        <figcaption class="widget__bar">Softmax — 이동해도 같고, 온도로 날카로워진다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">모든 logit 에 같은 수를 더해 보세요 — <strong>확률이 하나도 안 바뀝니다</strong>. 그것이 자유도가 $K-1$ 인 이유입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-reg"></span>
+      <h3>Regularization 정규화</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \min_{\mathbf{w}}\ -\sum_i\bigl[y_i\log p_i+(1-y_i)\log(1-p_i)\bigr]+\lambda\|\mathbf{w}\|_2^2 $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        <span class="hl">두 class 를 완벽히 가르는 초평면이 존재하면(<strong>완전분리</strong>)
+        $\|\mathbf{w}\|\to\infty$ 로 갈수록 loss 가 계속 줄어들어 <strong>MLE 해가 존재하지 않는다</strong> —
+        정규화는 선택이 아니라 필수다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>상황</th><th>정규화 없이</th><th>L2 를 넣으면</th></tr></thead>
+          <tbody>
+            <tr><td>완전분리</td><td>$\|\mathbf{w}\|\to\infty$, 수렴 안 함</td><td>유한한 유일해</td></tr>
+            <tr><td>준완전분리</td><td>일부 계수만 발산</td><td>안정</td></tr>
+            <tr><td>$d>n$</td><td>거의 항상 완전분리</td><td>필수</td></tr>
+            <tr><td>희귀 class</td><td>계수·표준오차가 폭주</td><td>Firth 보정이나 L2</td></tr>
+            <tr><td>확률의 정직성</td><td>극단으로 밀린다 (0 또는 1)</td><td>완화된다 (<a href="../ch04/4.9-uncertainty.html">4.9</a> calibration)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        L1 을 쓰면 <a href="5.3-linear-regression.html">5.3</a>과 같이 계수가 정확히 0 이 되어 변수 선택이 되고,
+        scikit-learn 은 <strong>기본값으로 이미 L2 가 켜져 있다</strong>(<code>C=1.0</code>) —
+        <strong>$C$ 는 $\lambda$ 의 역수</strong>라 작을수록 강한 정규화다(오해 5).
+      </p>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>계수를 해석하는 방법이 이 model 의 큰 장점이다.</p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ x_j \text{ 가 } 1 \text{ 늘면 log-odds 가 } w_j \text{ 늘고, odds 는 } e^{w_j} \text{ 배가 된다} $$</div>
+        <span class="eq__tag num">(8)</span>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$w_j$</th><th>odds ratio $e^{w_j}$</th><th>읽는 법</th></tr></thead>
+          <tbody>
+            <tr><td class="num">−0.69</td><td class="num">0.50</td><td>승산이 <strong>절반</strong>이 된다</td></tr>
+            <tr><td class="num">0</td><td class="num">1.00</td><td>영향 없음</td></tr>
+            <tr><td class="num">0.41</td><td class="num">1.50</td><td>승산이 1.5배</td></tr>
+            <tr><td class="num">0.69</td><td class="num">2.00</td><td>승산이 <strong>2배</strong></td></tr>
+            <tr><td class="num">2.30</td><td class="num">10.0</td><td>승산이 10배</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        주의할 점 두 가지.
+        <strong>odds ratio 는 확률의 배수가 아니다</strong> — $p$ 가 작을 때만 근사적으로 비슷하다
+        ($p=0.01$ 에서 odds 2배면 확률 약 1.98배, $p=0.5$ 에서 odds 2배면 확률 1.33배).
+        그리고 <strong>계수의 크기는 feature 의 단위에 의존</strong>하므로,
+        중요도를 비교하려면 표준화한 뒤 봐야 한다.
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$\sigma(\cdot)$</td><td>sigma · sigmoid · logistic function</td><td>$1/(1+e^{-z})$</td><td>함수</td><td>$(0,1)$</td></tr>
+            <tr><td>$z$</td><td>z · logit · 선형 점수</td><td>$\mathbf{w}^\top\mathbf{x}+b$</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$p_i$</td><td>p sub i</td><td>$i$ 번째 표본의 예측 확률</td><td>scalar</td><td>$(0,1)$</td></tr>
+            <tr><td>odds</td><td>오즈 · 승산</td><td>$p/(1-p)$</td><td>scalar</td><td>$[0,\infty)$</td></tr>
+            <tr><td>$\mathrm{logit}(p)$</td><td>로짓</td><td>$\log\frac{p}{1-p}$ — sigmoid 의 역함수</td><td>함수</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$e^{w_j}$</td><td>odds ratio 승산비</td><td>$x_j$ 가 1 늘 때 odds 의 배율</td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>$\mathbf{w}_k$</td><td>w sub k</td><td>class $k$ 의 가중치 벡터 (softmax)</td><td>$(d,)$</td><td>—</td></tr>
+            <tr><td>$K$</td><td>K</td><td>class 개수</td><td>정수</td><td>$\ge2$</td></tr>
+            <tr><td>$C$</td><td>C · 역정규화 강도</td><td>scikit-learn 의 $1/\lambda$</td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>$\lambda$</td><td>lambda</td><td>정규화 세기</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>link function</td><td>연결함수</td><td>평균과 선형 점수를 잇는 함수</td><td>함수</td><td>—</td></tr>
+            <tr><td>GLM</td><td>generalized linear model</td><td>지수족 + 연결함수의 틀</td><td>—</td><td>—</td></tr>
+            <tr><td>$\mathbf{p}$</td><td>bold p</td><td>예측 확률 벡터 $(p_1,\dots,p_n)$</td><td>$(n,)$</td><td>$(0,1)^n$</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">같은 것을 다르게 부른다</span>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>이 사이트</th><th>같은 뜻으로 쓰이는 말</th><th>주의할 점</th></tr></thead>
+            <tbody>
+              <tr><td>logit</td><td>log-odds, 선형 점수, pre-activation</td><td>딥러닝의 "logits" 는 <strong>softmax 이전의 점수 벡터</strong> 를 뜻해 뜻이 넓다</td></tr>
+              <tr><td>sigmoid</td><td>logistic function, expit</td><td><code>scipy.special.expit</code> 가 이 함수다</td></tr>
+              <tr><td>softmax regression</td><td>multinomial logistic regression, maxent classifier</td><td>NLP 문헌은 <strong>maximum entropy classifier</strong> 라 부른다</td></tr>
+              <tr><td>BCE</td><td>log loss, binary cross-entropy, deviance</td><td>통계학의 deviance 는 <strong>$2\times$ NLL</strong> 이라 상수배 다르다</td></tr>
+              <tr><td>$C$ (sklearn)</td><td>$1/\lambda$</td><td><strong>작을수록 강한 정규화</strong> — 방향이 반대다</td></tr>
+              <tr><td>$\mathbf{X}^\top(\mathbf{p}-\mathbf{y})$</td><td>score function, gradient</td><td>부호 규약(NLL 최소화 vs 우도 최대화)에 따라 뒤집힌다</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — BCE 의 gradient 에서 $\sigma'$ 가 사라진다</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \ell=-\bigl[y\log p+(1-y)\log(1-p)\bigr], \qquad p=\sigma(z),\ z=\mathbf{w}^\top\mathbf{x}+b $$</div>
+          <div class="derive__why">한 표본의 손실 (식 3)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\partial\ell}{\partial p}=-\frac{y}{p}+\frac{1-y}{1-p}=\frac{p-y}{p(1-p)} $$</div>
+          <div class="derive__why">통분했다. <strong>분모에 $p(1-p)$ 가 나타난다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\partial p}{\partial z}=\sigma'(z)=p(1-p) $$</div>
+          <div class="derive__why">식 (2)의 성질 — <strong>분자에 같은 것이 나타난다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\partial\ell}{\partial z}=\frac{p-y}{p(1-p)}\cdot p(1-p)=p-y $$</div>
+          <div class="derive__why">chain rule (<a href="../ch03/3.4-chain-rule-computation-graph.html">3.4</a>). <strong>$p(1-p)$ 가 정확히 약분된다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \nabla_{\mathbf{w}}\ell=(p-y)\,\mathbf{x},\qquad \nabla_{\mathbf{w}}\mathcal{L}=\frac1n\mathbf{X}^\top(\mathbf{p}-\mathbf{y}) $$</div>
+          <div class="derive__why">$\partial z/\partial\mathbf{w}=\mathbf{x}$. <strong>선형회귀와 완전히 같은 꼴</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{제곱손실을 썼다면}: \ \nabla=(p-y)\,p(1-p)\,\mathbf{x} $$</div>
+          <div class="derive__why">$p(1-p)$ 가 남아 <strong>크게 틀렸을 때 gradient 가 오히려 0 에 가까워진다</strong></div>
+        </div>
+      </div>
+      <p>
+        <span class="hl">마지막 두 줄의 대비가 <strong>분류에 제곱손실을 쓰면 안 되는 이유</strong>다 —
+        $p=0.99$ 인데 정답이 $y=0$ 이면 제곱손실의 gradient 는 $0.99\times0.0099\approx0.01$ 로 거의 멈추지만,
+        BCE 는 $0.99$ 로 <strong>가장 세게 밀어낸다</strong>.</span>
+      </p>
+
+      <h3>유도 2 — 왜 log-odds 를 선형으로 두는가</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{두 class 의 조건부 밀도를 가정}:\ p(\mathbf{x}\mid y=1),\ p(\mathbf{x}\mid y=0) $$</div>
+          <div class="derive__why">생성 관점에서 출발한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \log\frac{P(y=1\mid\mathbf{x})}{P(y=0\mid\mathbf{x})}=\log\frac{p(\mathbf{x}\mid y=1)}{p(\mathbf{x}\mid y=0)}+\log\frac{\pi_1}{\pi_0} $$</div>
+          <div class="derive__why">Bayes' theorem (<a href="../ch04/4.1-probability-basics.html">4.1</a>) — <strong>분모의 $p(\mathbf{x})$ 가 약분된다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ p(\mathbf{x}\mid y=k)=\mathcal{N}(\boldsymbol\mu_k,\boldsymbol\Sigma) \ \text{(공유 } \boldsymbol\Sigma) $$</div>
+          <div class="derive__why">두 class 의 covariance 가 같다고 두면</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \log\frac{\cdots}{\cdots}=-\tfrac12(\mathbf{x}-\boldsymbol\mu_1)^\top\boldsymbol\Sigma^{-1}(\mathbf{x}-\boldsymbol\mu_1)+\tfrac12(\mathbf{x}-\boldsymbol\mu_0)^\top\boldsymbol\Sigma^{-1}(\mathbf{x}-\boldsymbol\mu_0) $$</div>
+          <div class="derive__why">Gaussian 밀도의 로그 (<a href="../ch04/4.4-common-distributions.html">4.4</a> 식 8)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ =(\boldsymbol\mu_1-\boldsymbol\mu_0)^\top\boldsymbol\Sigma^{-1}\mathbf{x}+\text{상수} \ \equiv\ \mathbf{w}^\top\mathbf{x}+b $$</div>
+          <div class="derive__why"><strong>$\mathbf{x}^\top\boldsymbol\Sigma^{-1}\mathbf{x}$ 항이 상쇄되어 선형만 남는다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore\ P(y=1\mid\mathbf{x})=\sigma(\mathbf{w}^\top\mathbf{x}+b) $$</div>
+          <div class="derive__why">log-odds 선형은 <strong>가정이 아니라 결과</strong>다 (<a href="5.9-probabilistic-generative-models.html">5.9</a>의 GDA)</div>
+        </div>
+      </div>
+      <p>
+        같은 결론이 Gaussian 뿐 아니라 <strong>지수족 전체</strong>에서 나온다 —
+        Poisson·Bernoulli·감마 어느 것을 조건부 밀도로 두어도 log-odds 가 선형이 된다.
+        <span class="hl">로지스틱 회귀가 넓게 통하는 이유는 <strong>가정이 약해서</strong>다:
+        <strong>생성 model 이 무엇이든 log-odds 만 선형이면 된다.</strong></span>
+      </p>
+
+      <h3>유도 3 — 완전분리에서 계수가 발산한다</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{data}:\ (x,y)=(-1,0),\ (1,1). \quad \text{절편 없이 } z=wx $$</div>
+          <div class="derive__why">가장 단순한 완전분리 상황</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathcal{L}(w)=\tfrac12\bigl[-\log\sigma(w)-\log(1-\sigma(-w))\bigr]=-\log\sigma(w)=\log(1+e^{-w}) $$</div>
+          <div class="derive__why">$1-\sigma(-w)=\sigma(w)$ 이므로 두 항이 같다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ w=1:\ \log(1+e^{-1})=0.3133,\quad w=5:\ 0.00672,\quad w=10:\ 4.54\times10^{-5} $$</div>
+          <div class="derive__why"><strong>계속 줄어들기만 한다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathcal{L}'(w)=-\sigma(-w)<0 \quad \forall w $$</div>
+          <div class="derive__why"><strong>도함수가 어디서도 0 이 아니다</strong> → 최소점이 없다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lim_{w\to\infty}\mathcal{L}(w)=0 \ \text{이지만 도달하지 못한다} \ \Rightarrow\ \text{MLE 부재} $$</div>
+          <div class="derive__why">$\|\mathbf{w}\|\to\infty$. 실제 최적화는 <strong>반복 한계에서 멈출 뿐</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ J(w)=\log(1+e^{-w})+\lambda w^2:\quad J'(w)=-\sigma(-w)+2\lambda w=0 $$</div>
+          <div class="derive__why">L2 를 넣으면 <strong>두 힘이 균형을 이루는 유한한 $w$</strong> 가 생긴다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lambda=0.01:\ \sigma(-w)=0.02w \ \Rightarrow\ w^\star\approx2.82 $$</div>
+          <div class="derive__why">검산: $\sigma(-2.82)=0.0562$, $0.02(2.82)=0.0564$ ✓</div>
+        </div>
+      </div>
+
+      <details>
+        <summary>Newton 법(IRLS)이 왜 빠른가</summary>
+        <p>
+          BCE 의 Hessian 은 $\mathbf{H}=\mathbf{X}^\top\mathbf{S}\mathbf{X}$ 로 적힌다.
+          여기서 $\mathbf{S}=\mathrm{diag}\bigl(p_i(1-p_i)\bigr)$ 이고, 모든 대각원소가 양수이므로
+          <strong>$\mathbf{H}\succ0$ — 목적함수가 convex</strong> 다(<a href="../ch03/3.5-optimization-basics.html">3.5</a>).
+          지역 최소가 곧 전역 최소이고, 이것이 로지스틱 회귀가 신경망과 결정적으로 다른 점이다.
+        </p>
+        <p>
+          Newton 스텝은 $\mathbf{w}\leftarrow\mathbf{w}-\mathbf{H}^{-1}\nabla$ 인데,
+          정리하면 <strong>가중 최소제곱을 반복해서 푸는 형태</strong>가 된다:
+          $\mathbf{w}\leftarrow(\mathbf{X}^\top\mathbf{S}\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{S}\mathbf{u}$,
+          $\mathbf{u}=\mathbf{X}\mathbf{w}+\mathbf{S}^{-1}(\mathbf{y}-\mathbf{p})$.
+          그래서 <strong>IRLS(iteratively reweighted least squares)</strong> 라 부른다 —
+          <a href="5.3-linear-regression.html">5.3</a>의 정규방정식을 매 반복 다시 푸는 셈이다.
+        </p>
+        <p>
+          $d$ 가 작으면 <strong>5~10 회면 수렴</strong>해 gradient descent 보다 훨씬 빠르다.
+          $d$ 가 크면 $\mathbf{H}^{-1}$ 이 $O(d^3)$ 이라 L-BFGS 나 SGD 로 넘어간다
+          (<a href="../ch03/3.7-optimization-algorithms.html">3.7</a>).
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① sigmoid 와 logit 을 왕복하기</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \sigma(1)=\frac{1}{1+e^{-1}}=\frac{1}{1+0.36788}=\frac{1}{1.36788}=0.73106 $$</div>
+          <div class="derive__why">$e^{-1}=0.36788$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{logit}(0.73106)=\log\frac{0.73106}{0.26894}=\log 2.71828=1 \ \checkmark $$</div>
+          <div class="derive__why">되돌아온다 — <strong>서로 역함수</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sigma(-1)=1-\sigma(1)=0.26894 $$</div>
+          <div class="derive__why">$\sigma(-z)=1-\sigma(z)$ 라 <strong>한 번만 계산하면 된다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sigma'(1)=0.73106\times0.26894=0.19661 $$</div>
+          <div class="derive__why">식 (2). $z=0$ 의 0.25 보다 작다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{logit}(0.9)=\log\frac{0.9}{0.1}=\log 9=2.19722 $$</div>
+          <div class="derive__why">"9 대 1"</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{logit}(0.99)-\mathrm{logit}(0.9)=\log 99-\log 9=\log 11=2.39790 $$</div>
+          <div class="derive__why">확률로는 0.09 차이인데 <strong>log-odds 로는 2.4</strong> — 눈금이 펴진다</div>
+        </div>
+      </div>
+
+      <h3>② BCE 를 손으로</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>정답 $y$</th><th>예측 $p$</th><th>손실 $\ell$</th><th>메모</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td class="num">0.90</td><td class="num">0.1054</td><td>$-\log0.9$ — 잘 맞혔다</td></tr>
+            <tr><td class="num">1</td><td class="num">0.50</td><td class="num">0.6931</td><td>$-\log0.5=\log2$ — 찍은 것</td></tr>
+            <tr><td class="num">1</td><td class="num">0.10</td><td class="num">2.3026</td><td>자신 있게 틀림</td></tr>
+            <tr><td class="num">1</td><td class="num">0.01</td><td class="num"><strong>4.6052</strong></td><td>벌점이 <strong>로그로 폭증</strong></td></tr>
+            <tr><td class="num">0</td><td class="num">0.90</td><td class="num">2.3026</td><td>$-\log0.1$ — 대칭</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ p\to0 \ (\text{정답이 }1) \ \Rightarrow\ \ell=-\log p\to\infty $$</div>
+          <div class="derive__why"><strong>확률 0 을 주고 틀리면 손실이 무한대</strong> — 그래서 극단을 피하게 된다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{평균 손실 } 0.6931 = \log 2 \ \Rightarrow\ \text{동전 던지기 수준} $$</div>
+          <div class="derive__why">이진분류의 <strong>기준선</strong>. 이 값을 못 넘으면 학습이 안 된 것</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{perplexity} = e^{0.6931}=2 $$</div>
+          <div class="derive__why"><a href="../ch04/4.7-information-theory.html">4.7</a> — "2개 중 하나를 찍는 셈"</div>
+        </div>
+      </div>
+
+      <h3>③ Gradient 한 스텝을 손으로</h3>
+      <p>$x=(1,2,3)$, $y=(0,0,1)$, 시작점 $w=0$, $b=0$, 학습률 $\eta=1$.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ z=(0,0,0) \ \Rightarrow\ \mathbf{p}=(0.5,\ 0.5,\ 0.5) $$</div>
+          <div class="derive__why">모든 것이 반반</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{p}-\mathbf{y}=(0.5,\ 0.5,\ -0.5) $$</div>
+          <div class="derive__why">유도 1 의 핵심 양 — <strong>예측에서 정답을 뺀 것</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\partial\mathcal{L}}{\partial w}=\frac13\bigl[0.5(1)+0.5(2)-0.5(3)\bigr]=\frac13[0.5+1.0-1.5]=0 $$</div>
+          <div class="derive__why"><strong>정확히 0</strong> — 이 배치에서는 기울기가 움직일 이유가 없다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\partial\mathcal{L}}{\partial b}=\frac13[0.5+0.5-0.5]=\frac{0.5}{3}=0.16667 $$</div>
+          <div class="derive__why">3개 중 1개만 양성이므로 <strong>절편이 먼저 내려간다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ b\leftarrow 0-1(0.16667)=-0.16667,\qquad w\leftarrow 0 $$</div>
+          <div class="derive__why">한 스텝 후</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ z=(-0.16667)\ \text{모두} \ \Rightarrow\ \mathbf{p}=(0.45842,\ 0.45842,\ 0.45842) $$</div>
+          <div class="derive__why">$\sigma(-0.16667)=1/(1+e^{0.16667})=1/(1+1.18136)=0.45842$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\partial\mathcal{L}}{\partial w}=\frac13[0.45842+0.91684-1.62474]=\frac{-0.24948}{3}=-0.08316 $$</div>
+          <div class="derive__why">이제 <strong>기울기가 양수 방향으로 움직이기 시작</strong>한다 ($w$ 는 $+0.083$ 으로)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\partial\mathcal{L}}{\partial b}=\frac13[0.45842+0.45842-0.54158]=\frac{0.37526}{3}=0.12509 $$</div>
+          <div class="derive__why">여전히 양수 — <strong>$b$ 는 계속 내려간다</strong></div>
+        </div>
+      </div>
+
+      <h3>④ Softmax — 이동 불변성과 온도</h3>
+      <p>logit $\mathbf{z}=(2,1,0)$ 에서 시작한다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ e^2=7.38906,\ e^1=2.71828,\ e^0=1,\qquad \textstyle\sum=11.10734 $$</div>
+          <div class="derive__why">지수를 먼저</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{p}=(0.66524,\ 0.24473,\ 0.09003) $$</div>
+          <div class="derive__why">합 $=1.00000$ ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{z}+5=(7,6,5):\ e^7=1096.63,\ e^6=403.43,\ e^5=148.41,\ \textstyle\sum=1648.47 $$</div>
+          <div class="derive__why">전부 $e^5=148.41$ 배가 됐다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{p}=(0.66524,\ 0.24473,\ 0.09003) \ \checkmark \ \text{— 완전히 같다} $$</div>
+          <div class="derive__why">분자·분모가 <strong>같은 상수배</strong>라 약분된다 (식 6)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{그래서 수치 계산은 } \mathbf{z}-\max(\mathbf{z}) \text{ 로 옮겨서 한다} $$</div>
+          <div class="derive__why"><strong>overflow 를 막는 표준 기법</strong> — 결과는 같다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ K=2,\ \mathbf{z}=(z_1,z_2):\ p_1=\frac{e^{z_1}}{e^{z_1}+e^{z_2}}=\frac{1}{1+e^{-(z_1-z_2)}}=\sigma(z_1-z_2) $$</div>
+          <div class="derive__why"><strong>softmax 는 sigmoid 의 일반화</strong> — 차이만이 의미를 갖는다</div>
+        </div>
+      </div>
+
+      <h3>⑤ 계수를 odds ratio 로 읽기</h3>
+      <p>학습 결과 $\hat{w}_{\text{나이}}=0.03$ (단위: 세), $\hat{w}_{\text{흡연}}=0.85$ (0/1), $\hat{b}=-4.2$ 라 하자.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ e^{0.85}=2.3396 \ \Rightarrow\ \text{흡연자는 승산이 } 2.34 \text{ 배} $$</div>
+          <div class="derive__why">식 (8). <strong>확률이 2.34배가 아니다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ e^{0.03}=1.0305 \ \Rightarrow\ \text{한 살당 승산 } 3.05\% \text{ 증가} $$</div>
+          <div class="derive__why">작은 $w$ 에서는 $e^w\approx1+w$ 라 <strong>퍼센트로 바로 읽힌다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 10 \text{ 살 차이}:\ e^{0.3}=1.3499 \ \Rightarrow\ 35\% \text{ 증가} $$</div>
+          <div class="derive__why">선형이 아니라 <strong>곱셈으로 쌓인다</strong> ($1.0305^{10}=1.3498$ ✓)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{50세 비흡연자}:\ z=-4.2+0.03(50)=-2.7 \ \Rightarrow\ p=\sigma(-2.7)=0.0630 $$</div>
+          <div class="derive__why">$e^{2.7}=14.88$, $p=1/15.88$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{50세 흡연자}:\ z=-2.7+0.85=-1.85 \ \Rightarrow\ p=\sigma(-1.85)=0.1360 $$</div>
+          <div class="derive__why">확률은 <strong>2.16배</strong> — odds ratio 2.34 와 다르다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{확인}:\ \frac{0.1360/0.8640}{0.0630/0.9370}=\frac{0.15741}{0.06724}=2.3410 \ \checkmark $$</div>
+          <div class="derive__why"><strong>odds 의 비는 정확히 2.34</strong> — 확률의 비와 다르다</div>
+        </div>
+      </div>
+      <p>
+        <span class="hl">odds ratio 는 <strong>기준 확률이 어디든 일정</strong>하지만
+        확률의 비는 기준에 따라 달라진다 — 그래서 계수를 odds 로 보고하는 것이다.</span>
+      </p>
+
+      <h3>⑥ 완전분리와 정규화</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$w$</th><th>$\sigma(w)$</th><th>loss $\log(1+e^{-w})$</th><th>$\lambda=0.01$ 인 목적함수</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td class="num">0.7311</td><td class="num">0.31326</td><td class="num">0.32326</td></tr>
+            <tr><td class="num">2</td><td class="num">0.8808</td><td class="num">0.12693</td><td class="num">0.16693</td></tr>
+            <tr><td class="num">2.82</td><td class="num">0.9440</td><td class="num">0.05766</td><td class="num"><strong>0.13718</strong> ← 최소</td></tr>
+            <tr><td class="num">5</td><td class="num">0.9933</td><td class="num">0.00672</td><td class="num">0.25672</td></tr>
+            <tr><td class="num">10</td><td class="num">0.99995</td><td class="num">0.0000454</td><td class="num">1.00005</td></tr>
+            <tr><td class="num">$\infty$</td><td class="num">1</td><td class="num"><strong>0</strong></td><td class="num">$\infty$</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{정규화 없이}:\ \text{loss 가 } w \text{ 를 키울수록 계속 줄어 최소점이 없다} $$</div>
+          <div class="derive__why">유도 3 — <strong>MLE 가 존재하지 않는다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lambda=0.01:\ w^\star\approx2.82,\ \text{목적함수}=0.05766+0.01(2.82)^2=0.05766+0.07952=0.13718 $$</div>
+          <div class="derive__why">유한한 최소가 생긴다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ w=5:\ 0.00672+0.01(25)=0.25672\ >\ 0.13718 $$</div>
+          <div class="derive__why">더 키우면 <strong>벌점이 이긴다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lambda=0.001:\ \sigma(-w)=0.002w \ \Rightarrow\ w^\star\approx4.6 $$</div>
+          <div class="derive__why">검산: $\sigma(-4.6)=0.00995$, $0.002(4.6)=0.0092$ — 근처 ✓. <strong>$\lambda$ 를 줄이면 $w$ 가 커진다</strong></div>
+        </div>
+      </div>
+
+      <figure class="widget" data-widget="separation">
+        <figcaption class="widget__bar">Perfect Separation — 정규화 없이는 멈추지 않는다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$\lambda=0$ 으로 두면 곡선에 <strong>최소점이 없습니다</strong>. 아주 작은 $\lambda$ 만 넣어도 바닥이 생깁니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>눈금 펴기</strong> · <strong>결정경계</strong> ·
+        <strong>softmax</strong> · <strong>완전분리</strong> — 에 이어,
+        아래에서 <strong>BCE 와 제곱손실의 gradient 차이</strong>를 직접 비교한다.
+      </p>
+
+      <figure class="widget" data-widget="loss-compare">
+        <figcaption class="widget__bar">BCE vs 제곱손실 — 크게 틀렸을 때 누가 더 세게 미나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$z$ 를 왼쪽 끝으로 밀어 보세요 (정답은 1). <strong>제곱손실의 gradient 는 0 으로 죽고</strong> BCE 는 최대가 됩니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"계수 $w_j=0.85$ 이면 그 feature 가 있을 때 확률이 2.34배가 된다."</p>
+        <p>
+          <strong>실제로는</strong> 2.34배가 되는 것은 <strong>odds 이지 확률이 아니다</strong>(예제 ⑤).
+          기준 확률이 0.063 이면 확률은 2.16배가 되지만, 기준이 0.5 라면
+          odds 가 $1\to2.34$ 이므로 확률은 $0.5\to0.70$ 으로 <strong>1.4배</strong>밖에 안 된다.
+          <strong>확률이 높을수록 같은 odds ratio 의 효과가 작아진다</strong> — 1 을 넘을 수 없기 때문이다.
+          "위험이 2.34배" 같은 표현이 의학·정책 문헌에서 오해를 낳는 대표적인 자리다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"분류에도 제곱손실을 쓰면 되지 않나. 어차피 오차를 줄이는 것 아닌가."</p>
+        <p>
+          <strong>실제로는</strong> 두 가지가 깨진다.
+          (1) <strong>gradient 가 거꾸로 행동한다</strong> — 유도 1 에서 봤듯
+          $p=0.99$ 인데 정답이 0 이면 제곱손실의 gradient 가 $\approx0.01$ 로 <strong>거의 멈춘다</strong>.
+          자신 있게 틀린 경우에 가장 배우지 못하는 것이다.
+          (2) <strong>목적함수가 convex 가 아니게 된다</strong> — $\sigma$ 를 통과한 제곱손실은
+          지역 최소가 생길 수 있어 전역 최적 보장이 사라진다.
+          BCE 는 둘 다 해결한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"다중 label 문제도 softmax 로 풀면 된다."</p>
+        <p>
+          <strong>실제로는</strong> softmax 는 <strong>확률의 합을 1 로 강제</strong>하므로
+          class 들이 서로를 밀어낸다. "고양이"와 "실내"가 동시에 참인 문제에서
+          두 확률이 각각 0.5 로 눌려 <strong>임계값 0.5 를 아무도 못 넘는다</strong>.
+          class 가 <strong>배타적일 때만</strong> softmax 를 쓰고,
+          동시에 참일 수 있으면 <strong>class 별 독립 sigmoid</strong>(BCE $K$개)를 쓴다.
+          PyTorch 로는 <code>CrossEntropyLoss</code> 대 <code>BCEWithLogitsLoss</code> 의 차이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"학습이 수렴하지 않고 계수가 계속 커진다. 학습률 문제다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>완전분리</strong>일 가능성이 크다(유도 3).
+          두 class 를 완벽히 가르는 초평면이 있으면 MLE 해가 <strong>존재하지 않아</strong>
+          어떤 학습률로도 수렴하지 않는다 — 계수가 무한히 커지며 loss 만 0 으로 접근한다.
+          $d>n$ 이면 <strong>거의 항상</strong> 이 상황이고, 희귀 class 나 완벽한 예측 feature
+          (예: 실수로 넣은 정답 누출 열)가 있어도 그렇다.
+          진단은 간단하다 — <strong>계수의 크기와 train 정확도 100% 를 함께 확인</strong>하고, L2 를 넣는다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"scikit-learn 의 <code>LogisticRegression</code> 은 기본이 정규화 없는 순수 MLE 다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>기본값이 L2 정규화이고 $C=1.0$</strong> 이다.
+          그리고 <strong>$C$ 는 $\lambda$ 의 역수</strong>라 <strong>작을수록 정규화가 강하다</strong> —
+          방향이 반대라 자주 헷갈린다.
+          그래서 교재의 수식(λ)과 코드(C)의 결과가 달라 보이고,
+          "정규화를 안 걸었는데 계수가 작다"는 혼란이 생긴다.
+          순수 MLE 를 원하면 <code>penalty=None</code> 을 명시해야 하는데,
+          그 순간 완전분리 문제가 드러나는 경우가 많다(오해 4).
+          <strong>또한 정규화를 쓰면 feature 표준화가 필수</strong>다(<a href="5.3-linear-regression.html">5.3</a> 오해 4).
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–⑥ 을 검산한다.</p>
+      <details>
+        <summary>NumPy — gradient · softmax 이동불변 · 완전분리 (20줄)</summary>
+<pre><code>import numpy as np
+sig = lambda z: 1 / (1 + np.exp(-z))
+
+x = np.array([1., 2, 3]); y = np.array([0., 0, 1]); w = b = 0.0
+for step in range(2):
+    p = sig(w * x + b)
+    gw, gb = ((p - y) * x).mean(), (p - y).mean()
+    print(step, p.round(5), round(gw, 5), round(gb, 5))
+    w, b = w - 1 * gw, b - 1 * gb            # 0: 0.0 0.16667 / 1: -0.08316 0.12509
+
+z = np.array([2., 1, 0])
+soft = lambda v: np.exp(v - v.max()) / np.exp(v - v.max()).sum()
+print(soft(z).round(5), soft(z + 5).round(5))          # 완전히 같다 (이동 불변)
+print(soft(np.array([1., 0]))[0], sig(1.0))            # softmax(K=2) = sigmoid
+
+for wv in [1., 2, 2.82, 5, 10]:                        # 완전분리 + L2
+    loss = np.log1p(np.exp(-wv))
+    print(wv, round(loss, 6), round(loss + 0.01 * wv**2, 5))   # 2.82 에서 최소
+
+for wj in [-0.69, 0., 0.41, 0.69, 2.30]:
+    print(wj, round(np.exp(wj), 4))                    # odds ratio
+p0 = sig(-2.7); p1 = sig(-1.85)                        # 예제 ⑤
+print(round(p0, 4), round(p1, 4), round((p1 / (1 - p1)) / (p0 / (1 - p0)), 4))  # 2.341
+</code></pre>
+        <p>
+          <small>
+            마지막 줄이 오해 1 의 확인이다 — <strong>확률은 2.16배인데 odds 는 정확히 2.34배</strong>다.
+            두 번째 블록의 <code>v - v.max()</code> 가 예제 ④의 overflow 방지 기법이고,
+            결과가 바뀌지 않는 것이 shift invariance 다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $z=\mathbf{w}^\top\mathbf{x}+b=-1.5$ 일 때 예측 확률은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 0.182</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>약 0.818</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>−1.5</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\sigma(-1.5)=\frac{1}{1+e^{1.5}}=\frac{1}{1+4.4817}=\frac{1}{5.4817}=0.1824$.
+            <strong>나</strong>는 $\sigma(+1.5)$ 로 부호를 놓친 값이다 ($\sigma(-z)=1-\sigma(z)$ 이므로 둘의 합이 1 ✓).
+            <strong>다</strong>는 logit 을 그대로 확률로 읽은 것 — <strong>$z$ 는 log-odds 이지 확률이 아니다</strong>.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            계수 $w_j=1.10$ 이다. 이 feature 가 1 늘 때 odds 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 3.0배</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>1.10배</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>확률이 1.10 늘어난다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $e^{1.10}=3.004$ 이므로 <strong>odds 가 약 3배</strong>다(식 8).
+            <strong>나</strong>는 지수를 안 취한 것, <strong>다</strong>는 확률이 1 을 넘게 되어 애초에 불가능하다.
+            선형인 것은 <strong>log-odds</strong> 이고, odds 로 되돌리면 <strong>곱셈</strong>,
+            확률로 되돌리면 <strong>비선형</strong>이 된다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            logit $(3,1,1)$ 의 softmax 에서 첫 class 의 확률은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 0.788</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.600</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>약 0.953</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $e^3=20.086$, $e^1=2.718$ 이 둘이므로 합 $=25.522$ → $20.086/25.522=0.7870$.
+            <strong>나</strong>는 logit 을 그대로 정규화한 값($3/5$)이고,
+            <strong>다</strong>는 $\sigma(3)$ 로 다른 class 를 하나만 센 것이다.
+            <strong>softmax 는 모든 class 를 함께 본다</strong> — 같은 점수의 경쟁자가 늘면 확률이 내려간다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            BCE 의 gradient 가 $\mathbf{X}^\top(\mathbf{p}-\mathbf{y})$ 로 단순해지는 이유는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\sigma'=p(1-p)$ 가 손실의 분모에 있던 $p(1-p)$ 와 약분되기 때문</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>sigmoid 를 선형 근사했기 때문</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>우연이다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            유도 1 에서 $\frac{\partial\ell}{\partial p}=\frac{p-y}{p(1-p)}$ 이고 $\frac{\partial p}{\partial z}=p(1-p)$ 라
+            <strong>정확히 약분</strong>된다.
+            우연이 아니라 <strong>logit 이 Bernoulli 의 정준연결함수</strong>이기 때문이며,
+            지수족 + 정준연결이면 <strong>언제나</strong> 이 형태가 나온다(GLM).
+            그래서 Poisson 회귀도 같은 꼴의 gradient 를 갖는다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            $\mathbf{w}$ 를 10배로 키우면 무엇이 달라지나?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>결정경계는 그대로이고 확률이 0/1 쪽으로 급격해진다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>결정경계가 10배 멀어진다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>아무것도 달라지지 않는다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            경계는 $z=0$ 인 곳인데 $10\mathbf{w},10b$ 로 바꿔도 $10z=0 \iff z=0$ 이라 <strong>같은 자리</strong>다.
+            달라지는 것은 경계에서 멀어질 때 $p$ 가 얼마나 빨리 0/1 로 가느냐, 즉 <strong>확신의 세기</strong>다.
+            정확도는 그대로인데 <strong>calibration 만 나빠지는</strong> 상황이고
+            (<a href="../ch04/4.9-uncertainty.html">4.9</a>의 temperature scaling 과 정확히 반대 방향),
+            완전분리에서 $\|\mathbf{w}\|$ 가 커지는 것이 바로 이 현상이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            train 정확도가 100% 인데 계수가 학습을 돌릴수록 계속 커진다. 원인은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>완전분리 — MLE 해가 존재하지 않는다. L2 를 넣어야 한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>학습률이 너무 크다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>data 가 부족하다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            두 class 를 완벽히 가르는 초평면이 있으면 $\|\mathbf{w}\|\to\infty$ 로 loss 가 계속 줄어
+            <strong>도함수가 어디서도 0 이 아니다</strong>(유도 3).
+            학습률을 아무리 조절해도 수렴하지 않는다 — <strong>나</strong>가 틀린 이유다.
+            $d>n$ 이거나 정답이 누출된 feature 가 섞였을 때 흔하며,
+            <strong>계수 크기와 train 정확도를 함께 보는 것</strong>이 진단의 첫걸음이다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="5.9-probabilistic-generative-models.html">5.9 확률적 생성 모델</a></strong> — GDA 에서 로지스틱 회귀가 유도된다(유도 2).</li>
+        <li><strong><a href="5.13-model-evaluation.html">5.13 모델 평가</a></strong> — 임계값을 옮기며 ROC·PR 곡선을 그린다.</li>
+        <li><strong><a href="../ch04/4.9-uncertainty.html">4.9 불확실성</a></strong> — 출력 확률의 calibration.</li>
+        <li><strong>6장 신경망 기초</strong> — 분류 신경망의 마지막 층이 정확히 이 구조다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-hastie2009-esl" data-ref="hastie2009-esl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em> (2nd ed.). Springer.</span>
+          <span class="ref__where">4.4.1절 — 로지스틱 회귀의 log-likelihood 와 Newton–Raphson 이 IRLS 로 정리되는 유도(접힌 상자). 4.4.2절 — <strong>완전분리에서 계수가 발산한다</strong>는 지적(유도 3, 오해 4). 4.4.4절 — LDA 와 로지스틱 회귀가 같은 선형 log-odds 를 쓰지만 추정 방식이 다르다는 비교(유도 2). 4.4.5절 — L1 정규화 로지스틱 회귀</span>
+          <a class="ref__link" href="https://hastie.su.domains/ElemStatLearn/">hastie.su.domains</a>
+        </li>
+        <li class="ref" id="ref-bishop2006-prml" data-ref="bishop2006-prml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Bishop, C. M. (2006). <em>Pattern Recognition and Machine Learning</em>. Springer.</span>
+          <span class="ref__where">4.2절 — 조건부 밀도가 지수족이면 <strong>사후확률이 자동으로 sigmoid/softmax 형태가 된다</strong>는 유도(유도 2). 4.3.2절 — BCE 의 gradient 가 $\sum(p_n-y_n)\phi_n$ 으로 약분되는 계산(유도 1)과 Hessian 이 positive definite 이라 convex 라는 결과. 4.3.4절 — softmax 회귀와 그 gradient. 4.3.3절 — IRLS</span>
+          <a class="ref__link" href="https://www.microsoft.com/en-us/research/publication/pattern-recognition-machine-learning/">microsoft.com/research</a>
+        </li>
+        <li class="ref" id="ref-murphy2022-pml" data-ref="murphy2022-pml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Murphy, K. P. (2022). <em>Probabilistic Machine Learning: An Introduction</em>. MIT Press.</span>
+          <span class="ref__where">10.1–10.2절 — 이진 로지스틱 회귀의 정의, 결정경계가 $\|\mathbf{w}\|$ 에 따라 가팔라진다는 그림(위젯 2, 퀴즈 5). 10.3절 — softmax 회귀와 <strong>shift invariance 때문에 parameter 가 식별되지 않는다</strong>는 지적(식 6, 예제 ④). 10.4.7절 — 완전분리와 MAP 추정의 필요성. 12장 — GLM 의 일반적 틀과 정준연결함수</span>
+          <a class="ref__link" href="https://probml.github.io/pml-book/book1.html">probml.github.io</a>
+        </li>
+        <li class="ref" id="ref-stanford-cs229" data-ref="stanford-cs229">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Ng, A. &amp; Ma, T. <em>CS229: Machine Learning</em>. Stanford University.</span>
+          <span class="ref__where">강의노트 1 §2 "Classification and logistic regression" — sigmoid 의 도함수 성질과 gradient ascent 규칙이 선형회귀와 <strong>글자 그대로 같은 형태</strong>가 된다는 관찰(유도 1, '확률적 해석' 표). §3 "Generalized Linear Models" — 지수족 · 정준연결 · GLM 세 가정에서 로지스틱 회귀와 softmax 회귀를 <strong>유도</strong>하는 부분이 이 절 '확률적 해석' 의 뼈대다</span>
+          <a class="ref__link" href="https://cs229.stanford.edu/">cs229.stanford.edu</a>
+        </li>
+        <li class="ref" id="ref-sklearn-docs" data-ref="sklearn-docs">
+          <span class="ref__type" data-type="doc">문서</span>
+          <span class="ref__cite">scikit-learn developers. <em>User Guide — 1.1.11 Logistic regression</em>.</span>
+          <span class="ref__where">목적함수 정의에서 <strong><code>C</code> 가 정규화 강도의 역수</strong>이고 기본값이 L2 라는 명시(오해 5). <code>multi_class</code> 옵션의 <code>multinomial</code>(softmax) 대 <code>ovr</code> 차이('다중분류 전략' 표). solver 별 지원 penalty 표는 L1·elastic net 을 쓸 때 <code>saga</code> 가 필요한 이유를 설명한다</span>
+          <a class="ref__link" href="https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression">scikit-learn.org</a>
+        </li>
+        <li class="ref" id="ref-statquest" data-ref="statquest">
+          <span class="ref__type" data-type="video">영상</span>
+          <span class="ref__cite">Starmer, J. <em>Logistic Regression</em> · <em>Odds and Log(Odds)</em> · <em>Maximum Likelihood for Logistic Regression</em>. StatQuest.</span>
+          <span class="ref__where">'Odds and Log(Odds)' 편 — 확률 → odds → log-odds 로 눈금이 펴지는 과정과 <strong>log-odds 가 0 을 중심으로 대칭</strong>이라는 관찰(직관 절의 위젯 1, logit 표). 'Logistic Regression Details Pt1' — $y$ 축을 log-odds 로 바꿔 놓고 직선을 맞춘 뒤 확률로 되돌리는 시각화가 이 절의 핵심 그림이다</span>
+          <a class="ref__link" href="https://statquest.org/video-index/">statquest.org</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+function panel(p) {
+  p.add(VIZ.el('rect', {
+    x: p.pad.l, y: p.pad.t, width: p.iw, height: p.ih,
+    fill: 'var(--ink-3)', 'fill-opacity': 0.03, stroke: 'none'
+  }));
+  return p;
+}
+function mkRand(seed) {
+  var s = seed || 12345;
+  return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+}
+function gauss(rnd) {
+  var u = Math.max(1e-9, rnd()), v = rnd();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+function sig(z) { return 1 / (1 + Math.exp(-z)); }
+
+/* ============================================================
+   위젯 1 — 확률 → odds → log-odds
+   ============================================================ */
+WIDGETS.register('logit-ladder', function (root, ctx) {
+  var pv = 0.75, view = 'logit';
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'p', label: '확률 p', digits: 4 },
+    { key: 'o', label: 'odds = p/(1−p)', digits: 4 },
+    { key: 'l', label: 'log-odds = logit(p)', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function draw() {
+    var isLog = (view === 'logit');
+    var top = isLog ? 5 : 20;
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 0, xmax: 1, ymin: isLog ? -5 : 0, ymax: top,
+      pad: { t: 30, r: 16, b: 34, l: 50 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(0.25, isLog ? 2.5 : 5).axes('확률 p', '').ticks(0.25, isLog ? 2.5 : 5);
+    p.text(0, top, isLog ? 'log-odds — 0.5 를 중심으로 대칭이고 양쪽으로 무한히 펴진다'
+                         : 'odds — 1 을 중심으로 비대칭이고 오른쪽에서 폭발한다',
+      { size: 10, dy: -10 });
+
+    p.curve(function (q) {
+      if (q <= 0.001 || q >= 0.999) return isLog ? (q < 0.5 ? -6 : 6) : (q < 0.5 ? 0 : 25);
+      var o = q / (1 - q);
+      return isLog ? Math.log(o) : o;
+    }, { samples: 400 });
+    if (isLog) p.line([[0, 0], [1, 0]], { width: 1.6, dash: '3 3' });
+    else p.line([[0, 1], [1, 1]], { width: 1.6, dash: '3 3' });
+
+    var o = pv / (1 - pv), l = Math.log(o);
+    var yv = isLog ? Math.max(-4.9, Math.min(4.9, l)) : Math.min(19.5, o);
+    p.dot(pv, yv, 5.5);
+    p.line([[pv, isLog ? -5 : 0], [pv, yv]], { dash: '2 3' });
+    p.callout(pv, yv, isLog ? 'logit = ' + l.toFixed(3) : 'odds = ' + o.toFixed(2),
+      { dx: -20, dy: 24, tone: 'var(--seal)' });
+
+    out.set('p', pv);
+    out.set('o', o);
+    out.set('l', l);
+    out.setRaw('note', pv > 0.95 ? 'odds 는 이미 화면 밖 · log-odds 는 아직 3 근처'
+      : (Math.abs(pv - 0.5) < 0.02 ? 'p=0.5 → odds=1 → logit=0' : '—'));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '어느 눈금으로 볼까',
+    options: [{ value: 'odds', label: 'odds' }, { value: 'logit', label: 'log-odds' }],
+    value: 'logit', onChange: function (v) { view = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '확률 p', min: 0.01, max: 0.99, step: 0.01, value: 0.75, digits: 2,
+    onInput: function (v) { pv = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — 결정경계
+   ============================================================ */
+WIDGETS.register('decision-boundary', function (root, ctx) {
+  var ang = 0.6, mag = 1.5, bias = 0;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'w', label: '가중치 (w₁, w₂)' },
+    { key: 'norm', label: '‖w‖ (확신의 세기)', digits: 3 },
+    { key: 'acc', label: '학습 data 정확도', digits: 3 },
+    { key: 'conf', label: '평균 확신 (max p)', digits: 4 }
+  ]);
+
+  function data() {
+    var rnd = mkRand(9137), pts = [];
+    for (var i = 0; i < 40; i++) {
+      var c = i < 20 ? 0 : 1;
+      var cx = c ? 1.0 : -1.0, cy = c ? 0.8 : -0.6;
+      pts.push([cx + 0.8 * gauss(rnd), cy + 0.8 * gauss(rnd), c]);
+    }
+    return pts;
+  }
+  var pts = data();
+
+  function draw() {
+    var w1 = mag * Math.cos(ang), w2 = mag * Math.sin(ang);
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -3.4, xmax: 3.4, ymin: -3, ymax: 3,
+      pad: { t: 30, r: 16, b: 30, l: 42 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x₁', '').ticks(1, 1);
+    p.text(-3.4, 3, 'x₂ · 배경 띠 = 예측 확률 · 굵은 선 = 결정경계 (p = 0.5)',
+      { size: 10, dy: -10 });
+
+    /* 확률 띠를 세로 줄무늬로 그린다 */
+    for (var k = 0; k < 44; k++) {
+      var x0 = -3.4 + 6.8 * k / 44, x1 = -3.4 + 6.8 * (k + 1) / 44;
+      var xm = (x0 + x1) / 2;
+      /* 이 열의 중앙 y=0 에서의 확률 */
+      var pr = sig(w1 * xm + w2 * 0 + bias);
+      p.add(VIZ.el('rect', {
+        x: p.X(x0), y: p.Y(3), width: Math.max(1, p.X(x1) - p.X(x0)), height: p.Y(-3) - p.Y(3),
+        fill: pr > 0.5 ? 'var(--seal)' : 'var(--jade)',
+        'fill-opacity': 0.06 + 0.30 * Math.abs(pr - 0.5) * 2
+      }));
+    }
+    /* 경계선 w1 x + w2 y + b = 0 */
+    if (Math.abs(w2) > 1e-6) {
+      p.line([[-3.4, (-bias - w1 * (-3.4)) / w2], [3.4, (-bias - w1 * 3.4) / w2]], { width: 2.6 });
+    } else {
+      p.line([[-bias / w1, -3], [-bias / w1, 3]], { width: 2.6 });
+    }
+    p.vector(w1 / mag * 1.2, w2 / mag * 1.2, { width: 2, label: 'w' });
+
+    var hit = 0, conf = 0;
+    for (var i = 0; i < pts.length; i++) {
+      var pr2 = sig(w1 * pts[i][0] + w2 * pts[i][1] + bias);
+      if ((pr2 >= 0.5 ? 1 : 0) === pts[i][2]) hit++;
+      conf += Math.max(pr2, 1 - pr2) / pts.length;
+      p.add(VIZ.el('circle', {
+        cx: p.X(Math.max(-3.3, Math.min(3.3, pts[i][0]))),
+        cy: p.Y(Math.max(-2.9, Math.min(2.9, pts[i][1]))),
+        r: 3.4, fill: pts[i][2] ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': 0.85
+      }));
+    }
+
+    out.setRaw('w', '(' + w1.toFixed(2) + ', ' + w2.toFixed(2) + ')  b = ' + bias.toFixed(2));
+    out.set('norm', mag);
+    out.set('acc', hit / pts.length);
+    out.set('conf', conf);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'w 의 방향 (경계를 회전)', min: -1.5, max: 3, step: 0.05, value: 0.6, digits: 2,
+    onInput: function (v) { ang = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '‖w‖ (경계는 그대로, 확신만 바뀐다)', min: 0.1, max: 6, step: 0.1, value: 1.5, digits: 1,
+    onInput: function (v) { mag = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '절편 b (경계를 평행이동)', min: -3, max: 3, step: 0.1, value: 0, digits: 1,
+    onInput: function (v) { bias = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — softmax
+   ============================================================ */
+WIDGETS.register('softmax-lab', function (root, ctx) {
+  var z = [2.0, 1.0, 0.0, -1.0], shift = 0, T = 1;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'p', label: 'softmax 확률' },
+    { key: 'sum', label: '합', digits: 6 },
+    { key: 'same', label: '이동 전과 같은가' },
+    { key: 'ent', label: 'entropy (bit)', digits: 4 }
+  ]);
+
+  function soft(arr, t) {
+    var m = Math.max.apply(null, arr);
+    var e = arr.map(function (v) { return Math.exp((v - m) / t); });
+    var s = e.reduce(function (a, b) { return a + b; }, 0);
+    return e.map(function (v) { return v / s; });
+  }
+
+  function draw() {
+    var base = soft(z, T);
+    var moved = soft(z.map(function (v) { return v + shift; }), T);
+
+    var W = 460, H0 = 255, padL = 54, baseY = 195;
+    var svg = VIZ.el('svg', { viewBox: '0 0 ' + W + ' ' + H0, role: 'img' });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(svg);
+    svg.appendChild(VIZ.el('line', { x1: padL - 10, y1: baseY, x2: W - 20, y2: baseY,
+      stroke: 'var(--ink-3)', 'stroke-width': 1, 'stroke-opacity': 0.5 }));
+    svg.appendChild(VIZ.el('text', { x: 12, y: 20, class: 'viz-label', 'font-size': 11,
+      text: '막대 = softmax 확률 · 아래 숫자 = 이동 후 logit' }));
+
+    var best = 0;
+    moved.forEach(function (q, i) { if (q > moved[best]) best = i; });
+    moved.forEach(function (q, i) {
+      var x = padL + i * 92;
+      svg.appendChild(VIZ.el('rect', {
+        x: x, y: baseY - q * 150, width: 60, height: Math.max(1, q * 150), rx: 3,
+        fill: i === best ? 'var(--amber)' : 'var(--jade)', 'fill-opacity': i === best ? 0.6 : 0.3,
+        stroke: i === best ? 'var(--amber)' : 'var(--jade)', 'stroke-width': 1
+      }));
+      svg.appendChild(VIZ.el('text', { x: x + 30, y: baseY - q * 150 - 6, 'text-anchor': 'middle',
+        class: 'viz-label', 'font-size': 12, text: q.toFixed(4) }));
+      svg.appendChild(VIZ.el('text', { x: x + 30, y: baseY + 16, 'text-anchor': 'middle',
+        class: 'viz-label', 'font-size': 11, text: (z[i] + shift).toFixed(1) }));
+    });
+
+    var s = moved.reduce(function (a, b) { return a + b; }, 0);
+    var same = moved.every(function (q, i) { return Math.abs(q - base[i]) < 1e-9; });
+    var H = 0;
+    moved.forEach(function (q) { if (q > 0) H -= q * Math.log(q) / Math.LN2; });
+
+    out.setRaw('p', '(' + moved.map(function (q) { return q.toFixed(4); }).join(', ') + ')');
+    out.set('sum', s);
+    out.setRaw('same', same ? '완전히 같다 ✓ (이동 불변)' : '다르다 — 온도를 바꿨기 때문');
+    out.set('ent', H);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '모든 logit 에 더할 값 (이동)', min: -10, max: 10, step: 0.5, value: 0, digits: 1,
+    onInput: function (v) { shift = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '온도 T', min: 0.2, max: 5, step: 0.1, value: 1, digits: 1,
+    onInput: function (v) { T = v; draw(); }
+  });
+  WIDGETS.matrix({
+    host: ctx.controls, rows: 1, cols: 4, values: [z], step: 0.5, label: '원래 logit',
+    onChange: function (nv) { z = nv[0]; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — 완전분리
+   ============================================================ */
+WIDGETS.register('separation', function (root, ctx) {
+  var lam = 0.01;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'w', label: '최소가 되는 w' },
+    { key: 'loss', label: '그때의 BCE', digits: 6 },
+    { key: 'pen', label: '그때의 벌점 λw²', digits: 6 },
+    { key: 'note', label: '판정' }
+  ]);
+
+  function bce(w) { return Math.log(1 + Math.exp(-w)); }
+  function obj(w) { return bce(w) + lam * w * w; }
+
+  function draw() {
+    var top = Math.max(0.8, obj(0.2) * 1.1);
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 0, xmax: 12, ymin: 0, ymax: top,
+      pad: { t: 30, r: 16, b: 34, l: 50 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(2, top / 4).axes('w (계수의 크기)', '').ticks(2, top / 4);
+    p.text(0, top, '점선 = BCE (계속 줄어든다) · 잔점선 = 벌점 · 실선 = 합',
+      { size: 10, dy: -10 });
+
+    p.curve(bce, { samples: 240, alt: true, dash: '5 4' });
+    p.curve(function (w) { return Math.min(top, lam * w * w); }, { samples: 240, dash: '2 3' });
+    p.curve(function (w) { return Math.min(top, obj(w)); }, { samples: 260 });
+
+    var bw = 0.2, bv = 9;
+    for (var w = 0.2; w <= 40; w += 0.01) if (obj(w) < bv) { bv = obj(w); bw = w; }
+
+    if (lam > 1e-9 && bw < 12) {
+      p.dot(bw, bv, 5.5);
+      p.callout(bw, bv, 'w* = ' + bw.toFixed(2), { dx: 20, dy: 24, tone: 'var(--seal)' });
+    }
+
+    out.setRaw('w', lam < 1e-9 ? '없다 — w → ∞'
+      : (bw >= 39.9 ? '40 이상 (사실상 발산)' : bw.toFixed(3)));
+    out.set('loss', bce(bw));
+    out.set('pen', lam * bw * bw);
+    out.setRaw('note', lam < 1e-9 ? 'λ=0 → 최소점이 존재하지 않는다 (MLE 부재)'
+      : (lam < 0.002 ? 'λ 가 아주 작아 w 가 크게 나온다' : '유한한 유일해'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '정규화 세기 λ', min: 0, max: 0.2, step: 0.001, value: 0.01, digits: 3,
+    onInput: function (v) { lam = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — BCE vs 제곱손실
+   ============================================================ */
+WIDGETS.register('loss-compare', function (root, ctx) {
+  var zAt = -3, target = 1;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'p', label: '예측 확률 σ(z)', digits: 5 },
+    { key: 'gb', label: 'BCE 의 |∂ℓ/∂z|', digits: 5 },
+    { key: 'gs', label: '제곱손실의 |∂ℓ/∂z|', digits: 5 },
+    { key: 'ratio', label: '배율 (BCE / 제곱)', digits: 1 }
+  ]);
+
+  function draw() {
+    var p = VIZ.plot({ w: 460, h: 285, xmin: -6, xmax: 6, ymin: 0, ymax: 1.05,
+      pad: { t: 30, r: 16, b: 34, l: 48 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(2, 0.25).axes('z (선형 점수)', '').ticks(2, 0.25);
+    p.text(-6, 1.05, '|gradient| · 실선 = BCE · 점선 = 제곱손실 (정답 y = ' + target + ')',
+      { size: 10, dy: -10 });
+
+    var gB = function (z) { return Math.abs(sig(z) - target); };
+    var gS = function (z) { var q = sig(z); return Math.abs((q - target) * q * (1 - q)) * 4; };
+
+    p.curve(gB, { samples: 300 });
+    p.curve(gS, { samples: 300, alt: true, dash: '5 4' });
+    p.dot(zAt, gB(zAt), 5);
+    p.dot(zAt, gS(zAt), 4.5);
+    p.line([[zAt, 0], [zAt, 1.02]], { dash: '2 3' });
+    p.callout(zAt, gB(zAt), 'BCE 는 여기서 최대', { dx: -26, dy: -22, tone: 'var(--seal)' });
+
+    var q = sig(zAt);
+    var a = Math.abs(q - target), b = Math.abs((q - target) * q * (1 - q));
+    out.set('p', q);
+    out.set('gb', a);
+    out.set('gs', b);
+    out.set('ratio', b > 1e-12 ? a / b : 0);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '선형 점수 z', min: -6, max: 6, step: 0.1, value: -3, digits: 1,
+    onInput: function (v) { zAt = v; draw(); }
+  });
+  WIDGETS.toggle({
+    host: ctx.controls, label: '정답 y',
+    options: [{ value: 1, label: 'y = 1' }, { value: 0, label: 'y = 0' }],
+    value: 1, onChange: function (v) { target = Number(v); draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5.13 모델 평가 — AI 이론 학습</title>
+<meta name="description" content="정확도 하나로는 아무것도 알 수 없다. 혼동행렬의 네 칸에서 모든 지표가 나오고, 무엇을 재느냐는 어떤 실수가 더 비싼가에 달려 있다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="5.13">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">5.13</span>
+        <span>5장 · 전통적 머신러닝</span>
+      </div>
+      <h1>모델 평가</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 70분</span>
+        <span><b>난이도</b>★★★☆☆</span>
+        <span><b>선수지식</b>
+          <a href="../ch01/1.5-data-split-evaluation.html">1.5 데이터 분할과 평가</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-cm">Confusion Matrix</a>
+      <a class="chip" href="#c-acc">Accuracy</a>
+      <a class="chip" href="#c-prec">Precision</a>
+      <a class="chip" href="#c-rec">Recall</a>
+      <a class="chip" href="#c-f1">F1 Score</a>
+      <a class="chip" href="#c-roc">ROC Curve</a>
+      <a class="chip" href="#c-rocauc">ROC-AUC</a>
+      <a class="chip" href="#c-pr">PR Curve</a>
+      <a class="chip" href="#c-prauc">PR-AUC</a>
+      <a class="chip" href="#c-logloss">Log Loss</a>
+      <a class="chip" href="#c-calib">Calibration</a>
+      <a class="chip" href="#c-reg">Regression Metrics</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        <strong>정확도 하나로는 아무것도 알 수 없다.</strong>
+        혼동행렬의 <strong>네 칸</strong>에서 모든 분류 지표가 나오고,
+        무엇을 재느냐는 <strong>어떤 실수가 더 비싼가</strong>에 달려 있다.
+        <strong>문턱을 정하기 전</strong>의 성능은 곡선(ROC·PR)으로,
+        <strong>확률의 정직함</strong>은 log loss 와 보정으로 잰다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>혼동행렬에서 precision·recall·F1 을 손으로 계산하고 문턱에 따른 변화를 예측할 수 있다.</li>
+        <li>ROC 와 PR 곡선의 차이를 설명하고, <strong>불균형에서 왜 PR 을 봐야 하는지</strong> 유도할 수 있다.</li>
+        <li>log loss·Brier 점수와 보정 곡선을 계산하고, <strong>순위가 좋은데 확률이 나쁜</strong> 경우를 구별할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        1000명 중 10명이 걸린 병을 진단하는 model 이 있다.
+        <strong>"전부 음성"이라고만 답해도 정확도 99%</strong> 다 —
+        그런데 이 model 은 <strong>완전히 쓸모없다</strong>.
+        정확도가 무엇을 놓치는지가 이 절 전체의 출발점이다.
+      </p>
+      <p>
+        실수에는 <strong>두 종류</strong>가 있고 <strong>값이 다르다</strong>.
+        건강한 사람을 환자라고 하면 추가 검사를 하면 되지만,
+        환자를 놓치면 <strong>돌이킬 수 없다</strong>.
+        스팸 필터는 정반대다 — 스팸 몇 개가 들어오는 것보다
+        <strong>중요한 메일이 스팸함에 가는 것</strong>이 훨씬 나쁘다.
+      </p>
+      <p>
+        <span class="hl">그래서 <strong>"좋은 model"이라는 말은 성립하지 않는다</strong> —
+        <strong>어떤 실수를 얼마나 싫어하는가</strong>를 먼저 정해야 지표를 고를 수 있고,
+        그 결정은 <strong>기술이 아니라 도메인의 문제</strong>다.</span>
+      </p>
+
+      <figure class="widget" data-widget="threshold-cm">
+        <figcaption class="widget__bar">문턱 하나가 모든 지표를 움직인다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">문턱을 낮추면 <strong>recall 이 오르고 precision 이 떨어집니다</strong> — 언제나 맞바꿈입니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>어망의 그물코를 생각하면 됩니다. <strong>촘촘하게 짜면</strong> 물고기를 거의 다 잡지만(recall↑) 쓰레기도 함께 걸립니다(precision↓). <strong>성글게 짜면</strong> 건진 것은 대부분 물고기지만(precision↑) 많이 놓칩니다(recall↓).</p>
+        <p>어느 쪽이 옳은지는 <strong>물고기를 놓치는 비용과 쓰레기를 골라내는 비용</strong> 중 어느 것이 큰지에 달려 있습니다. 그물코 크기를 정하기 전에 <strong>"모든 크기에서 이 그물이 얼마나 좋은가"</strong>를 재는 것이 ROC·PR 곡선입니다.</p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-cm"></span>
+      <span class="anchor" id="c-acc"></span>
+      <h3>Confusion Matrix &amp; Accuracy</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \text{Accuracy}=\frac{TP+TN}{TP+TN+FP+FN} $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">혼동행렬은 <strong>실제 × 예측의 2×2 표</strong>이고,
+        <strong>이 절의 모든 분류 지표가 그 네 칸에서 나온다</strong>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>예측: 양성</th><th>예측: 음성</th><th>합</th></tr></thead>
+          <tbody>
+            <tr><td><strong>실제: 양성</strong></td><td><strong>TP</strong> (진짜양성)</td><td><strong>FN</strong> (놓침 · 2종 오류)</td><td>$P$</td></tr>
+            <tr><td><strong>실제: 음성</strong></td><td><strong>FP</strong> (거짓경보 · 1종 오류)</td><td><strong>TN</strong> (진짜음성)</td><td>$N$</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        정확도가 실패하는 조건은 명확하다 —
+        <strong>class 가 불균형하거나</strong>, <strong>두 실수의 비용이 다를 때</strong>다.
+        양성 비율이 $\pi$ 면 <strong>"전부 음성"의 정확도가 $1-\pi$</strong> 이므로,
+        <strong>정확도를 보고할 때는 반드시 이 기준선과 함께</strong> 봐야 한다.
+      </p>
+      <p>
+        불균형을 보정한 대안으로 <strong>균형 정확도</strong>(각 class 의 재현율 평균)와
+        <strong>Matthews 상관계수(MCC)</strong> 가 있다.
+        MCC 는 <strong>네 칸을 모두 쓰는 유일한 단일 지표</strong>에 가까워
+        <strong>불균형에서 가장 정직하다</strong>고 평가된다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \text{MCC}=\frac{TP\cdot TN-FP\cdot FN}{\sqrt{(TP{+}FP)(TP{+}FN)(TN{+}FP)(TN{+}FN)}}\ \in[-1,1] $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+
+      <span class="anchor" id="c-prec"></span>
+      <span class="anchor" id="c-rec"></span>
+      <span class="anchor" id="c-f1"></span>
+      <h3>Precision · Recall · F1 Score</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \text{Precision}=\frac{TP}{TP+FP}, \qquad \text{Recall}=\frac{TP}{TP+FN}, \qquad F_1=\frac{2PR}{P+R} $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl"><strong>precision 은 "양성이라 한 것 중 진짜 비율"</strong>(분모가 예측),
+        <strong>recall 은 "진짜 양성 중 찾아낸 비율"</strong>(분모가 실제)이며,
+        <strong>F1 은 둘의 조화평균</strong>이라 <strong>한쪽만 높으면 낮게 나온다</strong>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>지표</th><th>분모</th><th>답하는 질문</th><th>중요한 상황</th></tr></thead>
+          <tbody>
+            <tr><td>Precision</td><td><strong>예측 양성</strong></td><td>"경보를 믿어도 되나?"</td><td>스팸 필터·추천</td></tr>
+            <tr><td>Recall (민감도·TPR)</td><td><strong>실제 양성</strong></td><td>"놓친 것은 없나?"</td><td>암 진단·사기 탐지</td></tr>
+            <tr><td>특이도 (TNR)</td><td>실제 음성</td><td>"정상을 정상이라 하나?"</td><td>—</td></tr>
+            <tr><td>$F_1$</td><td>—</td><td>둘의 균형</td><td>기본값으로 쓸 만하다</td></tr>
+            <tr><td>$F_\beta$</td><td>—</td><td>$\beta>1$ 이면 recall 중시</td><td>$F_2$: 놓치면 큰일날 때</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>왜 산술평균이 아니라 조화평균인가</strong> —
+        precision 1.0, recall 0.01 인 model(딱 하나만 확실한 것을 골라 맞힘)의
+        산술평균은 <strong>0.505 로 그럴듯</strong>하지만 조화평균은 <strong>0.0198</strong> 이다.
+        <span class="hl">조화평균은 <strong>작은 쪽에 훨씬 가깝게</strong> 나오므로
+        <strong>한쪽을 희생해 다른 쪽을 올리는 속임수를 막는다</strong>(유도 1).</span>
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ F_\beta=(1+\beta^2)\frac{P\cdot R}{\beta^2 P+R} \qquad (\beta=1 \text{ 이 } F_1,\ \beta=2 \text{ 는 recall 을 } 2 \text{ 배 중시}) $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        다중분류에서는 <strong>평균 내는 방식</strong>이 결과를 크게 바꾼다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>방식</th><th>계산</th><th>성격</th></tr></thead>
+          <tbody>
+            <tr><td><strong>macro</strong></td><td>class 별 F1 의 <strong>단순평균</strong></td><td><strong>작은 class 도 동등</strong> — 불균형에 적합</td></tr>
+            <tr><td>micro</td><td>전체 TP·FP·FN 을 합쳐 계산</td><td>큰 class 가 지배 — <strong>다중분류에서 정확도와 같다</strong></td></tr>
+            <tr><td>weighted</td><td>class 크기로 가중평균</td><td>micro 와 macro 의 중간</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <span class="anchor" id="c-roc"></span>
+      <span class="anchor" id="c-rocauc"></span>
+      <h3>ROC Curve &amp; ROC-AUC</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \text{ROC}:\ \bigl(\text{FPR},\ \text{TPR}\bigr)=\Bigl(\frac{FP}{N},\ \frac{TP}{P}\Bigr) \text{ 를 모든 문턱에 대해} $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        <span class="hl">ROC 곡선은 <strong>문턱을 1 에서 0 으로 낮추며</strong> 그린 궤적이고,
+        <strong>AUC 는 "무작위로 뽑은 양성이 무작위 음성보다 높은 점수를 받을 확률"</strong> 이다(유도 2)<a class="cite" href="#ref-fawcett2006-roc" data-ref="fawcett2006-roc">1</a>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>AUC</th><th>뜻</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1.0</td><td>완벽한 순위 — 모든 양성이 모든 음성보다 위</td></tr>
+            <tr><td class="num">0.5</td><td><strong>무작위</strong> — 대각선</td></tr>
+            <tr><td class="num">&lt; 0.5</td><td><strong>뒤집으면 좋아진다</strong> (부호 오류를 의심)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>AUC 의 결정적 성질</strong>은 <strong>순위만 본다</strong>는 것이다 —
+        점수를 단조증가 함수로 아무리 바꿔도 <strong>AUC 는 그대로</strong>다.
+        <strong>class 비율이 바뀌어도 거의 변하지 않는다</strong>는 것도 같은 이유에서 나온다
+        (TPR 과 FPR 이 각각 자기 class 안에서만 정규화되므로).
+      </p>
+      <p>
+        그런데 <strong>바로 그것이 불균형에서 문제</strong>가 된다 —
+        음성이 10000개면 FPR 0.01 도 <strong>거짓경보 100건</strong>인데,
+        ROC 위에서는 <strong>왼쪽 끝 아주 좁은 구간</strong>으로 보여 눈에 띄지 않는다(오해 3).
+      </p>
+
+      <span class="anchor" id="c-pr"></span>
+      <span class="anchor" id="c-prauc"></span>
+      <h3>PR Curve &amp; PR-AUC</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \text{PR}:\ \bigl(\text{Recall},\ \text{Precision}\bigr), \qquad \text{기준선}=\pi=\frac{P}{P+N} \ (\textbf{양성 비율}) $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        <span class="hl">PR 곡선은 <strong>precision 의 분모에 FP 가 들어가</strong>
+        거짓경보의 절대 건수를 그대로 반영하므로,
+        <strong>불균형에서 ROC 보다 훨씬 민감</strong>하다<a class="cite" href="#ref-davis2006-pr-roc" data-ref="davis2006-pr-roc">2</a>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>ROC</th><th>PR</th></tr></thead>
+          <tbody>
+            <tr><td>축</td><td>FPR vs TPR</td><td>Recall vs Precision</td></tr>
+            <tr><td>TN 을 쓰나</td><td><strong>쓴다</strong> (FPR 의 분모)</td><td><strong>안 쓴다</strong></td></tr>
+            <tr><td>무작위 기준선</td><td>0.5 (고정)</td><td><strong>$\pi$ — data 마다 다르다</strong></td></tr>
+            <tr><td>class 비율 변화</td><td>거의 불변</td><td><strong>크게 변한다</strong></td></tr>
+            <tr><td>불균형에서</td><td><strong>지나치게 낙관적</strong></td><td>정직하다</td></tr>
+            <tr><td>보간</td><td>선형이 맞다</td><td><strong>선형 보간이 틀리다</strong> — AP 를 쓴다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>PR 곡선은 선형 보간하면 안 된다</strong>는 것이 실무의 함정이다 —
+        두 점 사이를 직선으로 이으면 <strong>실제로 도달 불가능한 성능</strong>을 그린다.
+        그래서 <strong>average precision(AP)</strong> 를 쓴다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \text{AP}=\sum_k\bigl(R_k-R_{k-1}\bigr)P_k \qquad (\textbf{계단 합} — \text{사다리꼴이 아니다}) $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        <strong>중요한 정리 하나</strong> — <strong>ROC 공간에서 한 곡선이 다른 곡선을 지배하면
+        PR 공간에서도 지배한다</strong>(그 역도 성립).
+        즉 <strong>어느 쪽이 나은지의 결론은 같지만, 차이의 크기가 완전히 다르게 보인다</strong>.
+      </p>
+
+      <figure class="widget" data-widget="roc-vs-pr">
+        <figcaption class="widget__bar">ROC vs PR — 불균형이 심해지면 갈린다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">양성 비율을 1% 로 낮추면 <strong>ROC-AUC 는 거의 그대로인데 PR-AUC 는 곤두박질칩니다</strong>.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-logloss"></span>
+      <h3>Log Loss</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \text{LogLoss}=-\frac1n\sum_i\bigl[y_i\log\hat{p}_i+(1-y_i)\log(1-\hat{p}_i)\bigr] $$</div>
+        <span class="eq__tag num">(8)</span>
+      </div>
+      <p>
+        <span class="hl">log loss 는 <strong>확률 자체</strong>를 평가하며,
+        <strong>틀린 쪽에 확신할수록 벌점이 발산</strong>한다 —
+        $\hat{p}=0$ 인데 $y=1$ 이면 <strong>손실이 무한대</strong>다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$\hat{p}$ (실제 $y=1$)</th><th>$-\log\hat{p}$</th><th>Brier $(y-\hat{p})^2$</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0.99</td><td class="num">0.0101</td><td class="num">0.0001</td></tr>
+            <tr><td class="num">0.5</td><td class="num">0.6931</td><td class="num">0.25</td></tr>
+            <tr><td class="num">0.1</td><td class="num">2.303</td><td class="num">0.81</td></tr>
+            <tr><td class="num">0.01</td><td class="num"><strong>4.605</strong></td><td class="num">0.98</td></tr>
+            <tr><td class="num">0.001</td><td class="num"><strong>6.908</strong></td><td class="num">0.998</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>Brier 점수는 유계</strong>($[0,1]$)인 반면 <strong>log loss 는 발산</strong>한다 —
+        그래서 log loss 는 <strong>극단적 확신의 실수 하나</strong>에 평균이 지배될 수 있고,
+        실무에서 <strong>$[\epsilon,\ 1-\epsilon]$ 로 잘라 쓰는</strong> 이유가 이것이다.
+      </p>
+      <p>
+        둘 다 <strong>엄격 적정 채점규칙(strictly proper scoring rule)</strong> 이다 —
+        <strong>참 확률을 그대로 말할 때 기댓값이 최소</strong>가 된다.
+        즉 <strong>거짓말할 유인이 없다</strong>(유도 3).
+      </p>
+
+      <span class="anchor" id="c-calib"></span>
+      <h3>Calibration 보정</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \text{완전 보정}:\ P\bigl(y=1\ \big|\ \hat{p}=q\bigr)=q \quad \forall q, \qquad \text{ECE}=\sum_b\frac{n_b}{n}\bigl|\text{acc}_b-\text{conf}_b\bigr| $$</div>
+        <span class="eq__tag num">(9)</span>
+      </div>
+      <p>
+        <span class="hl">보정이란 <strong>"70% 라고 말한 것 중 실제로 70% 가 양성"</strong> 인 상태다 —
+        <strong>순위가 완벽해도 보정이 엉망일 수 있고, 그 반대도 가능</strong>하다(오해 5).</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>보정 방법</th><th>형태</th><th>필요 data</th><th>특징</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Platt scaling</strong></td><td>sigmoid 두 parameter</td><td>적어도 됨</td><td>SVM 처럼 <strong>S자 왜곡</strong>에 적합</td></tr>
+            <tr><td><strong>Isotonic regression</strong></td><td>단조 계단 함수</td><td><strong>많이 필요</strong></td><td>유연하지만 <strong>과적합 위험</strong></td></tr>
+            <tr><td>Temperature scaling</td><td>logit 을 $T$ 로 나눔</td><td>아주 적어도 됨</td><td><strong>순위를 절대 안 바꾼다</strong> (신경망 표준)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>보정은 반드시 별도의 hold-out 에서</strong> 해야 한다 —
+        학습에 쓴 data 로 보정하면 <strong>과신을 그대로 학습</strong>해 아무 효과가 없다.
+        sklearn 의 <code>CalibratedClassifierCV</code> 가 교차검증으로 이를 처리한다.
+      </p>
+      <p>
+        model 별 전형적 왜곡도 알려져 있다 —
+        <strong>naive Bayes 는 0/1 로 극단화</strong>(<a href="5.9-probabilistic-generative-models.html">5.9</a>),
+        <strong>SVM 은 S자</strong>, <strong>random forest 는 평균 때문에 중앙으로 수축</strong>,
+        <strong>부스팅과 깊은 신경망은 과신</strong>하는 경향이 있다.
+        <strong>logistic regression 은 원래 log loss 를 최소화하므로 대체로 잘 보정</strong>되어 있다.
+      </p>
+
+      <figure class="widget" data-widget="calib-curve">
+        <figcaption class="widget__bar">Calibration — 말한 확률과 실제 비율</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">보정을 해도 <strong>AUC 는 거의 그대로</strong>입니다 — 순위를 안 바꾸기 때문입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-reg"></span>
+      <h3>Regression Metrics 회귀 평가 지표</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \text{MAE}=\frac1n\sum|y_i-\hat{y}_i|, \quad \text{RMSE}=\sqrt{\frac1n\sum(y_i-\hat{y}_i)^2}, \quad R^2=1-\frac{\sum(y_i-\hat{y}_i)^2}{\sum(y_i-\bar{y})^2} $$</div>
+        <span class="eq__tag num">(10)</span>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>지표</th><th>단위</th><th>최적 예측</th><th>이상치</th><th>주의</th></tr></thead>
+          <tbody>
+            <tr><td>MAE</td><td>$y$ 와 같다</td><td><strong>중앙값</strong></td><td>강하다</td><td>—</td></tr>
+            <tr><td><strong>RMSE</strong></td><td>$y$ 와 같다</td><td><strong>평균</strong></td><td><strong>취약</strong></td><td>큰 오차를 강하게 벌한다</td></tr>
+            <tr><td>MSE</td><td>$y^2$</td><td>평균</td><td>취약</td><td><strong>단위가 제곱</strong>이라 해석이 어렵다</td></tr>
+            <tr><td>$R^2$</td><td>없음</td><td>—</td><td>취약</td><td><strong>음수가 될 수 있다</strong></td></tr>
+            <tr><td>MAPE</td><td>%</td><td>—</td><td>—</td><td><strong>$y\approx0$ 이면 발산</strong> · 과소예측을 편애</td></tr>
+            <tr><td>Huber</td><td>$y$ 와 같다</td><td>—</td><td>강하다</td><td>MAE 와 MSE 의 절충 (<a href="5.3-linear-regression.html">5.3</a>)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <span class="hl"><strong>RMSE $\ge$ MAE</strong> 가 항상 성립하고,
+        <strong>둘의 차이가 크면 오차의 분포가 한쪽으로 치우쳤다는 신호</strong>다 —
+        큰 오차 몇 개가 RMSE 를 끌어올리기 때문이다(유도 4).</span>
+      </p>
+      <p>
+        <strong>$R^2$ 가 음수</strong>가 되는 것이 흔한 혼란이다 —
+        train 에서는 절편이 있으면 반드시 $\ge0$ 이지만,
+        <strong>test 에서는 "train 평균으로 찍는 것보다 못한" 경우</strong>가 얼마든지 있고 그때 음수가 된다.
+        <strong>$R^2<0$ 은 버그가 아니라 심각한 과적합의 신호</strong>다.
+      </p>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>상황별로 무엇을 봐야 하는지 정리한다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>상황</th><th>주 지표</th><th>함께 볼 것</th><th>피할 것</th></tr></thead>
+          <tbody>
+            <tr><td>균형 잡힌 분류</td><td>정확도 · F1</td><td>혼동행렬</td><td>—</td></tr>
+            <tr><td><strong>심한 불균형</strong></td><td><strong>PR-AUC · MCC</strong></td><td>Precision@k</td><td><strong>정확도 · ROC-AUC 단독</strong></td></tr>
+            <tr><td>문턱 미정</td><td>ROC-AUC · PR-AUC</td><td>곡선 자체</td><td>고정 문턱 지표</td></tr>
+            <tr><td><strong>확률이 필요</strong></td><td><strong>log loss · Brier</strong></td><td>보정 곡선 · ECE</td><td>AUC 단독</td></tr>
+            <tr><td>비용이 비대칭</td><td>기대비용</td><td>$F_\beta$</td><td>F1</td></tr>
+            <tr><td>회귀 (이상치 있음)</td><td>MAE · Huber</td><td>잔차 그림</td><td>RMSE 단독</td></tr>
+            <tr><td>회귀 (일반)</td><td>RMSE · $R^2$</td><td>잔차 그림</td><td>MAPE ($y\approx0$)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <span class="hl"><strong>어떤 단일 지표도 충분하지 않다</strong> —
+        혼동행렬을 직접 보고, 곡선을 그리고, <strong>잔차나 오분류 사례를 눈으로 확인</strong>하는 것이
+        지표 하나를 소수점 넷째 자리까지 비교하는 것보다 언제나 낫다.</span>
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>TP · TN</td><td>true positive · true negative</td><td>맞게 맞힌 양성 · 음성</td><td>정수</td><td>$\ge0$</td></tr>
+            <tr><td>FP</td><td>false positive · 1종 오류</td><td><strong>거짓경보</strong></td><td>정수</td><td>$\ge0$</td></tr>
+            <tr><td>FN</td><td>false negative · 2종 오류</td><td><strong>놓침</strong></td><td>정수</td><td>$\ge0$</td></tr>
+            <tr><td>$P$ · $N$</td><td>—</td><td>실제 양성 수 · 음성 수</td><td>정수</td><td>$P=TP{+}FN$</td></tr>
+            <tr><td>$\pi$</td><td>pi 파이 · prevalence</td><td><strong>양성 비율</strong> — PR 기준선</td><td>scalar</td><td>$[0,1]$</td></tr>
+            <tr><td>TPR</td><td>true positive rate · 재현율 · 민감도</td><td>$TP/P$</td><td>scalar</td><td>$[0,1]$</td></tr>
+            <tr><td>FPR</td><td>false positive rate</td><td>$FP/N=1-$특이도</td><td>scalar</td><td>$[0,1]$</td></tr>
+            <tr><td>AUC</td><td>area under the curve</td><td><strong>양성이 음성보다 높을 확률</strong></td><td>scalar</td><td>$[0,1]$</td></tr>
+            <tr><td>AP</td><td>average precision</td><td>PR 곡선의 계단 합</td><td>scalar</td><td>$[\pi,1]$</td></tr>
+            <tr><td>$\hat{p}_i$</td><td>p hat</td><td>예측 확률</td><td>scalar</td><td>$[0,1]$</td></tr>
+            <tr><td>ECE</td><td>expected calibration error</td><td>구간별 가중 보정 오차</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>MCC</td><td>Matthews correlation coefficient</td><td>네 칸을 모두 쓰는 지표</td><td>scalar</td><td>$[-1,1]$</td></tr>
+            <tr><td>Brier</td><td>브라이어 점수</td><td>$\frac1n\sum(y_i-\hat{p}_i)^2$</td><td>scalar</td><td>$[0,1]$</td></tr>
+            <tr><td>$R^2$</td><td>R squared · 결정계수</td><td>$1-\text{SSE}/\text{SST}$</td><td>scalar</td><td><strong>$(-\infty,1]$</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">같은 것을 다르게 부른다</span>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>이 사이트</th><th>같은 뜻으로 쓰이는 말</th><th>주의할 점</th></tr></thead>
+            <tbody>
+              <tr><td>Recall</td><td>민감도, sensitivity, TPR, hit rate</td><td>의학·정보검색·통계가 <strong>다른 이름</strong>을 쓴다</td></tr>
+              <tr><td>Precision</td><td>양성 예측도(PPV)</td><td>정밀도 ≠ 정확도(accuracy)</td></tr>
+              <tr><td>특이도</td><td>specificity, TNR, $1-$FPR</td><td>ROC 의 x축은 <strong>$1-$특이도</strong></td></tr>
+              <tr><td>PR-AUC</td><td>average precision(AP), AUPRC</td><td><strong>사다리꼴 적분과 AP 가 다른 값</strong>을 준다</td></tr>
+              <tr><td>Log loss</td><td>cross-entropy, 로지스틱 손실</td><td><a href="../ch04/4.7-information-theory.html">4.7</a>의 교차 엔트로피와 같다</td></tr>
+              <tr><td>보정</td><td>calibration, reliability</td><td>보정 곡선 = reliability diagram</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — F1 이 조화평균인 이유</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{1}{F_1}=\frac12\Bigl(\frac1P+\frac1R\Bigr) \ \Rightarrow\ F_1=\frac{2PR}{P+R} $$</div>
+          <div class="derive__why">역수의 평균의 역수 = <strong>조화평균</strong> — 식 (3)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P=1,\ R=0.01:\ \text{산술}=0.505,\quad \text{기하}=0.1,\quad F_1=\frac{2(0.01)}{1.01}=0.0198 $$</div>
+          <div class="derive__why"><strong>조화평균이 가장 작은 쪽에 가깝다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{일반적으로}\ \min\le H\le G\le A\le\max $$</div>
+          <div class="derive__why">조화 ≤ 기하 ≤ 산술 — 부등식의 순서</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ R\to0 \Rightarrow F_1\to0 \qquad P\to0 \Rightarrow F_1\to0 $$</div>
+          <div class="derive__why"><strong>한쪽이 0 이면 무조건 0</strong> — 속임수를 막는다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ F_1=\frac{2TP}{2TP+FP+FN} $$</div>
+          <div class="derive__why">대입해 정리하면 <strong>혼동행렬로 직접 표현</strong>된다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \textbf{TN 이 들어가지 않는다} $$</div>
+          <div class="derive__why"><strong>음성을 잘 맞히는 것에는 점수를 안 준다</strong> — 불균형에서 유용한 이유이자 한계</div>
+        </div>
+      </div>
+
+      <h3>유도 2 — AUC = "양성이 음성보다 높을 확률"</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{AUC}=\int_0^1 \text{TPR}\ d(\text{FPR}) $$</div>
+          <div class="derive__why">곡선 아래 넓이의 정의</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{문턱 } t:\ \text{TPR}(t)=P(s>t\mid y=1),\quad \text{FPR}(t)=P(s>t\mid y=0) $$</div>
+          <div class="derive__why">$s$ 는 model 이 준 점수</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{AUC}=\int P(s^+>t)\,dP(s^-\le t)=P\bigl(s^+>s^-\bigr) $$</div>
+          <div class="derive__why">치환하면 <strong>두 확률변수의 비교 확률</strong>이 된다 ∎</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{AUC}=\frac{1}{PN}\sum_{i\in+}\sum_{j\in-}\Bigl[\mathbb{1}(s_i>s_j)+\tfrac12\mathbb{1}(s_i=s_j)\Bigr] $$</div>
+          <div class="derive__why">표본판 — <strong>모든 양성-음성 쌍</strong>을 비교해 세면 된다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ =\frac{U}{PN},\qquad U=\text{Mann-Whitney } U \text{ 통계량} $$</div>
+          <div class="derive__why"><a href="../ch04/4.8-hypothesis-testing.html">4.8</a>의 순위합 검정과 <strong>정확히 같은 양</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{점수를 단조증가 변환해도 AUC 불변} $$</div>
+          <div class="derive__why">순위만 보기 때문 — <strong>보정이 나빠도 AUC 는 완벽할 수 있다</strong></div>
+        </div>
+      </div>
+
+      <h3>유도 3 — 불균형이 PR 만 무너뜨리는 이유</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Precision}=\frac{TP}{TP+FP}=\frac{\text{TPR}\cdot P}{\text{TPR}\cdot P+\text{FPR}\cdot N} $$</div>
+          <div class="derive__why">$TP=\text{TPR}\cdot P$, $FP=\text{FPR}\cdot N$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ =\frac{\text{TPR}}{\text{TPR}+\text{FPR}\cdot(N/P)}=\frac{\text{TPR}}{\text{TPR}+\text{FPR}\cdot\frac{1-\pi}{\pi}} $$</div>
+          <div class="derive__why">$N/P=(1-\pi)/\pi$ 로 <strong>class 비율이 명시적으로 등장</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \pi=0.5:\ \text{TPR}=0.9,\ \text{FPR}=0.1 \Rightarrow \frac{0.9}{0.9+0.1}=0.9 $$</div>
+          <div class="derive__why">균형 잡혔을 때</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \pi=0.01:\ \frac{0.9}{0.9+0.1(99)}=\frac{0.9}{0.9+9.9}=\frac{0.9}{10.8}=0.0833 $$</div>
+          <div class="derive__why"><strong>같은 TPR·FPR 인데 precision 이 0.9 → 0.083</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{반면 ROC 는 } (\text{FPR},\text{TPR})=(0.1,\ 0.9) \text{ 로 } \textbf{완전히 동일} $$</div>
+          <div class="derive__why">TPR·FPR 둘 다 <strong>자기 class 안에서만 정규화</strong>된다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{ROC 는 } \pi \text{ 에 불변,\ PR 은 } \pi \text{ 에 민감} \ \blacksquare $$</div>
+          <div class="derive__why"><strong>ROC 의 장점이 곧 불균형에서의 함정</strong> — 오해 3</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{PR 기준선}=\pi \ (\text{무작위 예측의 precision}) $$</div>
+          <div class="derive__why">$\pi=0.01$ 이면 PR-AUC 0.3 도 <strong>기준선의 30배</strong>라 훌륭한 것이다</div>
+        </div>
+      </div>
+
+      <h3>유도 4 — RMSE ≥ MAE 이고 그 비율이 알려 주는 것</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{RMSE}^2=\frac1n\sum e_i^2=E[e^2],\qquad \text{MAE}=E[|e|] $$</div>
+          <div class="derive__why">$e_i=y_i-\hat{y}_i$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ E[e^2]-\bigl(E[|e|]\bigr)^2=\mathrm{Var}(|e|)\ \ge\ 0 $$</div>
+          <div class="derive__why"><a href="../ch04/4.3-expectation-variance.html">4.3</a>의 $\mathrm{Var}(X)=E[X^2]-(E[X])^2$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{RMSE}\ \ge\ \text{MAE},\quad \text{등호} \iff \textbf{모든 오차의 크기가 같다} $$</div>
+          <div class="derive__why">분산이 0 일 때만 ∎</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{RMSE}=\sqrt{\text{MAE}^2+\mathrm{Var}(|e|)} $$</div>
+          <div class="derive__why"><strong>두 지표의 차이가 오차 크기의 분산</strong>을 말해 준다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{오차가 전부 } 2:\ \text{MAE}=2,\ \text{RMSE}=2 \ \Rightarrow\ \text{비율}=1 $$</div>
+          <div class="derive__why">고른 오차</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 99 \text{ 개가 } 0,\ 1 \text{ 개가 } 20:\ \text{MAE}=0.2,\ \text{RMSE}=\sqrt{4}=2 \ \Rightarrow\ \text{비율}=10 $$</div>
+          <div class="derive__why"><strong>비율이 크면 큰 오차 몇 개가 지배</strong>한다는 신호 — 이상치를 찾아봐야 한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{정규분포 오차면 } \frac{\text{RMSE}}{\text{MAE}}=\sqrt{\frac{\pi}{2}}=1.2533 $$</div>
+          <div class="derive__why">$E|e|=\sigma\sqrt{2/\pi}$ — <strong>1.25 근처면 정상적인 잡음</strong></div>
+        </div>
+      </div>
+
+      <details>
+        <summary>엄격 적정 채점규칙 — 왜 log loss 와 Brier 만 쓰는가</summary>
+        <p>
+          "확률을 평가하는 규칙"에는 위험한 함정이 있다.
+          어떤 규칙은 <strong>참 확률이 아닌 값을 말하는 것이 유리</strong>하게 만든다.
+        </p>
+        <p>
+          예로 <strong>절대오차 $|y-\hat{p}|$</strong> 를 쓴다고 하자.
+          참 확률이 $0.7$ 일 때 $\hat{p}$ 의 기대손실은
+          $0.7(1-\hat{p})+0.3\hat{p}=0.7-0.4\hat{p}$ 로 <strong>$\hat{p}$ 에 대해 감소</strong>한다 —
+          $\hat{p}=1$ 이라 <strong>거짓말하는 것이 최적</strong>이다.
+        </p>
+        <p>
+          Brier 점수는 다르다. 기대손실
+          $q(1-\hat{p})^2+(1-q)\hat{p}^2$ 를 미분하면
+          $-2q(1-\hat{p})+2(1-q)\hat{p}=0 \Rightarrow \hat{p}=q$ —
+          <strong>참 확률을 말할 때 정확히 최소</strong>다.
+        </p>
+        <p>
+          log loss 도 마찬가지로 $-q\log\hat{p}-(1-q)\log(1-\hat{p})$ 를 미분하면
+          $\hat{p}=q$ 에서 최소다.
+          이것이 <strong>엄격 적정(strictly proper)</strong> 의 뜻이고,
+          <a href="../ch04/4.7-information-theory.html">4.7</a>에서 교차 엔트로피가
+          $\mathrm{KL}(q\|\hat{p})$ 만큼 참 entropy 보다 크다는 것과 같은 이야기다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① 혼동행렬에서 모든 지표를 뽑는다</h3>
+      <p>1000명 중 실제 환자 20명. model 이 30명을 양성이라 했고 그중 15명이 진짜다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>예측 양성</th><th>예측 음성</th><th>합</th></tr></thead>
+          <tbody>
+            <tr><td><strong>실제 양성</strong></td><td class="num">15 (TP)</td><td class="num">5 (FN)</td><td class="num">20</td></tr>
+            <tr><td><strong>실제 음성</strong></td><td class="num">15 (FP)</td><td class="num">965 (TN)</td><td class="num">980</td></tr>
+            <tr><td><strong>합</strong></td><td class="num">30</td><td class="num">970</td><td class="num">1000</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Accuracy}=\frac{15+965}{1000}=\frac{980}{1000}=0.98 $$</div>
+          <div class="derive__why">식 (1). <strong>훌륭해 보인다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{“전부 음성”의 정확도}=\frac{980}{1000}=0.98 \quad \textbf{똑같다} $$</div>
+          <div class="derive__why"><strong>정확도로는 아무 정보도 못 얻는다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Precision}=\frac{15}{15+15}=0.5,\qquad \text{Recall}=\frac{15}{15+5}=0.75 $$</div>
+          <div class="derive__why">식 (3). <strong>경보 절반이 헛것이고, 환자 넷 중 셋을 찾았다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ F_1=\frac{2(0.5)(0.75)}{0.5+0.75}=\frac{0.75}{1.25}=0.6 $$</div>
+          <div class="derive__why">검산: $\frac{2(15)}{2(15)+15+5}=\frac{30}{50}=0.6$ ✓ (유도 1)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ F_2=\frac{5(0.5)(0.75)}{4(0.5)+0.75}=\frac{1.875}{2.75}=0.6818 $$</div>
+          <div class="derive__why">식 (4). <strong>recall 을 중시하니 점수가 오른다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{균형 정확도}=\frac{0.75+965/980}{2}=\frac{0.75+0.9847}{2}=0.8673 $$</div>
+          <div class="derive__why">0.98 보다 <strong>훨씬 정직하다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{MCC}=\frac{15(965)-15(5)}{\sqrt{30\cdot20\cdot980\cdot970}} =\frac{14475-75}{\sqrt{570{,}360{,}000}} $$</div>
+          <div class="derive__why">식 (2)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ =\frac{14400}{23882.2}=0.6030 $$</div>
+          <div class="derive__why"><strong>F1(0.6)과 비슷하지만 TN 까지 고려한 값</strong></div>
+        </div>
+      </div>
+
+      <h3>② ROC-AUC 를 쌍 비교로 손계산</h3>
+      <p>양성 3개의 점수 $(0.9,\ 0.6,\ 0.4)$, 음성 4개 $(0.7,\ 0.5,\ 0.3,\ 0.1)$.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{비교할 쌍}=3\times4=12 \text{ 개} $$</div>
+          <div class="derive__why">유도 2 의 표본판</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ s^+=0.9:\ 0.7,0.5,0.3,0.1 \text{ 모두 이김} \ \Rightarrow\ 4 $$</div>
+          <div class="derive__why"></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ s^+=0.6:\ 0.7 \text{ 에 짐},\ 0.5,0.3,0.1 \text{ 이김} \ \Rightarrow\ 3 $$</div>
+          <div class="derive__why"></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ s^+=0.4:\ 0.7,0.5 \text{ 에 짐},\ 0.3,0.1 \text{ 이김} \ \Rightarrow\ 2 $$</div>
+          <div class="derive__why"></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{AUC}=\frac{4+3+2}{12}=\frac{9}{12}=0.75 $$</div>
+          <div class="derive__why"><strong>양성이 음성보다 높을 확률이 75%</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{점수를 } \sqrt{\cdot} \text{ 로 바꿔도}:\ (0.949,0.775,0.632)\ \text{vs}\ (0.837,0.707,0.548,0.316) $$</div>
+          <div class="derive__why">단조 변환</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{순위가 그대로} \Rightarrow \text{AUC}=0.75 \ \textbf{불변} $$</div>
+          <div class="derive__why">유도 2 의 마지막 줄 ✓ — <strong>보정과 무관하다</strong></div>
+        </div>
+      </div>
+
+      <h3>③ 같은 model, 불균형만 바꾼다</h3>
+      <p>TPR $=0.9$, FPR $=0.1$ 로 고정하고 $\pi$ 만 바꾼다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$\pi$</th><th>$P$ / $N$ (총 10000)</th><th>TP</th><th>FP</th><th>Precision</th><th>ROC 점</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0.5</td><td>5000 / 5000</td><td class="num">4500</td><td class="num">500</td><td class="num"><strong>0.900</strong></td><td>(0.1, 0.9)</td></tr>
+            <tr><td class="num">0.1</td><td>1000 / 9000</td><td class="num">900</td><td class="num">900</td><td class="num">0.500</td><td>(0.1, 0.9)</td></tr>
+            <tr><td class="num">0.01</td><td>100 / 9900</td><td class="num">90</td><td class="num">990</td><td class="num"><strong>0.083</strong></td><td>(0.1, 0.9)</td></tr>
+            <tr><td class="num">0.001</td><td>10 / 9990</td><td class="num">9</td><td class="num">999</td><td class="num"><strong>0.009</strong></td><td>(0.1, 0.9)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \pi=0.01:\ TP=0.9(100)=90,\quad FP=0.1(9900)=990 $$</div>
+          <div class="derive__why"></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Precision}=\frac{90}{90+990}=\frac{90}{1080}=0.0833 $$</div>
+          <div class="derive__why">유도 3 의 공식으로 검산: $\frac{0.9}{0.9+0.1(99)}=0.0833$ ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \pi=0.001:\ \frac{9}{9+999}=\frac{9}{1008}=0.00893 $$</div>
+          <div class="derive__why"><strong>경보 112건 중 1건만 진짜</strong> — 실무에서 못 쓴다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{그런데 ROC 점은 } (0.1,\ 0.9) \text{ 로 } \textbf{네 경우 모두 동일} $$</div>
+          <div class="derive__why"><strong>ROC-AUC 만 보면 이 파국을 전혀 못 본다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \pi=0.001 \text{ 에서 PR 기준선}=0.001 \ \Rightarrow\ 0.00893 \text{ 은 기준선의 } 8.9 \text{ 배} $$</div>
+          <div class="derive__why"><strong>PR 은 항상 기준선 $\pi$ 와 함께</strong> 봐야 한다</div>
+        </div>
+      </div>
+
+      <h3>④ Log loss 와 보정 — 순위는 같은데 확률이 다르다</h3>
+      <p>참값 $y=(1,\ 1,\ 0,\ 0)$. 두 model 의 확률이 순위는 같고 값만 다르다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>model</th><th>$\hat{p}$</th><th>AUC</th><th>Log loss</th><th>Brier</th></tr></thead>
+          <tbody>
+            <tr><td>A (온건)</td><td>0.8, 0.6, 0.4, 0.2</td><td class="num">1.0</td><td class="num"><strong>0.3670</strong></td><td class="num"><strong>0.1000</strong></td></tr>
+            <tr><td>B (과신)</td><td>0.99, 0.98, 0.02, 0.01</td><td class="num">1.0</td><td class="num">0.0151</td><td class="num">0.0003</td></tr>
+            <tr><td>C (뒤집힌 확신)</td><td>0.6, 0.55, 0.45, 0.4</td><td class="num">1.0</td><td class="num">0.5543</td><td class="num">0.1813</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{A}:\ -\tfrac14\bigl[\ln0.8+\ln0.6+\ln0.6+\ln0.8\bigr] $$</div>
+          <div class="derive__why">$y=0$ 인 곳은 $\ln(1-\hat{p})$ — $1-0.4=0.6$, $1-0.2=0.8$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ =-\tfrac14\bigl[2(-0.2231)+2(-0.5108)\bigr]=\tfrac14(1.4679)=0.36699 $$</div>
+          <div class="derive__why">$\ln0.8=-0.22314$, $\ln0.6=-0.51083$ → 합 $1.46795$ → <strong>0.36699</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Brier(A)}=\tfrac14\bigl[(1{-}0.8)^2+(1{-}0.6)^2+0.4^2+0.2^2\bigr]=\tfrac{0.04+0.16+0.16+0.04}{4}=0.10 $$</div>
+          <div class="derive__why"></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{세 model 의 AUC 가 모두 } 1.0 \ (\text{순위가 완벽히 같다}) $$</div>
+          <div class="derive__why"><strong>AUC 로는 셋을 구별하지 못한다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{B 가 log loss 최소} \ \Rightarrow\ \text{여기서는 과신이 이득} $$</div>
+          <div class="derive__why"><strong>실제로 맞혔기 때문</strong>이다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{B 가 하나만 틀린다면}:\ \hat{p}=0.01,\ y=1 \Rightarrow -\ln0.01=4.605 $$</div>
+          <div class="derive__why"><strong>그 한 건이 평균을 1.16 로 밀어올린다</strong> — A(0.367)보다 훨씬 나쁘다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \textbf{과신은 맞으면 이득, 틀리면 파국} $$</div>
+          <div class="derive__why">log loss 가 <strong>정직한 확률을 요구</strong>하는 방식 — 접힌 상자</div>
+        </div>
+      </div>
+
+      <figure class="widget" data-widget="metric-table">
+        <figcaption class="widget__bar">혼동행렬을 직접 만들어 보기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">TN 을 아무리 늘려도 <strong>F1 은 변하지 않습니다</strong> — 유도 1 의 마지막 줄입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>문턱</strong> · <strong>ROC vs PR</strong> ·
+        <strong>보정</strong> · <strong>혼동행렬</strong> — 에 이어,
+        아래에서 <strong>회귀 지표들이 이상치에 어떻게 반응하는지</strong>를 본다.
+      </p>
+
+      <figure class="widget" data-widget="reg-metrics">
+        <figcaption class="widget__bar">Regression Metrics — 이상치 하나가 무엇을 바꾸나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">이상치를 키우면 <strong>RMSE 만 급등</strong>하고 MAE 는 완만합니다. 비율이 곧 경고 신호입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"정확도 98% 면 좋은 model 이다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>기준선을 봐야</strong> 안다.
+          예제 ①에서 정확도 0.98 인 model 의 <strong>"전부 음성" 기준선도 정확히 0.98</strong> 이었다 —
+          <strong>아무런 가치를 더하지 못한 것</strong>이다.
+          정확도는 <strong>class 가 균형 잡히고 두 실수의 비용이 같을 때만</strong> 의미가 있다.
+          불균형이면 <strong>PR-AUC·MCC·균형 정확도</strong> 를 쓰고,
+          정확도를 보고할 때는 <strong>반드시 $1-\pi$ 와 나란히</strong> 적어야 한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"F1 이 높으면 좋은 model 이다."</p>
+        <p>
+          <strong>실제로는</strong> F1 은 <strong>precision 과 recall 을 같은 무게로</strong> 본다는
+          <strong>임의의 선택</strong>을 담고 있다.
+          암 진단에서 놓침(FN)이 거짓경보(FP)보다 <strong>100배 비싸다면</strong>
+          F1 로 고른 문턱은 <strong>완전히 틀린 지점</strong>이다 —
+          $F_2$ 나 $F_{10}$, 혹은 <strong>기대비용 $c_{FP}\cdot FP+c_{FN}\cdot FN$ 을 직접 최소화</strong>해야 한다.
+          또 F1 은 유도 1 에서 봤듯 <strong>TN 을 전혀 쓰지 않아</strong>
+          음성을 잘 맞히는 능력이 점수에 반영되지 않는다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"ROC-AUC 가 0.95 니 실무에 쓸 수 있다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>양성 비율이 0.1% 라면 쓸 수 없을 가능성이 높다</strong>.
+          예제 ③에서 TPR 0.9 / FPR 0.1 인 <strong>같은 동작점</strong>이
+          $\pi=0.5$ 에서는 precision 0.9, $\pi=0.001$ 에서는 <strong>0.009</strong> 였다 —
+          <strong>ROC 위에서는 정확히 같은 점</strong>인데도 그렇다(유도 3).
+          <strong>ROC 가 $\pi$ 에 불변인 것이 장점이자 함정</strong>이다.
+          불균형에서는 <strong>PR 곡선을 $\pi$ 기준선과 함께</strong> 보거나,
+          <strong>Precision@k</strong> 처럼 <strong>실제 검토 가능 건수</strong>에 맞춘 지표를 써야 한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"$R^2$ 가 음수로 나왔으니 계산이 잘못됐다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>정상적으로 일어날 수 있다</strong>.
+          $R^2=1-\text{SSE}/\text{SST}$ 인데,
+          <strong>test 에서는 model 이 "train 평균으로 찍는 것"보다 못할 수 있고</strong>
+          그러면 $\text{SSE}>\text{SST}$ 가 되어 음수다.
+          <strong>$R^2<0$ 은 버그가 아니라 심각한 과적합이나 분포 이동의 신호</strong>다.
+          train 에서는 절편이 있는 선형 model 이면 반드시 $\ge0$ 이므로,
+          <strong>train 에서 음수가 나왔다면</strong> 그때는 정말 구현을 의심해야 한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"AUC 가 높으면 예측 확률도 믿을 만하다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>둘은 서로 독립적인 성질</strong>이다.
+          AUC 는 <strong>순위만</strong> 보므로(유도 2)
+          모든 확률을 <strong>0.5 근처로 눌러도, 0/1 로 극단화해도 그대로</strong>다 —
+          예제 ④의 세 model 이 <strong>AUC 는 전부 1.0 인데 log loss 는 40배 차이</strong>였다.
+          <strong>확률을 그대로 쓰는 곳</strong>(기대손실 계산, 위험도 표시, 다른 model 과 결합)이라면
+          <strong>log loss·Brier·보정 곡선</strong>을 반드시 함께 봐야 하고,
+          필요하면 <strong>hold-out 에서 별도 보정</strong>해야 한다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–④ 를 검산한다.</p>
+      <details>
+        <summary>NumPy — 지표 · AUC 쌍 비교 · 불균형 · log loss (22줄)</summary>
+<pre><code>import numpy as np
+
+TP, FN, FP, TN = 15, 5, 15, 965                                  # 예제 ①
+prec, rec = TP / (TP + FP), TP / (TP + FN)
+f1 = 2 * prec * rec / (prec + rec)
+f2 = 5 * prec * rec / (4 * prec + rec)
+mcc = (TP*TN - FP*FN) / np.sqrt((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))
+print(round((TP+TN)/1000, 4), round(prec, 4), round(rec, 4), round(f1, 4),
+      round(f2, 4), round(mcc, 4))          # 0.98 0.5 0.75 0.6 0.6818 0.603
+print(round((rec + TN/(TN+FP)) / 2, 4))     # 균형 정확도 0.8673
+
+pos = np.array([0.9, 0.6, 0.4]); neg = np.array([0.7, 0.5, 0.3, 0.1])   # 예제 ②
+auc = ((pos[:, None] &gt; neg).sum() + 0.5 * (pos[:, None] == neg).sum()) / (len(pos)*len(neg))
+print(auc, ((np.sqrt(pos)[:, None] &gt; np.sqrt(neg)).sum()) / 12)          # 0.75  0.75
+
+for pi in [0.5, 0.1, 0.01, 0.001]:                               # 예제 ③
+    P, N = pi * 10000, (1 - pi) * 10000
+    tp, fp = 0.9 * P, 0.1 * N
+    print(pi, int(tp), int(fp), round(tp / (tp + fp), 4))        # ROC 점은 언제나 (0.1, 0.9)
+
+y = np.array([1., 1, 0, 0])                                      # 예제 ④
+for p in [[.8,.6,.4,.2], [.99,.98,.02,.01], [.6,.55,.45,.4]]:
+    p = np.array(p)
+    print(np.round(p, 2), round(-np.mean(y*np.log(p) + (1-y)*np.log(1-p)), 4),
+          round(np.mean((y - p)**2), 4))    # AUC 는 셋 다 1.0
+</code></pre>
+        <p>
+          <small>
+            두 번째 블록에서 <strong>점수에 제곱근을 씌워도 AUC 가 0.75 로 그대로</strong>다 — 유도 2 의 순위 불변성이다.
+            세 번째 블록은 <strong>ROC 점이 (0.1, 0.9) 로 고정인데 precision 이 0.9 → 0.009 로 무너지는</strong> 것을 보인다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            TP=8, FP=2, FN=12, TN=78 일 때 F1 은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 0.533</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.86</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0.6</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $P=\frac{8}{10}=0.8$, $R=\frac{8}{20}=0.4$ →
+            $F_1=\frac{2(0.8)(0.4)}{1.2}=\frac{0.64}{1.2}=0.533$.
+            검산: $\frac{2(8)}{16+2+12}=\frac{16}{30}=0.533$ ✓
+            <strong>나</strong>는 정확도($86/100$)로, <strong>TN 이 78개나 되어 부풀려진</strong> 값이다.
+            <strong>다</strong>는 산술평균 $\frac{0.8+0.4}{2}$ 로, 조화평균보다 <strong>언제나 크다</strong>.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            양성 2개 $(0.8,\ 0.3)$, 음성 2개 $(0.6,\ 0.2)$ 의 ROC-AUC 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>0.75</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.5</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>1.0</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            쌍 4개를 센다 — $0.8$ 은 $0.6,0.2$ 둘 다 이기고(2),
+            $0.3$ 은 $0.2$ 만 이긴다(1) → $\frac{3}{4}=0.75$ (유도 2).
+            <strong>다</strong>가 되려면 <strong>모든 양성이 모든 음성보다 위</strong>여야 하는데
+            $0.3<0.6$ 이라 그렇지 않다.
+            <strong>AUC 는 점수의 크기가 아니라 순서만</strong> 본다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\pi=0.02$, TPR=0.8, FPR=0.05 일 때 precision 은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 0.246</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.8</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>약 0.94</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\frac{0.8}{0.8+0.05\cdot\frac{0.98}{0.02}}=\frac{0.8}{0.8+2.45}=\frac{0.8}{3.25}=0.246$ (유도 3).
+            <strong>FPR 이 0.05 로 작아 보여도</strong> 음성이 49배 많아
+            <strong>거짓경보가 진짜의 3배</strong>가 된다.
+            그래도 <strong>기준선 $\pi=0.02$ 의 12배</strong>라 나쁜 model 은 아니다 —
+            <strong>PR 값은 항상 $\pi$ 와 비교</strong>해야 한다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            model 의 모든 예측 확률에 $\hat{p}\to\hat{p}^2$ 를 적용했다. 무엇이 바뀌나?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>AUC 는 그대로, log loss 와 보정은 나빠진다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>모든 지표가 나빠진다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>아무것도 안 바뀐다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $[0,1]$ 에서 제곱은 <strong>단조증가</strong>라 순위가 보존되고 <strong>AUC 불변</strong>이다(유도 2).
+            하지만 모든 확률이 <strong>0 쪽으로 눌리므로</strong>
+            양성에 대한 $-\log\hat{p}$ 가 커져 <strong>log loss 가 악화</strong>되고
+            보정 곡선이 <strong>대각선 아래로</strong> 처진다.
+            <strong>순위와 보정은 별개</strong>라는 것이 오해 5 의 핵심이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            RMSE 가 MAE 의 5배로 나왔다. 무엇을 뜻하나?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>큰 오차 몇 개가 지배하고 있다 — 잔차를 확인해야 한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>model 이 전반적으로 나쁘다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>계산이 잘못됐다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\text{RMSE}=\sqrt{\text{MAE}^2+\mathrm{Var}(|e|)}$ 이므로(유도 4)
+            비율이 크다는 것은 <strong>오차 크기의 분산이 크다</strong>는 뜻이다.
+            정규분포 잔차면 비율이 <strong>1.25 근처</strong>인데 5배라면
+            <strong>소수의 큰 오차</strong>가 있다는 강한 신호다.
+            <strong>다</strong>는 아니다 — 이 부등식은 <strong>항상 성립</strong>하고 비율에 상한이 없다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            train 에서 $R^2=0.95$, test 에서 $R^2=-0.3$ 이다. 무엇을 뜻하나?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>test 에서 train 평균으로 찍는 것보다 못하다 — 심각한 과적합</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$R^2$ 계산에 버그가 있다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>test 표본이 적어서 생긴 잡음이다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $R^2<0$ 은 $\text{SSE}>\text{SST}$ 라는 뜻으로,
+            <strong>"평균으로 찍는 baseline 보다 나쁘다"</strong> 는 명확한 신호다(오해 4).
+            <strong>test 에서는 얼마든지 일어날 수 있고</strong>,
+            train 0.95 와의 격차가 크다면 <strong>과적합이나 분포 이동</strong>을 의심해야 한다.
+            <strong>나</strong>는 <strong>train 에서 음수가 나왔을 때</strong>만 타당한 의심이다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="5.14-model-selection.html">5.14 모델 선택</a></strong> — 어떤 지표로 교차검증을 할 것인가.</li>
+        <li><strong><a href="../ch04/4.9-uncertainty.html">4.9 불확실성</a></strong> — 보정과 신뢰도의 확률적 배경.</li>
+        <li><strong><a href="5.12-anomaly-detection.html">5.12 이상치 탐지</a></strong> — 극단적 불균형에서 PR-AUC 가 필수인 이유.</li>
+        <li><strong>17장 AI 안전성</strong> — 공정성 지표도 혼동행렬을 집단별로 나눈 것이다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-fawcett2006-roc" data-ref="fawcett2006-roc">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Fawcett, T. (2006). <em>An Introduction to ROC Analysis</em>. Pattern Recognition Letters, 27(8), 861–874.</span>
+          <span class="ref__where">§2 — 혼동행렬에서 TPR·FPR·precision 을 유도하는 표('혼동행렬' 표). §4 — ROC 곡선을 문턱 이동으로 그리는 절차(식 5). §7 — <strong>AUC 가 무작위 양성이 무작위 음성보다 높은 점수를 받을 확률이며 Mann-Whitney $U$ 와 같다</strong>는 결과(유도 2, 예제 ②). §4.2 — <strong>ROC 가 class 분포 변화에 불변</strong>이라는 성질과 그것이 언제 함정이 되는지</span>
+          <a class="ref__link" href="https://doi.org/10.1016/j.patrec.2005.10.010">doi.org</a>
+        </li>
+        <li class="ref" id="ref-davis2006-pr-roc" data-ref="davis2006-pr-roc">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Davis, J. &amp; Goadrich, M. (2006). <em>The Relationship Between Precision-Recall and ROC Curves</em>. ICML 2006.</span>
+          <span class="ref__where">§3 — <strong>ROC 공간에서 지배하면 PR 공간에서도 지배한다</strong>는 정리 3.1–3.2. §2 Figure 2 — 같은 model 이 <strong>ROC 에서는 훌륭해 보이는데 PR 에서는 형편없어 보이는</strong> 불균형 사례가 이 절 예제 ③의 원형이다. §4 — <strong>PR 곡선을 선형 보간하면 도달 불가능한 성능을 그린다</strong>는 지적과 올바른 보간법(식 7)</span>
+          <a class="ref__link" href="https://doi.org/10.1145/1143844.1143874">doi.org</a>
+        </li>
+        <li class="ref" id="ref-saito2015-pr-plot" data-ref="saito2015-pr-plot">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Saito, T. &amp; Rehmsmeier, M. (2015). <em>The Precision-Recall Plot Is More Informative than the ROC Plot When Evaluating Binary Classifiers on Imbalanced Datasets</em>. PLoS ONE, 10(3), e0118432.</span>
+          <span class="ref__where">Figure 2–4 — 양성 비율을 바꿔 가며 <strong>ROC 는 거의 그대로인데 PR 이 무너지는</strong> 시뮬레이션(위젯 2, 예제 ③). §Results — <strong>PR 의 기준선이 $\pi$ 라 절대값을 그대로 해석하면 안 된다</strong>는 지적(유도 3 의 마지막 줄). §Discussion — 불균형에서 ROC-AUC 만 보고한 논문들의 낙관 편향 사례</span>
+          <a class="ref__link" href="https://doi.org/10.1371/journal.pone.0118432">doi.org</a>
+        </li>
+        <li class="ref" id="ref-guo2017-calibration" data-ref="guo2017-calibration">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Guo, C., Pleiss, G., Sun, Y. &amp; Weinberger, K. Q. (2017). <em>On Calibration of Modern Neural Networks</em>. ICML 2017.</span>
+          <span class="ref__where">§2 — <strong>완전 보정의 정의와 ECE(구간별 가중 보정 오차)</strong> 의 정식화(식 9). §3 — 깊은 신경망이 <strong>정확도는 좋아지는데 보정은 나빠지는</strong> 현상과 그 원인 분석. §4 — <strong>temperature scaling 이 logit 을 상수로 나누므로 순위를 절대 바꾸지 않고</strong> 보정만 고친다는 결과('보정 방법' 표, 위젯 3, 오해 5)</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1706.04599">arXiv:1706.04599</a>
+        </li>
+        <li class="ref" id="ref-hastie2009-esl" data-ref="hastie2009-esl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em> (2nd ed.). Springer.</span>
+          <span class="ref__where">7.2절 — 편향-분산과 <strong>손실함수별 평가 지표</strong>의 관계, 그리고 <strong>log loss 가 곧 이탈도(deviance)</strong> 라는 정리(식 8). 9.2.5절 — ROC 곡선과 비대칭 비용에서 문턱을 옮기는 방법(오해 2). 7.10절 — 교차검증으로 지표를 추정할 때의 주의점이 <a href="5.14-model-selection.html">5.14</a>로 이어진다</span>
+          <a class="ref__link" href="https://hastie.su.domains/ElemStatLearn/">hastie.su.domains</a>
+        </li>
+        <li class="ref" id="ref-sklearn-docs" data-ref="sklearn-docs">
+          <span class="ref__type" data-type="doc">문서</span>
+          <span class="ref__cite">scikit-learn developers. <em>User Guide — 3.4 Metrics and scoring · 1.16 Probability calibration</em>.</span>
+          <span class="ref__where">3.4.4절 — <strong>macro/micro/weighted 평균의 차이</strong>와 다중분류에서 micro-F1 이 정확도와 같아지는 이유('평균 방식' 표). 3.4.4.13절 — <strong><code>average_precision_score</code> 가 계단 합이라 <code>auc(recall, precision)</code> 의 사다리꼴 적분과 다르다</strong>는 명시적 경고(식 7). 3.4.5절 — $R^2$ 가 음수가 될 수 있다는 설명(오해 4). 1.16절 — <strong>보정은 반드시 별도 fold 에서</strong> 해야 하며 model 별 전형적 왜곡 형태를 보인 그림</span>
+          <a class="ref__link" href="https://scikit-learn.org/stable/modules/model_evaluation.html">scikit-learn.org</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+function panel(p) {
+  p.add(VIZ.el('rect', {
+    x: p.pad.l, y: p.pad.t, width: p.iw, height: p.ih,
+    fill: 'var(--ink-3)', 'fill-opacity': 0.03, stroke: 'none'
+  }));
+  return p;
+}
+function mkRand(seed) {
+  var s = seed || 12345;
+  return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+}
+function gauss(rnd) {
+  var u = Math.max(1e-9, rnd()), v = rnd();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+/* 분리도 sep 로 두 정규분포 점수를 만든다 */
+function makeScores(nPos, nNeg, sep, seed) {
+  var rnd = mkRand(seed * 733 + 11), s = [], y = [], i;
+  function sig(z) { return 1 / (1 + Math.exp(-z)); }
+  for (i = 0; i < nPos; i++) { s.push(sig(sep / 2 + gauss(rnd))); y.push(1); }
+  for (i = 0; i < nNeg; i++) { s.push(sig(-sep / 2 + gauss(rnd))); y.push(0); }
+  return { s: s, y: y };
+}
+function rocPr(s, y) {
+  var idx = [], i;
+  for (i = 0; i < s.length; i++) idx.push(i);
+  idx.sort(function (a, b) { return s[b] - s[a]; });
+  var P = 0, N = 0;
+  for (i = 0; i < y.length; i++) (y[i] ? P++ : N++);
+  var tp = 0, fp = 0, roc = [[0, 0]], pr = [], ap = 0, prevR = 0;
+  for (i = 0; i < idx.length; i++) {
+    if (y[idx[i]]) tp++; else fp++;
+    var r = tp / Math.max(1, P), pcs = tp / Math.max(1, tp + fp);
+    roc.push([fp / Math.max(1, N), r]);
+    pr.push([r, pcs]);
+    ap += (r - prevR) * pcs;
+    prevR = r;
+  }
+  /* AUC 사다리꼴 */
+  var auc = 0;
+  for (i = 1; i < roc.length; i++) auc += (roc[i][0] - roc[i - 1][0]) * (roc[i][1] + roc[i - 1][1]) / 2;
+  return { roc: roc, pr: pr, auc: auc, ap: ap, pi: P / (P + N) };
+}
+
+/* ============================================================
+   위젯 1 — 문턱과 혼동행렬
+   ============================================================ */
+WIDGETS.register('threshold-cm', function (root, ctx) {
+  var thr = 0.5, sep = 2.2, npos = 40, seed = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'cm', label: 'TP / FP / FN / TN' },
+    { key: 'pr', label: 'Precision / Recall', digits: 4 },
+    { key: 'f1', label: 'F1 / F2', digits: 4 },
+    { key: 'acc', label: '정확도 (전부 음성 기준선과 비교)' }
+  ]);
+
+  function draw() {
+    var d = makeScores(npos, 200 - npos, sep, seed);
+    var TP = 0, FP = 0, FN = 0, TN = 0, i;
+    for (i = 0; i < d.s.length; i++) {
+      var pred = d.s[i] >= thr ? 1 : 0;
+      if (pred && d.y[i]) TP++;
+      else if (pred && !d.y[i]) FP++;
+      else if (!pred && d.y[i]) FN++;
+      else TN++;
+    }
+
+    var p = VIZ.plot({ w: 460, h: 250, xmin: 0, xmax: 1, ymin: 0, ymax: 1.08,
+      pad: { t: 30, r: 16, b: 34, l: 48 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(0.25, 0.25).axes('예측 점수', '').ticks(0.25, 0.25);
+    p.text(0, 1.08, '점수 분포 · 위쪽 = 양성 · 아래쪽 = 음성 · 세로 점선 = 문턱',
+      { size: 10, dy: -10 });
+    for (i = 0; i < d.s.length; i++) {
+      var yy = d.y[i] ? 0.62 + 0.3 * ((i * 41) % 100) / 100 : 0.06 + 0.3 * ((i * 23) % 100) / 100;
+      p.add(VIZ.el('circle', { cx: p.X(d.s[i]), cy: p.Y(yy), r: 2.8,
+        fill: d.y[i] ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': 0.75 }));
+    }
+    p.line([[thr, 0], [thr, 1.05]], { dash: '4 3', width: 2.4 });
+
+    /* 혼동행렬 표 */
+    var W = 460, H0 = 118;
+    var svg = VIZ.el('svg', { viewBox: '0 0 ' + W + ' ' + H0, role: 'img' });
+    ctx.stage.appendChild(svg);
+    var cells = [['', '예측 양성', '예측 음성'],
+                 ['실제 양성', 'TP ' + TP, 'FN ' + FN],
+                 ['실제 음성', 'FP ' + FP, 'TN ' + TN]];
+    for (var r = 0; r < 3; r++) for (var c = 0; c < 3; c++) {
+      var x = 40 + c * 130, yy2 = 14 + r * 32;
+      if (r > 0 && c > 0) {
+        var good = (r === 1 && c === 1) || (r === 2 && c === 2);
+        svg.appendChild(VIZ.el('rect', { x: x, y: yy2, width: 122, height: 28, rx: 3,
+          fill: good ? 'var(--jade)' : 'var(--seal)', 'fill-opacity': good ? 0.22 : 0.22 }));
+      }
+      svg.appendChild(VIZ.el('text', { x: x + (c ? 61 : 0), y: yy2 + 19,
+        'text-anchor': c ? 'middle' : 'start', class: 'viz-label',
+        'font-size': 12, text: cells[r][c] }));
+    }
+
+    var prec = TP / Math.max(1, TP + FP), rec = TP / Math.max(1, TP + FN);
+    var f1 = 2 * prec * rec / Math.max(1e-9, prec + rec);
+    var f2 = 5 * prec * rec / Math.max(1e-9, 4 * prec + rec);
+    out.setRaw('cm', TP + ' / ' + FP + ' / ' + FN + ' / ' + TN);
+    out.setRaw('pr', prec.toFixed(4) + '  /  ' + rec.toFixed(4));
+    out.setRaw('f1', f1.toFixed(4) + '  /  ' + f2.toFixed(4));
+    out.setRaw('acc', ((TP + TN) / 200).toFixed(4) + '   (전부 음성이면 '
+      + ((200 - npos) / 200).toFixed(4) + ')');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '문턱', min: 0.02, max: 0.98, step: 0.01, value: 0.5, digits: 2,
+    onInput: function (v) { thr = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '양성 표본 수 (전체 200)', min: 5, max: 100, step: 5, value: 40, digits: 0,
+    onInput: function (v) { npos = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'model 의 분리 능력', min: 0.2, max: 5, step: 0.1, value: 2.2, digits: 1,
+    onInput: function (v) { sep = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — ROC vs PR
+   ============================================================ */
+WIDGETS.register('roc-vs-pr', function (root, ctx) {
+  var pi = 0.5, sep = 2.4, seed = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'pi', label: '양성 비율 π', digits: 4 },
+    { key: 'auc', label: 'ROC-AUC', digits: 4 },
+    { key: 'ap', label: 'PR-AUC (average precision)', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function draw() {
+    var n = 2000, npos = Math.max(4, Math.round(pi * n));
+    var d = makeScores(npos, n - npos, sep, seed);
+    var r = rocPr(d.s, d.y);
+
+    var p1 = VIZ.plot({ w: 460, h: 175, xmin: 0, xmax: 1, ymin: 0, ymax: 1.05,
+      pad: { t: 26, r: 14, b: 24, l: 46 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p1.svg);
+    panel(p1).grid(0.25, 0.25).axes('FPR', '').ticks(0.25, 0.25);
+    p1.text(0, 1.05, 'TPR · ROC 곡선 · 점선 = 무작위 (0.5)', { size: 10, dy: -8 });
+    p1.line(r.roc, { width: 2.4 });
+    p1.line([[0, 0], [1, 1]], { dash: '4 3', width: 1.4 });
+
+    var p2 = VIZ.plot({ w: 460, h: 175, xmin: 0, xmax: 1, ymin: 0, ymax: 1.05,
+      pad: { t: 26, r: 14, b: 26, l: 46 } });
+    ctx.stage.appendChild(p2.svg);
+    panel(p2).grid(0.25, 0.25).axes('Recall', '').ticks(0.25, 0.25);
+    p2.text(0, 1.05, 'Precision · PR 곡선 · 점선 = 기준선 π', { size: 10, dy: -8 });
+    p2.line(r.pr, { alt: true, width: 2.4 });
+    p2.line([[0, r.pi], [1, r.pi]], { dash: '4 3', width: 1.6 });
+
+    out.set('pi', r.pi);
+    out.set('auc', r.auc);
+    out.set('ap', r.ap);
+    out.setRaw('note', pi < 0.05
+      ? 'ROC-AUC 는 거의 그대로인데 PR-AUC 가 무너졌다 — 같은 model, 같은 동작점이다'
+      : (pi > 0.4 ? '균형 잡혀 두 지표가 비슷하게 움직인다' : '불균형이 시작되며 PR 이 먼저 반응한다'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '양성 비율 π', min: 0.005, max: 0.5, step: 0.005, value: 0.5, digits: 3,
+    onInput: function (v) { pi = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'model 의 분리 능력', min: 0.5, max: 5, step: 0.1, value: 2.4, digits: 1,
+    onInput: function (v) { sep = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — 보정 곡선
+   ============================================================ */
+WIDGETS.register('calib-curve', function (root, ctx) {
+  var temp = 1, sep = 2.4, seed = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'll', label: 'Log loss', digits: 4 },
+    { key: 'br', label: 'Brier 점수', digits: 4 },
+    { key: 'ece', label: 'ECE (10구간)', digits: 4 },
+    { key: 'auc', label: 'ROC-AUC (온도를 바꿔도 불변)', digits: 4 }
+  ]);
+
+  function draw() {
+    var n = 1200, d = makeScores(n / 2, n / 2, sep, seed), i;
+    /* temperature: logit 을 T 로 나눈다. T<1 이면 과신, T>1 이면 과소확신 */
+    var q = d.s.map(function (v) {
+      var z = Math.log(Math.max(1e-9, v) / Math.max(1e-9, 1 - v));
+      return 1 / (1 + Math.exp(-z / temp));
+    });
+
+    var bins = 10, cnt = new Array(bins).fill(0), acc = new Array(bins).fill(0),
+        conf = new Array(bins).fill(0);
+    var ll = 0, br = 0;
+    for (i = 0; i < n; i++) {
+      var b = Math.min(bins - 1, Math.floor(q[i] * bins));
+      cnt[b]++; acc[b] += d.y[i]; conf[b] += q[i];
+      var pp = Math.min(1 - 1e-12, Math.max(1e-12, q[i]));
+      ll += -(d.y[i] * Math.log(pp) + (1 - d.y[i]) * Math.log(1 - pp)) / n;
+      br += (d.y[i] - q[i]) * (d.y[i] - q[i]) / n;
+    }
+    var ece = 0, pts = [];
+    for (i = 0; i < bins; i++) {
+      if (!cnt[i]) continue;
+      var a = acc[i] / cnt[i], c = conf[i] / cnt[i];
+      ece += cnt[i] / n * Math.abs(a - c);
+      pts.push([c, a]);
+    }
+
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 0, xmax: 1, ymin: 0, ymax: 1.05,
+      pad: { t: 30, r: 16, b: 34, l: 48 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(0.25, 0.25).axes('model 이 말한 확률', '').ticks(0.25, 0.25);
+    p.text(0, 1.05, '실제 양성 비율 · 점선 대각선 = 완전 보정 · 위로 휘면 과소확신, 아래면 과신',
+      { size: 10, dy: -10 });
+    p.line([[0, 0], [1, 1]], { dash: '4 3', width: 1.6 });
+    if (pts.length > 1) p.line(pts, { width: 2.6 });
+    for (i = 0; i < pts.length; i++) p.dot(pts[i][0], pts[i][1], 4);
+
+    var r = rocPr(q, d.y);
+    out.set('ll', ll);
+    out.set('br', br);
+    out.set('ece', ece);
+    out.set('auc', r.auc);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '온도 T (작으면 과신, 크면 과소확신)', min: 0.25, max: 4, step: 0.05,
+    value: 1, digits: 2, onInput: function (v) { temp = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'model 의 분리 능력', min: 0.5, max: 5, step: 0.1, value: 2.4, digits: 1,
+    onInput: function (v) { sep = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — 혼동행렬 직접 입력
+   ============================================================ */
+WIDGETS.register('metric-table', function (root, ctx) {
+  var TP = 15, FN = 5, FP = 15, TN = 965;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'acc', label: '정확도 / 기준선(전부 음성)' },
+    { key: 'pr', label: 'Precision / Recall' },
+    { key: 'f', label: 'F1 / F2 / MCC' },
+    { key: 'bal', label: '균형 정확도', digits: 4 }
+  ]);
+
+  function draw() {
+    var n = TP + FN + FP + TN;
+    var prec = TP / Math.max(1, TP + FP), rec = TP / Math.max(1, TP + FN);
+    var f1 = 2 * prec * rec / Math.max(1e-9, prec + rec);
+    var f2 = 5 * prec * rec / Math.max(1e-9, 4 * prec + rec);
+    var den = Math.sqrt(Math.max(1, (TP + FP) * (TP + FN) * (TN + FP) * (TN + FN)));
+    var mcc = (TP * TN - FP * FN) / den;
+    var spec = TN / Math.max(1, TN + FP);
+
+    var W = 460, H0 = 250;
+    var svg = VIZ.el('svg', { viewBox: '0 0 ' + W + ' ' + H0, role: 'img' });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(svg);
+    svg.appendChild(VIZ.el('text', { x: 12, y: 18, class: 'viz-label', 'font-size': 11,
+      text: '막대 = 각 지표의 값 (0~1) · 회색 선 = 전부 음성 기준선' }));
+
+    var metrics = [['정확도', (TP + TN) / n], ['Precision', prec], ['Recall', rec],
+                   ['특이도', spec], ['F1', f1], ['MCC', (mcc + 1) / 2]];
+    var base = (TN + FP) / n;
+    var baseY = 200, padL = 20;
+    svg.appendChild(VIZ.el('line', { x1: padL, y1: baseY, x2: W - 16, y2: baseY,
+      stroke: 'var(--ink-3)', 'stroke-width': 1, 'stroke-opacity': 0.5 }));
+    svg.appendChild(VIZ.el('line', { x1: padL, y1: baseY - 150 * base, x2: W - 16,
+      y2: baseY - 150 * base, stroke: 'var(--ink-3)', 'stroke-width': 1.4,
+      'stroke-dasharray': '4 3', 'stroke-opacity': 0.8 }));
+    for (var i = 0; i < metrics.length; i++) {
+      var x = padL + 8 + i * 71, h = 150 * Math.max(0, Math.min(1, metrics[i][1]));
+      svg.appendChild(VIZ.el('rect', { x: x, y: baseY - h, width: 52, height: Math.max(1, h), rx: 3,
+        fill: i === 5 ? 'var(--amber)' : 'var(--jade)', 'fill-opacity': 0.45,
+        stroke: i === 5 ? 'var(--amber)' : 'var(--jade)', 'stroke-width': 1 }));
+      svg.appendChild(VIZ.el('text', { x: x + 26, y: baseY - h - 6, 'text-anchor': 'middle',
+        class: 'viz-label', 'font-size': 11, text: metrics[i][1].toFixed(3) }));
+      svg.appendChild(VIZ.el('text', { x: x + 26, y: baseY + 16, 'text-anchor': 'middle',
+        class: 'viz-label', 'font-size': 10, text: metrics[i][0] }));
+    }
+    svg.appendChild(VIZ.el('text', { x: 12, y: H0 - 14, class: 'viz-label', 'font-size': 10,
+      'fill-opacity': 0.75, text: 'MCC 는 [−1,1] 이라 (MCC+1)/2 로 그렸다 · 0.5 가 무작위' }));
+
+    out.setRaw('acc', ((TP + TN) / n).toFixed(4) + '  /  ' + base.toFixed(4));
+    out.setRaw('pr', prec.toFixed(4) + '  /  ' + rec.toFixed(4));
+    out.setRaw('f', f1.toFixed(4) + '  /  ' + f2.toFixed(4) + '  /  ' + mcc.toFixed(4));
+    out.set('bal', (rec + spec) / 2);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'TP', min: 0, max: 60, step: 1, value: 15, digits: 0,
+    onInput: function (v) { TP = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'FN (놓침)', min: 0, max: 60, step: 1, value: 5, digits: 0,
+    onInput: function (v) { FN = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'FP (거짓경보)', min: 0, max: 60, step: 1, value: 15, digits: 0,
+    onInput: function (v) { FP = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'TN', min: 0, max: 2000, step: 5, value: 965, digits: 0,
+    onInput: function (v) { TN = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — 회귀 지표
+   ============================================================ */
+WIDGETS.register('reg-metrics', function (root, ctx) {
+  var outlier = 5, noise = 1, seed = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'mae', label: 'MAE', digits: 4 },
+    { key: 'rmse', label: 'RMSE', digits: 4 },
+    { key: 'ratio', label: 'RMSE / MAE  (정규분포면 1.253)', digits: 4 },
+    { key: 'r2', label: 'R²', digits: 4 }
+  ]);
+
+  function draw() {
+    var rnd = mkRand(seed * 331 + 7), n = 40, xs = [], ys = [], pred = [], i;
+    for (i = 0; i < n; i++) {
+      var x = -3 + 6 * i / (n - 1);
+      xs.push(x);
+      ys.push(0.8 * x + 1 + noise * 0.5 * gauss(rnd));
+      pred.push(0.8 * x + 1);
+    }
+    ys[Math.floor(n / 2)] += outlier;
+
+    var mae = 0, mse = 0, my = 0;
+    for (i = 0; i < n; i++) { mae += Math.abs(ys[i] - pred[i]) / n; mse += Math.pow(ys[i] - pred[i], 2) / n; my += ys[i] / n; }
+    var sst = 0;
+    for (i = 0; i < n; i++) sst += Math.pow(ys[i] - my, 2);
+    var rmse = Math.sqrt(mse);
+    var r2 = 1 - (mse * n) / Math.max(1e-9, sst);
+
+    var lim = Math.max(5, 3.5 + outlier * 0.6);
+    var p = VIZ.plot({ w: 460, h: 290, xmin: -3.4, xmax: 3.4, ymin: -lim, ymax: lim,
+      pad: { t: 30, r: 16, b: 32, l: 46 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, Math.round(lim / 2)).axes('x', '').ticks(1, Math.round(lim / 2));
+    p.text(-3.4, lim, 'y · 선 = 예측 · 세로 선 = 각 점의 잔차', { size: 10, dy: -10 });
+    p.line([[-3.4, 0.8 * -3.4 + 1], [3.4, 0.8 * 3.4 + 1]], { width: 2.4 });
+    for (i = 0; i < n; i++) {
+      var yy = Math.max(-lim * 0.97, Math.min(lim * 0.97, ys[i]));
+      p.line([[xs[i], pred[i]], [xs[i], yy]], { dash: '2 3' });
+      p.dot(xs[i], yy, 3);
+    }
+    var oi = Math.floor(n / 2);
+    p.callout(xs[oi], Math.min(lim * 0.95, ys[oi]), '이상치',
+      { dx: 22, dy: -22, tone: 'var(--seal)' });
+
+    out.set('mae', mae);
+    out.set('rmse', rmse);
+    out.set('ratio', rmse / Math.max(1e-9, mae));
+    out.set('r2', r2);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '이상치의 크기', min: 0, max: 20, step: 0.5, value: 5, digits: 1,
+    onInput: function (v) { outlier = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '일반 잡음 크기', min: 0.1, max: 3, step: 0.1, value: 1, digits: 1,
+    onInput: function (v) { noise = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

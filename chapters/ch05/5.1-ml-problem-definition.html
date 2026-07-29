@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5.1 머신러닝 문제 정의 — AI 이론 학습</title>
+<meta name="description" content="학습은 가설 공간에서 기대 위험을 최소로 하는 함수를 고르는 일이다. 볼 수 있는 것은 경험적 위험뿐이고, 그 간극이 일반화 오차이며, 가정 없이는 학습 자체가 불가능하다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="5.1">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">5.1</span>
+        <span>5장 · 전통적 머신러닝</span>
+      </div>
+      <h1>머신러닝 문제 정의</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 65분</span>
+        <span><b>난이도</b>★★★☆☆</span>
+        <span><b>선수지식</b>
+          <a href="../ch04/4.5-statistical-estimation.html">4.5 통계적 추정</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-input">Input Space</a>
+      <a class="chip" href="#c-output">Output Space</a>
+      <a class="chip" href="#c-hyp">Hypothesis Space</a>
+      <a class="chip" href="#c-model">Model Class</a>
+      <a class="chip" href="#c-erisk">Empirical Risk</a>
+      <a class="chip" href="#c-risk">Expected Risk</a>
+      <a class="chip" href="#c-bias">Inductive Bias</a>
+      <a class="chip" href="#c-gen">Generalization Error</a>
+      <a class="chip" href="#c-samp">Sample Complexity</a>
+      <a class="chip" href="#c-nfl">No Free Lunch</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        학습은 <strong>가설 공간 $\mathcal{H}$ 에서 기대 위험 $R(h)$ 를 최소로 하는 함수를 고르는 일</strong>이다.
+        그런데 볼 수 있는 것은 <strong>경험적 위험 $\hat{R}(h)$ 뿐</strong>이고, 그 둘의 간극이 일반화 오차이며,
+        <strong>가정(귀납적 편향) 없이는 학습 자체가 불가능하다</strong>.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>학습 문제를 $(\mathcal{X},\mathcal{Y},P,\ell,\mathcal{H})$ 다섯 개로 형식화할 수 있다.</li>
+        <li>$R(\hat h)-R^\star$ 를 근사오차와 추정오차로 분해하고, 가설 공간 크기가 둘을 반대로 움직인다는 것을 설명할 수 있다.</li>
+        <li>No Free Lunch 정리를 작은 예로 직접 확인하고, 그것이 "모든 알고리즘이 실무에서 같다"는 뜻이 <strong>아닌</strong> 이유를 말할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        점 세 개를 찍어 놓고 "이 점들을 지나는 함수를 찾아라"라고 하면 답은 <strong>무한히 많다</strong>.
+        직선도 되고, 2차 곡선도 되고, 점 사이에서 아무렇게나 요동치는 함수도 된다.
+        어느 것이 <strong>맞는지</strong>는 data 만 봐서는 결정할 수 없다.
+      </p>
+      <p>
+        그래서 학습을 시작하려면 먼저 <strong>후보를 줄여야</strong> 한다 —
+        "직선 중에서 고르겠다", "매끄러운 함수 중에서 고르겠다" 하는 식으로.
+        이 후보 집합이 <strong>가설 공간</strong>이고, 그렇게 좁히는 결정 자체가 <strong>귀납적 편향</strong>이다.
+        편향이라는 말이 부정적으로 들리지만, <strong>이것이 없으면 아무것도 배울 수 없다</strong>.
+      </p>
+      <p>
+        후보를 정하고 나면 그중 무엇을 고를지가 남는다.
+        진짜 원하는 것은 <strong>앞으로 만날 data 에서의 평균 오차</strong>(기대 위험)인데
+        그것은 볼 수가 없다. 볼 수 있는 것은 <strong>손에 든 data 에서의 평균 오차</strong>(경험적 위험)뿐이다.
+        <strong>보이는 것을 줄여서 안 보이는 것을 줄이려는 시도</strong> — 이것이 학습의 전부이고, 이 절은 그 구조를 적는다.
+      </p>
+
+      <figure class="widget" data-widget="many-fits">
+        <figcaption class="widget__bar">Inductive Bias — 같은 점, 다른 답</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">세 곡선 모두 <strong>점을 정확히 지납니다</strong>. 어느 것이 옳은지는 data 가 아니라 <strong>내가 고른 가설 공간</strong>이 정합니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          <strong>data 는 답을 결정하지 않는다.</strong> data 는 후보들 사이에서 <em>점수</em>를 매길 뿐이고,
+          후보를 정하는 것은 사람이다.
+          "어떤 model 을 쓸까"라는 질문은 사실 <strong>"세상이 어떻게 생겼다고 가정할까"</strong>라는 질문이다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-input"></span>
+      <span class="anchor" id="c-output"></span>
+      <h3>Input Space &amp; Output Space 입력 공간과 출력 공간</h3>
+      <p>
+        <span class="hl">input space(입력 공간) $\mathcal{X}$ 는 model 이 받을 수 있는 것 전체의 집합,
+        output space(출력 공간) $\mathcal{Y}$ 는 내놓을 수 있는 것 전체의 집합이며,
+        이 둘을 정하는 순간 문제의 종류가 결정된다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>문제</th><th>$\mathcal{X}$</th><th>$\mathcal{Y}$</th><th>흔한 loss $\ell$</th></tr></thead>
+          <tbody>
+            <tr><td>이진분류</td><td>$\mathbb{R}^d$</td><td>$\{0,1\}$ 또는 $\{-1,+1\}$</td><td>0-1 loss · logistic loss</td></tr>
+            <tr><td>다중분류</td><td>$\mathbb{R}^d$</td><td>$\{1,\dots,K\}$</td><td>cross-entropy</td></tr>
+            <tr><td>회귀</td><td>$\mathbb{R}^d$</td><td>$\mathbb{R}$</td><td>제곱오차 · 절대오차</td></tr>
+            <tr><td>구조 예측</td><td>문장</td><td>token 수열</td><td>token 별 cross-entropy 합</td></tr>
+            <tr><td>군집화</td><td>$\mathbb{R}^d$</td><td><strong>없다</strong> (비지도)</td><td>군집 내 분산 등</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        마지막 줄이 중요하다. $\mathcal{Y}$ 가 없으면 <strong>"정답에 얼마나 가까운가"라는 물음 자체가 성립하지 않아</strong>
+        평가 기준을 따로 만들어야 한다 (<a href="5.10-clustering.html">5.10</a>).
+        같은 data 라도 $\mathcal{X}$ 를 어떻게 표현하느냐(feature)에 따라 문제의 난이도가 완전히 달라지는데,
+        그 표현을 사람이 정하는 것이 전통적 ML, model 이 학습하는 것이 딥러닝이다.
+      </p>
+
+      <h3>학습 문제의 형식화</h3>
+      <p>
+        $\mathcal{X}\times\mathcal{Y}$ 위에 <strong>우리가 모르는 분포 $P$</strong> 가 있고,
+        training set 은 거기서 독립적으로 뽑힌 $n$개의 표본이다.
+      </p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ S=\{(x_i,y_i)\}_{i=1}^{n}\ \overset{\text{i.i.d.}}{\sim}\ P, \qquad \text{목표: } \ \min_{h}\ R(h)=\mathbb{E}_{(x,y)\sim P}\bigl[\ell\bigl(h(x),y\bigr)\bigr] $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        학습 문제는 이렇게 <strong>다섯 개</strong>로 특정된다 —
+        $\mathcal{X}$ · $\mathcal{Y}$ · $P$(모름) · $\ell$(내가 고름) · $\mathcal{H}$(내가 고름).
+        i.i.d. 가정이 깨지면(분포 이동·시계열·표본 편향) 이 틀 전체가 흔들린다.
+      </p>
+
+      <span class="anchor" id="c-hyp"></span>
+      <span class="anchor" id="c-model"></span>
+      <h3>Hypothesis Space &amp; Model Class 가설 공간과 모델 클래스</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathcal{H}\subseteq\{h:\mathcal{X}\to\mathcal{Y}\} \qquad\text{— 후보 함수들의 집합} $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        <span class="hl">hypothesis space(가설 공간) $\mathcal{H}$ 는 <strong>학습 알고리즘이 고를 수 있는 함수 전체</strong>이고,
+        model class(모델 클래스)는 그것을 parameter 로 적은 형태 $\{h_\theta : \theta\in\Theta\}$ 다 —
+        같은 것을 함수의 집합으로 보느냐 parameter 의 집합으로 보느냐의 차이다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>model class</th><th>$\mathcal{H}$</th><th>parameter 수</th><th>표현력</th></tr></thead>
+          <tbody>
+            <tr><td>상수</td><td>$\{h(x)=c\}$</td><td class="num">1</td><td>가장 작다</td></tr>
+            <tr><td>선형</td><td>$\{h(x)=\mathbf{w}^\top x+b\}$</td><td class="num">$d+1$</td><td>직선/초평면만</td></tr>
+            <tr><td>$k$차 다항식</td><td>$\{\sum_{j=0}^{k}a_jx^j\}$</td><td class="num">$k+1$</td><td>$k$ 로 조절</td></tr>
+            <tr><td>깊이 $D$ 결정트리</td><td>축에 나란한 분할</td><td>노드 수</td><td>$D$ 로 조절 (<a href="5.6-decision-trees.html">5.6</a>)</td></tr>
+            <tr><td>신경망</td><td>$\{h_\theta\}$, $\theta\in\mathbb{R}^P$</td><td class="num">$P$ (수백만)</td><td>매우 크다</td></tr>
+            <tr><td>모든 함수</td><td>$\mathcal{Y}^{\mathcal{X}}$</td><td>—</td><td><strong>학습 불가</strong> (오해 5)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>범인을 찾는 일과 같습니다. <strong>용의자 명단</strong>이 가설 공간입니다. 명단이 좁으면 진범이 빠져 있을 수 있고(근사오차), 명단이 너무 넓으면 증거 몇 개로는 누구인지 좁힐 수가 없습니다(추정오차).</p>
+        <p>"명단을 어떻게 만들 것인가"가 곧 <strong>귀납적 편향</strong>이고, 명단 없이 "세상 모든 사람"에서 시작하면 증거를 아무리 모아도 범인을 특정할 수 없습니다.</p>
+      </div>
+
+      <span class="anchor" id="c-risk"></span>
+      <span class="anchor" id="c-erisk"></span>
+      <h3>Expected Risk &amp; Empirical Risk 기대 위험과 경험적 위험</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ R(h)=\mathbb{E}_{(x,y)\sim P}\bigl[\ell(h(x),y)\bigr] \qquad\text{vs}\qquad \hat{R}_S(h)=\frac1n\sum_{i=1}^{n}\ell\bigl(h(x_i),y_i\bigr) $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl">expected risk(기대 위험, 참 위험)는 <strong>분포 전체에 대한 평균 손실</strong>이라
+        계산할 수 없고, empirical risk(경험적 위험)는 <strong>손에 든 표본에 대한 평균 손실</strong>이라 계산할 수 있다.</span>
+        후자는 전자의 <strong>몬테카를로 추정</strong>이므로 $\mathbb{E}_S[\hat{R}_S(h)]=R(h)$ 로 <strong>불편</strong>이다
+        (<a href="../ch04/4.5-statistical-estimation.html">4.5</a>) — 단, <strong>$h$ 를 $S$ 로 고른 뒤에는 성립하지 않는다</strong>(오해 1).
+      </p>
+      <p>$\hat{R}$ 를 최소화하는 전략을 <strong>Empirical Risk Minimization(ERM)</strong> 이라 하고, 다음 절의 주제다.</p>
+      <div class="eq">
+        <div class="eq__body">$$ \hat h = \arg\min_{h\in\mathcal{H}}\ \hat{R}_S(h) $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+
+      <span class="anchor" id="c-gen"></span>
+      <h3>Generalization Error 일반화 오차</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \underbrace{R(\hat h)-R^\star}_{\text{초과 위험}} \;=\; \underbrace{\Bigl(\inf_{h\in\mathcal{H}}R(h)-R^\star\Bigr)}_{\text{근사오차 · } \mathcal{H} \text{ 가 작아서}} \;+\; \underbrace{\Bigl(R(\hat h)-\inf_{h\in\mathcal{H}}R(h)\Bigr)}_{\text{추정오차 · data 가 적어서}} $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        <span class="hl">일반화 오차는 좁게는 $R(\hat h)-\hat{R}_S(\hat h)$(보이는 것과 참값의 간극)를 뜻하고,
+        넓게는 도달 가능한 최선 $R^\star$ 와의 차이를 뜻하며, 후자는 <strong>두 원인으로 정확히 갈린다</strong>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>근사오차 (approximation)</th><th>추정오차 (estimation)</th></tr></thead>
+          <tbody>
+            <tr><td>원인</td><td>$\mathcal{H}$ 안에 좋은 함수가 없다</td><td>$\mathcal{H}$ 안에서 잘못 골랐다</td></tr>
+            <tr><td>$\mathcal{H}$ 를 키우면</td><td><strong>줄어든다</strong></td><td><strong>늘어난다</strong></td></tr>
+            <tr><td>$n$ 을 키우면</td><td>그대로</td><td>줄어든다</td></tr>
+            <tr><td>증상</td><td>underfitting — train·test 둘 다 나쁘다</td><td>overfitting — train 은 좋고 test 는 나쁘다</td></tr>
+            <tr><td>대응 개념</td><td colspan="2"><strong>편향-분산 분해</strong>의 편향 · 분산 (<a href="5.2-statistical-learning-theory.html">5.2</a>)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        $R^\star=\inf_{h}R(h)$ 는 <strong>Bayes risk</strong> 로, 세상의 잡음 때문에 어떤 model 도 넘을 수 없는 바닥이다 —
+        <a href="../ch04/4.9-uncertainty.html">4.9</a>의 aleatoric uncertainty 가 정하는 값이다.
+      </p>
+
+      <figure class="widget" data-widget="risk-decomp">
+        <figcaption class="widget__bar">Error Decomposition — 가설 공간을 키우면 무엇이 어떻게 움직이나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$\mathcal{H}$ 를 키우면 근사오차는 줄고 추정오차는 늘어 <strong>합에 최솟값</strong>이 생깁니다. $n$ 을 키우면 그 최솟값이 오른쪽으로 옮겨 갑니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-bias"></span>
+      <h3>Inductive Bias 귀납적 편향</h3>
+      <p>
+        <span class="hl">귀납적 편향은 <strong>data 만으로는 정할 수 없는 것을 정해 주는 가정 전체</strong>이며,
+        학습 알고리즘이 본 적 없는 입력에 대해 예측을 <em>할 수 있게</em> 만드는 유일한 근거다.</span>
+        Mitchell 은 이것을 "학습기가 관측을 넘어 일반화할 때 쓰는 추가 가정"으로 정의했다<a class="cite" href="#ref-mitchell1997-ml" data-ref="mitchell1997-ml">1</a>.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>어디에 들어 있나</th><th>구체적인 가정</th><th>예</th></tr></thead>
+          <tbody>
+            <tr><td>가설 공간</td><td>"답은 이 모양이다"</td><td>선형 model · 다항식 차수 제한</td></tr>
+            <tr><td>정규화</td><td>"작은 계수가 더 그럴듯하다"</td><td>L2 (Gaussian prior, <a href="../ch04/4.6-likelihood-estimation.html">4.6</a>)</td></tr>
+            <tr><td>아키텍처</td><td>"가까운 것끼리 관련 있다 · 위치가 바뀌어도 같다"</td><td>CNN 의 지역성·평행이동 등변성</td></tr>
+            <tr><td>거리 함수</td><td>"가까우면 답도 비슷하다"</td><td>KNN (<a href="5.5-distance-based-learning.html">5.5</a>)</td></tr>
+            <tr><td>최적화</td><td>"먼저 찾은 해가 더 낫다"</td><td>early stopping · SGD 의 암묵적 정규화</td></tr>
+            <tr><td>탐색 순서</td><td>"단순한 것부터"</td><td>결정트리의 탐욕적 분할 (<a href="5.6-decision-trees.html">5.6</a>)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        마지막 두 줄은 <strong>가설 공간이 아니라 알고리즘에 숨어 있는</strong> 편향이라 눈에 잘 띄지 않는다.
+        표현력이 같은 두 model 이 서로 다른 성능을 내는 이유가 대개 여기 있다.
+      </p>
+
+      <span class="anchor" id="c-samp"></span>
+      <h3>Sample Complexity 표본 복잡도</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ n(\varepsilon,\delta)=\min\Bigl\{n:\ \forall P,\ \ \Pr_S\bigl[R(\hat h)-\inf_{h\in\mathcal{H}}R(h)\le\varepsilon\bigr]\ge1-\delta\Bigr\} $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        <span class="hl">sample complexity 는 <strong>"오차 $\varepsilon$ 이내를 확률 $1-\delta$ 로 보장하려면 표본이 몇 개 필요한가"</strong> 이며,
+        유한한 $\mathcal{H}$ 에서는 그 크기의 <strong>로그</strong>에만 비례한다.</span>
+      </p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ n \ \ge\ \frac{1}{\varepsilon}\Bigl(\ln|\mathcal{H}|+\ln\frac{1}{\delta}\Bigr) \qquad (\text{실현 가능한 경우}) $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        $\ln|\mathcal{H}|$ 이라는 것이 요점이다 — <strong>후보를 두 배로 늘려도 필요한 표본은 상수만큼만 는다</strong>.
+        그래서 parameter 가 수백만인 model 도 학습이 되는 것이고,
+        무한한 $\mathcal{H}$ 에서는 $\ln|\mathcal{H}|$ 자리에 VC dimension 이 들어간다 (<a href="5.2-statistical-learning-theory.html">5.2</a>).
+      </p>
+
+      <figure class="widget" data-widget="sample-complexity">
+        <figcaption class="widget__bar">Sample Complexity — 후보가 늘면 표본이 얼마나 더 필요한가</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$|\mathcal{H}|$ 를 $10^3$ 에서 $10^6$ 으로 <strong>1000배</strong> 키워도 필요한 $n$ 은 두 배가 안 됩니다. 로그이기 때문입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-nfl"></span>
+      <h3>No Free Lunch 공짜 점심은 없다</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \frac{1}{|\mathcal{F}|}\sum_{f\in\mathcal{F}} R_f(A)\ \ \text{은 알고리즘 } A \text{ 와 무관하게 같다} $$</div>
+        <span class="eq__tag num">(8)</span>
+      </div>
+      <p>
+        <span class="hl">가능한 모든 목표 함수에 걸쳐 평균 내면 <strong>어떤 학습 알고리즘도 무작위 추측보다 낫지 않다</strong>.
+        어떤 알고리즘이 어떤 문제에서 잘한다면, 그만큼 다른 문제에서 못한다는 뜻이다<a class="cite" href="#ref-wolpert1996-no-free-lunch" data-ref="wolpert1996-no-free-lunch">2</a>.</span>
+      </p>
+      <p>
+        이 정리가 말하는 것과 말하지 않는 것을 구분해야 한다.
+        말하는 것은 <strong>"보편적으로 최고인 알고리즘은 없다"</strong> 이고,
+        말하지 <em>않는</em> 것은 "실무에서 모든 알고리즘이 비슷하다" 이다 —
+        우리가 실제로 만나는 문제는 <strong>가능한 함수 전체에서 균등하게 뽑히지 않기 때문</strong>이다(오해 3).
+        현실의 data 에는 매끄러움·지역성·계층 구조 같은 규칙성이 있고,
+        <strong>그 규칙성에 맞는 귀납적 편향을 가진 알고리즘이 이긴다.</strong>
+      </p>
+
+      <figure class="widget" data-widget="nfl-demo">
+        <figcaption class="widget__bar">No Free Lunch — 8개 세상에서 평균 내면</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">어떤 예측 규칙을 골라도 <strong>8개 세상의 평균 정확도가 정확히 0.5</strong> 입니다. 한쪽에서 얻은 만큼 다른 쪽에서 잃습니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>자주 쓰는 loss 함수와 그것이 최소화하는 대상을 정리한다. <strong>loss 를 고르는 것이 곧 무엇을 예측할지 고르는 것</strong>이다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>loss $\ell(\hat y,y)$</th><th>식</th><th>$R$ 을 최소로 하는 $h^\star(x)$</th></tr></thead>
+          <tbody>
+            <tr><td>제곱오차</td><td>$(\hat y-y)^2$</td><td>$\mathbb{E}[y\mid x]$ — <strong>조건부 평균</strong></td></tr>
+            <tr><td>절대오차</td><td>$|\hat y-y|$</td><td>조건부 <strong>중앙값</strong></td></tr>
+            <tr><td>pinball ($\tau$분위)</td><td>비대칭 절대오차</td><td>조건부 $\tau$-quantile</td></tr>
+            <tr><td>0-1 loss</td><td>$\mathbb{1}[\hat y\ne y]$</td><td>$\arg\max_k P(y=k\mid x)$ — <strong>Bayes 분류기</strong></td></tr>
+            <tr><td>cross-entropy</td><td>$-\log \hat p_y$</td><td>참 조건부분포 $P(y\mid x)$ 자체</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <span class="hl">같은 data 에 제곱오차를 쓰면 평균을, 절대오차를 쓰면 중앙값을 배운다 —
+        <strong>loss 는 평가 기준이 아니라 학습 목표의 정의</strong>다.</span>
+        이상치가 많은 문제에서 MSE 가 흔들리는 것은 평균이 이상치에 끌려가기 때문이고,
+        이는 <a href="../ch04/4.6-likelihood-estimation.html">4.6</a>에서 본 잡음 분포 가정과 같은 이야기다.
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$\mathcal{X}$</td><td>script X · input space</td><td>입력 공간</td><td>집합</td><td>—</td></tr>
+            <tr><td>$\mathcal{Y}$</td><td>script Y · output space</td><td>출력 공간</td><td>집합</td><td>—</td></tr>
+            <tr><td>$P$</td><td>P · data 생성 분포</td><td>$\mathcal{X}\times\mathcal{Y}$ 위의 <strong>미지의</strong> 분포</td><td>분포</td><td>—</td></tr>
+            <tr><td>$S$</td><td>S · training set</td><td>$P$ 에서 i.i.d. 로 뽑은 $n$개 표본</td><td>집합</td><td>$|S|=n$</td></tr>
+            <tr><td>$h$</td><td>h · hypothesis</td><td>후보 함수</td><td>$\mathcal{X}\to\mathcal{Y}$</td><td>$h\in\mathcal{H}$</td></tr>
+            <tr><td>$\mathcal{H}$</td><td>script H · hypothesis space</td><td>가설 공간</td><td>함수들의 집합</td><td>—</td></tr>
+            <tr><td>$\ell$</td><td>script l · loss</td><td>손실 함수</td><td>$\mathcal{Y}\times\mathcal{Y}\to\mathbb{R}$</td><td>보통 $\ge0$</td></tr>
+            <tr><td>$R(h)$</td><td>R of h · expected risk</td><td>기대 위험 (참 위험)</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$\hat{R}_S(h)$</td><td>R hat · empirical risk</td><td>경험적 위험</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$\hat h$</td><td>h hat</td><td>ERM 이 고른 가설</td><td>$\in\mathcal{H}$</td><td>—</td></tr>
+            <tr><td>$R^\star$</td><td>R star · Bayes risk</td><td>모든 함수를 통틀어 도달 가능한 최소 위험</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$\varepsilon$</td><td>epsilon 엡실론</td><td>허용 오차</td><td>scalar</td><td>$(0,1)$</td></tr>
+            <tr><td>$\delta$</td><td>delta 델타</td><td>실패 확률</td><td>scalar</td><td>$(0,1)$</td></tr>
+            <tr><td>$\mathbb{1}[\cdot]$</td><td>indicator 지시함수</td><td>참이면 1, 거짓이면 0</td><td>함수</td><td>$\{0,1\}$</td></tr>
+            <tr><td>i.i.d.</td><td>아이아이디</td><td>독립 동일 분포</td><td>가정</td><td>—</td></tr>
+            <tr><td>$\arg\min$</td><td>argmin 아그민</td><td>최솟값을 주는 <strong>위치</strong></td><td>연산자</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">같은 것을 다르게 부른다</span>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>이 사이트</th><th>같은 뜻으로 쓰이는 말</th><th>주의할 점</th></tr></thead>
+            <tbody>
+              <tr><td>기대 위험 $R(h)$</td><td>true risk, generalization error, population risk, test error</td><td>"generalization error" 는 <strong>$R(h)$ 자체</strong>를 뜻하기도, $R-\hat R$ <strong>간극</strong>을 뜻하기도 한다</td></tr>
+              <tr><td>경험적 위험 $\hat R$</td><td>training error, empirical loss, in-sample error $E_{\text{in}}$</td><td>Caltech CS156 은 $E_{\text{in}}$/$E_{\text{out}}$ 표기를 쓴다</td></tr>
+              <tr><td>가설 공간 $\mathcal{H}$</td><td>model class, function class, 가설 집합</td><td>거의 구분 없이 쓰인다</td></tr>
+              <tr><td>귀납적 편향</td><td>inductive bias, prior assumption, 학습 편향</td><td>통계의 <strong>bias(편향)</strong> 와 다른 말이다 — 헷갈리기 쉽다</td></tr>
+              <tr><td>근사오차 / 추정오차</td><td>approximation / estimation error</td><td>편향-분산과 <strong>대응하지만 같지는 않다</strong> (5.2)</td></tr>
+              <tr><td>$R^\star$</td><td>Bayes risk, irreducible error, 잡음 바닥</td><td>0 이 아닐 수 있다 — 완벽한 model 로도 못 없앤다</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — 초과 위험이 두 조각으로 갈린다</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ R(\hat h)-R^\star = \bigl[R(\hat h)-R_{\mathcal{H}}^\star\bigr]+\bigl[R_{\mathcal{H}}^\star-R^\star\bigr], \quad R_{\mathcal{H}}^\star=\inf_{h\in\mathcal{H}}R(h) $$</div>
+          <div class="derive__why">$R_{\mathcal{H}}^\star$ 를 <strong>더했다 뺐다</strong> — 4장 내내 쓴 기법</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ R_{\mathcal{H}}^\star-R^\star \ \ge 0 \quad(\text{근사오차}) $$</div>
+          <div class="derive__why">$\mathcal{H}$ 가 모든 함수의 부분집합이므로 최솟값이 더 크다. <strong>$n$ 과 무관</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ R(\hat h)-R_{\mathcal{H}}^\star \ \ge 0 \quad(\text{추정오차}) $$</div>
+          <div class="derive__why">$\hat h$ 는 $\mathcal{H}$ 안의 한 원소이므로 최선보다 나쁠 수밖에 없다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathcal{H}\subseteq\mathcal{H}' \Rightarrow R_{\mathcal{H}'}^\star\le R_{\mathcal{H}}^\star $$</div>
+          <div class="derive__why">후보를 늘리면 <strong>근사오차는 반드시 줄어든다</strong> (또는 그대로)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{그러나 } \sup_{h\in\mathcal{H}'}\bigl|R(h)-\hat R(h)\bigr| \ \ge\ \sup_{h\in\mathcal{H}}\bigl|R(h)-\hat R(h)\bigr| $$</div>
+          <div class="derive__why">후보가 많을수록 <strong>운 좋게 $\hat R$ 이 작아 보이는 것</strong>이 섞일 여지가 커진다 → 추정오차 증가</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore\ \text{총 오차에 최솟값이 존재한다} $$</div>
+          <div class="derive__why">두 항이 반대로 움직인다 — 식 (5), 그리고 <a href="5.2-statistical-learning-theory.html">5.2</a>의 SRM</div>
+        </div>
+      </div>
+
+      <h3>유도 2 — 유한 가설 공간의 표본 복잡도</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{“나쁜” 가설}:\ R(h)>\varepsilon. \quad \Pr\bigl[\hat R_S(h)=0\bigr]=(1-R(h))^n<(1-\varepsilon)^n $$</div>
+          <div class="derive__why">나쁜 $h$ 가 $n$개를 <strong>전부 맞힐</strong> 확률. 실현 가능(정답이 $\mathcal{H}$ 안에 있음)을 가정</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ (1-\varepsilon)^n \le e^{-\varepsilon n} $$</div>
+          <div class="derive__why">$1-x\le e^{-x}$ — 다루기 쉬운 형태로 눌렀다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Pr\bigl[\exists\,\text{나쁜 } h \text{ 가 } \hat R=0\bigr] \ \le\ |\mathcal{H}|\,e^{-\varepsilon n} $$</div>
+          <div class="derive__why"><strong>union bound</strong> (<a href="../ch04/4.1-probability-basics.html">4.1</a>) — 여기서 $|\mathcal{H}|$ 가 들어온다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ |\mathcal{H}|\,e^{-\varepsilon n}\le\delta \iff n \ge \frac{1}{\varepsilon}\Bigl(\ln|\mathcal{H}|+\ln\tfrac1\delta\Bigr) $$</div>
+          <div class="derive__why">양변에 로그를 씌워 $n$ 에 대해 풀었다 — 식 (7)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ |\mathcal{H}|\to2|\mathcal{H}| \Rightarrow n \to n+\frac{\ln 2}{\varepsilon} $$</div>
+          <div class="derive__why">후보가 <strong>두 배</strong>여도 표본은 <strong>상수만큼만</strong> 더 필요하다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \theta\in\mathbb{R}^P \text{ 를 } 32\text{bit 로}: \ |\mathcal{H}|=2^{32P} \Rightarrow \ln|\mathcal{H}|=32P\ln2\approx22P $$</div>
+          <div class="derive__why">parameter 수에 <strong>선형</strong>. 무한 $\mathcal{H}$ 는 VC dimension 으로 다룬다 (<a href="5.2-statistical-learning-theory.html">5.2</a>)</div>
+        </div>
+      </div>
+
+      <h3>유도 3 — No Free Lunch (작은 경우로)</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathcal{X}=\{x_1,x_2,x_3\},\quad \mathcal{Y}=\{0,1\} \ \Rightarrow\ |\mathcal{F}|=2^3=8 \ \text{개의 참 함수} $$</div>
+          <div class="derive__why">가능한 "세상"이 8개뿐인 장난감 문제</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ S=\{(x_1,f(x_1)),(x_2,f(x_2))\} \ \text{를 보고 } x_3 \text{ 을 예측한다} $$</div>
+          <div class="derive__why">훈련 2개, 시험 1개</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{알고리즘 } A \text{ 의 예측 } A(S)(x_3) \text{ 는 } S \text{ 만의 함수다} $$</div>
+          <div class="derive__why"><strong>$f(x_3)$ 을 볼 수 없다</strong> — 이것이 논증의 전부</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{같은 } S \text{ 를 주는 } f \text{ 는 정확히 2개}:\ f(x_3)=0 \text{ 인 것과 } 1 \text{ 인 것} $$</div>
+          <div class="derive__why">$f(x_1),f(x_2)$ 는 고정되고 $f(x_3)$ 만 자유롭다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ A \text{ 가 무엇을 예측하든 그 둘 중 정확히 하나에 맞고 하나에 틀린다} $$</div>
+          <div class="derive__why">$A$ 의 예측은 둘에 대해 <strong>같은 값</strong>일 수밖에 없다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore\ \frac{1}{8}\sum_{f} \mathbb{1}[A(S)(x_3)\ne f(x_3)] = \frac12 \quad \forall A $$</div>
+          <div class="derive__why"><strong>알고리즘과 무관하게 정확히 1/2</strong> — 식 (8)</div>
+        </div>
+      </div>
+
+      <details>
+        <summary>왜 그런데도 machine learning 이 작동하는가</summary>
+        <p>
+          NFL 의 전제는 <strong>"가능한 모든 함수가 똑같이 그럴듯하다"</strong> 는 것이다.
+          위 예에서 8개 세상에 균등한 prior 를 놓은 셈이다.
+        </p>
+        <p>
+          현실은 그렇지 않다. 우리가 만나는 문제는 <strong>가능한 함수 공간의 아주 좁은 구석</strong>에 몰려 있다 —
+          가까운 픽셀은 비슷하고, 문장은 앞뒤가 이어지고, 물리 법칙은 매끄럽다.
+          $2^{3}$ 이 아니라 $2^{(\text{1백만 픽셀})}$ 개의 가능한 이미지 분류 함수 중
+          실제로 나타나는 것은 극히 일부다.
+        </p>
+        <p>
+          그래서 실무의 질문은 <strong>"보편적으로 좋은 알고리즘은 무엇인가"</strong>(답: 없다)가 아니라
+          <strong>"이 문제의 규칙성에 맞는 귀납적 편향은 무엇인가"</strong> 가 된다.
+          CNN 이 이미지에서, Transformer 가 문장에서 잘 되는 것은
+          각각의 편향이 그 data 의 구조와 맞아떨어지기 때문이다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① 가설 공간을 바꾸면 경험적 위험이 바뀐다</h3>
+      <p>1차원 data 5개: $(1,0)\ (2,0)\ (3,1)\ (4,1)\ (5,0)$. 0-1 loss 를 쓴다.</p>
+      <p><strong>가설 공간 A</strong> — 임계값 분류기 $h_\theta(x)=\mathbb{1}[x>\theta]$</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$\theta$</th><th>예측 (x=1..5)</th><th>틀린 개수</th><th>$\hat{R}$</th></tr></thead>
+          <tbody>
+            <tr><td>0.5</td><td class="num">1, 1, 1, 1, 1</td><td class="num">3 (x=1,2,5)</td><td class="num">0.6</td></tr>
+            <tr><td>2.5</td><td class="num">0, 0, 1, 1, 1</td><td class="num"><strong>1 (x=5)</strong></td><td class="num"><strong>0.2</strong></td></tr>
+            <tr><td>4.5</td><td class="num">0, 0, 0, 0, 1</td><td class="num">3 (x=3,4,5)</td><td class="num">0.6</td></tr>
+            <tr><td>5.5</td><td class="num">0, 0, 0, 0, 0</td><td class="num">2 (x=3,4)</td><td class="num">0.4</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \min_{\theta}\hat{R}(h_\theta)=0.2 \ >\ 0 $$</div>
+          <div class="derive__why">이 $\mathcal{H}$ 로는 <strong>어떤 $\theta$ 로도 완벽히 맞힐 수 없다</strong> — 근사오차가 있다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathcal{H}_B=\{\mathbb{1}[a\le x\le b]\}:\ a=2.5,\ b=4.5 \ \Rightarrow\ 0,0,1,1,0 $$</div>
+          <div class="derive__why">구간 분류기로 넓히면 <strong>전부 맞는다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat{R}=0,\qquad |\mathcal{H}_A| \ \text{(구분 가능한 개수)} = 6,\quad |\mathcal{H}_B| = \binom{6}{2}+1=16 $$</div>
+          <div class="derive__why">5개 점은 6개 구간을 만든다. <strong>후보가 늘어난 대가로 맞춘 것</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{식 (7)}:\ \ln 6=1.79 \ \to\ \ln 16=2.77 $$</div>
+          <div class="derive__why">필요한 표본이 $\varepsilon=0.1$ 에서 <strong>약 10개 더</strong> 늘었다</div>
+        </div>
+      </div>
+      <p>
+        <span class="hl">근사오차 $0.2$ 를 없애기 위해 추정오차를 조금 샀다 —
+        <strong>식 (5)의 맞바꿈을 숫자로 본 것</strong>이다.</span>
+        어느 쪽이 나은지는 $n$ 이 얼마나 되는가에 달렸다.
+      </p>
+
+      <h3>② 표본 복잡도 계산</h3>
+      <p>이진 feature 10개에 대한 conjunction(논리곱) 가설을 생각한다. 각 feature 는 "쓴다/안 쓴다/부정해서 쓴다" 셋 중 하나이므로 $|\mathcal{H}|=3^{10}$.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ |\mathcal{H}|=3^{10}=59{,}049,\qquad \ln|\mathcal{H}|=10\ln3=10(1.0986)=10.986 $$</div>
+          <div class="derive__why">로그를 먼저 취해 두면 계산이 쉽다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \varepsilon=0.1,\ \delta=0.05:\quad \ln\tfrac1\delta=\ln20=2.996 $$</div>
+          <div class="derive__why">"오차 10% 이내를 95% 확신으로"</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ n\ \ge\ \frac{1}{0.1}(10.986+2.996)=10\times13.982=139.8\ \Rightarrow\ n=140 $$</div>
+          <div class="derive__why">식 (7). <strong>후보가 5만 9천 개인데 표본 140개면 된다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{feature 를 } 20 \text{개로}:\ \ln|\mathcal{H}|=21.97,\quad n\ge 10(21.97+3.00)=250 $$</div>
+          <div class="derive__why">$|\mathcal{H}|$ 는 <strong>35억 배</strong>가 됐는데 $n$ 은 1.8배</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \varepsilon \to 0.01:\quad n\ge 100(10.986+2.996)=1{,}398 $$</div>
+          <div class="derive__why">정밀도를 <strong>10배</strong> 올리려면 표본도 <strong>10배</strong> — $1/\varepsilon$ 에 비례</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \delta \to 0.001:\quad n\ge 10(10.986+6.908)=179 $$</div>
+          <div class="derive__why">확신을 95%→99.9% 로 올리는 값은 <strong>싸다</strong> — $\ln\frac1\delta$ 라서</div>
+        </div>
+      </div>
+      <p>
+        마지막 두 줄의 대비가 핵심이다.
+        <span class="hl"><strong>정밀도($\varepsilon$)는 비싸고 확신($\delta$)은 싸다</strong> — 앞은 역수로, 뒤는 로그로 들어오기 때문이다.</span>
+      </p>
+
+      <h3>③ No Free Lunch 를 표로 확인</h3>
+      <p>$\mathcal{X}=\{x_1,x_2,x_3\}$. $S$ 에서 $f(x_1)=1,\ f(x_2)=0$ 을 봤다. $x_3$ 을 예측한다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>세상 $f$</th><th>$f(x_1)$</th><th>$f(x_2)$</th><th>$f(x_3)$</th><th>$S$ 와 일치?</th><th>"1 로 예측" 채점</th><th>"0 으로 예측" 채점</th></tr></thead>
+          <tbody>
+            <tr><td>$f_1$</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td>✗</td><td>—</td><td>—</td></tr>
+            <tr><td>$f_2$</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td>✗</td><td>—</td><td>—</td></tr>
+            <tr><td>$f_3$</td><td class="num">0</td><td class="num">1</td><td class="num">0</td><td>✗</td><td>—</td><td>—</td></tr>
+            <tr><td>$f_4$</td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td>✗</td><td>—</td><td>—</td></tr>
+            <tr><td>$f_5$</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td><strong>✓</strong></td><td class="num">✗ 틀림</td><td class="num">✓ 맞음</td></tr>
+            <tr><td>$f_6$</td><td class="num">1</td><td class="num">0</td><td class="num">1</td><td><strong>✓</strong></td><td class="num">✓ 맞음</td><td class="num">✗ 틀림</td></tr>
+            <tr><td>$f_7$</td><td class="num">1</td><td class="num">1</td><td class="num">0</td><td>✗</td><td>—</td><td>—</td></tr>
+            <tr><td>$f_8$</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td>✗</td><td>—</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ S \text{ 와 일치하는 세상은 } f_5,\ f_6 \ \text{둘뿐이고 } f(x_3) \text{ 만 다르다} $$</div>
+          <div class="derive__why">훈련 data 가 $f(x_3)$ 에 대해 <strong>아무 정보도 주지 않는다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{“1 로 예측”}: \tfrac12 \ \text{정확}, \qquad \text{“0 으로 예측”}: \tfrac12 \ \text{정확} $$</div>
+          <div class="derive__why">어느 쪽이든 <strong>정확히 반</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{“}x_1 \text{ 을 따라 한다”}:\ \text{예측}=1 \Rightarrow \tfrac12, \qquad \text{“다수결”}:\ \text{예측}=0 \Rightarrow \tfrac12 $$</div>
+          <div class="derive__why">더 정교한 규칙도 <strong>똑같이 1/2</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{8개 세상 전체 평균으로도}\ \frac{1}{8}\sum_f(\cdots)=\frac12 $$</div>
+          <div class="derive__why">$S$ 가 달라져도 같은 논증이 반복된다 (유도 3)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{“}f \text{ 는 상수함수일 것”} \text{ 이라는 가정을 넣으면}:\ f_1,f_8 \text{ 만 남고 } S \text{ 와 모순} $$</div>
+          <div class="derive__why"><strong>가정이 들어오는 순간</strong> 세상이 걸러진다 — 귀납적 편향의 작동 방식</div>
+        </div>
+      </div>
+
+      <h3>④ 어느 쪽이 문제인가 — 학습곡선 읽기</h3>
+      <p>세 가지 상황의 train/test 오차다. 처방이 각각 다르다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>상황</th><th>train 오차</th><th>test 오차</th><th>지배하는 것</th><th>처방</th></tr></thead>
+          <tbody>
+            <tr><td>A</td><td class="num">0.32</td><td class="num">0.34</td><td>근사오차 (underfit)</td><td>$\mathcal{H}$ 를 키운다 · feature 를 늘린다</td></tr>
+            <tr><td>B</td><td class="num">0.01</td><td class="num">0.28</td><td>추정오차 (overfit)</td><td>data 를 늘린다 · 정규화 · $\mathcal{H}$ 를 줄인다</td></tr>
+            <tr><td>C</td><td class="num">0.11</td><td class="num">0.13</td><td>균형 — $R^\star$ 근처</td><td>더 나아지려면 <strong>문제 정의나 feature 를 바꿔야</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{A}:\ \hat R \text{ 자체가 크다} \ \Rightarrow\ \inf_{h\in\mathcal{H}}R(h) \text{ 가 크다는 신호} $$</div>
+          <div class="derive__why">data 를 100배 모아도 <strong>0.32 아래로 안 내려간다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{B}:\ R(\hat h)-\hat R(\hat h)=0.27 \ \text{— 간극이 크다} $$</div>
+          <div class="derive__why">$\mathcal{H}$ 안에서 <strong>잘못 골랐다</strong>. $n$ 을 늘리면 줄어든다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{C}:\ \text{간극 } 0.02,\ \text{둘 다 } 0.12 \text{ 근처} $$</div>
+          <div class="derive__why">둘 다 작다 — <strong>남은 것은 대부분 $R^\star$</strong>(잡음)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{A 에서 data 를 늘리는 것} = \text{추정오차만 줄이는 것} = \text{효과 없음} $$</div>
+          <div class="derive__why"><strong>진단을 틀리면 돈과 시간을 엉뚱한 데 쓴다</strong> (<a href="../ch04/4.5-statistical-estimation.html">4.5</a> 오해 4)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>같은 점 다른 답</strong> · <strong>오차 분해</strong> ·
+        <strong>표본 복잡도</strong> · <strong>No Free Lunch</strong> — 에 이어,
+        아래에서 <strong>가설 공간을 직접 갈아 끼우며</strong> 경험적 위험이 어떻게 변하는지 본다.
+      </p>
+
+      <figure class="widget" data-widget="hypothesis-space">
+        <figcaption class="widget__bar">Hypothesis Space — 후보를 넓히면 무엇을 얻고 무엇을 잃나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">차수를 올리면 train 오차는 <strong>단조 감소</strong>하지만 test 오차는 어느 지점부터 <strong>다시 오릅니다</strong>.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"경험적 위험은 기대 위험의 불편추정량이니 $\hat R(\hat h)$ 로 성능을 보고해도 된다."</p>
+        <p>
+          <strong>실제로는</strong> $\hat R_S(h)$ 가 $R(h)$ 의 불편추정량인 것은 <strong>$h$ 를 $S$ 와 무관하게 고정했을 때</strong>뿐이다.
+          $\hat h$ 는 <strong>$S$ 에서 $\hat R$ 이 가장 작아지도록 고른 것</strong>이라 낙관적으로 치우친다 —
+          여러 후보 중 최솟값을 고르는 순간 <a href="../ch04/4.8-hypothesis-testing.html">4.8</a>의 다중검정과 같은 선택 편향이 생긴다.
+          <a href="../ch04/4.6-likelihood-estimation.html">4.6</a>에서 MLE 의 $\hat\sigma^2$ 이 과소추정된 것과 정확히 같은 구조다.
+          그래서 별도의 test set 이 필요하고, 그 test set 도 <strong>한 번만</strong> 써야 한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"train 오차가 0 이면 완벽하게 배운 것이다."</p>
+        <p>
+          <strong>실제로는</strong> $\hat R=0$ 은 <strong>$\mathcal{H}$ 가 그 data 를 외울 만큼 크다</strong>는 사실만 알려 준다.
+          모든 점을 지나는 다항식은 언제나 존재하고(점 $n$개면 $n-1$차), 무작위 label 도 신경망은 외운다.
+          <strong>$\hat R=0$ 자체는 좋은 소식도 나쁜 소식도 아니다</strong> —
+          그 옆의 test 오차와 함께 봐야 뜻이 생긴다(예제 ④).
+          현대 딥러닝은 오히려 $\hat R=0$ 을 지나서도 test 오차가 계속 줄어드는 영역에서 작동하는데
+          (<a href="../ch03/3.9-constraints-regularization.html">3.9</a>의 double descent), 그것은 <strong>$\mathcal{H}$ 의 크기가 아니라 최적화의 암묵적 편향</strong>이 하는 일이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"No Free Lunch 정리에 따르면 어떤 알고리즘을 써도 결국 같다."</p>
+        <p>
+          <strong>실제로는</strong> NFL 의 평균은 <strong>가능한 모든 함수에 균등한 가중치</strong>를 준 것이다.
+          그 균등분포에서 뽑힌 함수는 거의 전부 <strong>완전한 잡음</strong>이라 애초에 배울 것이 없다.
+          현실의 문제는 그 공간의 극히 좁은 구석에 몰려 있고,
+          <strong>그 구석의 구조와 맞는 편향을 가진 알고리즘이 이긴다</strong>.
+          NFL 이 실제로 주는 교훈은 "알고리즘 선택이 무의미하다"가 아니라
+          <strong>"어떤 가정을 넣었는지 밝히고, 그 가정이 이 문제에 맞는지 확인하라"</strong> 이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"가설 공간이 크면 클수록 좋다 — 진짜 함수가 들어 있을 확률이 높아지니까."</p>
+        <p>
+          <strong>실제로는</strong> 근사오차만 보면 맞지만 <strong>추정오차가 함께 커진다</strong>(유도 1).
+          후보가 많을수록 <strong>운 좋게 train 을 잘 맞히는 나쁜 가설</strong>이 섞일 여지가 커지고,
+          유한한 표본으로는 그것을 걸러 낼 수 없다.
+          식 (7)의 $\ln|\mathcal{H}|$ 가 정확히 그 대가다.
+          그래서 실무의 목표는 "$\mathcal{H}$ 를 키우는 것"이 아니라
+          <strong>"$n$ 에 맞는 크기의 $\mathcal{H}$ 를 고르는 것"</strong> 이고,
+          그 절차를 형식화한 것이 <a href="5.2-statistical-learning-theory.html">5.2</a>의 SRM 이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"편향 없이 data 만 보고 배우는 것이 가장 객관적이다."</p>
+        <p>
+          <strong>실제로는</strong> 귀납적 편향이 없으면 <strong>학습이 논리적으로 불가능</strong>하다.
+          $\mathcal{H}$ 가 "모든 함수"이면, training set 을 전부 외우고 나머지 입력에 대해서는
+          <strong>어떤 답을 내도 $\hat R$ 이 같다</strong> — 고를 근거가 없다(유도 3).
+          "편향 없는 학습"이라고 부르는 것들은 실은 편향을 <strong>명시하지 않았을 뿐</strong>이며,
+          숨은 편향은 검증할 수도 고칠 수도 없어 더 위험하다.
+          <strong>좋은 실무는 편향을 없애는 것이 아니라 드러내 놓고 고르는 것</strong>이다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–③ 을 검산한다.</p>
+      <details>
+        <summary>NumPy — 경험적 위험 · 표본 복잡도 · NFL (20줄)</summary>
+<pre><code>import numpy as np
+from itertools import product
+
+x = np.array([1, 2, 3, 4, 5]); y = np.array([0, 0, 1, 1, 0])
+for th in [0.5, 2.5, 4.5, 5.5]:
+    print(th, ((x &gt; th).astype(int) != y).mean().round(2))   # 0.6 0.2 0.6 0.4
+best = min((((x &gt;= a) &amp; (x &lt;= b)).astype(int) != y).mean()
+           for a in x for b in x)
+print("구간 가설 최소 경험적 위험:", best)                    # 0.0
+
+for H, eps, del_ in [(3**10, .1, .05), (3**20, .1, .05), (3**10, .01, .05), (3**10, .1, .001)]:
+    print(H, eps, del_, int(np.ceil((np.log(H) + np.log(1 / del_)) / eps)))
+# 59049 0.1 0.05 140 / ... 250 / ... 1398 / ... 179
+
+F = list(product([0, 1], repeat=3))                          # 8개의 세상
+S = {0: 1, 1: 0}                                             # f(x1)=1, f(x2)=0
+for name, pred in [("항상 1", 1), ("항상 0", 0)]:
+    hit = [f[2] == pred for f in F if f[0] == S[0] and f[1] == S[1]]
+    print(name, np.mean(hit))                                # 0.5 / 0.5
+</code></pre>
+        <p>
+          <small>
+            마지막 블록에서 $S$ 와 일치하는 세상은 $f_5,f_6$ 둘뿐이고 $f(x_3)$ 만 다르므로,
+            <strong>어떤 예측을 넣어도 평균이 0.5</strong> 다. 예측 규칙을 바꿔 가며 돌려 봐도 값은 변하지 않는다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $|\mathcal{H}|=2^{20}$, $\varepsilon=0.05$, $\delta=0.01$ 일 때 필요한 표본 수는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 370개</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>약 2,100만 개</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>약 20개</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\ln 2^{20}=20\ln2=13.86$, $\ln\frac1{0.01}=4.61$ →
+            $n\ge\frac{1}{0.05}(13.86+4.61)=20\times18.47=369.4$ → <strong>370</strong>.
+            <strong>나</strong>는 $|\mathcal{H}|$ 자체를 쓴 값으로, <strong>로그가 들어간다는 점</strong>을 놓친 것이다.
+            후보가 백만 개여도 표본 수백 개면 되는 것이 식 (7)의 요점이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            예제 ①의 data 에서 가설 공간을 "모든 함수"로 두면 최소 경험적 위험은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>0 — 하지만 본 적 없는 $x$ 에 대해서는 아무 근거가 없다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.2 — 임계값 가설의 최솟값과 같다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>정의되지 않는다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            5개 점을 통째로 외우면 $\hat R=0$ 이다. 문제는 그다음이다 —
+            $x=2.7$ 에서 무엇을 내놓든 $\hat R$ 이 <strong>똑같이 0</strong> 이라 고를 근거가 없다(오해 5).
+            <strong>경험적 위험만으로는 일반화를 논할 수 없다</strong>는 것을 보여 주는 극단적인 경우이며,
+            그래서 $\mathcal{H}$ 를 제한하거나 정규화를 넣는다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            같은 조건에서 $\varepsilon$ 만 $0.1\to0.02$ 로 줄이면 필요한 표본은 몇 배?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>5배</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>25배</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>변하지 않는다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            식 (7)에서 $n\propto 1/\varepsilon$ 이므로 $0.1/0.02=5$배다.
+            <strong>나</strong>는 $1/\varepsilon^2$ 로 착각한 것인데, 그것은
+            <strong>실현 불가능한(agnostic) 경우</strong>의 형태다 — 정답이 $\mathcal{H}$ 안에 없으면
+            $n\propto 1/\varepsilon^2$ 이 되어 훨씬 비싸진다(<a href="5.2-statistical-learning-theory.html">5.2</a>).
+            어떤 가정 아래의 식인지가 지수를 바꾼다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            train 오차 0.30, test 오차 0.32 다. 가장 먼저 할 일은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>model 표현력을 키운다 — 근사오차가 지배한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>data 를 10배 모은다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>정규화를 세게 건다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            둘이 <strong>붙어 있으면서 높다</strong>는 것은 추정오차가 작고 근사오차가 크다는 뜻이다(예제 ④ 상황 A).
+            data 를 늘리면 추정오차만 줄어드는데 그건 이미 0.02 밖에 안 된다.
+            <strong>다</strong>는 $\mathcal{H}$ 를 더 줄이는 처방이라 오히려 나빠진다.
+            <strong>진단이 처방을 정한다</strong>는 것이 이 절의 실용적 결론이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            제곱오차 loss 로 학습한 회귀 model 이 근사하는 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>조건부 평균 $\mathbb{E}[y\mid x]$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>조건부 중앙값</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>조건부 최빈값</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\mathbb{E}[(c-y)^2]$ 를 최소로 하는 $c$ 는 $\mathbb{E}[y]$ 다 (<a href="../ch04/4.3-expectation-variance.html">4.3</a> 유도 1의 부산물).
+            <strong>나</strong>는 절대오차, <strong>다</strong>는 0-1 loss 에 대응한다.
+            그래서 이상치가 많은 문제에서 MSE 가 흔들린다 — 평균이 끌려가기 때문이며,
+            <strong>loss 를 바꾸면 배우는 대상 자체가 바뀐다</strong>.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            "우리 알고리즘은 어떤 문제에서도 잘 작동합니다." 이 주장에 대한 옳은 반응은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>어떤 귀납적 편향을 넣었고 그것이 어떤 문제에서 깨지는지 물어본다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>NFL 정리에 위배되므로 거짓이다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>충분히 큰 가설 공간을 쓰면 가능하다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            NFL 은 "모든 함수에 균등한 가중치" 아래의 진술이라
+            <strong>실무 주장을 곧바로 반박하지는 못한다</strong>(오해 3) — <strong>나</strong>는 정리를 과하게 쓴 것이다.
+            생산적인 반응은 <strong>가정을 드러내게 하는 것</strong>이다.
+            "잘 작동한다"는 언제나 "이런 구조를 가진 문제에서"라는 조건을 달고 있으며,
+            그 조건을 말할 수 없다면 검증도 할 수 없다.
+            <strong>다</strong>는 오해 4 — 큰 $\mathcal{H}$ 는 추정오차를 부른다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="5.2-statistical-learning-theory.html">5.2 통계적 학습이론</a></strong> — 식 (5)의 두 항을 정리로 만든다. VC dimension·일반화 상계.</li>
+        <li><strong><a href="5.14-model-selection.html">5.14 모델 선택</a></strong> — $\mathcal{H}$ 를 고르는 절차를 실무로 옮긴 것.</li>
+        <li><strong><a href="5.13-model-evaluation.html">5.13 모델 평가</a></strong> — $\hat R$ 대신 무엇을 어떻게 재야 하는가.</li>
+        <li><strong><a href="../ch01/1.5-data-split-evaluation.html">1.5 데이터 분할과 평가</a></strong> — 오해 1 의 실무적 처방.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-shalev2014-uml" data-ref="shalev2014-uml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Shalev-Shwartz, S. &amp; Ben-David, S. (2014). <em>Understanding Machine Learning: From Theory to Algorithms</em>. Cambridge University Press.</span>
+          <span class="ref__where">2장 — 학습 문제를 $(\mathcal{X},\mathcal{Y},P,\ell,\mathcal{H})$ 로 형식화하고 ERM 을 도입하는 구성(식 1·3·4). 2.3절 — 유한 가설 공간의 표본 복잡도 유도(유도 2, 식 7). 5.1절 — No Free Lunch 정리의 엄밀한 서술과 증명(유도 3). 5.2절 — 초과 위험을 근사오차·추정오차로 쪼개는 분해(식 5, 유도 1)</span>
+          <a class="ref__link" href="https://www.cs.huji.ac.il/~shais/UnderstandingMachineLearning/">cs.huji.ac.il/~shais</a>
+        </li>
+        <li class="ref" id="ref-wolpert1996-no-free-lunch" data-ref="wolpert1996-no-free-lunch">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Wolpert, D. H. (1996). <em>The Lack of A Priori Distinctions Between Learning Algorithms</em>. Neural Computation, 8(7), 1341–1390.</span>
+          <span class="ref__where">§2–3 — 목표 함수에 균등 prior 를 놓으면 <strong>off-training-set 오차의 기댓값이 알고리즘과 무관</strong>해진다는 결과(식 8, 예제 ③). §5 — 그 결론이 "가정 없이는 일반화가 불가능하다"는 뜻이지 실무에서 알고리즘 선택이 무의미하다는 뜻이 아니라는 저자 자신의 논의(오해 3)</span>
+          <a class="ref__link" href="https://doi.org/10.1162/neco.1996.8.7.1341">doi.org</a>
+        </li>
+        <li class="ref" id="ref-mitchell1997-ml" data-ref="mitchell1997-ml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Mitchell, T. M. (1997). <em>Machine Learning</em>. McGraw-Hill.</span>
+          <span class="ref__where">2.7절 "Inductive Bias" — 귀납적 편향을 "학습기가 관측을 넘어 일반화할 때 쓰는 추가 가정의 집합"으로 정의하고, <strong>편향이 없는 학습기(rote learner)는 본 적 없는 입력에 아무 예측도 못 한다</strong>는 논증(오해 5). 2.4–2.6절 — 가설 공간을 후보 집합으로 보는 version space 관점이 식 (2)의 배경이다</span>
+          <a class="ref__link" href="https://www.cs.cmu.edu/~tom/mlbook.html">cs.cmu.edu/~tom/mlbook</a>
+        </li>
+        <li class="ref" id="ref-hastie2009-esl" data-ref="hastie2009-esl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em> (2nd ed.). Springer.</span>
+          <span class="ref__where">2.4절 — loss 를 바꾸면 최적 예측이 조건부 평균·중앙값·Bayes 분류기로 갈린다는 표('수식과 기호'의 loss 표). 2.9절 — model 복잡도와 편향-분산의 관계. 7.2–7.3절 — train 오차가 test 오차의 낙관적 추정이라는 계산(오해 1)과 학습곡선으로 진단하는 법(예제 ④)</span>
+          <a class="ref__link" href="https://hastie.su.domains/ElemStatLearn/">hastie.su.domains</a>
+        </li>
+        <li class="ref" id="ref-caltech-cs156" data-ref="caltech-cs156">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Abu-Mostafa, Y. S. <em>Learning From Data (CS156)</em>. Caltech.</span>
+          <span class="ref__where">Lecture 1 "The Learning Problem" — 학습 문제의 다섯 구성요소 도식과 $E_{\text{in}}$/$E_{\text{out}}$ 표기('같은 것을 다르게 부른다' 표). Lecture 2 "Is Learning Feasible?" — 유한 $\mathcal{H}$ 에 union bound 를 써서 $|\mathcal{H}|$ 가 들어오는 과정(유도 2)과 "학습은 확률적 보증일 뿐"이라는 결론</span>
+          <a class="ref__link" href="https://work.caltech.edu/telecourse.html">work.caltech.edu</a>
+        </li>
+        <li class="ref" id="ref-murphy2022-pml" data-ref="murphy2022-pml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Murphy, K. P. (2022). <em>Probabilistic Machine Learning: An Introduction</em>. MIT Press.</span>
+          <span class="ref__where">4.3절 — 경험적 위험 최소화를 MLE 의 일반화로 놓는 서술과 근사오차·추정오차·잡음의 삼분법. 1.2절 — 지도학습을 $\mathcal{X}\to\mathcal{Y}$ 사상으로 정의하고 문제 유형을 $\mathcal{Y}$ 로 가르는 표('입력·출력 공간' 표). 19.1절 — 귀납적 편향이 아키텍처와 최적화에 숨어 들어가는 예</span>
+          <a class="ref__link" href="https://probml.github.io/pml-book/book1.html">probml.github.io</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+/* 플롯 영역 배경 — 축 라벨이 놓이는 '칸'을 눈에 보이게 만든다.
+   (tools/check-visual.mjs 의 '칸초과' 는 같은 그룹의 첫 rect 를 칸으로 본다) */
+function panel(p) {
+  p.add(VIZ.el('rect', {
+    x: p.pad.l, y: p.pad.t, width: p.iw, height: p.ih,
+    fill: 'var(--ink-3)', 'fill-opacity': 0.03, stroke: 'none'
+  }));
+  return p;
+}
+function mkRand(seed) {
+  var s = seed || 12345;
+  return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+}
+function gauss(rnd) {
+  var u = Math.max(1e-9, rnd()), v = rnd();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+/* 최소제곱 다항식 맞추기 (정규방정식을 가우스 소거로) */
+function polyfit(xs, ys, deg) {
+  var m = deg + 1, i, j, k, A = [], b = [];
+  for (i = 0; i < m; i++) {
+    A.push(new Array(m).fill(0));
+    b.push(0);
+    for (k = 0; k < xs.length; k++) {
+      for (j = 0; j < m; j++) A[i][j] += Math.pow(xs[k], i + j);
+      b[i] += Math.pow(xs[k], i) * ys[k];
+    }
+    A[i][i] += 1e-8;                      /* 수치 안정용 아주 작은 ridge */
+  }
+  for (i = 0; i < m; i++) {
+    var piv = i;
+    for (k = i + 1; k < m; k++) if (Math.abs(A[k][i]) > Math.abs(A[piv][i])) piv = k;
+    var t = A[i]; A[i] = A[piv]; A[piv] = t;
+    var tb = b[i]; b[i] = b[piv]; b[piv] = tb;
+    if (Math.abs(A[i][i]) < 1e-12) continue;
+    for (k = i + 1; k < m; k++) {
+      var f = A[k][i] / A[i][i];
+      for (j = i; j < m; j++) A[k][j] -= f * A[i][j];
+      b[k] -= f * b[i];
+    }
+  }
+  var c = new Array(m).fill(0);
+  for (i = m - 1; i >= 0; i--) {
+    var s2 = b[i];
+    for (j = i + 1; j < m; j++) s2 -= A[i][j] * c[j];
+    c[i] = Math.abs(A[i][i]) < 1e-12 ? 0 : s2 / A[i][i];
+  }
+  return c;
+}
+function polyval(c, x) {
+  var v = 0;
+  for (var i = c.length - 1; i >= 0; i--) v = v * x + c[i];
+  return v;
+}
+
+/* ============================================================
+   위젯 1 — 같은 점을 지나는 여러 함수
+   ============================================================ */
+WIDGETS.register('many-fits', function (root, ctx) {
+  var show = { line: true, poly: true, wig: true }, xq = 2.5;
+
+  var pts = [[1, 1.0], [2, 2.2], [3, 1.6]];
+
+  var p = VIZ.plot({ w: 460, h: 285, xmin: 0.3, xmax: 3.7, ymin: 0, ymax: 3.4,
+    pad: { t: 30, r: 16, b: 32, l: 44 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'a', label: 'x = 2.5 에서 직선의 예측', digits: 4 },
+    { key: 'b', label: 'x = 2.5 에서 2차 곡선의 예측', digits: 4 },
+    { key: 'c', label: 'x = 2.5 에서 요동치는 함수의 예측', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  /* 세 점을 모두 지나는 2차 곡선 */
+  var quad = polyfit([1, 2, 3], [1.0, 2.2, 1.6], 2);
+  /* 직선은 세 점을 다 지날 수 없으므로 최소제곱 */
+  var lin = polyfit([1, 2, 3], [1.0, 2.2, 1.6], 1);
+  function wig(x) { return polyval(quad, x) + 0.9 * Math.sin(7.5 * (x - 1)) * (x - 1) * (x - 3); }
+
+  function draw() {
+    panel(p.clear()).grid(1, 1).axes('x', '').ticks(1, 1);
+    p.text(0.3, 3.4, 'y · 세 곡선 모두 후보다 — data 는 셋을 구별하지 못한다',
+      { size: 10, dy: -10 });
+    if (show.line) p.curve(function (x) { return polyval(lin, x); }, { samples: 200, alt: true, dash: '5 4' });
+    if (show.poly) p.curve(function (x) { return polyval(quad, x); }, { samples: 240 });
+    if (show.wig) p.curve(wig, { samples: 320, dash: '2 3' });
+    pts.forEach(function (q) { p.dot(q[0], q[1], 5); });
+    p.line([[xq, 0], [xq, 3.2]], { dash: '3 3' });
+
+    var a = polyval(lin, xq), b = polyval(quad, xq), c = wig(xq);
+    if (show.poly) p.dot(xq, Math.max(0, Math.min(3.4, b)), 4.5);
+    p.callout(xq, Math.max(0.2, Math.min(3.0, b)), '여기서 답이 갈린다',
+      { dx: 18, dy: -22, tone: 'var(--seal)' });
+
+    out.set('a', a);
+    out.set('b', b);
+    out.set('c', c);
+    out.setRaw('note', '세 값의 폭 ' + (Math.max(a, b, c) - Math.min(a, b, c)).toFixed(3)
+      + ' — data 만으로는 좁힐 수 없다');
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '어떤 가설 공간을 보여 줄까',
+    options: [
+      { value: 'all', label: '셋 다' },
+      { value: 'line', label: '직선만' },
+      { value: 'poly', label: '2차만' },
+      { value: 'wig', label: '요동치는 것만' }
+    ],
+    value: 'all',
+    onChange: function (v) {
+      show = { line: v === 'all' || v === 'line', poly: v === 'all' || v === 'poly',
+               wig: v === 'all' || v === 'wig' };
+      draw();
+    }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '예측할 위치 x', min: 0.4, max: 3.6, step: 0.05, value: 2.5, digits: 2,
+    onInput: function (v) { xq = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — 오차 분해
+   ============================================================ */
+WIDGETS.register('risk-decomp', function (root, ctx) {
+  var n = 60, noise = 0.15, at = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'app', label: '근사오차 (H 가 작아서)', digits: 4 },
+    { key: 'est', label: '추정오차 (data 가 적어서)', digits: 4 },
+    { key: 'tot', label: '총 초과 위험', digits: 4 },
+    { key: 'best', label: '총합이 최소가 되는 복잡도' }
+  ]);
+
+  /* 복잡도 c 에 대한 모형: 근사오차는 지수적으로 줄고 추정오차는 c/n 로 는다 */
+  function app(c) { return 0.55 * Math.exp(-0.55 * c); }
+  function est(c) { return 1.6 * c / n; }
+  function tot(c) { return app(c) + est(c) + noise; }
+
+  function draw() {
+    var p = VIZ.plot({ w: 460, h: 290, xmin: 0, xmax: 14, ymin: 0, ymax: 1.0,
+      pad: { t: 30, r: 16, b: 34, l: 48 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(2, 0.25).axes('가설 공간의 복잡도', '').ticks(2, 0.25);
+    p.text(0, 1.0, '위험 · 점선 = 근사오차 · 잔점선 = 추정오차 · 실선 = 합',
+      { size: 10, dy: -10 });
+
+    p.curve(app, { samples: 200, alt: true, dash: '5 4' });
+    p.curve(est, { samples: 200, dash: '2 3' });
+    p.curve(tot, { samples: 240 });
+    p.line([[0, noise], [14, noise]], { dash: '1 3' });
+
+    /* 최솟점 */
+    var bc = 0, bv = 9;
+    for (var c = 0.1; c <= 14; c += 0.05) if (tot(c) < bv) { bv = tot(c); bc = c; }
+    p.dot(bc, bv, 5.5);
+    p.line([[at, 0], [at, tot(at)]], { width: 1.6 });
+    p.dot(at, tot(at), 5);
+    p.callout(bc, bv, '최적 복잡도 ' + bc.toFixed(1), { dx: 20, dy: 24, tone: 'var(--seal)' });
+
+    out.set('app', app(at));
+    out.set('est', est(at));
+    out.set('tot', tot(at));
+    out.setRaw('best', bc.toFixed(1) + '  (지금 고른 값 ' + at.toFixed(1) + ')');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '표본 수 n', min: 15, max: 400, step: 5, value: 60, digits: 0,
+    onInput: function (v) { n = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '지금 고른 복잡도', min: 0.2, max: 14, step: 0.2, value: 4, digits: 1,
+    onInput: function (v) { at = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '잡음 바닥 R★ (aleatoric)', min: 0, max: 0.4, step: 0.01, value: 0.15, digits: 2,
+    onInput: function (v) { noise = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — 표본 복잡도
+   ============================================================ */
+WIDGETS.register('sample-complexity', function (root, ctx) {
+  var logH = 6, eps = 0.1, del = 0.05;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'H', label: '가설 공간 크기 |H|' },
+    { key: 'n', label: '필요한 표본 수 n' },
+    { key: 'part', label: '기여도 (ln|H| : ln(1/δ))' },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function need(lh) { return (lh * Math.LN10 + Math.log(1 / del)) / eps; }
+
+  function draw() {
+    var top = Math.max(50, need(12) * 1.1);
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 0, xmax: 12, ymin: 0, ymax: top,
+      pad: { t: 30, r: 16, b: 34, l: 56 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(2, top / 4).axes('log₁₀ |H|  (후보의 개수)', '').ticks(2, top / 4);
+    p.text(0, top, '필요한 표본 수 n — 후보가 10배가 되어도 계단 하나만 오른다',
+      { size: 10, dy: -10 });
+    p.curve(need, { samples: 200 });
+    p.dot(logH, need(logH), 5.5);
+    p.callout(logH, need(logH), 'n = ' + Math.ceil(need(logH)),
+      { dx: 20, dy: 24, tone: 'var(--seal)' });
+
+    var a = logH * Math.LN10, b = Math.log(1 / del);
+    out.setRaw('H', '10^' + logH.toFixed(1) + '  (≈ ' + Math.pow(10, logH).toExponential(1) + ')');
+    out.setRaw('n', String(Math.ceil(need(logH))));
+    out.setRaw('part', a.toFixed(2) + ' : ' + b.toFixed(2)
+      + '  → ' + (100 * a / (a + b)).toFixed(0) + '% 가 |H| 몫');
+    out.setRaw('note', eps <= 0.02 ? 'ε 이 작아 표본이 급격히 비싸진다'
+      : (logH >= 9 ? '후보가 10억 개여도 n 은 수백~수천' : '보통'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'log₁₀ |H|', min: 0.5, max: 12, step: 0.5, value: 6, digits: 1,
+    onInput: function (v) { logH = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '허용 오차 ε', min: 0.01, max: 0.3, step: 0.01, value: 0.1, digits: 2,
+    onInput: function (v) { eps = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '실패 확률 δ', min: 0.001, max: 0.2, step: 0.001, value: 0.05, digits: 3,
+    onInput: function (v) { del = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — No Free Lunch
+   ============================================================ */
+WIDGETS.register('nfl-demo', function (root, ctx) {
+  var rule = 'always1', s1 = 1, s2 = 0;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'seen', label: '관측한 훈련 data' },
+    { key: 'cand', label: '이 훈련 data 와 일치하는 세상' },
+    { key: 'pred', label: '이 규칙의 x₃ 예측' },
+    { key: 'acc', label: '일치하는 세상들에서의 평균 정확도', digits: 3 }
+  ]);
+
+  function predict() {
+    if (rule === 'always1') return 1;
+    if (rule === 'always0') return 0;
+    if (rule === 'copy') return s1;                     /* x1 을 따라 한다 */
+    return (s1 + s2 >= 1) ? 1 : 0;                      /* 다수결 */
+  }
+
+  function draw() {
+    var W = 460, H0 = 260, padL = 60, padT = 46, cw = 44, rh = 24;
+    var svg = VIZ.el('svg', { viewBox: '0 0 ' + W + ' ' + H0, role: 'img' });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(svg);
+
+    var pr = predict(), hit = 0, cnt = 0;
+    for (var f = 0; f < 8; f++) {
+      var a = (f >> 2) & 1, b = (f >> 1) & 1, c = f & 1;
+      var match = (a === s1 && b === s2);
+      if (match) { cnt++; if (c === pr) hit++; }
+      var y = padT + f * rh;
+      svg.appendChild(VIZ.el('rect', {
+        x: padL - 6, y: y - 15, width: 3 * cw + 96, height: rh - 4, rx: 3,
+        fill: match ? 'var(--amber)' : 'var(--ink-3)', 'fill-opacity': match ? 0.22 : 0.05
+      }));
+      svg.appendChild(VIZ.el('text', { x: 14, y: y, class: 'viz-label', 'font-size': 11,
+        text: 'f' + (f + 1) }));
+      [a, b, c].forEach(function (v, k) {
+        svg.appendChild(VIZ.el('text', {
+          x: padL + k * cw, y: y, 'text-anchor': 'middle', class: 'viz-label', 'font-size': 12,
+          'fill-opacity': match ? 1 : 0.35, text: String(v)
+        }));
+      });
+      if (match) {
+        svg.appendChild(VIZ.el('text', {
+          x: padL + 3 * cw + 16, y: y, class: 'viz-label', 'font-size': 11,
+          fill: c === pr ? 'var(--jade)' : 'var(--seal)',
+          text: c === pr ? '예측 맞음' : '예측 틀림'
+        }));
+      }
+    }
+    ['x₁', 'x₂', 'x₃'].forEach(function (L, k) {
+      svg.appendChild(VIZ.el('text', { x: padL + k * cw, y: padT - 17, 'text-anchor': 'middle',
+        class: 'viz-label', 'font-size': 12, text: L }));
+    });
+    svg.appendChild(VIZ.el('text', { x: 12, y: 13, class: 'viz-label', 'font-size': 11,
+      text: '가능한 세상 8개 · 진한 줄 = 훈련 data 와 앞뒤가 맞는 세상' }));
+
+    out.setRaw('seen', 'f(x₁) = ' + s1 + ',  f(x₂) = ' + s2);
+    out.setRaw('cand', cnt + ' 개 — x₃ 만 다르다');
+    out.setRaw('pred', String(pr));
+    out.set('acc', cnt ? hit / cnt : 0);
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: 'x₃ 를 예측하는 규칙',
+    options: [
+      { value: 'always1', label: '항상 1' },
+      { value: 'always0', label: '항상 0' },
+      { value: 'copy', label: 'x₁ 을 따라 한다' },
+      { value: 'vote', label: '다수결' }
+    ],
+    value: 'always1', onChange: function (v) { rule = v; draw(); }
+  });
+  WIDGETS.toggle({
+    host: ctx.controls, label: '관측한 f(x₁)',
+    options: [{ value: 0, label: '0' }, { value: 1, label: '1' }],
+    value: 1, onChange: function (v) { s1 = Number(v); draw(); }
+  });
+  WIDGETS.toggle({
+    host: ctx.controls, label: '관측한 f(x₂)',
+    options: [{ value: 0, label: '0' }, { value: 1, label: '1' }],
+    value: 0, onChange: function (v) { s2 = Number(v); draw(); }
+  });
+  s1 = 1; s2 = 0; rule = 'always1';
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — 가설 공간을 갈아 끼우기 (다항식 차수)
+   ============================================================ */
+WIDGETS.register('hypothesis-space', function (root, ctx) {
+  var deg = 3, n = 14, noise = 0.28, seed = 5;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'tr', label: 'train 오차 (경험적 위험)', digits: 4 },
+    { key: 'te', label: 'test 오차 (기대 위험 추정)', digits: 4 },
+    { key: 'gap', label: '간극 = 일반화 오차', digits: 4 },
+    { key: 'diag', label: '진단' }
+  ]);
+
+  function truef(x) { return 0.9 * Math.sin(1.7 * x) + 0.25 * x; }
+
+  function data() {
+    var rnd = mkRand(seed * 3301 + 11), xs = [], ys = [], txs = [], tys = [];
+    var i;
+    for (i = 0; i < n; i++) {
+      var x = -2.6 + 5.2 * i / (n - 1);
+      xs.push(x); ys.push(truef(x) + noise * gauss(rnd));
+    }
+    for (i = 0; i < 120; i++) {
+      var t = -2.6 + 5.2 * i / 119;
+      txs.push(t); tys.push(truef(t) + noise * gauss(rnd));
+    }
+    return { xs: xs, ys: ys, txs: txs, tys: tys };
+  }
+
+  function draw() {
+    var d = data();
+    var c = polyfit(d.xs, d.ys, deg);
+    var tr = 0, te = 0, i;
+    for (i = 0; i < d.xs.length; i++) tr += Math.pow(polyval(c, d.xs[i]) - d.ys[i], 2) / d.xs.length;
+    for (i = 0; i < d.txs.length; i++) te += Math.pow(polyval(c, d.txs[i]) - d.tys[i], 2) / d.txs.length;
+
+    var p = VIZ.plot({ w: 460, h: 290, xmin: -3, xmax: 3, ymin: -2.6, ymax: 2.6,
+      pad: { t: 30, r: 16, b: 32, l: 44 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x', '').ticks(1, 1);
+    p.text(-3, 2.6, 'y · 점선 = 참 함수 · 실선 = 맞춘 다항식 (차수 ' + deg + ')',
+      { size: 10, dy: -10 });
+
+    p.curve(truef, { samples: 240, alt: true, dash: '5 4' });
+    p.curve(function (x) { return polyval(c, x); }, { samples: 300 });
+    for (i = 0; i < d.xs.length; i++) {
+      if (Math.abs(d.ys[i]) > 2.5) continue;
+      p.dot(d.xs[i], d.ys[i], 3.6);
+    }
+
+    out.set('tr', tr);
+    out.set('te', te);
+    out.set('gap', te - tr);
+    out.setRaw('diag', te - tr > 0.6 * te ? '추정오차 지배 — overfit'
+      : (tr > 0.35 ? '근사오차 지배 — underfit' : '균형'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '다항식 차수 (가설 공간의 크기)', min: 0, max: 12, step: 1, value: 3, digits: 0,
+    onInput: function (v) { deg = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '훈련 표본 수 n', min: 5, max: 60, step: 1, value: 14, digits: 0,
+    onInput: function (v) { n = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '잡음 크기', min: 0, max: 0.8, step: 0.02, value: 0.28, digits: 2,
+    onInput: function (v) { noise = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 30, step: 1, value: 5, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

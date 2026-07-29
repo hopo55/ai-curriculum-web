@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5.3 선형회귀 — AI 이론 학습</title>
+<meta name="description" content="최소제곱은 y를 열공간 위로 정사영하는 일이고, 정규방정식은 잔차가 모든 feature와 직교한다는 조건이다. 다중공선성은 그 정사영이 불안정해지는 현상이며, ridge·lasso가 그 처방이다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="5.3">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">5.3</span>
+        <span>5장 · 전통적 머신러닝</span>
+      </div>
+      <h1>선형회귀</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 70분</span>
+        <span><b>난이도</b>★★★☆☆</span>
+        <span><b>선수지식</b>
+          <a href="../ch02/2.6-linear-systems.html">2.6 선형 연립방정식</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-slr">Simple Linear Regression</a>
+      <a class="chip" href="#c-mlr">Multiple Linear Regression</a>
+      <a class="chip" href="#c-ols">Least Squares</a>
+      <a class="chip" href="#c-resid">Residual</a>
+      <a class="chip" href="#c-normal">Normal Equation</a>
+      <a class="chip" href="#c-multi">Multicollinearity</a>
+      <a class="chip" href="#c-ridge">Ridge Regression</a>
+      <a class="chip" href="#c-lasso">Lasso Regression</a>
+      <a class="chip" href="#c-enet">Elastic Net</a>
+      <a class="chip" href="#c-robust">Robust Regression</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        최소제곱은 <strong>$\mathbf{y}$ 를 $\mathbf{X}$ 의 열공간 위로 정사영하는 일</strong>이고,
+        정규방정식 $\mathbf{X}^\top\mathbf{X}\mathbf{w}=\mathbf{X}^\top\mathbf{y}$ 는
+        <strong>잔차가 모든 feature 와 직교한다</strong>는 조건을 적은 것이다.
+        feature 끼리 겹치면(다중공선성) 그 정사영이 불안정해지고, <strong>ridge·lasso 가 그 처방</strong>이다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>단순선형회귀의 계수를 $b=S_{xy}/S_{xx}$ 로 손으로 구하고 잔차의 두 직교 성질을 확인할 수 있다.</li>
+        <li>정규방정식을 "잔차 ⊥ 열공간" 에서 유도하고, $\mathbf{X}^\top\mathbf{X}$ 가 특이해지는 조건을 말할 수 있다.</li>
+        <li>ridge 는 왜 0 으로 안 보내고 lasso 는 왜 정확히 0 으로 보내는지 soft thresholding 으로 설명할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        점들 사이로 직선을 긋는다. "가장 잘 맞는" 직선이란 무엇인가 —
+        <strong>각 점에서 직선까지의 세로 거리를 재서, 그 제곱을 다 더한 값이 최소</strong>인 직선이다.
+        세로 거리를 <strong>잔차</strong>라 하고, 제곱합을 최소로 한다고 해서 <strong>최소제곱</strong>이라 부른다.
+      </p>
+      <p>
+        왜 하필 제곱인가. 그냥 더하면 위아래가 상쇄되고, 절댓값은 미분이 안 된다.
+        제곱은 <strong>상쇄를 막으면서 매끄럽고</strong>, 무엇보다 <strong>답이 한 줄 식으로 딱 떨어진다</strong>.
+        대가도 분명하다 — 거리를 제곱하니 <strong>멀리 있는 한 점이 지나치게 큰 발언권</strong>을 갖는다(예제 ⑤).
+      </p>
+      <p>
+        feature 가 여러 개면 그림이 달라진다.
+        <a href="../ch02/2.6-linear-systems.html">2.6</a>에서 봤듯, $\mathbf{y}$ 는 대개 $\mathbf{X}$ 의 열들이 만드는 공간 안에 없다.
+        그래서 <strong>그 공간 위로 그림자를 떨어뜨린다</strong>(정사영). 남는 그림자와 원본의 차이가 잔차 벡터이고,
+        <strong>잔차가 그 공간에 수직</strong>이라는 것이 최소제곱의 기하학적 정의다.
+      </p>
+
+      <figure class="widget" data-widget="lsq-drag">
+        <figcaption class="widget__bar">Least Squares — 점을 움직이면 직선이 따라온다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">한 점만 멀리 끌어 보세요. <strong>제곱 때문에 그 점 하나가 직선 전체를 끌고 갑니다</strong>.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          선형회귀에서 "선형"은 <strong>$x$ 에 대해 직선</strong>이라는 뜻이 아니라
+          <strong>parameter $\mathbf{w}$ 에 대해 선형</strong>이라는 뜻이다.
+          $y=w_0+w_1x+w_2x^2$ 도 선형회귀다 — $x^2$ 을 새 feature 로 부르면 되기 때문이다.
+          그래서 이 절의 모든 공식이 다항식 회귀·spline·kernel 회귀에 그대로 적용된다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-slr"></span>
+      <h3>Simple Linear Regression 단순선형회귀</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \hat{y}=a+bx, \qquad b=\frac{S_{xy}}{S_{xx}}=\frac{\sum_i(x_i-\bar{x})(y_i-\bar{y})}{\sum_i(x_i-\bar{x})^2}, \qquad a=\bar{y}-b\bar{x} $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">feature 가 하나일 때의 최소제곱 해는 <strong>공분산을 분산으로 나눈 값</strong>이 기울기이고,
+        직선은 반드시 <strong>평균점 $(\bar{x},\bar{y})$ 를 지난다</strong>.</span>
+        $b=\frac{S_{xy}}{S_{xx}}=r\cdot\frac{s_y}{s_x}$ 로도 쓸 수 있어
+        <a href="../ch04/4.3-expectation-variance.html">4.3</a>의 correlation 과 곧바로 이어진다 —
+        <strong>기울기는 상관계수를 두 표준편차 비로 되돌린 값</strong>이다.
+      </p>
+
+      <span class="anchor" id="c-mlr"></span>
+      <span class="anchor" id="c-ols"></span>
+      <h3>Multiple Linear Regression &amp; Least Squares</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \hat{\mathbf{y}}=\mathbf{X}\mathbf{w}, \qquad \mathbf{w}^\star=\arg\min_{\mathbf{w}}\ \|\mathbf{y}-\mathbf{X}\mathbf{w}\|_2^2 $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        <span class="hl">feature 가 $d$개면 $\mathbf{X}\in\mathbb{R}^{n\times(d+1)}$ (절편 열 포함)이고,
+        최소제곱은 <strong>$\mathbf{y}$ 와 열공간 사이의 거리를 최소로 하는 $\mathbf{w}$</strong> 를 찾는 문제다.</span>
+        $\mathbf{X}\mathbf{w}$ 는 $\mathbf{X}$ 의 열들의 linear combination 이므로 (<a href="../ch02/2.4-matrix-operations.html">2.4</a>),
+        도달할 수 있는 곳은 <strong>열공간 $\mathrm{Col}(\mathbf{X})$ 전체</strong>다.
+      </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>천장에 매달린 전구($\mathbf{y}$)와 바닥($\mathrm{Col}(\mathbf{X})$)이 있습니다. 전구는 바닥 위에 있지 않으니 바닥에서 가장 가까운 점을 찾아야 하는데, 그 점은 <strong>전구에서 바닥으로 수직으로 내린 발</strong>입니다.</p>
+        <p>수직이 아니면 더 가까운 점이 반드시 있습니다. 그래서 "잔차가 바닥에 수직" 이라는 조건이 곧 답이 되고, 그것을 식으로 적은 것이 정규방정식입니다.</p>
+      </div>
+
+      <span class="anchor" id="c-resid"></span>
+      <h3>Residual 잔차</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathbf{e}=\mathbf{y}-\hat{\mathbf{y}}=\mathbf{y}-\mathbf{X}\mathbf{w}^\star, \qquad \mathbf{X}^\top\mathbf{e}=\mathbf{0} $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl">잔차는 <strong>model 이 설명하지 못하고 남긴 것</strong>이며,
+        최소제곱 해에서는 <strong>모든 feature 와 직교</strong>한다 — 절편이 있으면 $\sum_i e_i=0$ 도 따라 나온다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>양</th><th>식</th><th>뜻</th></tr></thead>
+          <tbody>
+            <tr><td>SST (총변동)</td><td>$\sum(y_i-\bar{y})^2$</td><td>$y$ 자체의 흩어짐</td></tr>
+            <tr><td>SSR (설명된 변동)</td><td>$\sum(\hat{y}_i-\bar{y})^2$</td><td>model 이 설명한 몫</td></tr>
+            <tr><td>SSE (잔차 변동)</td><td>$\sum e_i^2$</td><td>남은 몫</td></tr>
+            <tr><td>분해</td><td colspan="2"><strong>SST = SSR + SSE</strong> — 피타고라스 정리 (잔차 ⊥ 예측)</td></tr>
+            <tr><td>$R^2$</td><td>$1-\dfrac{\text{SSE}}{\text{SST}}$</td><td>설명한 비율. 단순회귀에서는 $r^2$ 과 같다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        잔차 그림(residual plot)을 보는 것이 진단의 기본이다 —
+        <strong>잔차에 남은 패턴은 model 이 놓친 구조</strong>다.
+        휘어 있으면 비선형 항이, 부채꼴이면 이분산이, 한 점만 크게 튀면 이상치가 있다는 신호다.
+      </p>
+
+      <span class="anchor" id="c-normal"></span>
+      <h3>Normal Equation 정규방정식</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathbf{X}^\top\mathbf{X}\,\mathbf{w}=\mathbf{X}^\top\mathbf{y} \qquad\Longrightarrow\qquad \mathbf{w}^\star=(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y} $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        <span class="hl">정규방정식은 <strong>"잔차가 모든 열과 직교"($\mathbf{X}^\top(\mathbf{y}-\mathbf{X}\mathbf{w})=\mathbf{0}$)를 정리한 것</strong>이고,
+        $\mathbf{X}$ 의 열들이 linearly independent 일 때만 $\mathbf{X}^\top\mathbf{X}$ 가 역행렬을 갖는다.</span>
+        "normal" 은 정규분포가 아니라 <strong>수직(normal)</strong> 이라는 뜻이다 — 이름의 유래가 곧 정의다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>푸는 방법</th><th>비용</th><th>수치 안정성</th><th>언제</th></tr></thead>
+          <tbody>
+            <tr><td>정규방정식 + 역행렬</td><td>$O(nd^2+d^3)$</td><td><strong>나쁘다</strong> — 조건수가 제곱된다</td><td>쓰지 않는 편이 낫다</td></tr>
+            <tr><td>Cholesky 분해</td><td>$O(nd^2+d^3/3)$</td><td>보통</td><td>$d$ 가 작고 잘 조건화되었을 때</td></tr>
+            <tr><td><strong>QR 분해</strong></td><td>$O(nd^2)$</td><td>좋다</td><td>표준 (<code>numpy.linalg.lstsq</code>)</td></tr>
+            <tr><td>SVD</td><td>$O(nd^2)$ (상수 큼)</td><td><strong>가장 좋다</strong></td><td>특이하거나 rank 부족일 때</td></tr>
+            <tr><td>경사하강법</td><td>반복당 $O(nd)$</td><td>—</td><td>$n$ 이 아주 클 때 (<a href="../ch03/3.6-gradient-descent.html">3.6</a>)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        첫 줄이 중요하다. $\kappa(\mathbf{X}^\top\mathbf{X})=\kappa(\mathbf{X})^2$ 이므로
+        <strong>정규방정식을 그대로 풀면 조건수가 제곱되어 정밀도를 절반쯤 잃는다</strong>
+        (<a href="../ch02/2.6-linear-systems.html">2.6</a>). 실무 라이브러리가 QR·SVD 를 쓰는 이유다.
+      </p>
+
+      <span class="anchor" id="c-multi"></span>
+      <h3>Multicollinearity 다중공선성</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathrm{Var}(\hat{w}_j)=\frac{\sigma^2}{S_{jj}}\cdot\underbrace{\frac{1}{1-R_j^2}}_{\text{VIF}_j}, \qquad R_j^2=\text{다른 feature 들로 } x_j \text{ 를 회귀했을 때의 } R^2 $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        <span class="hl">feature 들이 서로 강하게 상관되면 $\mathbf{X}^\top\mathbf{X}$ 가 <strong>거의 특이</strong>해져
+        계수의 분산이 VIF 배만큼 부풀고, <strong>부호가 뒤집히거나 표본이 조금만 바뀌어도 값이 널뛴다</strong>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$R_j^2$</th><th>VIF</th><th>계수 표준오차 배율</th><th>판단</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0.00</td><td class="num">1.00</td><td class="num">×1.0</td><td>문제 없음</td></tr>
+            <tr><td class="num">0.50</td><td class="num">2.00</td><td class="num">×1.41</td><td>가벼움</td></tr>
+            <tr><td class="num">0.90</td><td class="num">10.0</td><td class="num">×3.16</td><td>흔히 쓰는 경고선</td></tr>
+            <tr><td class="num">0.99</td><td class="num">100</td><td class="num">×10.0</td><td><strong>심각</strong></td></tr>
+            <tr><td class="num">1.00</td><td class="num">$\infty$</td><td class="num">—</td><td>완전공선 — 해가 무한히 많다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        중요한 구분이 있다.
+        <strong>다중공선성은 <em>예측</em>에는 별로 해롭지 않고 <em>계수 해석</em>에 치명적</strong>이다 —
+        $\hat{\mathbf{y}}$ 는 안정적인데 개별 $\hat{w}_j$ 가 흔들린다.
+        "이 feature 의 효과는 얼마인가"를 물을 때만 문제가 된다(오해 3).
+      </p>
+
+      <figure class="widget" data-widget="collinearity">
+        <figcaption class="widget__bar">Multicollinearity — 두 feature 가 겹치면 계수가 널뛴다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">상관을 0.99 로 올리면 <strong>계수는 크게 흔들리는데 예측선은 거의 그대로</strong>입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-ridge"></span>
+      <h3>Ridge Regression</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathbf{w}_{\text{ridge}}=\arg\min_{\mathbf{w}}\ \|\mathbf{y}-\mathbf{X}\mathbf{w}\|_2^2+\lambda\|\mathbf{w}\|_2^2 =(\mathbf{X}^\top\mathbf{X}+\lambda\mathbf{I})^{-1}\mathbf{X}^\top\mathbf{y} $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        <span class="hl">ridge 는 대각선에 $\lambda$ 를 더해 <strong>$\mathbf{X}^\top\mathbf{X}$ 를 강제로 가역으로 만들고</strong>,
+        그 대가로 계수를 0 쪽으로 <strong>비례해서 줄인다</strong> — 정확히 0 으로 보내지는 않는다<a class="cite" href="#ref-hoerl1970-ridge" data-ref="hoerl1970-ridge">1</a>.</span>
+      </p>
+      <p>
+        $\mathbf{X}$ 를 SVD 로 쓰면 무슨 일이 일어나는지 정확히 보인다 (<a href="../ch02/2.8-svd.html">2.8</a>).
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \hat{\mathbf{y}}_{\text{ridge}}=\sum_{j}\mathbf{u}_j\,\frac{\sigma_j^2}{\sigma_j^2+\lambda}\,\mathbf{u}_j^\top\mathbf{y} \qquad (\text{OLS 는 } \tfrac{\sigma_j^2}{\sigma_j^2}=1) $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        <strong>singular value 가 작은 방향일수록 세게 눌린다</strong> —
+        $\sigma_j\gg\sqrt\lambda$ 이면 거의 그대로, $\sigma_j\ll\sqrt\lambda$ 이면 거의 0 이 된다.
+        <span class="hl">다중공선성이란 곧 작은 $\sigma_j$ 가 있다는 뜻이므로,
+        ridge 는 <strong>불안정한 방향만 골라서 죽이는 장치</strong>다.</span>
+        <a href="../ch04/4.6-likelihood-estimation.html">4.6</a>의 관점으로는 $\mathcal{N}(0,\tau^2)$ prior 의 MAP 이고 $\lambda=\sigma^2/\tau^2$ 다.
+      </p>
+
+      <span class="anchor" id="c-lasso"></span>
+      <h3>Lasso Regression</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathbf{w}_{\text{lasso}}=\arg\min_{\mathbf{w}}\ \|\mathbf{y}-\mathbf{X}\mathbf{w}\|_2^2+\lambda\|\mathbf{w}\|_1 $$</div>
+        <span class="eq__tag num">(8)</span>
+      </div>
+      <p>
+        <span class="hl">lasso 는 L1 벌점을 써서 <strong>계수를 정확히 0 으로 만든다</strong> —
+        정규화와 변수 선택을 동시에 하는 것이 핵심이다<a class="cite" href="#ref-tibshirani1996-lasso" data-ref="tibshirani1996-lasso">2</a>.</span>
+        닫힌 해는 없지만 feature 들이 직교하면 <strong>soft thresholding</strong> 한 줄로 적힌다.
+      </p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \hat{w}_j^{\text{lasso}}=\mathcal{S}\!\left(\hat{w}_j^{\text{OLS}},\ \tfrac{\lambda}{2}\right)=\mathrm{sign}(\hat{w}_j)\cdot\max\!\left(|\hat{w}_j|-\tfrac{\lambda}{2},\ 0\right) $$</div>
+        <span class="eq__tag num">(9)</span>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>Ridge (L2)</th><th>Lasso (L1)</th></tr></thead>
+          <tbody>
+            <tr><td>계수를 0 으로</td><td><strong>안 보낸다</strong> (점근적으로만)</td><td><strong>정확히 0</strong></td></tr>
+            <tr><td>변환</td><td>비례 축소 $\frac{w}{1+\lambda}$</td><td>평행 이동 후 0 에서 자름</td></tr>
+            <tr><td>상관된 feature</td><td>여럿에 <strong>고르게 나눠 준다</strong></td><td>하나만 남기고 <strong>나머지를 0</strong> 으로</td></tr>
+            <tr><td>해</td><td>닫힌 형태</td><td>반복 알고리즘 (좌표하강·LARS)</td></tr>
+            <tr><td>prior</td><td>Gaussian</td><td>Laplace (<a href="../ch04/4.6-likelihood-estimation.html">4.6</a>)</td></tr>
+            <tr><td>$d>n$ 일 때</td><td>모든 feature 를 조금씩 쓴다</td><td>최대 $n$개까지만 고를 수 있다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <a href="../ch03/3.9-constraints-regularization.html">3.9</a>에서 기하로 본 "마름모의 모서리에서 접한다"가
+        여기서는 식 (9)의 <strong>$\max(\cdot,0)$</strong> 으로 나타난다 — 같은 사실의 두 표현이다.
+      </p>
+
+      <span class="anchor" id="c-enet"></span>
+      <h3>Elastic Net</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \arg\min_{\mathbf{w}}\ \|\mathbf{y}-\mathbf{X}\mathbf{w}\|_2^2+\lambda\Bigl(\alpha\|\mathbf{w}\|_1+\tfrac{1-\alpha}{2}\|\mathbf{w}\|_2^2\Bigr) $$</div>
+        <span class="eq__tag num">(10)</span>
+      </div>
+      <p>
+        <span class="hl">elastic net 은 L1 과 L2 를 $\alpha$ 로 섞어, <strong>lasso 의 희소성과 ridge 의 안정성을 함께</strong> 얻는다<a class="cite" href="#ref-zou2005-elastic-net" data-ref="zou2005-elastic-net">3</a>.</span>
+        lasso 의 두 가지 약점을 겨냥한 것이다 —
+        (1) <strong>$d>n$ 이면 최대 $n$개까지만</strong> 고를 수 있고,
+        (2) <strong>강하게 상관된 feature 무리 중 하나만 임의로</strong> 골라 버린다.
+        L2 항이 들어가면 상관된 것들이 <strong>함께 들어오거나 함께 빠지는</strong> grouping effect 가 생긴다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$\alpha$</th><th>결과</th><th>언제 쓰나</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1.0</td><td>lasso</td><td>진짜로 희소하다고 믿을 때</td></tr>
+            <tr><td class="num">0.5</td><td>반반</td><td>기본값으로 무난</td></tr>
+            <tr><td class="num">0.0</td><td>ridge</td><td>모든 feature 가 조금씩 기여할 때</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <figure class="widget" data-widget="shrinkage-path">
+        <figcaption class="widget__bar">Regularization Path — λ 를 키우면 계수가 어떻게 죽나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">lasso 는 계수가 <strong>0 에 닿아 붙어 버리고</strong>, ridge 는 0 에 가까워지기만 합니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-robust"></span>
+      <h3>Robust Regression 로버스트 회귀</h3>
+      <p>
+        <span class="hl">제곱손실은 이상치에 <strong>제곱만큼</strong> 반응하므로 점 하나가 직선을 통째로 끌고 갈 수 있고,
+        손실 함수를 바꿔 그 영향력을 제한하는 것이 robust regression 이다.</span>
+      </p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \ell_\delta(e)=\begin{cases}\tfrac12 e^2 & |e|\le\delta\\[2pt] \delta\bigl(|e|-\tfrac12\delta\bigr) & |e|>\delta\end{cases} \qquad (\text{Huber}) $$</div>
+        <span class="eq__tag num">(11)</span>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>손실</th><th>$|e|$ 가 클 때</th><th>영향력 $\partial\ell/\partial e$</th><th>추정하는 것</th></tr></thead>
+          <tbody>
+            <tr><td>제곱 (OLS)</td><td>$e^2$ — 폭증</td><td>$e$ — <strong>한없이 커진다</strong></td><td>조건부 평균</td></tr>
+            <tr><td>절대값 (LAD)</td><td>$|e|$ — 선형</td><td>$\pm1$ — <strong>유계</strong></td><td>조건부 중앙값</td></tr>
+            <tr><td>Huber</td><td>선형</td><td>$\pm\delta$ 로 유계</td><td>가운데는 평균, 바깥은 중앙값처럼</td></tr>
+            <tr><td>Tukey biweight</td><td>상수 (평평)</td><td><strong>0 으로 되돌아간다</strong></td><td>극단값을 완전히 무시</td></tr>
+            <tr><td>RANSAC</td><td>—</td><td>표본을 뽑아 다수 합의를 찾는다</td><td>내부점(inlier)만으로</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <a href="5.1-ml-problem-definition.html">5.1</a>의 loss 표와 이어진다 —
+        <strong>손실을 바꾸는 것은 "무엇을 추정할지"를 바꾸는 것</strong>이고,
+        <a href="../ch04/4.6-likelihood-estimation.html">4.6</a>의 관점으로는 <strong>잡음 분포 가정을
+        Gaussian 에서 꼬리가 두꺼운 것으로 바꾸는 일</strong>이다.
+      </p>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>정사영 관점에서 모든 것이 하나의 행렬로 정리된다.</p>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbf{H}=\mathbf{X}(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top, \qquad \hat{\mathbf{y}}=\mathbf{H}\mathbf{y}, \qquad \mathbf{e}=(\mathbf{I}-\mathbf{H})\mathbf{y} $$</div>
+        <span class="eq__tag num">(12)</span>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>성질</th><th>뜻</th></tr></thead>
+          <tbody>
+            <tr><td>$\mathbf{H}^2=\mathbf{H}$</td><td>정사영을 두 번 해도 같다 (멱등)</td></tr>
+            <tr><td>$\mathbf{H}^\top=\mathbf{H}$</td><td>직교 정사영이다</td></tr>
+            <tr><td>$\mathrm{tr}(\mathbf{H})=d+1$</td><td><strong>쓴 자유도</strong> — 잔차의 자유도가 $n-d-1$ 인 이유</td></tr>
+            <tr><td>$h_{ii}$ (leverage)</td><td>$i$ 번째 점이 자기 예측을 <strong>얼마나 스스로 정하는가</strong></td></tr>
+            <tr><td>$\hat\sigma^2=\frac{\text{SSE}}{n-d-1}$</td><td>잡음 분산의 불편추정 (<a href="../ch04/4.5-statistical-estimation.html">4.5</a>의 $n-1$ 과 같은 이유)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        leverage $h_{ii}$ 가 진단에 유용하다 — <strong>$x$ 가 평균에서 멀리 떨어진 점일수록 크고</strong>,
+        그런 점의 잔차가 크면 <strong>영향점(influential point)</strong> 이다.
+        Cook's distance 가 그 둘을 합친 지표다.
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$\mathbf{X}$</td><td>bold X · design matrix</td><td>설계행렬 (행=표본, 열=feature)</td><td>$(n,d{+}1)$</td><td>—</td></tr>
+            <tr><td>$\mathbf{w}$</td><td>bold w</td><td>회귀계수 (절편 포함)</td><td>$(d{+}1,)$</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\mathbf{e}$</td><td>bold e · residual</td><td>잔차 벡터</td><td>$(n,)$</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$S_{xy}$</td><td>S x y</td><td>$\sum(x_i-\bar x)(y_i-\bar y)$</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$S_{xx}$</td><td>S x x</td><td>$\sum(x_i-\bar x)^2$</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$\mathbf{H}$</td><td>hat matrix 햇 행렬</td><td>정사영 행렬 ($\hat{\mathbf{y}}=\mathbf{H}\mathbf{y}$)</td><td>$(n,n)$</td><td>멱등 · 대칭</td></tr>
+            <tr><td>$h_{ii}$</td><td>leverage 레버리지</td><td>$i$ 번째 점의 지렛대 값</td><td>scalar</td><td>$[0,1]$, 합 $=d{+}1$</td></tr>
+            <tr><td>$R^2$</td><td>R squared · 결정계수</td><td>설명된 변동의 비율</td><td>scalar</td><td>$(-\infty,1]$</td></tr>
+            <tr><td>VIF</td><td>variance inflation factor</td><td>분산 팽창 인자 $1/(1-R_j^2)$</td><td>scalar</td><td>$\ge1$</td></tr>
+            <tr><td>$\lambda$</td><td>lambda 람다</td><td>정규화 세기</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$\alpha$</td><td>alpha 알파</td><td>elastic net 의 L1 비율</td><td>scalar</td><td>$[0,1]$</td></tr>
+            <tr><td>$\mathcal{S}(z,\gamma)$</td><td>soft threshold 소프트 임계</td><td>$\mathrm{sign}(z)\max(|z|-\gamma,0)$</td><td>함수</td><td>—</td></tr>
+            <tr><td>$\sigma_j$</td><td>sigma j · singular value</td><td>$\mathbf{X}$ 의 특이값</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$\delta$</td><td>delta 델타</td><td>Huber 손실의 전환점</td><td>scalar</td><td>$>0$</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">같은 것을 다르게 부른다</span>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>이 사이트</th><th>같은 뜻으로 쓰이는 말</th><th>주의할 점</th></tr></thead>
+            <tbody>
+              <tr><td>$\lambda$ (ridge)</td><td>$\alpha$ (scikit-learn), 정규화 강도</td><td><strong>scikit-learn 의 <code>alpha</code> 가 이 $\lambda$</strong> 다. elastic net 의 $\alpha$ 는 <code>l1_ratio</code></td></tr>
+              <tr><td>계수 $\mathbf{w}$</td><td>$\boldsymbol\beta$ (통계학), weight (ML)</td><td>통계 교재는 거의 $\beta$ 를 쓴다</td></tr>
+              <tr><td>설계행렬 $\mathbf{X}$</td><td>design matrix, feature matrix</td><td>절편 열이 <strong>포함인지 아닌지</strong> 반드시 확인</td></tr>
+              <tr><td>잔차 $e_i$</td><td>residual, error</td><td>참 오차 $\varepsilon_i$ 와 <strong>다르다</strong> — 잔차는 관측 가능</td></tr>
+              <tr><td>정규방정식</td><td>normal equation</td><td>normal 은 <strong>수직</strong>이라는 뜻 (정규분포가 아니다)</td></tr>
+              <tr><td>LAD</td><td>least absolute deviation, L1 회귀, 분위회귀($\tau=0.5$)</td><td>중앙값 회귀와 같은 것</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — 정규방정식을 두 가지로</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ L(\mathbf{w})=\|\mathbf{y}-\mathbf{X}\mathbf{w}\|_2^2=(\mathbf{y}-\mathbf{X}\mathbf{w})^\top(\mathbf{y}-\mathbf{X}\mathbf{w}) $$</div>
+          <div class="derive__why">노름을 내적으로 폈다 (<a href="../ch02/2.3-inner-product.html">2.3</a>)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ =\mathbf{y}^\top\mathbf{y}-2\mathbf{w}^\top\mathbf{X}^\top\mathbf{y}+\mathbf{w}^\top\mathbf{X}^\top\mathbf{X}\mathbf{w} $$</div>
+          <div class="derive__why">전개. $\mathbf{y}^\top\mathbf{X}\mathbf{w}$ 는 스칼라라 전치와 같다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \nabla_{\mathbf{w}}L=-2\mathbf{X}^\top\mathbf{y}+2\mathbf{X}^\top\mathbf{X}\mathbf{w}=\mathbf{0} $$</div>
+          <div class="derive__why">$\nabla(\mathbf{w}^\top\mathbf{A}\mathbf{w})=2\mathbf{A}\mathbf{w}$ ($\mathbf{A}$ 대칭) — <a href="../ch03/3.3-multivariable-derivatives.html">3.3</a></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore\ \mathbf{X}^\top\mathbf{X}\mathbf{w}=\mathbf{X}^\top\mathbf{y} $$</div>
+          <div class="derive__why">식 (4). <strong>기하로 가면 더 빠르다</strong> ↓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{e}\perp\mathrm{Col}(\mathbf{X}) \iff \mathbf{X}^\top\mathbf{e}=\mathbf{0} \iff \mathbf{X}^\top(\mathbf{y}-\mathbf{X}\mathbf{w})=\mathbf{0} $$</div>
+          <div class="derive__why">"모든 열과 직교" = "$\mathbf{X}^\top$ 를 곱하면 0". <strong>미분 없이 같은 식</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \nabla^2 L=2\mathbf{X}^\top\mathbf{X}\succeq0 \ \Rightarrow\ L \text{ 은 convex} $$</div>
+          <div class="derive__why">임계점이 <strong>전역 최소</strong> (<a href="../ch03/3.5-optimization-basics.html">3.5</a>). 열이 독립이면 유일</div>
+        </div>
+      </div>
+
+      <h3>유도 2 — 단순선형회귀 공식</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ L(a,b)=\sum_i (y_i-a-bx_i)^2 $$</div>
+          <div class="derive__why">feature 하나짜리 최소제곱</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\partial L}{\partial a}=-2\sum_i(y_i-a-bx_i)=0 \ \Rightarrow\ \bar{y}=a+b\bar{x} $$</div>
+          <div class="derive__why"><strong>직선이 평균점을 지난다</strong>는 것이 여기서 나온다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\partial L}{\partial b}=-2\sum_i x_i(y_i-a-bx_i)=0 $$</div>
+          <div class="derive__why">$\sum x_ie_i=0$ — 잔차가 $x$ 와 직교</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ a=\bar{y}-b\bar{x} \ \text{를 대입}: \ \sum_i x_i\bigl((y_i-\bar y)-b(x_i-\bar x)\bigr)=0 $$</div>
+          <div class="derive__why">첫 식을 둘째에 넣었다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ b=\frac{\sum x_i(y_i-\bar y)}{\sum x_i(x_i-\bar x)}=\frac{\sum(x_i-\bar x)(y_i-\bar y)}{\sum(x_i-\bar x)^2}=\frac{S_{xy}}{S_{xx}} $$</div>
+          <div class="derive__why">$\sum\bar x(y_i-\bar y)=0$ 이라 분자·분모에 $\bar x$ 를 넣어도 같다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ b=\frac{S_{xy}}{S_{xx}}=\frac{S_{xy}/n}{S_{xx}/n}=\frac{\mathrm{Cov}(x,y)}{\mathrm{Var}(x)}=r\cdot\frac{s_y}{s_x} $$</div>
+          <div class="derive__why">4.3 의 correlation 과 직결 — <strong>기울기는 표준화된 상관을 되돌린 값</strong></div>
+        </div>
+      </div>
+
+      <h3>유도 3 — Ridge 가 왜 0 으로 안 보내고 Lasso 는 보내는가</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{직교 feature 가정}: \ \mathbf{X}^\top\mathbf{X}=\mathbf{I} \ \Rightarrow\ \hat{w}_j^{\text{OLS}}=(\mathbf{X}^\top\mathbf{y})_j=z_j $$</div>
+          <div class="derive__why">각 계수가 <strong>독립적으로</strong> 정해져 1차원 문제로 쪼개진다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{ridge}: \ \min_w\ (w-z)^2+\lambda w^2 \ \Rightarrow\ 2(w-z)+2\lambda w=0 $$</div>
+          <div class="derive__why">미분해서 0</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat{w}^{\text{ridge}}=\frac{z}{1+\lambda} $$</div>
+          <div class="derive__why"><strong>비례 축소</strong>. $\lambda$ 가 아무리 커도 $z\ne0$ 이면 0 이 아니다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{lasso}: \ \min_w\ (w-z)^2+\lambda|w| $$</div>
+          <div class="derive__why">$w=0$ 에서 미분이 안 되므로 <strong>경우를 나눈다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ w>0:\ 2(w-z)+\lambda=0 \Rightarrow w=z-\tfrac\lambda2 \quad(\text{단 } z>\tfrac\lambda2) $$</div>
+          <div class="derive__why">양수 쪽 해. 조건이 깨지면 이 영역에 해가 없다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ |z|\le\tfrac\lambda2:\ \text{양쪽 모두 해가 없다} \ \Rightarrow\ \hat{w}=0 $$</div>
+          <div class="derive__why"><strong>0 에서의 기울기가 $\pm\lambda$ 로 일정</strong>해 data 항이 못 이긴다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore\ \hat{w}^{\text{lasso}}=\mathcal{S}(z,\tfrac\lambda2)=\mathrm{sign}(z)\max(|z|-\tfrac\lambda2,0) $$</div>
+          <div class="derive__why">식 (9). <strong>평행이동 후 0 에서 자르기</strong></div>
+        </div>
+      </div>
+      <p>
+        <span class="hl">차이의 뿌리는 <strong>0 에서의 벌점 기울기</strong>다 —
+        $w^2$ 의 미분은 $2w\to0$ 이라 원점 근처에서 당기는 힘이 사라지지만,
+        $|w|$ 의 미분은 $\pm1$ 로 일정해 <strong>끝까지 당긴다</strong>.</span>
+      </p>
+
+      <details>
+        <summary>Ridge 는 왜 항상 풀리는가</summary>
+        <p>
+          $\mathbf{X}^\top\mathbf{X}$ 는 대칭 positive semi-definite 이라 eigenvalue 가 모두 $\ge0$ 이다
+          (<a href="../ch02/2.7-eigenvalues.html">2.7</a>). 열이 종속이면 eigenvalue 에 0 이 섞여 역행렬이 없다.
+        </p>
+        <p>
+          $\lambda\mathbf{I}$ 를 더하면 모든 eigenvalue 가 $\lambda_j+\lambda$ 로 올라가
+          <strong>$\lambda>0$ 인 한 반드시 양수</strong>가 된다 → positive definite → 항상 가역.
+          $d>n$ 이라 $\mathbf{X}^\top\mathbf{X}$ 의 rank 가 $n$ 뿐인 경우에도 마찬가지다.
+        </p>
+        <p>
+          조건수도 함께 좋아진다: $\kappa=\frac{\sigma_{\max}^2+\lambda}{\sigma_{\min}^2+\lambda}$ 이므로
+          $\lambda$ 를 키우면 1 에 가까워진다.
+          <strong>ridge 는 통계적 처방이면서 동시에 수치적 처방</strong>이다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① 단순선형회귀 — 다섯 점으로 끝까지</h3>
+      <p>$x=(1,2,3,4,5)$, $y=(2,4,5,4,5)$</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \bar{x}=\frac{15}{5}=3,\qquad \bar{y}=\frac{20}{5}=4 $$</div>
+          <div class="derive__why">평균부터</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ S_{xy}=(-2)(-2)+(-1)(0)+(0)(1)+(1)(0)+(2)(1)=4+0+0+0+2=6 $$</div>
+          <div class="derive__why">편차의 곱을 더한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ S_{xx}=4+1+0+1+4=10 $$</div>
+          <div class="derive__why">$x$ 편차의 제곱합</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ b=\frac{6}{10}=0.6,\qquad a=4-0.6(3)=4-1.8=2.2 $$</div>
+          <div class="derive__why">식 (1). <strong>$\hat{y}=2.2+0.6x$</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat{y}=(2.8,\ 3.4,\ 4.0,\ 4.6,\ 5.2),\qquad \mathbf{e}=(-0.8,\ 0.6,\ 1.0,\ -0.6,\ -0.2) $$</div>
+          <div class="derive__why">$x=3$ 에서 $\hat y=\bar y=4$ ✓ (평균점을 지난다)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sum e_i=-0.8+0.6+1.0-0.6-0.2=0 \ \checkmark $$</div>
+          <div class="derive__why">절편이 있으면 <strong>잔차 합은 반드시 0</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sum x_ie_i=-0.8+1.2+3.0-2.4-1.0=0 \ \checkmark $$</div>
+          <div class="derive__why">잔차가 $x$ 와도 직교 — 식 (3)의 두 조건이 모두 확인됐다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{SSE}=0.64+0.36+1.00+0.36+0.04=2.40,\quad \text{SST}=4+0+1+0+1=6 $$</div>
+          <div class="derive__why">잔차 제곱합과 총변동</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ R^2=1-\frac{2.40}{6}=1-0.4=0.60 $$</div>
+          <div class="derive__why">검산: $r=\frac{6}{\sqrt{10\times6}}=\frac{6}{7.746}=0.7746$, $r^2=0.60$ ✓</div>
+        </div>
+      </div>
+
+      <h3>② 정규방정식을 $2\times2$ 로 직접</h3>
+      <p>$x=(1,2,3)$, $y=(1,2,2)$. 절편을 포함해 $\mathbf{X}=\begin{pmatrix}1&amp;1\\1&amp;2\\1&amp;3\end{pmatrix}$.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{X}^\top\mathbf{X}=\begin{pmatrix}3 & 6\\ 6 & 14\end{pmatrix},\qquad \mathbf{X}^\top\mathbf{y}=\begin{pmatrix}1+2+2\\ 1+4+6\end{pmatrix}=\begin{pmatrix}5\\ 11\end{pmatrix} $$</div>
+          <div class="derive__why">$\sum x=6$, $\sum x^2=1+4+9=14$, $\sum xy=1+4+6=11$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \det=3(14)-6(6)=42-36=6,\qquad (\mathbf{X}^\top\mathbf{X})^{-1}=\frac16\begin{pmatrix}14 & -6\\ -6 & 3\end{pmatrix} $$</div>
+          <div class="derive__why">$2\times2$ 역행렬 공식 (<a href="../ch02/2.4-matrix-operations.html">2.4</a>)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{w}=\frac16\begin{pmatrix}14(5)-6(11)\\ -6(5)+3(11)\end{pmatrix}=\frac16\begin{pmatrix}70-66\\ -30+33\end{pmatrix}=\frac16\begin{pmatrix}4\\ 3\end{pmatrix}=\begin{pmatrix}0.6\overline{6}\\ 0.5\end{pmatrix} $$</div>
+          <div class="derive__why"><strong>$\hat{y}=0.667+0.5x$</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{식 (1) 로 검산}:\ \bar x=2,\ \bar y=\tfrac53,\ S_{xy}=(-1)(-\tfrac23)+0+1(\tfrac13)=1,\ S_{xx}=2 $$</div>
+          <div class="derive__why">$b=1/2=0.5$ ✓, $a=\tfrac53-0.5(2)=\tfrac23$ ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat{\mathbf{y}}=(1.1\overline{6},\ 1.6\overline{6},\ 2.1\overline{6}),\qquad \mathbf{e}=(-0.1\overline{6},\ 0.3\overline{3},\ -0.1\overline{6}) $$</div>
+          <div class="derive__why">합 $=0$ ✓, $\sum x_ie_i=-0.167+0.667-0.5=0$ ✓</div>
+        </div>
+      </div>
+
+      <h3>③ 다중공선성이 계수를 어떻게 흔드나</h3>
+      <p>두 feature 의 상관 $\rho$ 만 바꿔 가며 계수의 표준오차를 본다 (식 5).</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$\rho$</th><th>$1-\rho^2$</th><th>VIF $=\frac{1}{1-\rho^2}$</th><th>$\mathrm{SE}$ 배율 $=\sqrt{\text{VIF}}$</th><th>예측의 SE</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0.0</td><td class="num">1.000</td><td class="num">1.00</td><td class="num">×1.00</td><td>변화 없음</td></tr>
+            <tr><td class="num">0.7</td><td class="num">0.510</td><td class="num">1.96</td><td class="num">×1.40</td><td>거의 없음</td></tr>
+            <tr><td class="num">0.9</td><td class="num">0.190</td><td class="num">5.26</td><td class="num">×2.29</td><td>거의 없음</td></tr>
+            <tr><td class="num">0.99</td><td class="num">0.0199</td><td class="num">50.3</td><td class="num"><strong>×7.09</strong></td><td>거의 없음</td></tr>
+            <tr><td class="num">0.999</td><td class="num">0.002</td><td class="num">500</td><td class="num"><strong>×22.4</strong></td><td>거의 없음</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \rho=0.99:\ \text{VIF}=\frac{1}{1-0.9801}=\frac{1}{0.0199}=50.25 $$</div>
+          <div class="derive__why">계수 분산이 <strong>50배</strong>로 부푼다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sqrt{50.25}=7.09 \ \Rightarrow\ \text{95\% 구간의 폭도 7배} $$</div>
+          <div class="derive__why">$\hat w_1=2.0\pm0.3$ 이던 것이 $2.0\pm2.1$ 이 된다 — <strong>부호도 못 정한다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{그런데 } \hat{\mathbf{y}} \text{ 의 분산은 거의 그대로} $$</div>
+          <div class="derive__why">$w_1$ 이 커지면 $w_2$ 가 그만큼 작아져 <strong>합이 상쇄</strong>된다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{ridge}(\lambda=1):\ \frac{\sigma_{\min}^2}{\sigma_{\min}^2+1}\ \text{만큼 그 방향을 누른다} $$</div>
+          <div class="derive__why">식 (7) — <strong>불안정한 방향만 골라 죽인다</strong></div>
+        </div>
+      </div>
+
+      <h3>④ Ridge · Lasso 를 손으로</h3>
+      <p>직교 feature 가정에서 $\hat{w}^{\text{OLS}}=z=0.6$ 일 때 (유도 3).</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$\lambda$</th><th>Ridge $\frac{z}{1+\lambda}$</th><th>Lasso $\max(z-\frac\lambda2,0)$</th><th>Elastic Net ($\alpha=0.5$)</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0.0</td><td class="num">0.600</td><td class="num">0.600</td><td class="num">0.600</td></tr>
+            <tr><td class="num">0.4</td><td class="num">0.429</td><td class="num">0.400</td><td class="num">0.417</td></tr>
+            <tr><td class="num">1.0</td><td class="num">0.300</td><td class="num">0.100</td><td class="num">0.233</td></tr>
+            <tr><td class="num">1.2</td><td class="num">0.273</td><td class="num"><strong>0.000</strong></td><td class="num">0.188</td></tr>
+            <tr><td class="num">5.0</td><td class="num">0.100</td><td class="num"><strong>0.000</strong></td><td class="num"><strong>0.000</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{lasso 가 0 이 되는 조건}:\ z\le\tfrac\lambda2 \ \Rightarrow\ 0.6\le\tfrac\lambda2 \ \Rightarrow\ \lambda\ge1.2 $$</div>
+          <div class="derive__why"><strong>정확한 임계값이 존재한다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{ridge}:\ \frac{0.6}{1+\lambda}=0 \ \Rightarrow\ \lambda=\infty $$</div>
+          <div class="derive__why"><strong>유한한 $\lambda$ 로는 절대 0 이 안 된다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lambda=5:\ \text{ridge}=\frac{0.6}{6}=0.1 \ \ne 0 $$</div>
+          <div class="derive__why">아주 작아지지만 <strong>여전히 0 이 아니다</strong> — 변수 선택이 안 된다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{elastic net}(\alpha=0.5):\ \hat{w}=\frac{\mathcal{S}(z,\ \lambda\alpha/2)}{1+\lambda(1-\alpha)} =\frac{\max(0.6-\tfrac\lambda4,0)}{1+\tfrac\lambda2} $$</div>
+          <div class="derive__why">$\lambda=1$: $\frac{0.6-0.25}{1.5}=\frac{0.35}{1.5}=0.233$ ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{0 이 되는 조건}:\ \lambda\ge\frac{4z}{1}=2.4 \quad(\alpha=0.5) $$</div>
+          <div class="derive__why">lasso(1.2)보다 <strong>늦게</strong> 0 이 된다 — L2 가 완충한다</div>
+        </div>
+      </div>
+
+      <h3>⑤ 이상치 하나가 직선을 끌고 간다</h3>
+      <p>예제 ①의 마지막 값만 $y_5=5$ 에서 <strong>50</strong> 으로 바꾼다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \bar{y}=\frac{2+4+5+4+50}{5}=\frac{65}{5}=13 $$</div>
+          <div class="derive__why">평균부터 4 → 13 으로 뛴다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ S_{xy}=(-2)(-11)+(-1)(-9)+0(-8)+1(-9)+2(37)=22+9+0-9+74=96 $$</div>
+          <div class="derive__why">$y$ 편차: $-11,-9,-8,-9,37$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ b=\frac{96}{10}=9.6,\qquad a=13-9.6(3)=13-28.8=-15.8 $$</div>
+          <div class="derive__why"><strong>기울기가 0.6 → 9.6 으로 16배</strong>가 됐다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{정상 4점만의 적합}:\ \hat{y}=2.0+0.7x \ \text{정도} $$</div>
+          <div class="derive__why">한 점이 <strong>나머지 넷을 모두 무시하게</strong> 만들었다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Huber}(\delta=1):\ \text{그 점의 영향력이 } |e| \text{ 가 아니라 } \delta=1 \text{ 로 고정} $$</div>
+          <div class="derive__why">식 (11) — <strong>아무리 멀어도 발언권이 더 커지지 않는다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{OLS 에서 그 점의 영향력}=|e|\approx 34 \quad\text{vs}\quad \text{Huber}=1 $$</div>
+          <div class="derive__why"><strong>34배 차이</strong>. 이것이 robust regression 의 전부다</div>
+        </div>
+      </div>
+      <p>
+        <span class="hl">최소제곱은 <a href="../ch04/4.6-likelihood-estimation.html">4.6</a>의 관점에서
+        <strong>Gaussian 잡음 가정의 MLE</strong> 이고, Gaussian은 꼬리가 얇아 $|e|=34$ 인 관측을
+        <strong>"거의 불가능한 일"</strong> 로 보기 때문에 필사적으로 직선을 끌어당긴다.
+        꼬리가 두꺼운 잡음을 가정하면 그 힘이 사라진다.</span>
+      </p>
+
+      <figure class="widget" data-widget="robust-loss">
+        <figcaption class="widget__bar">Robust Regression — 손실을 바꾸면 이상치의 발언권이 달라진다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">이상치를 위로 끌어올려 보세요. <strong>OLS 선만 따라 올라가고</strong> Huber·LAD 선은 거의 제자리입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>최소제곱</strong> · <strong>다중공선성</strong> ·
+        <strong>정규화 경로</strong> · <strong>로버스트</strong> — 에 이어,
+        아래에서 <strong>정사영으로서의 최소제곱</strong>을 3차원 그림으로 본다.
+      </p>
+
+      <figure class="widget" data-widget="projection-view">
+        <figcaption class="widget__bar">Projection — y 를 열공간 위로 떨어뜨리기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">잔차 벡터가 평면과 <strong>정확히 수직</strong>일 때 길이가 최소가 됩니다. 각도를 틀어 보면 길이가 늘어납니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"$R^2$ 가 높으면 좋은 model 이다."</p>
+        <p>
+          <strong>실제로는</strong> $R^2$ 는 feature 를 추가하면 <strong>절대 줄어들지 않는다</strong> —
+          무작위 잡음 열을 넣어도 오른다. 그래서 model 비교에 쓰면 언제나 가장 복잡한 것이 이긴다.
+          자유도로 보정한 <strong>adjusted $R^2$</strong> 나 hold-out 성능을 봐야 한다.
+          더 근본적으로 $R^2$ 는 <strong>$y$ 의 분산이 클수록 자동으로 커지므로</strong>
+          서로 다른 dataset 사이에서는 비교 자체가 무의미하고,
+          <strong>test set 에서는 음수가 될 수도 있다</strong>(평균보다 못한 예측).
+          Anscombe 의 네 dataset 은 $R^2$ 가 모두 0.67 인데 그림이 전혀 다르다 —
+          <strong>숫자 하나로 적합을 판단하면 안 된다</strong>.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"정규방정식 $(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y}$ 를 그대로 코드로 옮기면 된다."</p>
+        <p>
+          <strong>실제로는</strong> 역행렬을 직접 구하는 것은 <strong>수치적으로 나쁜 선택</strong>이다.
+          $\kappa(\mathbf{X}^\top\mathbf{X})=\kappa(\mathbf{X})^2$ 이라 조건수가 제곱되어
+          <strong>유효 자릿수를 절반쯤 잃는다</strong>(<a href="../ch02/2.6-linear-systems.html">2.6</a>).
+          $\kappa(\mathbf{X})=10^4$ 면 배정밀도(16자리)로도 8자리밖에 못 믿는다.
+          <code>numpy.linalg.solve</code> 조차 차선이고,
+          표준은 <code>lstsq</code>(QR/SVD)다 — <strong>rank 가 부족해도 최소노름 해를 준다</strong>.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"다중공선성이 있으면 예측도 못 믿는다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>예측은 멀쩡하고 계수 해석만 무너진다</strong>(예제 ③).
+          $w_1$ 이 커지면 $w_2$ 가 그만큼 작아져 $\hat y=w_1x_1+w_2x_2$ 는 안정적이기 때문이다.
+          그래서 <strong>"예측만 필요하면 VIF 를 신경 쓸 필요가 거의 없다"</strong> —
+          문제가 되는 것은 "이 변수의 효과가 얼마인가", "어느 변수가 중요한가" 를 물을 때다.
+          단, 학습 때와 <strong>상관 구조가 다른 data 에서 예측</strong>하면 그때는 예측도 무너진다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"정규화를 걸 때 feature 스케일은 상관없다."</p>
+        <p>
+          <strong>실제로는</strong> ridge·lasso 는 <strong>스케일에 전혀 불변이 아니다</strong>.
+          $\|\mathbf{w}\|^2$ 는 모든 계수를 똑같이 벌하는데, 어떤 feature 를 미터에서 킬로미터로 바꾸면
+          그 계수가 1000배가 되어 <strong>벌점을 100만 배</strong> 받는다.
+          그래서 <strong>반드시 표준화한 뒤 적합</strong>해야 하고,
+          <strong>절편은 벌점에서 빼야</strong> 한다(빼지 않으면 $y$ 를 평행이동한 것만으로 답이 달라진다).
+          OLS 는 스케일 불변이라 이 문제가 없어서 더 헷갈린다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"lasso 가 고른 변수들이 진짜로 중요한 변수다."</p>
+        <p>
+          <strong>실제로는</strong> 강하게 상관된 feature 무리가 있으면 lasso 는 그중 <strong>하나만 임의로</strong> 고른다 —
+          표본이 조금만 바뀌어도 <strong>고른 변수가 통째로 바뀐다</strong>.
+          "선택되지 않았다"가 "중요하지 않다"를 뜻하지 않는다.
+          안정성이 필요하면 elastic net 을 쓰거나(grouping effect),
+          <strong>여러 부표본에서 반복 적합해 선택 빈도를 세는</strong> stability selection 을 쓴다.
+          또한 lasso 계수는 축소되어 있으므로 <strong>효과 크기의 추정치로 그대로 읽으면 안 된다</strong> —
+          선택 후 OLS 로 다시 적합하는 relaxed lasso 가 그 처방이다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–⑤ 를 검산한다.</p>
+      <details>
+        <summary>NumPy — 단순회귀 · 정규방정식 · 축소 · 이상치 (20줄)</summary>
+<pre><code>import numpy as np
+
+x = np.array([1., 2, 3, 4, 5]); y = np.array([2., 4, 5, 4, 5])
+b = ((x - x.mean()) * (y - y.mean())).sum() / ((x - x.mean())**2).sum()
+a = y.mean() - b * x.mean()
+e = y - (a + b * x)
+print(a, b, e.round(2), e.sum().round(12), (x * e).sum().round(12))   # 2.2 0.6 / 0 / 0
+print(1 - (e**2).sum() / ((y - y.mean())**2).sum())                   # 0.6  = R^2
+
+X = np.c_[np.ones(3), [1., 2, 3]]; yy = np.array([1., 2, 2])
+print(np.linalg.solve(X.T @ X, X.T @ yy))            # [0.6667 0.5]
+print(np.linalg.lstsq(X, yy, rcond=None)[0])         # 같은 값 — 이쪽이 수치적으로 낫다
+
+z, soft = 0.6, lambda v, g: np.sign(v) * max(abs(v) - g, 0)
+for lam in [0, .4, 1., 1.2, 5.]:
+    print(lam, round(z / (1 + lam), 3), round(soft(z, lam / 2), 3),
+          round(soft(z, lam * .5 / 2) / (1 + lam * .5), 3))   # ridge / lasso / enet
+
+y2 = y.copy(); y2[4] = 50                                     # 이상치 하나
+b2 = ((x - x.mean()) * (y2 - y2.mean())).sum() / ((x - x.mean())**2).sum()
+print(b, "->", b2)                                            # 0.6 -> 9.6
+</code></pre>
+        <p>
+          <small>
+            마지막 두 줄이 예제 ⑤ 다 — <strong>다섯 점 중 하나만 바꿨는데 기울기가 16배</strong>가 된다.
+            <code>solve</code> 와 <code>lstsq</code> 가 여기서는 같은 값을 주지만,
+            $\mathbf{X}$ 의 조건수가 나쁘면 갈리기 시작한다(오해 2).
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $S_{xy}=12$, $S_{xx}=8$, $\bar{x}=2$, $\bar{y}=7$ 일 때 회귀직선은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\hat{y}=4+1.5x$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$\hat{y}=7+1.5x$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$\hat{y}=4+0.667x$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $b=12/8=1.5$, $a=7-1.5(2)=4$.
+            <strong>나</strong>는 절편에 $\bar y$ 를 그대로 쓴 것으로,
+            <strong>직선이 $(\bar x,\bar y)$ 를 지난다</strong>는 조건을 놓친 것이다 (검산: $4+1.5(2)=7$ ✓).
+            <strong>다</strong>는 $S_{xx}/S_{xy}$ 로 뒤집어 계산한 값이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            직교 feature 에서 $\hat{w}^{\text{OLS}}=0.9$ 다. lasso 로 이 계수를 0 으로 만들려면 $\lambda$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\lambda\ge1.8$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$\lambda\ge0.9$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>어떤 $\lambda$ 로도 불가능</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            식 (9)에서 $|z|\le\lambda/2$ 이면 0 이므로 $0.9\le\lambda/2$ → $\lambda\ge1.8$.
+            <strong>나</strong>는 $\lambda/2$ 의 2 를 놓친 것이다 (문헌에 따라 벌점을 $\lambda\|w\|_1$ 로 쓰느냐
+            $\frac{\lambda}{2n}$ 로 쓰느냐에 따라 상수가 달라지니 <strong>정의를 확인해야</strong> 한다).
+            <strong>다</strong>는 ridge 의 성질이다 — ridge 는 유한한 $\lambda$ 로 0 을 만들 수 없다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            두 feature 의 상관이 0.95 다. 계수 표준오차는 무상관일 때의 몇 배?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 3.2배</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>약 10.3배</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>약 0.95배</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\text{VIF}=\frac{1}{1-0.95^2}=\frac{1}{1-0.9025}=\frac{1}{0.0975}=10.26$ 이고,
+            <strong>표준오차는 그 제곱근</strong>이므로 $\sqrt{10.26}=3.20$ 배다.
+            <strong>나</strong>는 VIF 자체를 답한 것 — <strong>VIF 는 <em>분산</em>의 배율</strong>이라
+            표준오차로 옮길 때 제곱근을 씌워야 한다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            정규방정식의 "normal" 이 뜻하는 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>수직 — 잔차가 열공간에 직교한다는 조건</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>정규분포 — 잡음이 Gaussian이라는 가정</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>정규화 — 계수를 표준화한다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            기하에서 "normal" 은 <strong>법선(수직)</strong> 이다. $\mathbf{X}^\top\mathbf{e}=\mathbf{0}$ 이
+            정확히 그 조건이고, 그것을 정리한 것이 식 (4)다(유도 1).
+            Gaussian 가정은 <strong>따로 얹으면 MLE 해석이 붙는</strong> 것이지
+            정규방정식 자체는 어떤 분포 가정도 필요 없다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            $d>n$ (feature 가 표본보다 많음) 일 때 OLS 와 ridge 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>OLS 는 해가 무한히 많고, ridge 는 $\lambda>0$ 이면 유일한 해가 있다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>둘 다 해가 없다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>둘 다 유일한 해가 있다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\mathrm{rank}(\mathbf{X})\le n&lt;d$ 이므로 $\mathbf{X}^\top\mathbf{X}$ 는 특이하고,
+            잔차를 0 으로 만드는 $\mathbf{w}$ 가 <strong>무한히 많다</strong>.
+            $\lambda\mathbf{I}$ 를 더하면 모든 eigenvalue 가 $\ge\lambda>0$ 이 되어
+            <strong>항상 가역</strong>이 된다(접힌 상자).
+            이것이 유전체·텍스트처럼 $d\gg n$ 인 문제에서 정규화가 <strong>선택이 아니라 필수</strong>인 이유다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            feature 를 하나 추가했더니 train $R^2$ 가 0.72 → 0.74 로 올랐다. 판단은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>아무 정보도 없다 — $R^2$ 는 feature 를 넣으면 반드시 오른다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>그 feature 가 유용하다는 증거다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>과적합이 시작됐다는 신호다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            열을 추가하면 열공간이 넓어져 <strong>정사영이 더 가까워질 수밖에 없다</strong> —
+            무작위 잡음 열이어도 $R^2$ 는 오른다(오해 1).
+            판단하려면 <strong>adjusted $R^2$ 나 hold-out 성능</strong>을 봐야 하고,
+            <a href="../ch04/4.8-hypothesis-testing.html">4.8</a>의 관점으로는 그 증가가 잡음보다 큰지 검정해야 한다.
+            <strong>다</strong>도 성급하다 — train 만으로는 과적합 여부를 알 수 없다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="5.4-logistic-regression.html">5.4 로지스틱 회귀</a></strong> — 같은 선형 형태에 sigmoid 를 씌워 분류로.</li>
+        <li><strong><a href="../ch02/2.6-linear-systems.html">2.6 선형 연립방정식</a></strong> — 정사영과 최소제곱의 기하.</li>
+        <li><strong><a href="../ch03/3.9-constraints-regularization.html">3.9 제약과 정규화</a></strong> — L1/L2 를 제약 영역의 모양으로 보는 관점.</li>
+        <li><strong><a href="5.7-ensemble.html">5.7 앙상블</a></strong> — gradient boosting 의 각 단계가 잔차에 대한 회귀다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-hastie2009-esl" data-ref="hastie2009-esl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em> (2nd ed.). Springer.</span>
+          <span class="ref__where">3.2절 — 최소제곱을 열공간 위로의 정사영으로 보는 그림(직관 절)과 hat matrix 의 성질(식 12). 3.4.1절 — ridge 를 SVD 로 분해해 $\sigma_j^2/(\sigma_j^2+\lambda)$ 로 축소된다는 결과(식 7). 3.4.2–3.4.3절 — lasso 의 soft thresholding(식 9, 유도 3)과 elastic net. 3.4.4절 — 세 벌점의 제약 영역 그림과 상관된 feature 에서의 행동 차이(오해 5)</span>
+          <a class="ref__link" href="https://hastie.su.domains/ElemStatLearn/">hastie.su.domains</a>
+        </li>
+        <li class="ref" id="ref-hoerl1970-ridge" data-ref="hoerl1970-ridge">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Hoerl, A. E. &amp; Kennard, R. W. (1970). <em>Ridge Regression: Biased Estimation for Nonorthogonal Problems</em>. Technometrics, 12(1), 55–67.</span>
+          <span class="ref__where">§2 — $\mathbf{X}^\top\mathbf{X}$ 가 거의 특이할 때 OLS 계수의 길이가 폭증한다는 진단과, $\lambda\mathbf{I}$ 를 더해 이를 막는 처방(식 6). §4 — <strong>편향을 감수하고 MSE 를 낮추는 $\lambda$ 가 항상 존재한다</strong>는 정리로, <a href="../ch04/4.5-statistical-estimation.html">4.5</a> 오해 2 의 회귀판이다. §5 — ridge trace 로 $\lambda$ 를 고르는 원래 방법(오늘날은 교차검증으로 대체)</span>
+          <a class="ref__link" href="https://doi.org/10.1080/00401706.1970.10488634">doi.org</a>
+        </li>
+        <li class="ref" id="ref-tibshirani1996-lasso" data-ref="tibshirani1996-lasso">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Tibshirani, R. (1996). <em>Regression Shrinkage and Selection via the Lasso</em>. Journal of the Royal Statistical Society B, 58(1), 267–288.</span>
+          <span class="ref__where">§2 — L1 제약이 <strong>축소와 변수 선택을 동시에</strong> 한다는 제안과 이름의 유래. §2.2 — 직교 설계에서의 닫힌 해가 soft thresholding 이라는 결과(식 9, 예제 ④). §3 — 제약 영역이 마름모라 모서리에서 접하므로 계수가 정확히 0 이 된다는 기하적 설명(<a href="../ch03/3.9-constraints-regularization.html">3.9</a>와 같은 그림)</span>
+          <a class="ref__link" href="https://www.jstor.org/stable/2346178">jstor.org</a>
+        </li>
+        <li class="ref" id="ref-zou2005-elastic-net" data-ref="zou2005-elastic-net">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Zou, H. &amp; Hastie, T. (2005). <em>Regularization and Variable Selection via the Elastic Net</em>. Journal of the Royal Statistical Society B, 67(2), 301–320.</span>
+          <span class="ref__where">§1 — lasso 의 두 한계($d>n$ 이면 최대 $n$개, 상관된 무리에서 하나만 임의 선택)를 명시한 부분(오해 5). §2 — L1·L2 혼합 벌점의 정의(식 10). 정리 1 — <strong>grouping effect</strong>: 상관이 1 에 가까운 두 feature 의 계수 차이가 0 으로 간다는 결과로, 왜 함께 들어오고 함께 빠지는지의 근거</span>
+          <a class="ref__link" href="https://doi.org/10.1111/j.1467-9868.2005.00503.x">doi.org</a>
+        </li>
+        <li class="ref" id="ref-stanford-cs229" data-ref="stanford-cs229">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Ng, A. &amp; Ma, T. <em>CS229: Machine Learning</em>. Stanford University.</span>
+          <span class="ref__where">강의노트 1 "Supervised learning" §1.1–1.2 — 최소제곱의 행렬 미분 유도(유도 1 앞부분)와 정규방정식. §1.3 "Probabilistic interpretation" — <strong>최소제곱이 Gaussian 잡음 가정의 MLE</strong> 라는 유도로, 예제 ⑤ 에서 이상치에 취약한 이유를 설명한다. §2 — locally weighted regression 으로 넘어가는 부분이 로버스트 회귀의 동기와 이어진다</span>
+          <a class="ref__link" href="https://cs229.stanford.edu/">cs229.stanford.edu</a>
+        </li>
+        <li class="ref" id="ref-sklearn-docs" data-ref="sklearn-docs">
+          <span class="ref__type" data-type="doc">문서</span>
+          <span class="ref__cite">scikit-learn developers. <em>User Guide — 1.1 Linear Models</em>.</span>
+          <span class="ref__where">1.1.2–1.1.5절 — <code>Ridge</code>·<code>Lasso</code>·<code>ElasticNet</code> 의 목적함수 정의. <strong><code>alpha</code> 가 이 절의 $\lambda$ 이고 <code>l1_ratio</code> 가 $\alpha$</strong> 라는 표기 대응('같은 것을 다르게 부른다' 표)과, 벌점항이 $\frac{1}{2n}$ 로 나뉘어 있어 상수가 달라진다는 주의(퀴즈 2). 1.1.16절 — Huber·RANSAC·Theil-Sen 로버스트 회귀의 비교표(식 11 아래 표)</span>
+          <a class="ref__link" href="https://scikit-learn.org/stable/modules/linear_model.html">scikit-learn.org</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+function panel(p) {
+  p.add(VIZ.el('rect', {
+    x: p.pad.l, y: p.pad.t, width: p.iw, height: p.ih,
+    fill: 'var(--ink-3)', 'fill-opacity': 0.03, stroke: 'none'
+  }));
+  return p;
+}
+function mkRand(seed) {
+  var s = seed || 12345;
+  return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+}
+function gauss(rnd) {
+  var u = Math.max(1e-9, rnd()), v = rnd();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+/* 단순 최소제곱 */
+function ols(xs, ys) {
+  var n = xs.length, mx = 0, my = 0, i;
+  for (i = 0; i < n; i++) { mx += xs[i] / n; my += ys[i] / n; }
+  var sxy = 0, sxx = 0;
+  for (i = 0; i < n; i++) { sxy += (xs[i] - mx) * (ys[i] - my); sxx += Math.pow(xs[i] - mx, 2); }
+  var b = sxx > 1e-12 ? sxy / sxx : 0;
+  return { a: my - b * mx, b: b, sxy: sxy, sxx: sxx, mx: mx, my: my };
+}
+/* 반복 재가중 최소제곱 — Huber / 절대값 */
+function robustFit(xs, ys, kind, delta) {
+  var f = ols(xs, ys), a = f.a, b = f.b, i, it;
+  for (it = 0; it < 60; it++) {
+    var sw = 0, swx = 0, swy = 0, swxx = 0, swxy = 0;
+    for (i = 0; i < xs.length; i++) {
+      var e = ys[i] - (a + b * xs[i]), ae = Math.abs(e), w;
+      if (kind === 'ols') w = 1;
+      else if (kind === 'huber') w = ae <= delta ? 1 : delta / Math.max(ae, 1e-9);
+      else w = 1 / Math.max(ae, 1e-3);                 /* 절대값 (LAD) */
+      sw += w; swx += w * xs[i]; swy += w * ys[i];
+      swxx += w * xs[i] * xs[i]; swxy += w * xs[i] * ys[i];
+    }
+    var det = sw * swxx - swx * swx;
+    if (Math.abs(det) < 1e-12) break;
+    a = (swxx * swy - swx * swxy) / det;
+    b = (sw * swxy - swx * swy) / det;
+  }
+  return { a: a, b: b };
+}
+
+/* ============================================================
+   위젯 1 — 최소제곱과 잔차
+   ============================================================ */
+WIDGETS.register('lsq-drag', function (root, ctx) {
+  var pts = [[1, 2], [2, 4], [3, 5], [4, 4], [5, 5]];
+  var moveIdx = 4, moveY = 5;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'line', label: '회귀직선' },
+    { key: 'sse', label: 'SSE (잔차 제곱합)', digits: 4 },
+    { key: 'r2', label: 'R²', digits: 4 },
+    { key: 'checks', label: '잔차의 두 직교 조건' }
+  ]);
+
+  function draw() {
+    var xs = [], ys = [], i;
+    for (i = 0; i < pts.length; i++) {
+      xs.push(pts[i][0]);
+      ys.push(i === moveIdx ? moveY : pts[i][1]);
+    }
+    var f = ols(xs, ys);
+    var sse = 0, sst = 0, se = 0, sxe = 0;
+    for (i = 0; i < xs.length; i++) {
+      var e = ys[i] - (f.a + f.b * xs[i]);
+      sse += e * e; sst += Math.pow(ys[i] - f.my, 2);
+      se += e; sxe += xs[i] * e;
+    }
+
+    var top = Math.max(7, Math.max.apply(null, ys) + 1.5);
+    var p = VIZ.plot({ w: 460, h: 290, xmin: 0, xmax: 6, ymin: Math.min(0, Math.min.apply(null, ys) - 1), ymax: top,
+      pad: { t: 30, r: 16, b: 32, l: 44 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, Math.max(1, Math.round(top / 6))).axes('x', '')
+      .ticks(1, Math.max(1, Math.round(top / 6)));
+    p.text(0, top, 'y · 세로 선분 = 잔차 (그 제곱의 합을 최소로 한다)', { size: 10, dy: -10 });
+
+    p.curve(function (x) { return f.a + f.b * x; }, { samples: 60 });
+    for (i = 0; i < xs.length; i++) {
+      var yh = f.a + f.b * xs[i];
+      p.line([[xs[i], ys[i]], [xs[i], yh]], { dash: '3 3', width: 1.6 });
+      p.dot(xs[i], ys[i], i === moveIdx ? 6 : 4.2);
+    }
+    p.dot(f.mx, f.my, 5);
+    p.callout(f.mx, f.my, '평균점 — 직선이 반드시 지난다', { dx: 20, dy: 24, tone: 'var(--seal)' });
+
+    out.setRaw('line', 'ŷ = ' + f.a.toFixed(3) + ' + ' + f.b.toFixed(3) + ' x');
+    out.set('sse', sse);
+    out.set('r2', sst > 1e-12 ? 1 - sse / sst : 0);
+    out.setRaw('checks', 'Σe = ' + se.toFixed(9) + ' · Σxe = ' + sxe.toFixed(9));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '움직일 점의 번호', min: 1, max: 5, step: 1, value: 5, digits: 0,
+    onInput: function (v) { moveIdx = v - 1; moveY = pts[moveIdx][1]; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '그 점의 y 값', min: -2, max: 20, step: 0.5, value: 5, digits: 1,
+    onInput: function (v) { moveY = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — 다중공선성
+   ============================================================ */
+WIDGETS.register('collinearity', function (root, ctx) {
+  var rho = 0.5, seed = 3, n = 40;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'vif', label: 'VIF = 1/(1−ρ²)', digits: 2 },
+    { key: 'w', label: '표본 5개에서 나온 (w₁, w₂)' },
+    { key: 'spread', label: 'w₁ 의 표본 간 표준편차', digits: 4 },
+    { key: 'pred', label: '예측 ŷ(1,1) 의 표본 간 표준편차', digits: 4 }
+  ]);
+
+  function fitOne(rnd) {
+    /* 참값 w = (1, 1). x2 = ρ x1 + √(1−ρ²) noise */
+    var i, s11 = 0, s12 = 0, s22 = 0, s1y = 0, s2y = 0;
+    for (i = 0; i < n; i++) {
+      var z1 = gauss(rnd), z2 = gauss(rnd);
+      var x1 = z1, x2 = rho * z1 + Math.sqrt(Math.max(0, 1 - rho * rho)) * z2;
+      var y = x1 + x2 + 0.5 * gauss(rnd);
+      s11 += x1 * x1; s12 += x1 * x2; s22 += x2 * x2;
+      s1y += x1 * y; s2y += x2 * y;
+    }
+    var det = s11 * s22 - s12 * s12;
+    if (Math.abs(det) < 1e-9) return [0, 0];
+    return [(s22 * s1y - s12 * s2y) / det, (s11 * s2y - s12 * s1y) / det];
+  }
+
+  function draw() {
+    var rnd = mkRand(seed * 7919 + 3), ws = [], i;
+    for (i = 0; i < 5; i++) ws.push(fitOne(rnd));
+
+    var p = VIZ.plot({ w: 460, h: 290, xmin: -3, xmax: 5, ymin: -3, ymax: 5,
+      pad: { t: 30, r: 16, b: 32, l: 44 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('w₁', '').ticks(1, 1);
+    p.text(-3, 5, 'w₂ · 점 = 표본마다 나온 계수 · 점선 = w₁+w₂=2 (예측이 같은 선)',
+      { size: 10, dy: -10 });
+    p.line([[-3, 5], [5, -3]], { dash: '4 3', width: 1.6 });
+    p.dot(1, 1, 6);
+    p.callout(1, 1, '참값 (1, 1)', { dx: 20, dy: 24, tone: 'var(--seal)' });
+
+    var m1 = 0, m2 = 0;
+    for (i = 0; i < ws.length; i++) { m1 += ws[i][0] / 5; m2 += ws[i][1] / 5; }
+    var v1 = 0, vp = 0;
+    for (i = 0; i < ws.length; i++) {
+      v1 += Math.pow(ws[i][0] - m1, 2) / 5;
+      vp += Math.pow((ws[i][0] + ws[i][1]) - (m1 + m2), 2) / 5;
+      p.dot(Math.max(-2.9, Math.min(4.9, ws[i][0])), Math.max(-2.9, Math.min(4.9, ws[i][1])), 4);
+    }
+
+    out.set('vif', 1 / Math.max(1e-6, 1 - rho * rho));
+    out.setRaw('w', ws.map(function (q) {
+      return '(' + q[0].toFixed(2) + ', ' + q[1].toFixed(2) + ')';
+    }).join(' '));
+    out.set('spread', Math.sqrt(v1));
+    out.set('pred', Math.sqrt(vp));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '두 feature 의 상관 ρ', min: 0, max: 0.999, step: 0.001, value: 0.5, digits: 3,
+    onInput: function (v) { rho = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '표본 수 n', min: 10, max: 300, step: 5, value: 40, digits: 0,
+    onInput: function (v) { n = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 40, step: 1, value: 3, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — 정규화 경로
+   ============================================================ */
+WIDGETS.register('shrinkage-path', function (root, ctx) {
+  var kind = 'lasso', alpha = 0.5;
+  var zs = [1.2, 0.8, 0.45, -0.6, 0.15];
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'lam', label: 'λ 를 키울 때 0 이 되는 순서' },
+    { key: 'at1', label: 'λ = 1 에서의 계수' },
+    { key: 'nz', label: 'λ = 1 에서 0 이 아닌 계수 수' },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function coef(z, lam) {
+    if (kind === 'ridge') return z / (1 + lam);
+    if (kind === 'lasso') return Math.sign(z) * Math.max(Math.abs(z) - lam / 2, 0);
+    var s = Math.sign(z) * Math.max(Math.abs(z) - lam * alpha / 2, 0);
+    return s / (1 + lam * (1 - alpha));
+  }
+
+  function draw() {
+    var p = VIZ.plot({ w: 460, h: 290, xmin: 0, xmax: 4, ymin: -1.0, ymax: 1.4,
+      pad: { t: 30, r: 16, b: 34, l: 48 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 0.5).axes('λ (정규화 세기)', '').ticks(1, 0.5);
+    p.text(0, 1.4, '계수 · 선 하나가 feature 하나 · 가로선 = 0',
+      { size: 10, dy: -10 });
+    p.line([[0, 0], [4, 0]], { width: 2 });
+
+    zs.forEach(function (z, k) {
+      p.curve(function (lam) { return coef(z, lam); }, { samples: 240, alt: k % 2 === 1 });
+    });
+
+    /* 0 이 되는 지점 표시 */
+    var order = [];
+    zs.forEach(function (z, k) {
+      var hit = null;
+      for (var lam = 0; lam <= 4; lam += 0.01) {
+        if (Math.abs(coef(z, lam)) < 1e-9) { hit = lam; break; }
+      }
+      if (hit !== null) { p.dot(hit, 0, 4.5); order.push('w' + (k + 1) + '@' + hit.toFixed(2)); }
+    });
+
+    var at1 = zs.map(function (z) { return coef(z, 1).toFixed(3); });
+    var nz = at1.filter(function (v) { return Math.abs(Number(v)) > 1e-9; }).length;
+
+    out.setRaw('lam', order.length ? order.join(' · ') : '아무것도 0 이 되지 않는다 (ridge)');
+    out.setRaw('at1', '(' + at1.join(', ') + ')');
+    out.setRaw('nz', nz + ' / ' + zs.length);
+    out.setRaw('note', kind === 'ridge' ? 'ridge — 0 에 가까워지기만 한다'
+      : (kind === 'lasso' ? 'lasso — 작은 계수부터 차례로 정확히 0'
+      : 'elastic net — lasso 보다 늦게 0 이 된다'));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '벌점',
+    options: [
+      { value: 'ridge', label: 'Ridge (L2)' },
+      { value: 'lasso', label: 'Lasso (L1)' },
+      { value: 'enet', label: 'Elastic Net' }
+    ],
+    value: 'lasso', onChange: function (v) { kind = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'elastic net 의 L1 비율 α', min: 0, max: 1, step: 0.05, value: 0.5, digits: 2,
+    onInput: function (v) { alpha = v; draw(); }
+  });
+  WIDGETS.matrix({
+    host: ctx.controls, rows: 1, cols: 5, values: [zs], step: 0.05,
+    label: 'OLS 계수 z (직교 feature 가정)',
+    onChange: function (nv) { zs = nv[0]; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — 로버스트 회귀
+   ============================================================ */
+WIDGETS.register('robust-loss', function (root, ctx) {
+  var outY = 5, delta = 1.0;
+
+  var xs = [1, 2, 3, 4, 5];
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'ols', label: 'OLS 기울기', digits: 4 },
+    { key: 'hub', label: 'Huber 기울기', digits: 4 },
+    { key: 'lad', label: '절대값(LAD) 기울기', digits: 4 },
+    { key: 'infl', label: '이상치의 영향력 (OLS vs Huber)' }
+  ]);
+
+  function draw() {
+    var ys = [2, 4, 5, 4, outY];
+    var fo = ols(xs, ys);
+    var fh = robustFit(xs, ys, 'huber', delta);
+    var fl = robustFit(xs, ys, 'lad', delta);
+
+    var top = Math.max(8, outY + 2);
+    var p = VIZ.plot({ w: 460, h: 290, xmin: 0, xmax: 6, ymin: -1, ymax: top,
+      pad: { t: 30, r: 16, b: 32, l: 46 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    var gy = Math.max(1, Math.round(top / 6));
+    panel(p).grid(1, gy).axes('x', '').ticks(1, gy);
+    p.text(0, top, 'y · 실선 = OLS · 점선 = Huber · 잔점선 = 절대값(LAD)', { size: 10, dy: -10 });
+
+    p.curve(function (x) { return fo.a + fo.b * x; }, { samples: 60 });
+    p.curve(function (x) { return fh.a + fh.b * x; }, { samples: 60, alt: true, dash: '5 4' });
+    p.curve(function (x) { return fl.a + fl.b * x; }, { samples: 60, dash: '2 3' });
+    for (var i = 0; i < xs.length; i++) {
+      p.dot(xs[i], Math.max(-0.9, Math.min(top - 0.1, ys[i])), i === 4 ? 6 : 4);
+    }
+    var eo = Math.abs(ys[4] - (fo.a + fo.b * xs[4]));
+    p.callout(5, Math.min(top - 0.5, outY), '이상치', { dx: -18, dy: 24, tone: 'var(--seal)' });
+
+    out.set('ols', fo.b);
+    out.set('hub', fh.b);
+    out.set('lad', fl.b);
+    out.setRaw('infl', eo.toFixed(2) + '  vs  ' + Math.min(delta, eo).toFixed(2)
+      + '  (' + (eo / Math.max(1e-9, Math.min(delta, eo))).toFixed(1) + '배)');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '이상치의 y 값 (원래 5)', min: 0, max: 50, step: 0.5, value: 5, digits: 1,
+    onInput: function (v) { outY = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'Huber 의 전환점 δ', min: 0.2, max: 6, step: 0.1, value: 1, digits: 1,
+    onInput: function (v) { delta = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — 정사영
+   ============================================================ */
+WIDGETS.register('projection-view', function (root, ctx) {
+  var tilt = 0;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'len', label: '잔차 벡터의 길이', digits: 4 },
+    { key: 'min', label: '가능한 최소 길이 (수직일 때)', digits: 4 },
+    { key: 'ang', label: '잔차와 평면이 이루는 각', digits: 1 },
+    { key: 'dot', label: 'Xᵀe (0 이어야 최소)', digits: 4 }
+  ]);
+
+  function draw() {
+    var p = VIZ.plot({ w: 460, h: 290, xmin: -1, xmax: 5, ymin: -1.2, ymax: 3.6,
+      pad: { t: 30, r: 16, b: 30, l: 40 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).axes('', '').ticks(0, 0);
+    p.text(-1, 3.6, '평면 = 열공간 Col(X) · 위 화살표 = y · 아래로 내린 선 = 잔차',
+      { size: 10, dy: -10 });
+
+    /* 열공간을 평행사변형으로 그린다 */
+    p.add(VIZ.el('path', {
+      d: 'M' + p.X(0) + ' ' + p.Y(0) + ' L' + p.X(3.6) + ' ' + p.Y(0.45) +
+         ' L' + p.X(4.4) + ' ' + p.Y(-0.35) + ' L' + p.X(0.8) + ' ' + p.Y(-0.8) + ' Z',
+      fill: 'var(--jade)', 'fill-opacity': 0.13, stroke: 'var(--jade)', 'stroke-width': 1.2
+    }));
+    p.text(3.4, -0.65, 'Col(X)', { size: 11 });
+
+    /* y 벡터 (고정) 와 후보 점 */
+    var yv = [2.2, 3.0];
+    var foot = [2.2, 0.28];                       /* 수직으로 내린 발 */
+    var cand = [foot[0] + tilt, 0.28 + tilt * 0.125];
+    p.vector(yv[0], yv[1], { width: 2.4 });
+    p.text(yv[0] + 0.12, yv[1] + 0.1, 'y', { size: 12 });
+
+    p.line([[yv[0], yv[1]], [cand[0], cand[1]]], { alt: true, width: 2.2 });
+    p.dot(cand[0], cand[1], 5);
+    p.vector(cand[0], cand[1], { width: 1.6, stroke: 'var(--ink-3)' });
+
+    var dx = yv[0] - cand[0], dy = yv[1] - cand[1];
+    var len = Math.sqrt(dx * dx + dy * dy);
+    var minLen = yv[1] - 0.28;
+    /* 평면 방향벡터 (3.6, 0.45) 와의 내적 */
+    var ux = 3.6 / Math.sqrt(3.6 * 3.6 + 0.45 * 0.45), uy = 0.45 / Math.sqrt(3.6 * 3.6 + 0.45 * 0.45);
+    var dot = dx * ux + dy * uy;
+    var ang = 90 - Math.abs(Math.atan2(dot, Math.sqrt(Math.max(1e-9, len * len - dot * dot))) * 180 / Math.PI);
+
+    p.callout(cand[0], cand[1], Math.abs(tilt) < 0.02 ? '수직 — 여기가 최소' : '기울었다 — 더 길다',
+      { dx: 18, dy: 26, tone: Math.abs(tilt) < 0.02 ? 'var(--seal)' : 'var(--ink-2)' });
+
+    out.set('len', len);
+    out.set('min', minLen);
+    out.set('ang', ang);
+    out.set('dot', dot);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '평면 위에서 발을 옮겨 본다 (0 = 수직)', min: -1.6, max: 1.6, step: 0.02, value: 0, digits: 2,
+    onInput: function (v) { tilt = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

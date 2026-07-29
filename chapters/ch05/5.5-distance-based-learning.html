@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5.5 거리 기반 학습 — AI 이론 학습</title>
+<meta name="description" content="KNN은 학습하지 않고 저장한다. 가정은 '가까우면 답도 비슷하다' 하나뿐이라, 거리 함수와 feature 스케일이 곧 모델이고, 고차원에서는 그 가정 자체가 무너진다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="5.5">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">5.5</span>
+        <span>5장 · 전통적 머신러닝</span>
+      </div>
+      <h1>거리 기반 학습</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 60분</span>
+        <span><b>난이도</b>★★☆☆☆</span>
+        <span><b>선수지식</b>
+          <a href="../ch02/2.3-inner-product.html">2.3 내적과 유사도</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-knn">K-Nearest Neighbors</a>
+      <a class="chip" href="#c-dist">Distance Function</a>
+      <a class="chip" href="#c-scale">Feature Scaling</a>
+      <a class="chip" href="#c-local">Local Decision Boundary</a>
+      <a class="chip" href="#c-curse">Curse of Dimensionality</a>
+      <a class="chip" href="#c-ann">Approximate Nearest Neighbor</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        KNN 은 <strong>학습하지 않고 저장한다</strong>. 가정은 <strong>"가까우면 답도 비슷하다"</strong> 하나뿐이라
+        <strong>거리 함수와 feature 스케일이 곧 model</strong> 이고,
+        고차원에서는 <strong>모든 점이 비슷하게 멀어져 그 가정 자체가 무너진다</strong>.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>$k$ 를 바꾸면 결정경계와 편향-분산이 어떻게 움직이는지 설명하고 손으로 예측할 수 있다.</li>
+        <li>거리 함수와 스케일링이 예측을 통째로 바꾼다는 것을 수치로 보일 수 있다.</li>
+        <li>차원이 커질 때 "가까운 이웃"이 왜 가깝지 않게 되는지 세 가지 계산으로 설명할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        지금까지의 model 은 전부 <strong>data 를 요약해 parameter 에 담고 원본을 버렸다</strong>.
+        KNN 은 정반대다 — <strong>아무것도 요약하지 않고 통째로 들고 있다가</strong>,
+        질문이 들어오면 그때 가장 비슷한 것들을 찾아 답한다.
+      </p>
+      <p>
+        이 방식이 통하려면 <strong>"비슷하다"가 무엇인지</strong>를 먼저 정해야 한다.
+        그것이 거리 함수이고, 여기에 이 알고리즘의 <strong>귀납적 편향이 전부 들어 있다</strong>
+        (<a href="5.1-ml-problem-definition.html">5.1</a>).
+        선형회귀가 "답은 직선이다"라고 가정했다면, KNN 은 <strong>"가까운 것끼리는 답이 비슷하다"</strong> 라고 가정한다.
+      </p>
+      <p>
+        가정이 약해서 강력하다 — 결정경계의 모양에 아무 제약이 없어 <strong>어떤 복잡한 경계든 표현</strong>한다.
+        대가는 세 가지다. <strong>예측이 느리고</strong>(매번 전체를 뒤진다),
+        <strong>스케일에 취약하며</strong>(단위 하나 바꾸면 이웃이 바뀐다),
+        <strong>고차원에서 무너진다</strong>(모든 점이 비슷하게 멀어진다).
+      </p>
+
+      <figure class="widget" data-widget="knn-boundary">
+        <figcaption class="widget__bar">K-Nearest Neighbors — k 하나로 갈리는 결정경계</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$k=1$ 은 경계가 <strong>들쭉날쭉</strong>하고 train 오차가 0 입니다. $k$ 를 키우면 매끄러워지는 대신 세밀한 구조를 놓칩니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          KNN 에서 <strong>"학습"이란 사실상 거리 함수와 스케일을 고르는 일</strong>이다.
+          $k$ 는 그다음이다.
+          그래서 성능이 안 나올 때 손볼 순서는 <strong>스케일링 → 거리 함수 → feature 선택 → $k$</strong> 이며,
+          $k$ 만 만지작거리는 것은 대개 헛수고다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-knn"></span>
+      <h3>K-Nearest Neighbors</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \hat{y}(\mathbf{x})=\begin{cases}\displaystyle\arg\max_{c}\sum_{i\in N_k(\mathbf{x})}\mathbb{1}[y_i=c] & \text{분류}\\[10pt] \displaystyle\frac{1}{k}\sum_{i\in N_k(\mathbf{x})}y_i & \text{회귀}\end{cases} $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">$N_k(\mathbf{x})$ 는 $\mathbf{x}$ 에서 가장 가까운 $k$개 훈련점의 집합이고,
+        예측은 그들의 <strong>다수결(분류) 또는 평균(회귀)</strong>이다.
+        학습 단계에서 하는 일은 <strong>저장뿐</strong>이라 lazy learning(게으른 학습)이라 부른다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>학습</th><th>예측 (표본 하나)</th><th>메모리</th></tr></thead>
+          <tbody>
+            <tr><td>KNN (완전탐색)</td><td class="num">$O(1)$</td><td class="num">$O(nd)$</td><td class="num">$O(nd)$ — <strong>전부 보관</strong></td></tr>
+            <tr><td>KNN (k-d tree)</td><td class="num">$O(n\log n)$</td><td class="num">$O(\log n)$ — <strong>$d\lesssim20$ 에서만</strong></td><td class="num">$O(nd)$</td></tr>
+            <tr><td>KNN (HNSW 등 근사)</td><td class="num">$O(n\log n)$</td><td class="num">$O(\log n)$</td><td class="num">$O(nd)$ + 그래프</td></tr>
+            <tr><td>선형회귀</td><td class="num">$O(nd^2)$</td><td class="num">$O(d)$</td><td class="num">$O(d)$</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>비용이 학습에서 예측으로 옮겨 간다</strong>는 것이 이 방식의 성격을 규정한다 —
+        학습은 공짜인데 <strong>서빙이 비싸다</strong>.
+        추천·검색처럼 항목이 계속 추가되는 시스템에서는 재학습이 필요 없다는 점이 큰 장점이 된다.
+      </p>
+      <p>거리에 따라 가중치를 주면 부드러워진다.</p>
+      <div class="eq">
+        <div class="eq__body">$$ \hat{y}(\mathbf{x})=\frac{\sum_{i\in N_k}w_i\,y_i}{\sum_{i\in N_k}w_i}, \qquad w_i=\frac{1}{d(\mathbf{x},\mathbf{x}_i)+\varepsilon} \quad\text{또는}\quad w_i=e^{-d^2/2h^2} $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        오른쪽 형태로 $k$ 대신 폭 $h$ 를 쓰고 <strong>모든 점을 가중</strong>하면 <strong>커널 회귀</strong>가 된다 —
+        KNN 은 그 특수한 경우(가까운 $k$개에만 가중치 1)로 볼 수 있다.
+      </p>
+
+      <span class="anchor" id="c-dist"></span>
+      <h3>Distance Function 거리 함수</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ d_p(\mathbf{x},\mathbf{z})=\Bigl(\sum_{j=1}^{d}|x_j-z_j|^p\Bigr)^{1/p} \qquad (\text{Minkowski}) $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl">거리 함수를 고르는 것은 <strong>"무엇을 비슷하다고 볼 것인가"를 정하는 일</strong>이고,
+        <a href="../ch02/2.3-inner-product.html">2.3</a>에서 본 metric 의 네 조건(비음수·동일성·대칭·삼각부등식)을 만족해야 한다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>거리</th><th>식</th><th>단위공의 모양</th><th>언제</th></tr></thead>
+          <tbody>
+            <tr><td>Manhattan ($p=1$)</td><td>$\sum|x_j-z_j|$</td><td>마름모</td><td>축마다 독립적 · 이상치에 덜 민감</td></tr>
+            <tr><td><strong>Euclidean</strong> ($p=2$)</td><td>$\sqrt{\sum(x_j-z_j)^2}$</td><td>원</td><td>기본값 · 회전 불변</td></tr>
+            <tr><td>Chebyshev ($p=\infty$)</td><td>$\max_j|x_j-z_j|$</td><td>정사각형</td><td>가장 나쁜 축 하나가 지배</td></tr>
+            <tr><td>Cosine</td><td>$1-\frac{\mathbf{x}^\top\mathbf{z}}{\|\mathbf{x}\|\|\mathbf{z}\|}$</td><td>—</td><td><strong>방향만 중요할 때</strong> — 텍스트·embedding</td></tr>
+            <tr><td>Mahalanobis</td><td>$\sqrt{(\mathbf{x}-\mathbf{z})^\top\boldsymbol\Sigma^{-1}(\mathbf{x}-\mathbf{z})}$</td><td>타원</td><td>feature 상관을 보정 (<a href="../ch04/4.4-common-distributions.html">4.4</a>)</td></tr>
+            <tr><td>Hamming</td><td>다른 자리의 개수</td><td>—</td><td>범주형 · 이진 벡터</td></tr>
+            <tr><td>편집거리</td><td>삽입·삭제·치환 최소 횟수</td><td>—</td><td>문자열</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>Mahalanobis 는 사실상 "표준화 + Euclidean"</strong> 이다 —
+        $\boldsymbol\Sigma^{-1}$ 이 각 축을 표준편차로 나누고 상관까지 풀어 준다.
+        cosine 은 <strong>길이를 1 로 정규화한 뒤의 Euclidean 과 순서가 같아</strong>,
+        embedding 검색에서 둘을 섞어 써도 결과가 같은 경우가 많다.
+      </p>
+
+      <figure class="widget" data-widget="distance-shapes">
+        <figcaption class="widget__bar">Distance Function — 같은 거리인 점들의 모양</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$p$ 를 바꾸면 "같은 거리"의 뜻이 달라집니다. <strong>어떤 점이 이웃이 되는지가 통째로 바뀝니다</strong>.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-scale"></span>
+      <h3>Feature Scaling 특성 스케일링</h3>
+      <p>
+        <span class="hl">거리 기반 방법은 <strong>단위에 전혀 불변이 아니다</strong> —
+        어떤 feature 의 단위를 바꾸면 그 축이 거리를 지배해 <strong>이웃이 통째로 바뀐다</strong>.
+        스케일링은 선택이 아니라 필수 전처리다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>방법</th><th>식</th><th>결과 범위</th><th>이상치</th></tr></thead>
+          <tbody>
+            <tr><td>표준화 (z-score)</td><td>$\frac{x-\mu}{\sigma}$</td><td>평균 0, 분산 1</td><td>민감</td></tr>
+            <tr><td>Min-Max</td><td>$\frac{x-\min}{\max-\min}$</td><td>$[0,1]$</td><td><strong>매우 민감</strong></td></tr>
+            <tr><td>Robust</td><td>$\frac{x-\text{중앙값}}{\text{IQR}}$</td><td>—</td><td>강건</td></tr>
+            <tr><td>단위벡터화</td><td>$\mathbf{x}/\|\mathbf{x}\|$</td><td>구 위</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>키(cm)와 몸무게(kg)로 사람을 비교한다고 합시다. 키를 <strong>밀리미터</strong>로 바꾸면 숫자가 10배가 되고, 그 순간 <strong>몸무게는 거의 무시</strong>됩니다. 계산은 똑같은데 "비슷한 사람"이 완전히 달라집니다.</p>
+        <p>그래서 먼저 <strong>모든 자를 같은 눈금으로 맞춰야</strong> 합니다. 표준화는 "각 feature 를 자기 표준편차 단위로 재기"이고, 그러면 어느 축도 단위 때문에 유리해지지 않습니다.</p>
+      </div>
+      <p>
+        중요한 절차 하나 — <strong>스케일링 parameter($\mu,\sigma$)는 training set 에서만 계산</strong>해야 한다.
+        전체 data 로 계산한 뒤 나누면 test 정보가 새어 들어가는 <strong>data leakage</strong> 다
+        (<a href="../ch01/1.5-data-split-evaluation.html">1.5</a>). 교차검증 안에서는 fold 마다 다시 계산해야 한다.
+      </p>
+
+      <figure class="widget" data-widget="scaling-flip">
+        <figcaption class="widget__bar">Feature Scaling — 단위 하나로 이웃이 뒤바뀐다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">스케일링을 켜고 끄면 <strong>가장 가까운 점이 바뀝니다</strong>. 같은 data, 같은 알고리즘인데도 답이 달라집니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-local"></span>
+      <h3>Local Decision Boundary 지역적 결정경계</h3>
+      <p>
+        <span class="hl">$k=1$ 이면 결정경계가 <strong>Voronoi 다이어그램의 경계</strong>가 되어
+        훈련점 하나하나가 자기 영역을 갖고, $k$ 를 키우면 그 경계가 매끄러워진다 —
+        <strong>$k$ 가 곧 복잡도 조절 손잡이</strong>다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$k$</th><th>train 오차</th><th>결정경계</th><th>편향 / 분산</th><th>유효 parameter 수 $\approx n/k$</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td class="num"><strong>0</strong></td><td>들쭉날쭉 (Voronoi)</td><td>편향 최소 · <strong>분산 최대</strong></td><td class="num">$n$</td></tr>
+            <tr><td class="num">5</td><td>작다</td><td>조금 매끄럽다</td><td>균형</td><td class="num">$n/5$</td></tr>
+            <tr><td class="num">$\sqrt{n}$</td><td>보통</td><td>매끄럽다</td><td>흔히 쓰는 어림값</td><td class="num">$\sqrt{n}$</td></tr>
+            <tr><td class="num">$n$</td><td>가장 크다</td><td><strong>없다</strong> — 항상 다수 class</td><td><strong>편향 최대</strong> · 분산 0</td><td class="num">1</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>train 오차 0 이 좋은 신호가 아니라는</strong> 것을 $k=1$ 이 극명하게 보여 준다
+        (<a href="5.1-ml-problem-definition.html">5.1</a> 오해 2) — 자기 자신이 항상 최근접 이웃이기 때문이다.
+        그래서 $k$ 는 반드시 <strong>교차검증으로</strong> 고르고, 이진분류에서는 동점을 피하려 <strong>홀수</strong>로 둔다.
+      </p>
+      <p>
+        이론적 보증도 있다. Cover 와 Hart 는 $n\to\infty$ 에서 1-NN 의 오차가
+        <strong>Bayes 오차의 두 배를 넘지 않는다</strong>는 것을 증명했다<a class="cite" href="#ref-cover1967-nearest-neighbor" data-ref="cover1967-nearest-neighbor">1</a>.
+      </p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ R^\star\ \le\ R_{1\text{NN}}\ \le\ R^\star\Bigl(2-\tfrac{M}{M-1}R^\star\Bigr) \ \xrightarrow{M=2}\ 2R^\star(1-R^\star) $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        <strong>"가장 가까운 것 하나만 봐도 최선의 두 배 안"</strong> 이라는 결과는 놀랍도록 강하다 —
+        아무 model 도 세우지 않고 얻는 보증이기 때문이다.
+        다만 <strong>$n\to\infty$ 의 점근 결과</strong>이고, 다음 절의 차원의 저주가 그 "충분히 많은 $n$" 을 엄청나게 키운다.
+      </p>
+
+      <span class="anchor" id="c-curse"></span>
+      <h3>Curse of Dimensionality 차원의 저주</h3>
+      <p>
+        <span class="hl">차원이 커지면 <strong>모든 점이 서로 비슷하게 멀어져</strong>
+        "가까운 이웃"이라는 개념 자체가 의미를 잃는다 — 거리 기반 방법이 무너지는 근본 원인이다.</span>
+        세 가지 계산으로 같은 사실을 볼 수 있다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>현상</th><th>식</th><th>$d=2$</th><th>$d=10$</th><th>$d=100$</th></tr></thead>
+          <tbody>
+            <tr><td>표본의 10% 를 담는 정육면체의 변</td><td>$0.1^{1/d}$</td><td class="num">0.316</td><td class="num">0.794</td><td class="num"><strong>0.977</strong></td></tr>
+            <tr><td>반지름 0.9 안의 부피 비율</td><td>$0.9^{d}$</td><td class="num">0.810</td><td class="num">0.349</td><td class="num"><strong>0.0000266</strong></td></tr>
+            <tr><td>거리 제곱의 상대 표준편차</td><td>$1.183/\sqrt{d}$</td><td class="num">0.837</td><td class="num">0.374</td><td class="num"><strong>0.118</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        첫 줄이 가장 직관적이다 — $d=100$ 에서 <strong>"가장 가까운 10%"를 모으려면 각 축의 98% 를 써야 한다</strong>.
+        지역적이라고 부를 수가 없다.
+        둘째 줄은 <strong>부피가 전부 껍질에 몰린다</strong>는 뜻이고,
+        셋째 줄은 <strong>가장 가까운 점과 가장 먼 점의 거리 차이가 사라진다</strong>는 뜻이다(예제 ④).
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \lim_{d\to\infty}\frac{d_{\max}-d_{\min}}{d_{\min}}\ \to\ 0 \qquad (\text{거리 집중 현상}) $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        구제책은 <strong>"진짜 차원"을 줄이는 것</strong>이다.
+        실제 data 는 고차원 공간에 흩어져 있지 않고 <strong>훨씬 낮은 차원의 매니폴드 위에 놓여 있는 경우가 많고</strong>
+        (<a href="5.11-dimensionality-reduction-manifold.html">5.11</a>),
+        그래서 PCA·embedding 을 거친 뒤 KNN 을 쓰면 되살아난다 —
+        실제로 오늘날 벡터 검색이 하는 일이 정확히 그것이다.
+      </p>
+
+      <figure class="widget" data-widget="curse-dim">
+        <figcaption class="widget__bar">Curse of Dimensionality — 세 가지 방식으로 같은 붕괴를 보기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">차원을 20 근처까지만 올려도 <strong>가장 가까운 점과 가장 먼 점의 차이가 거의 사라집니다</strong>.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-ann"></span>
+      <h3>Approximate Nearest Neighbor 근사 최근접 탐색</h3>
+      <p>
+        <span class="hl">정확한 최근접을 찾으려면 고차원에서는 결국 전수 조사($O(nd)$)를 해야 하므로,
+        <strong>정확도를 조금 포기하고 속도를 크게 얻는</strong> 근사 알고리즘을 쓴다 —
+        이것이 벡터 데이터베이스의 핵심 기술이다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>방법</th><th>아이디어</th><th>강점</th><th>약점</th></tr></thead>
+          <tbody>
+            <tr><td>k-d tree · ball tree</td><td>공간을 재귀적으로 분할</td><td>저차원에서 정확 + 빠름</td><td><strong>$d\gtrsim20$ 에서 전수 조사와 같아진다</strong></td></tr>
+            <tr><td>LSH</td><td>가까운 것이 같은 해시에 걸리게</td><td>이론적 보증이 있다</td><td>메모리 · 조정이 까다롭다</td></tr>
+            <tr><td>IVF (역파일)</td><td>먼저 군집화하고 몇 군집만 뒤진다</td><td>단순 · 대규모에 적합</td><td>군집 경계에서 놓친다</td></tr>
+            <tr><td>PQ (곱 양자화)</td><td>벡터를 조각내 코드북으로 압축</td><td><strong>메모리를 수십 배 절약</strong></td><td>압축 오차</td></tr>
+            <tr><td><strong>HNSW</strong></td><td>계층적 근접 그래프를 타고 내려간다</td><td>속도·정확도 균형이 가장 좋다<a class="cite" href="#ref-malkov2016-efficient-and-robust" data-ref="malkov2016-efficient-and-robust">2</a></td><td>메모리가 크다 · 삭제가 번거롭다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        평가 지표는 <strong>recall@k</strong> — "진짜 상위 $k$ 개 중 몇 개를 찾았나"다.
+        실무에서는 <strong>recall 0.95 를 유지하면서 100배 빠르게</strong> 같은 지점을 고른다.
+        RAG·추천·이미지 검색이 전부 이 구조 위에 서 있고,
+        <strong>KNN 이라는 60년 된 알고리즘이 지금도 쓰이는 이유</strong>가 여기 있다.
+      </p>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>KNN 의 성격을 다른 model 과 대비해 정리한다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>KNN</th><th>선형 model</th></tr></thead>
+          <tbody>
+            <tr><td>parameter</td><td><strong>없다</strong> (비모수)</td><td>$d+1$개</td></tr>
+            <tr><td>가정</td><td>가까우면 답이 비슷하다</td><td>답이 선형이다</td></tr>
+            <tr><td>$\mathcal{H}$ 의 크기</td><td>$d_{\text{VC}}=\infty$ (<a href="5.2-statistical-learning-theory.html">5.2</a>)</td><td>$d_{\text{VC}}=d+1$</td></tr>
+            <tr><td>복잡도 조절</td><td>$k$ (와 거리 함수)</td><td>정규화 $\lambda$</td></tr>
+            <tr><td>외삽</td><td><strong>못 한다</strong> — 본 범위 밖은 가장자리 값</td><td>한다 (위험할 수도)</td></tr>
+            <tr><td>결측치</td><td>거리 계산이 곤란</td><td>대치하면 된다</td></tr>
+            <tr><td>해석</td><td>"이 이웃들 때문" — <strong>사례 기반 설명</strong></td><td>계수</td></tr>
+            <tr><td>data 추가</td><td>즉시 반영 (재학습 없음)</td><td>재학습 필요</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        마지막 두 줄이 실무에서 KNN 을 고르는 이유다 —
+        <strong>"왜 이렇게 예측했나"에 실제 사례를 내밀 수 있고</strong>, 새 data 가 즉시 반영된다.
+        의료·법률처럼 근거 제시가 중요한 곳에서 baseline 으로 자주 쓰인다.
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$k$</td><td>k</td><td>참조할 이웃의 개수</td><td>정수</td><td>$1\le k\le n$</td></tr>
+            <tr><td>$N_k(\mathbf{x})$</td><td>N sub k of x</td><td>$\mathbf{x}$ 의 최근접 $k$개 집합</td><td>index 집합</td><td>$|N_k|=k$</td></tr>
+            <tr><td>$d(\cdot,\cdot)$</td><td>distance 거리 함수</td><td>두 점의 비유사도</td><td>함수</td><td>$\ge0$</td></tr>
+            <tr><td>$d_p$</td><td>Minkowski p-distance</td><td>식 (3)</td><td>함수</td><td>$p\ge1$ 이라야 metric</td></tr>
+            <tr><td>$\boldsymbol\Sigma^{-1}$</td><td>precision matrix</td><td>Mahalanobis 의 가중 행렬</td><td>$(d,d)$</td><td>PSD</td></tr>
+            <tr><td>$w_i$</td><td>weight</td><td>거리 기반 가중치</td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>$h$</td><td>bandwidth 대역폭</td><td>커널의 폭</td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>$R^\star$</td><td>Bayes risk</td><td>도달 가능한 최소 오차</td><td>scalar</td><td>$[0,1]$</td></tr>
+            <tr><td>$M$</td><td>M</td><td>class 개수</td><td>정수</td><td>$\ge2$</td></tr>
+            <tr><td>recall@k</td><td>리콜 앳 케이</td><td>진짜 상위 $k$ 중 찾아낸 비율</td><td>scalar</td><td>$[0,1]$</td></tr>
+            <tr><td>Voronoi</td><td>보로노이</td><td>각 점이 최근접인 영역 분할</td><td>—</td><td>—</td></tr>
+            <tr><td>lazy learning</td><td>게으른 학습</td><td>예측 시점에 계산하는 방식</td><td>—</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">같은 것을 다르게 부른다</span>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>이 사이트</th><th>같은 뜻으로 쓰이는 말</th><th>주의할 점</th></tr></thead>
+            <tbody>
+              <tr><td>KNN</td><td>k-NN, 최근접 이웃법, memory-based learning</td><td>"instance-based" · "case-based" 도 같은 계열</td></tr>
+              <tr><td>lazy learning</td><td>게으른 학습, 비모수 학습</td><td>비모수(nonparametric)는 <strong>parameter 가 없다</strong>가 아니라 <strong>$n$ 에 따라 는다</strong>는 뜻</td></tr>
+              <tr><td>표준화</td><td>z-score, standardization, <code>StandardScaler</code></td><td>정규화(normalization)와 <strong>혼용되어</strong> 뜻이 갈린다</td></tr>
+              <tr><td>Min-Max</td><td>정규화, <code>MinMaxScaler</code>, 0-1 스케일링</td><td>문헌마다 "정규화"가 이것을 뜻하기도 한다</td></tr>
+              <tr><td>cosine distance</td><td>$1-\cos$, 각거리</td><td><strong>삼각부등식을 만족하지 않아</strong> 엄밀한 metric 이 아니다</td></tr>
+              <tr><td>ANN</td><td>approximate nearest neighbor</td><td><strong>artificial neural network 의 ANN 과 약자가 같다</strong> — 문맥 확인</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — 고차원에서 이웃이 멀어진다 (부피 논증)</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{data 가 } [0,1]^d \text{ 에 고르게 있다. 변 길이 } r \text{ 인 작은 정육면체의 부피}=r^d $$</div>
+          <div class="derive__why">부피가 곧 그 안에 들어올 표본의 비율</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{전체의 비율 } f \text{ 를 담으려면}:\ r^d=f \ \Rightarrow\ r=f^{1/d} $$</div>
+          <div class="derive__why">양변에 $1/d$ 제곱</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f=0.1,\ d=100:\ r=0.1^{0.01}=e^{0.01\ln0.1}=e^{-0.02303}=0.9772 $$</div>
+          <div class="derive__why"><strong>각 축의 97.7% 를 써야 표본의 10% 를 모은다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{즉 “가장 가까운 10\%”가 사실상 } \textbf{공간 전체} $$</div>
+          <div class="derive__why">"지역적"이라는 말이 <strong>의미를 잃는다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{반대로 } r=0.9 \text{ 인 정육면체에 들어올 비율}=0.9^{100}=2.66\times10^{-5} $$</div>
+          <div class="derive__why">부피의 <strong>99.997% 가 껍질</strong>에 있다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{같은 밀도를 유지하려면 } n \propto c^d \ \text{— 지수적} $$</div>
+          <div class="derive__why">$d$ 가 10 늘 때마다 표본이 <strong>수천 배</strong> 필요하다</div>
+        </div>
+      </div>
+
+      <h3>유도 2 — 거리가 한 점으로 모인다 (집중 현상)</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{x},\mathbf{z}\sim\mathrm{Uniform}([0,1]^d), \qquad D^2=\sum_{j=1}^{d}(x_j-z_j)^2 $$</div>
+          <div class="derive__why">각 축이 독립이므로 <strong>독립 확률변수의 합</strong> (<a href="../ch04/4.3-expectation-variance.html">4.3</a>)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ W=x_j-z_j:\ \mathbb{E}[W^2]=\mathrm{Var}(W)=\tfrac1{12}+\tfrac1{12}=\tfrac16 $$</div>
+          <div class="derive__why">$\mathrm{Var}(\mathrm{Uniform}(0,1))=1/12$, 독립이라 더해진다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}[W^4]=2\!\int_0^1\!w^4(1-w)\,dw=2\bigl(\tfrac15-\tfrac16\bigr)=\tfrac1{15} $$</div>
+          <div class="derive__why">$W$ 의 밀도는 $[-1,1]$ 위의 삼각형</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{Var}(W^2)=\tfrac1{15}-\tfrac1{36}=\tfrac{12-5}{180}=\tfrac{7}{180} $$</div>
+          <div class="derive__why">$\mathbb{E}[W^4]-(\mathbb{E}[W^2])^2$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}[D^2]=\frac{d}{6},\qquad \mathrm{Var}(D^2)=\frac{7d}{180} $$</div>
+          <div class="derive__why">독립 항 $d$개의 합 — <strong>평균은 $d$ 에 비례, 표준편차는 $\sqrt{d}$ 에 비례</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\mathrm{sd}(D^2)}{\mathbb{E}[D^2]}=\frac{\sqrt{7d/180}}{d/6}=\frac{6}{\sqrt d}\sqrt{\tfrac{7}{180}}=\frac{1.183}{\sqrt d} $$</div>
+          <div class="derive__why">$\sqrt{7/180}=0.1972$, $6\times0.1972=1.183$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ d\to\infty \ \Rightarrow\ \frac{\mathrm{sd}}{\mathbb{E}}\to0 \ \Rightarrow\ \text{모든 쌍의 거리가 같아진다} $$</div>
+          <div class="derive__why">식 (5). <strong>"가장 가까운"이 무의미해지는 정확한 이유</strong></div>
+        </div>
+      </div>
+
+      <h3>유도 3 — 1-NN 오차가 Bayes 오차의 두 배 이내</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ n\to\infty \ \Rightarrow\ \text{최근접 이웃 } \mathbf{x}' \to \mathbf{x} \ \Rightarrow\ P(y=1\mid\mathbf{x}')\to p(\mathbf{x}) $$</div>
+          <div class="derive__why">표본이 조밀해지면 이웃이 <strong>같은 조건부 분포</strong>를 갖는다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{1-NN 이 틀릴 확률}=P(y\ne y')=p(1-p)+(1-p)p=2p(1-p) $$</div>
+          <div class="derive__why">질의와 이웃의 label 이 <strong>독립적으로</strong> 뽑히므로</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Bayes 오차}:\ r^\star(\mathbf{x})=\min(p,\ 1-p) $$</div>
+          <div class="derive__why">더 그럴듯한 쪽을 고르는 것이 최선 (<a href="5.1-ml-problem-definition.html">5.1</a>)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 2p(1-p)=2r^\star(1-r^\star) $$</div>
+          <div class="derive__why">$p$ 든 $1-p$ 든 <strong>곱이 같으므로</strong> $r^\star$ 로 바꿔 쓸 수 있다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 2r^\star(1-r^\star)\le 2r^\star \qquad (1-r^\star\le1) $$</div>
+          <div class="derive__why"><strong>각 점에서 두 배 이내</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ R_{1\text{NN}}=\mathbb{E}_{\mathbf{x}}\bigl[2r^\star(1-r^\star)\bigr]\ \le\ 2R^\star(1-R^\star) $$</div>
+          <div class="derive__why">Jensen (<a href="../ch04/4.3-expectation-variance.html">4.3</a>) — 식 (4)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ R^\star=0.1:\ R_{1\text{NN}}\le2(0.1)(0.9)=0.18 $$</div>
+          <div class="derive__why">10% 가 한계인 문제에서 <strong>1-NN 은 18% 이내</strong></div>
+        </div>
+      </div>
+
+      <details>
+        <summary>$k$ 를 늘리면 왜 좋아지고, 얼마나 늘려야 하나</summary>
+        <p>
+          $k$ 개의 이웃이 모두 $\mathbf{x}$ 근처에서 왔다면, 그들의 label 은
+          $\mathrm{Bernoulli}(p(\mathbf{x}))$ 에서 뽑힌 $k$개 표본이다.
+          다수결은 그 <strong>표본비율의 반올림</strong>이고, 표본비율의 표준오차는 $\sqrt{p(1-p)/k}$ 다
+          (<a href="../ch04/4.4-common-distributions.html">4.4</a>).
+        </p>
+        <p>
+          그래서 $k$ 를 키우면 <strong>잡음이 $1/\sqrt{k}$ 로 줄어</strong> 분산이 낮아진다.
+          $k\to\infty$ 이면 다수결이 $\arg\max_c P(y=c\mid\mathbf{x})$ 에 수렴해
+          <strong>Bayes 분류기가 된다</strong> — 두 배 상계보다 훨씬 좋아진다.
+        </p>
+        <p>
+          대가는 편향이다. $k$ 를 키우면 이웃을 <strong>더 멀리서 데려와야</strong> 하고,
+          거기서는 $p(\mathbf{x}')\ne p(\mathbf{x})$ 라 다른 분포의 표본이 섞인다.
+          그래서 이론적 조건은 <strong>$k\to\infty$ 이면서 $k/n\to0$</strong> 이고,
+          $k\approx\sqrt{n}$ 이 그 조건을 만족하는 흔한 어림값이다.
+          실제로는 <strong>교차검증으로 고른다</strong>.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① KNN 을 손으로 — $k$ 에 따라 답이 뒤집힌다</h3>
+      <p>훈련점 7개와 질의점 $\mathbf{q}=(3,2)$. Euclidean 거리를 쓴다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>점</th><th>좌표</th><th>class</th><th>$d^2$</th><th>$d$</th><th>순위</th></tr></thead>
+          <tbody>
+            <tr><td>G</td><td>(3, 3)</td><td class="num">1</td><td class="num">0+1=1</td><td class="num">1.000</td><td class="num"><strong>1</strong></td></tr>
+            <tr><td>B</td><td>(2, 1)</td><td class="num">0</td><td class="num">1+1=2</td><td class="num">1.414</td><td class="num">2</td></tr>
+            <tr><td>C</td><td>(1, 2)</td><td class="num">0</td><td class="num">4+0=4</td><td class="num">2.000</td><td class="num">3</td></tr>
+            <tr><td>A</td><td>(1, 1)</td><td class="num">0</td><td class="num">4+1=5</td><td class="num">2.236</td><td class="num">4</td></tr>
+            <tr><td>D</td><td>(4, 4)</td><td class="num">1</td><td class="num">1+4=5</td><td class="num">2.236</td><td class="num">5</td></tr>
+            <tr><td>E</td><td>(5, 4)</td><td class="num">1</td><td class="num">4+4=8</td><td class="num">2.828</td><td class="num">6</td></tr>
+            <tr><td>F</td><td>(4, 5)</td><td class="num">1</td><td class="num">1+9=10</td><td class="num">3.162</td><td class="num">7</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ k=1:\ \{G\} \ \Rightarrow\ \text{class } 1 $$</div>
+          <div class="derive__why">가장 가까운 하나가 class 1</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ k=3:\ \{G,B,C\}=\{1,0,0\} \ \Rightarrow\ \text{class } \mathbf{0} $$</div>
+          <div class="derive__why"><strong>답이 뒤집혔다</strong> — 2 대 1 다수결</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ k=5:\ \{G,B,C,A,D\}=\{1,0,0,0,1\} \ \Rightarrow\ \text{class } 0 \ (3\text{ 대 }2) $$</div>
+          <div class="derive__why">여전히 0</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ k=7:\ \{1,0,0,0,1,1,1\} \ \Rightarrow\ \text{class } \mathbf{1} \ (4\text{ 대 }3) $$</div>
+          <div class="derive__why"><strong>또 뒤집혔다</strong> — 전체 다수 class 로 수렴</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{거리 가중}(k=3,\ w=1/d):\ \text{class }1: \tfrac11=1.000,\quad \text{class }0: \tfrac1{1.414}+\tfrac12=1.207 $$</div>
+          <div class="derive__why">식 (2). 가중해도 class 0 — <strong>가까운 G 의 몫이 커졌지만 부족</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{동점 위험}:\ D \text{ 와 } A \text{ 의 } d \text{ 가 정확히 같다}\ (2.236) $$</div>
+          <div class="derive__why"><strong>$k=4$ 이면 어느 것을 넣느냐로 답이 갈린다</strong> — 홀수 $k$ 를 쓰는 이유</div>
+        </div>
+      </div>
+
+      <h3>② 스케일 하나로 이웃이 바뀐다</h3>
+      <p>질의 $P=(\text{나이 }25,\ \text{소득 }30000)$, 후보 $Q=(35,\ 30050)$, $R=(26,\ 33000)$.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ d(P,Q)=\sqrt{(35-25)^2+(30050-30000)^2}=\sqrt{100+2500}=\sqrt{2600}=50.99 $$</div>
+          <div class="derive__why">소득 차이 50 이 나이 차이 10 을 <strong>제곱에서 25배</strong>로 압도</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ d(P,R)=\sqrt{1+(3000)^2}=\sqrt{1+9{,}000{,}000}=3000.0 $$</div>
+          <div class="derive__why">나이 차이 1 은 <strong>완전히 무시</strong>된다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{최근접은 } Q \ (50.99 < 3000) $$</div>
+          <div class="derive__why">나이가 10살이나 차이 나는데도 <strong>소득만 보고 골랐다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{표준화}\ (\sigma_{\text{나이}}=5,\ \sigma_{\text{소득}}=3000):\ P=(5,\ 10),\ Q=(7,\ 10.0167),\ R=(5.2,\ 11) $$</div>
+          <div class="derive__why">각 축을 자기 표준편차로 나눴다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ d(P,Q)=\sqrt{4+0.000278}=2.000,\qquad d(P,R)=\sqrt{0.04+1}=1.0198 $$</div>
+          <div class="derive__why">이제 두 축이 <strong>비슷한 목소리</strong>를 낸다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{최근접이 } R \text{ 로 바뀌었다} $$</div>
+          <div class="derive__why"><strong>같은 data, 같은 알고리즘, 다른 답</strong> — 스케일링이 곧 model 이다</div>
+        </div>
+      </div>
+
+      <h3>③ 차원의 저주 — 세 가지 숫자</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$d$</th><th>10% 를 담는 변 $0.1^{1/d}$</th><th>$0.9^d$ (안쪽 부피)</th><th>거리 상대 표준편차 $\frac{1.183}{\sqrt d}$</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td class="num">0.100</td><td class="num">0.900</td><td class="num">1.183</td></tr>
+            <tr><td class="num">2</td><td class="num">0.316</td><td class="num">0.810</td><td class="num">0.837</td></tr>
+            <tr><td class="num">3</td><td class="num">0.464</td><td class="num">0.729</td><td class="num">0.683</td></tr>
+            <tr><td class="num">10</td><td class="num">0.794</td><td class="num">0.349</td><td class="num">0.374</td></tr>
+            <tr><td class="num">50</td><td class="num">0.955</td><td class="num">0.005</td><td class="num">0.167</td></tr>
+            <tr><td class="num">100</td><td class="num"><strong>0.977</strong></td><td class="num"><strong>0.0000266</strong></td><td class="num"><strong>0.118</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ d=10:\ 0.1^{0.1}=e^{-0.2303}=0.7943 $$</div>
+          <div class="derive__why">차원 10 만 되어도 <strong>각 축의 79% 를 써야</strong> 10% 를 모은다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ d=100:\ 0.9^{100}=e^{100\ln0.9}=e^{-10.536}=2.66\times10^{-5} $$</div>
+          <div class="derive__why">반지름의 90% 안에 <strong>10만 분의 3</strong> 만 있다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ d=100:\ \mathbb{E}[D^2]=\frac{100}{6}=16.67,\quad \mathrm{sd}=\sqrt{\frac{700}{180}}=1.972 $$</div>
+          <div class="derive__why">유도 2. 상대 표준편차 $1.972/16.67=0.118$ ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{거의 모든 쌍의 거리가 } 16.67\pm2\times1.972 \ \text{안에} $$</div>
+          <div class="derive__why"><strong>가장 가까운 점과 가장 먼 점의 차이가 ±12% 남짓</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ d=2 \text{ 였다면}:\ 0.333\pm2(0.279) \ \Rightarrow\ \text{배수로 차이가 난다} $$</div>
+          <div class="derive__why">저차원에서는 <strong>“가깝다”가 확실히 구별된다</strong></div>
+        </div>
+      </div>
+
+      <h3>④ Cover–Hart 상계를 숫자로</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Bayes 오차 $R^\star$</th><th>1-NN 상계 $2R^\star(1-R^\star)$</th><th>배율</th><th>메모</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0.01</td><td class="num">0.0198</td><td class="num">×1.98</td><td>거의 두 배</td></tr>
+            <tr><td class="num">0.05</td><td class="num">0.0950</td><td class="num">×1.90</td><td></td></tr>
+            <tr><td class="num">0.10</td><td class="num">0.1800</td><td class="num">×1.80</td><td></td></tr>
+            <tr><td class="num">0.30</td><td class="num">0.4200</td><td class="num">×1.40</td><td></td></tr>
+            <tr><td class="num">0.50</td><td class="num">0.5000</td><td class="num"><strong>×1.00</strong></td><td>더 나빠질 여지가 없다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ R^\star=0.10:\ 2(0.10)(0.90)=0.18 $$</div>
+          <div class="derive__why">최선이 90% 정확도인 문제에서 <strong>1-NN 은 최소 82%</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ R^\star \text{ 가 작을수록 배율이 } 2 \text{ 에 가깝다} $$</div>
+          <div class="derive__why">쉬운 문제일수록 <strong>1-NN 의 상대적 손해가 크다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ k\to\infty,\ k/n\to0 \ \Rightarrow\ R_{k\text{NN}}\to R^\star $$</div>
+          <div class="derive__why">$k$ 를 적절히 키우면 <strong>상계가 아니라 최적에 도달</strong> (접힌 상자)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{단, 이는 } n\to\infty \text{ 의 결과} $$</div>
+          <div class="derive__why">유도 1 이 말하는 대로 <strong>고차원에서 그 $n$ 이 천문학적</strong>이다</div>
+        </div>
+      </div>
+
+      <figure class="widget" data-widget="k-tradeoff">
+        <figcaption class="widget__bar">k 고르기 — train 오차와 test 오차가 반대로 움직인다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$k=1$ 에서 train 오차가 <strong>정확히 0</strong> 입니다. test 오차는 중간 어딘가에서 최소가 됩니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>결정경계</strong> · <strong>거리의 모양</strong> ·
+        <strong>스케일링</strong> · <strong>차원의 저주</strong> · <strong>$k$ 고르기</strong> — 에 이어,
+        아래에서 <strong>근사 탐색의 맞바꿈</strong>을 본다.
+      </p>
+
+      <figure class="widget" data-widget="ann-tradeoff">
+        <figcaption class="widget__bar">Approximate NN — 정확도를 조금 내주고 속도를 크게 얻는다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">recall 0.95 근처까지는 <strong>속도가 거의 공짜</strong>로 얻어지고, 1.0 에 다가갈수록 비용이 급격히 오릅니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"KNN 은 parameter 가 없으니 과적합하지 않는다."</p>
+        <p>
+          <strong>실제로는</strong> $k=1$ 이 <strong>가장 과적합된 model</strong> 이다 —
+          train 오차가 정확히 0 이고(자기 자신이 최근접), 결정경계가 잡음 하나하나를 따라간다.
+          $d_{\text{VC}}=\infty$ 이기도 하다(<a href="5.2-statistical-learning-theory.html">5.2</a>).
+          "비모수"는 parameter 가 없다는 뜻이 아니라 <strong>$n$ 이 늘면 model 복잡도도 함께 는다</strong>는 뜻이고,
+          유효 parameter 수가 대략 $n/k$ 라 <strong>$k$ 가 곧 정규화 강도</strong>다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"성능이 안 나오니 $k$ 를 여러 개 시도해 보자."</p>
+        <p>
+          <strong>실제로는</strong> <strong>스케일링을 먼저 확인해야</strong> 한다.
+          예제 ②에서 봤듯 단위 하나가 최근접 이웃을 통째로 바꾸고,
+          그 상태에서는 $k$ 를 아무리 조절해도 <strong>엉뚱한 이웃들 안에서 다수결할 뿐</strong>이다.
+          순서는 <strong>스케일링 → 거리 함수 → 무의미한 feature 제거 → $k$</strong> 다.
+          특히 <strong>쓸모없는 feature 를 넣으면 KNN 은 곧바로 나빠진다</strong> —
+          거리에 잡음만 더해지기 때문으로, 선형 model 이 계수를 0 으로 만들어 무시할 수 있는 것과 대조적이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"차원의 저주는 차원이 수천쯤 되어야 문제가 된다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>$d\approx10$ 부터 이미 눈에 띈다</strong>(예제 ③).
+          $d=10$ 에서 표본의 10% 를 모으려면 각 축의 79% 를 써야 하고,
+          k-d tree 는 <strong>$d\gtrsim20$ 에서 전수 조사와 다를 바 없어진다</strong>.
+          다만 반대 방향의 사실도 있다 — 실제 data 는 <strong>내재 차원(intrinsic dimension)이 훨씬 낮은</strong>
+          매니폴드 위에 놓인 경우가 많아, 명목 차원이 784(MNIST)여도 KNN 이 잘 작동한다.
+          <strong>명목 차원이 아니라 내재 차원이 문제</strong>이며,
+          그래서 embedding 을 거친 뒤의 벡터 검색이 실용적이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"거리 계산 전에 전체 data 로 표준화하면 된다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>data leakage</strong> 다.
+          $\mu,\sigma$ 를 test set 까지 포함해 계산하면 test 의 정보가 학습에 스며들어
+          성능이 <strong>낙관적으로 부풀려진다</strong>(<a href="../ch01/1.5-data-split-evaluation.html">1.5</a>).
+          교차검증에서는 더 미묘하다 — <strong>fold 를 나누기 전에 표준화하면 fold 마다 정보가 새고</strong>,
+          그래서 scikit-learn 은 <code>Pipeline</code> 으로 감싸 <strong>fold 안에서 fit 하도록</strong> 강제한다.
+          KNN 은 스케일에 특히 민감해 이 실수의 대가가 크다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"KNN 은 학습이 $O(1)$ 이니 가장 싼 알고리즘이다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>비용이 예측 시점으로 옮겨 갔을 뿐</strong>이다.
+          표본 하나를 예측하는 데 $O(nd)$ 가 들고, <strong>$n$ 을 전부 메모리에 들고 있어야</strong> 한다.
+          100만 개 $\times$ 768차원이면 float32 로 3GB 이고, 질의 하나에 7.7억 번의 곱셈이 필요하다.
+          그래서 실무에서는 반드시 근사 탐색(HNSW·IVF·PQ)을 쓰고,
+          <strong>"학습이 공짜"라는 말은 총비용을 말한 것이 아니다</strong>.
+          반대로 data 가 계속 추가되는 상황에서는 재학습이 필요 없다는 점이 진짜 장점이 된다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–④ 를 검산한다.</p>
+      <details>
+        <summary>NumPy — KNN · 스케일링 · 거리 집중 (20줄)</summary>
+<pre><code>import numpy as np
+
+X = np.array([[1,1],[2,1],[1,2],[4,4],[5,4],[4,5],[3,3]], float)
+y = np.array([0,0,0,1,1,1,1]); q = np.array([3.,2])
+d = np.linalg.norm(X - q, axis=1); o = np.argsort(d, kind="stable")
+print(d[o].round(3), y[o])
+for k in [1, 3, 5, 7]:
+    print(k, int(np.bincount(y[o[:k]]).argmax()))        # 1 / 0 / 0 / 1  — 답이 뒤집힌다
+
+P, Q, R = np.array([25.,30000]), np.array([35.,30050]), np.array([26.,33000])
+raw = [np.linalg.norm(P-Q), np.linalg.norm(P-R)]
+s = np.array([5., 3000])
+std = [np.linalg.norm((P-Q)/s), np.linalg.norm((P-R)/s)]
+print(np.round(raw,2), np.round(std,4))                  # Q 가 가깝다 → R 이 가깝다
+
+rng = np.random.default_rng(0)
+for dim in [2, 10, 100]:
+    A = rng.random((2000, dim)); B = rng.random((2000, dim))
+    D2 = ((A - B)**2).sum(1)
+    print(dim, round(D2.mean(),3), round(dim/6,3), round(D2.std()/D2.mean(),4),
+          round(1.183/np.sqrt(dim),4))                    # 이론값과 일치
+print([round(0.1**(1/dd),3) for dd in [1,2,3,10,50,100]])
+</code></pre>
+        <p>
+          <small>
+            세 번째 블록에서 실측 $\mathbb{E}[D^2]$ 가 이론값 $d/6$ 과, 상대 표준편차가 $1.183/\sqrt{d}$ 와
+            소수 둘째 자리까지 맞는다(유도 2).
+            <strong>$d=100$ 에서 상대 표준편차가 0.118 로 떨어지는 것</strong>이 차원의 저주의 정체다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $d=20$ 인 단위 정육면체에서 표본의 1% 를 담으려면 각 축의 몇 %가 필요한가?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 79%</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>약 1%</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>약 5%</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $0.01^{1/20}=e^{\ln0.01/20}=e^{-4.605/20}=e^{-0.2303}=0.7943$ → <strong>약 79%</strong>.
+            <strong>나</strong>는 1차원의 직관을 그대로 옮긴 것이다.
+            "가장 가까운 1%"를 모으는 데 각 축의 80% 가 필요하다면
+            <strong>그것은 더 이상 지역적인 이웃이 아니다</strong>(유도 1).
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            Bayes 오차가 0.20 인 문제에서 1-NN 오차의 점근 상계는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>0.32</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.40</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0.20</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $2R^\star(1-R^\star)=2(0.2)(0.8)=0.32$ (식 4).
+            <strong>나</strong>는 $(1-R^\star)$ 를 빼먹고 단순히 두 배로 본 값인데,
+            그것은 <strong>더 느슨한 상계</strong>다($0.32\le0.40$ 이므로 틀리진 않지만 촘촘하지 않다).
+            <strong>다</strong>는 하계다 — 1-NN 이 Bayes 보다 나을 수는 없다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            예제 ①에서 $k=3$, 거리 가중치 $w=1/d$ 를 썼을 때의 예측은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>class 0 (1.207 대 1.000)</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>class 1 — 가장 가까운 G 가 이긴다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>동점</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            class 1 은 G 하나로 $1/1.000=1.000$,
+            class 0 은 B 와 C 로 $1/1.414+1/2.000=0.707+0.500=1.207$.
+            <strong>가중치를 줘도 class 0</strong> 이다 — 두 표가 한 표를 이겼다.
+            거리 가중은 <strong>가까운 점의 발언권을 키울 뿐 뒤집는 것을 보장하지 않는다</strong>.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            KNN 의 성능이 나쁘다. 가장 먼저 확인할 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>feature 스케일이 맞춰져 있는지</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$k$ 값</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>학습률</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            거리 기반 방법에서 <strong>스케일이 곧 model</strong> 이다(예제 ②, 오해 2).
+            단위가 큰 feature 하나가 거리를 지배하면 나머지는 없는 것과 같고,
+            그 상태에서 $k$ 를 조절해 봐야 <strong>잘못된 이웃 안에서 다수결</strong>할 뿐이다.
+            <strong>다</strong>는 아예 무관하다 — KNN 에는 <strong>학습 자체가 없다</strong>.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            $k=1$ 에서 train 정확도가 100% 다. 이것이 뜻하는 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>아무 정보도 없다 — 자기 자신이 항상 최근접 이웃이라 구조적으로 100% 다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>data 가 완벽히 분리 가능하다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$k=1$ 이 최적이다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            훈련점 자신과의 거리가 0 이므로 <strong>어떤 data 에서도 $k=1$ 의 train 오차는 0</strong> 이다 —
+            무작위 label 이어도 그렇다.
+            <strong>train 오차 0 이 좋은 신호가 아니라는</strong> 것의 가장 깔끔한 사례이며
+            (<a href="5.1-ml-problem-definition.html">5.1</a> 오해 2),
+            $k$ 는 반드시 <strong>hold-out 이나 교차검증</strong>으로 골라야 한다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            무관한 잡음 feature 를 100개 추가했다. KNN 과 lasso 회귀 중 더 나빠지는 쪽은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>KNN — 잡음이 거리에 그대로 더해져 이웃이 무의미해진다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>lasso — parameter 가 100개 늘어난다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>둘 다 같은 정도로 나빠진다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            lasso 는 무관한 feature 의 계수를 <strong>정확히 0 으로 만들어 무시</strong>할 수 있다
+            (<a href="5.3-linear-regression.html">5.3</a>).
+            KNN 에는 그런 장치가 없다 — 모든 축이 거리에 <strong>동등하게 기여</strong>하므로
+            잡음 100개가 신호 몇 개를 묻어 버린다.
+            그래서 거리 기반 방법에서는 <strong>feature 선택이나 차원 축소가 특히 중요하다</strong>
+            (<a href="5.11-dimensionality-reduction-manifold.html">5.11</a>).
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="5.10-clustering.html">5.10 군집화</a></strong> — k-means·DBSCAN 도 거리 함수 위에 서 있다.</li>
+        <li><strong><a href="5.11-dimensionality-reduction-manifold.html">5.11 차원 축소</a></strong> — 차원의 저주를 우회하는 방법. t-SNE·UMAP 이 이웃 관계를 보존한다.</li>
+        <li><strong><a href="5.12-anomaly-detection.html">5.12 이상치 탐지</a></strong> — LOF 가 이웃 밀도를 쓴다.</li>
+        <li><strong>13장 LLM</strong> — RAG 의 검색 단계가 곧 근사 최근접 탐색이다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-cover1967-nearest-neighbor" data-ref="cover1967-nearest-neighbor">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Cover, T. M. &amp; Hart, P. E. (1967). <em>Nearest Neighbor Pattern Classification</em>. IEEE Transactions on Information Theory, 13(1), 21–27.</span>
+          <span class="ref__where">§II–III — $n\to\infty$ 에서 최근접 이웃의 조건부 분포가 질의점의 것과 같아진다는 논증과, 1-NN 의 점근 오차가 $R^\star\le R\le R^\star(2-\frac{M}{M-1}R^\star)$ 로 갇힌다는 정리(식 4, 유도 3). <strong>아무 model 도 세우지 않고 얻는 보증</strong>이라는 점이 이 논문의 의의이며, $k$-NN 으로 확장하면 $R^\star$ 에 수렴한다는 후속 결과가 §V 에 논의되어 있다</span>
+          <a class="ref__link" href="https://ieeexplore.ieee.org/document/1053964">ieeexplore.ieee.org</a>
+        </li>
+        <li class="ref" id="ref-hastie2009-esl" data-ref="hastie2009-esl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em> (2nd ed.). Springer.</span>
+          <span class="ref__where">2.3.2절 — $k$-NN 의 정의와 <strong>유효 parameter 수가 $n/k$</strong> 라는 관찰('지역적 결정경계' 표). 2.5절 — 차원의 저주를 <strong>정육면체 변 길이 $f^{1/d}$ 와 껍질 부피</strong>로 계산한 부분(유도 1, 예제 ③)이 이 절 그 표의 출처다. 13.3절 — 거리 함수 선택·불변 metric·편집거리와 KNN 의 실무적 문제(무관한 feature 에 취약하다는 지적, 퀴즈 6)</span>
+          <a class="ref__link" href="https://hastie.su.domains/ElemStatLearn/">hastie.su.domains</a>
+        </li>
+        <li class="ref" id="ref-murphy2022-pml" data-ref="murphy2022-pml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Murphy, K. P. (2022). <em>Probabilistic Machine Learning: An Introduction</em>. MIT Press.</span>
+          <span class="ref__where">16.1절 — KNN 을 비모수 model 로 놓고 $k$ 가 복잡도를 조절한다는 서술과 Voronoi 분할 그림(위젯 1). 16.1.2절 — <strong>차원의 저주와 거리 집중</strong>, 그리고 실제 data 의 내재 차원이 낮아 KNN 이 여전히 작동하는 이유(오해 3). 16.2절 — Mahalanobis 거리와 거리 학습(metric learning)으로의 확장</span>
+          <a class="ref__link" href="https://probml.github.io/pml-book/book1.html">probml.github.io</a>
+        </li>
+        <li class="ref" id="ref-malkov2016-efficient-and-robust" data-ref="malkov2016-efficient-and-robust">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Malkov, Y. A. &amp; Yashunin, D. A. (2020). <em>Efficient and Robust Approximate Nearest Neighbor Search Using Hierarchical Navigable Small World Graphs</em>. IEEE TPAMI, 42(4), 824–836.</span>
+          <span class="ref__where">§3 — 계층적 근접 그래프를 만들고 위층에서 아래층으로 내려가며 탐색하는 HNSW 구조('근사 탐색' 표). §4 — recall 과 질의 시간의 맞바꿈 곡선으로, <strong>recall 0.95 부근까지는 속도가 거의 공짜</strong>이고 1.0 에 다가갈수록 비용이 급증한다는 실측(위젯 6). k-d tree 가 고차원에서 무너지는 것과 대비되는 부분이 §2 에 정리되어 있다</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1603.09320">arXiv:1603.09320</a>
+        </li>
+        <li class="ref" id="ref-sklearn-docs" data-ref="sklearn-docs">
+          <span class="ref__type" data-type="doc">문서</span>
+          <span class="ref__cite">scikit-learn developers. <em>User Guide — 1.6 Nearest Neighbors</em> · <em>6.3 Preprocessing data</em>.</span>
+          <span class="ref__where">1.6.4절 — brute force · k-d tree · ball tree 의 선택 기준과 <strong>$d\gtrsim20$ 에서 tree 가 전수 조사와 같아진다</strong>는 명시('KNN 계산량' 표, 오해 3). <code>weights='distance'</code> 옵션이 식 (2)에 해당한다. 6.3절 — <code>StandardScaler</code>·<code>MinMaxScaler</code>·<code>RobustScaler</code> 비교와, <strong><code>Pipeline</code> 으로 감싸 fold 안에서 fit 해야 leakage 가 없다</strong>는 경고(오해 4)</span>
+          <a class="ref__link" href="https://scikit-learn.org/stable/modules/neighbors.html">scikit-learn.org</a>
+        </li>
+        <li class="ref" id="ref-statquest" data-ref="statquest">
+          <span class="ref__type" data-type="video">영상</span>
+          <span class="ref__cite">Starmer, J. <em>K-nearest neighbors, Clearly Explained</em>. StatQuest.</span>
+          <span class="ref__where">전체(약 5분) — 새 점 하나가 들어왔을 때 이웃을 세어 다수결하는 절차를 그림으로 따라가고, <strong>$k$ 를 키우면 결정이 매끄러워지지만 소수 class 를 놓친다</strong>는 맞바꿈을 보여 준다(예제 ①, 위젯 1). 저차원 예제라 예제 ③의 고차원 붕괴와 대비해 보면 좋다</span>
+          <a class="ref__link" href="https://statquest.org/video-index/">statquest.org</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+function panel(p) {
+  p.add(VIZ.el('rect', {
+    x: p.pad.l, y: p.pad.t, width: p.iw, height: p.ih,
+    fill: 'var(--ink-3)', 'fill-opacity': 0.03, stroke: 'none'
+  }));
+  return p;
+}
+function mkRand(seed) {
+  var s = seed || 12345;
+  return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+}
+function gauss(rnd) {
+  var u = Math.max(1e-9, rnd()), v = rnd();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+/* ============================================================
+   위젯 1 — KNN 결정경계
+   ============================================================ */
+WIDGETS.register('knn-boundary', function (root, ctx) {
+  var k = 1, noise = 0.55, seed = 7;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'k', label: '이웃 수 k' },
+    { key: 'tr', label: 'train 오차', digits: 4 },
+    { key: 'eff', label: '유효 parameter 수 ≈ n/k', digits: 1 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function data() {
+    var rnd = mkRand(seed * 613 + 5), pts = [];
+    for (var i = 0; i < 36; i++) {
+      var c = i % 2;
+      var t = Math.PI * (i / 36) * 2;
+      var cx = c ? 1.1 * Math.cos(t) + 0.9 : 1.1 * Math.cos(t) - 0.9;
+      var cy = c ? 1.1 * Math.sin(t) + 0.7 : 1.1 * Math.sin(t) - 0.7;
+      pts.push([cx + noise * gauss(rnd), cy + noise * gauss(rnd), c]);
+    }
+    return pts;
+  }
+
+  function draw() {
+    var pts = data();
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -3.6, xmax: 3.6, ymin: -3, ymax: 3,
+      pad: { t: 30, r: 16, b: 30, l: 42 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x₁', '').ticks(1, 1);
+    p.text(-3.6, 3, 'x₂ · 배경 = k-NN 예측 영역 · 점 = 훈련 data', { size: 10, dy: -10 });
+
+    function predict(x, y) {
+      var ds = pts.map(function (q) {
+        return [Math.pow(q[0] - x, 2) + Math.pow(q[1] - y, 2), q[2]];
+      });
+      ds.sort(function (a, b) { return a[0] - b[0]; });
+      var s = 0;
+      for (var i = 0; i < Math.min(k, ds.length); i++) s += ds[i][1];
+      return s * 2 > Math.min(k, ds.length) ? 1 : 0;
+    }
+
+    var GX = 30, GY = 24;
+    for (var gx = 0; gx < GX; gx++) {
+      for (var gy = 0; gy < GY; gy++) {
+        var x0 = -3.6 + 7.2 * gx / GX, x1 = -3.6 + 7.2 * (gx + 1) / GX;
+        var y0 = -3 + 6 * gy / GY, y1 = -3 + 6 * (gy + 1) / GY;
+        var c = predict((x0 + x1) / 2, (y0 + y1) / 2);
+        p.add(VIZ.el('rect', {
+          x: p.X(x0), y: p.Y(y1),
+          width: Math.max(1, p.X(x1) - p.X(x0)), height: Math.max(1, p.Y(y0) - p.Y(y1)),
+          fill: c ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': 0.14
+        }));
+      }
+    }
+    var wrong = 0;
+    for (var i = 0; i < pts.length; i++) {
+      if (predict(pts[i][0], pts[i][1]) !== pts[i][2]) wrong++;
+      p.add(VIZ.el('circle', {
+        cx: p.X(Math.max(-3.5, Math.min(3.5, pts[i][0]))),
+        cy: p.Y(Math.max(-2.9, Math.min(2.9, pts[i][1]))),
+        r: 3.6, fill: pts[i][2] ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': 0.9
+      }));
+    }
+
+    out.setRaw('k', String(k));
+    out.set('tr', wrong / pts.length);
+    out.set('eff', pts.length / k);
+    out.setRaw('note', k === 1 ? 'k=1 → train 오차가 구조적으로 0 (자기 자신이 이웃)'
+      : (k >= pts.length * 0.6 ? 'k 가 너무 커서 경계가 사라진다' : '적당한 매끄러움'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '이웃 수 k', min: 1, max: 25, step: 1, value: 1, digits: 0,
+    onInput: function (v) { k = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'data 의 잡음', min: 0.1, max: 1.2, step: 0.05, value: 0.55, digits: 2,
+    onInput: function (v) { noise = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 30, step: 1, value: 7, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — 거리의 단위공
+   ============================================================ */
+WIDGETS.register('distance-shapes', function (root, ctx) {
+  var pnorm = 2;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'p', label: 'Minkowski 의 p', digits: 2 },
+    { key: 'a', label: '점 A(1, 0) 까지의 거리', digits: 4 },
+    { key: 'b', label: '점 B(0.7, 0.7) 까지의 거리', digits: 4 },
+    { key: 'near', label: '어느 쪽이 더 가까운가' }
+  ]);
+
+  function dist(x, y, p) {
+    if (p > 50) return Math.max(Math.abs(x), Math.abs(y));
+    return Math.pow(Math.pow(Math.abs(x), p) + Math.pow(Math.abs(y), p), 1 / p);
+  }
+
+  function draw() {
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -1.6, xmax: 1.6, ymin: -1.35, ymax: 1.35,
+      pad: { t: 30, r: 16, b: 30, l: 42 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(0.5, 0.5).axes('x₁', '').ticks(0.5, 0.5);
+    p.text(-1.6, 1.35, 'x₂ · 곡선 = 원점에서 거리가 1 인 점들', { size: 10, dy: -10 });
+
+    /* 단위공 그리기 — 각도를 돌며 반지름을 푼다 */
+    var pts = [];
+    for (var i = 0; i <= 400; i++) {
+      var th = 2 * Math.PI * i / 400;
+      var cx = Math.cos(th), cy = Math.sin(th);
+      var r = 1 / Math.max(1e-9, dist(cx, cy, pnorm));
+      pts.push([r * cx, r * cy]);
+    }
+    p.line(pts, { width: 2.4 });
+    /* 비교용 원 */
+    var circ = [];
+    for (var j = 0; j <= 200; j++) {
+      var t2 = 2 * Math.PI * j / 200;
+      circ.push([Math.cos(t2), Math.sin(t2)]);
+    }
+    p.line(circ, { dash: '3 3' });
+
+    p.dot(1, 0, 5);
+    p.dot(0.7, 0.7, 5);
+    p.text(1.04, 0.06, 'A', { size: 12 });
+    p.text(0.74, 0.78, 'B', { size: 12 });
+    p.dot(0, 0, 4);
+
+    var da = dist(1, 0, pnorm), db = dist(0.7, 0.7, pnorm);
+    out.set('p', pnorm > 50 ? Infinity : pnorm);
+    out.set('a', da);
+    out.set('b', db);
+    out.setRaw('near', Math.abs(da - db) < 1e-6 ? '똑같다'
+      : (da < db ? 'A 가 가깝다' : 'B 가 가깝다') + '  (차이 ' + Math.abs(da - db).toFixed(4) + ')');
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '자주 쓰는 값',
+    options: [
+      { value: 1, label: 'p=1 Manhattan' },
+      { value: 2, label: 'p=2 Euclidean' },
+      { value: 99, label: 'p=∞ Chebyshev' }
+    ],
+    value: 2, onChange: function (v) { pnorm = Number(v); draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'p 를 연속으로', min: 1, max: 8, step: 0.1, value: 2, digits: 1,
+    onInput: function (v) { pnorm = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — 스케일링으로 이웃이 바뀐다
+   ============================================================ */
+WIDGETS.register('scaling-flip', function (root, ctx) {
+  var scaled = false, incomeUnit = 1;
+
+  var P = [25, 30000], Q = [35, 30050], R = [26, 33000];
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'dq', label: 'P–Q 거리', digits: 4 },
+    { key: 'dr', label: 'P–R 거리', digits: 4 },
+    { key: 'near', label: '최근접' },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function draw() {
+    var sa = scaled ? 5 : 1, sb = scaled ? 3000 / incomeUnit : 1;
+    function cv(pt) { return [pt[0] / sa, (pt[1] / incomeUnit) / sb]; }
+    var p1 = cv(P), q1 = cv(Q), r1 = cv(R);
+    var dq = Math.hypot(p1[0] - q1[0], p1[1] - q1[1]);
+    var dr = Math.hypot(p1[0] - r1[0], p1[1] - r1[1]);
+
+    var xs = [p1[0], q1[0], r1[0]], ys = [p1[1], q1[1], r1[1]];
+    var xlo = Math.min.apply(null, xs), xhi = Math.max.apply(null, xs);
+    var ylo = Math.min.apply(null, ys), yhi = Math.max.apply(null, ys);
+    var mx = Math.max(1e-6, (xhi - xlo) * 0.25), my = Math.max(1e-6, (yhi - ylo) * 0.25);
+
+    var p = VIZ.plot({ w: 460, h: 290, xmin: xlo - mx, xmax: xhi + mx,
+      ymin: ylo - my, ymax: yhi + my, pad: { t: 30, r: 20, b: 34, l: 60 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).axes('나이 축', '').ticks(0, 0);
+    p.text(xlo - mx, yhi + my, (scaled ? '표준화한 뒤' : '원래 단위') + ' · 소득 축 · 선 = P 에서의 거리',
+      { size: 10, dy: -10 });
+
+    p.line([[p1[0], p1[1]], [q1[0], q1[1]]], { width: 2, dash: dq <= dr ? null : '4 3' });
+    p.line([[p1[0], p1[1]], [r1[0], r1[1]]], { alt: true, width: 2, dash: dr < dq ? null : '4 3' });
+    p.dot(p1[0], p1[1], 6);
+    p.dot(q1[0], q1[1], 5);
+    p.dot(r1[0], r1[1], 5);
+    p.text(p1[0], p1[1], 'P', { size: 12, dx: 8, dy: -8 });
+    p.text(q1[0], q1[1], 'Q', { size: 12, dx: 8, dy: -8 });
+    p.text(r1[0], r1[1], 'R', { size: 12, dx: 8, dy: -8 });
+
+    out.set('dq', dq);
+    out.set('dr', dr);
+    out.setRaw('near', dq < dr ? 'Q' : 'R');
+    out.setRaw('note', scaled ? '두 축이 비슷한 목소리를 낸다' : '소득 축이 거리를 지배한다');
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '전처리',
+    options: [{ value: 'raw', label: '원래 단위' }, { value: 'std', label: '표준화' }],
+    value: 'raw', onChange: function (v) { scaled = (v === 'std'); draw(); }
+  });
+  WIDGETS.toggle({
+    host: ctx.controls, label: '소득의 단위',
+    options: [{ value: 1, label: '원' }, { value: 1000, label: '천 원' }, { value: 10000, label: '만 원' }],
+    value: 1, onChange: function (v) { incomeUnit = Number(v); draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — 차원의 저주
+   ============================================================ */
+WIDGETS.register('curse-dim', function (root, ctx) {
+  var dim = 10, view = 'edge';
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'edge', label: '표본 10% 를 담는 변 길이 0.1^(1/d)', digits: 4 },
+    { key: 'shell', label: '반지름 0.9 안의 부피 비율 0.9^d', digits: 8 },
+    { key: 'conc', label: '거리 제곱의 상대 표준편차 1.183/√d', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function edge(d) { return Math.pow(0.1, 1 / d); }
+  function shell(d) { return Math.pow(0.9, d); }
+  function conc(d) { return 1.183 / Math.sqrt(d); }
+
+  function draw() {
+    var f = view === 'edge' ? edge : (view === 'shell' ? shell : conc);
+    var label = view === 'edge' ? '표본 10% 를 담는 각 축의 비율'
+      : (view === 'shell' ? '반지름 0.9 안에 남은 부피 비율' : '거리 제곱의 상대 표준편차');
+    var top = view === 'conc' ? 1.25 : 1.05;
+
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 1, xmax: 100, ymin: 0, ymax: top,
+      pad: { t: 30, r: 16, b: 34, l: 50 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(20, top / 4).axes('차원 d', '').ticks(20, top / 4);
+    p.text(1, top, label, { size: 10, dy: -10 });
+    p.curve(f, { samples: 300 });
+    p.dot(dim, Math.min(top - 0.02, f(dim)), 5.5);
+    p.callout(dim, Math.min(top - 0.05, f(dim)), 'd = ' + dim + ' → ' + f(dim).toFixed(4),
+      { dx: 20, dy: 24, tone: 'var(--seal)' });
+
+    out.set('edge', edge(dim));
+    out.set('shell', shell(dim));
+    out.set('conc', conc(dim));
+    out.setRaw('note', dim >= 30 ? '“가까운 이웃”이 사실상 무의미해진 영역'
+      : (dim <= 3 ? '직관이 통하는 저차원' : '이미 무너지기 시작한다'));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '무엇으로 볼까',
+    options: [
+      { value: 'edge', label: '변 길이' },
+      { value: 'shell', label: '껍질 부피' },
+      { value: 'conc', label: '거리 집중' }
+    ],
+    value: 'edge', onChange: function (v) { view = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '차원 d', min: 1, max: 100, step: 1, value: 10, digits: 0,
+    onInput: function (v) { dim = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — k 고르기
+   ============================================================ */
+WIDGETS.register('k-tradeoff', function (root, ctx) {
+  var n = 60, noise = 0.6, seed = 11;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'best', label: 'test 오차가 최소인 k' },
+    { key: 'tr1', label: 'k=1 의 train 오차', digits: 4 },
+    { key: 'te1', label: 'k=1 의 test 오차', digits: 4 },
+    { key: 'sq', label: '√n (흔히 쓰는 어림값)', digits: 1 }
+  ]);
+
+  function make(rnd, m) {
+    var pts = [];
+    for (var i = 0; i < m; i++) {
+      var c = i % 2;
+      var cx = c ? 1.0 : -1.0, cy = c ? 0.7 : -0.7;
+      pts.push([cx + noise * gauss(rnd), cy + noise * gauss(rnd), c]);
+    }
+    return pts;
+  }
+
+  function draw() {
+    var rnd = mkRand(seed * 811 + 3);
+    var tr = make(rnd, n), te = make(rnd, 240);
+
+    function err(set, k, excludeSelf) {
+      var wrong = 0;
+      for (var i = 0; i < set.length; i++) {
+        var ds = [];
+        for (var j = 0; j < tr.length; j++) {
+          if (excludeSelf && set === tr && i === j) { ds.push([1e9, tr[j][2]]); continue; }
+          ds.push([Math.pow(tr[j][0] - set[i][0], 2) + Math.pow(tr[j][1] - set[i][1], 2), tr[j][2]]);
+        }
+        ds.sort(function (a, b) { return a[0] - b[0]; });
+        var kk = Math.min(k, ds.length);          /* 표본보다 큰 k 를 막는다 */
+        var s = 0;
+        for (var q = 0; q < kk; q++) s += ds[q][1];
+        if ((s * 2 > kk ? 1 : 0) !== set[i][2]) wrong++;
+      }
+      return wrong / set.length;
+    }
+
+    var ks = [], trE = [], teE = [];
+    for (var k = 1; k <= 31; k += 2) {
+      ks.push(k);
+      trE.push(err(tr, k, false));
+      teE.push(err(te, k, false));
+    }
+
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 0, xmax: 32, ymin: 0, ymax: 0.55,
+      pad: { t: 30, r: 16, b: 34, l: 48 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(5, 0.1).axes('k', '').ticks(5, 0.1);
+    p.text(0, 0.55, '오차 · 점선 = train · 실선 = test', { size: 10, dy: -10 });
+
+    var a = [], b = [];
+    for (var t = 0; t < ks.length; t++) {
+      a.push([ks[t], Math.min(0.54, trE[t])]);
+      b.push([ks[t], Math.min(0.54, teE[t])]);
+    }
+    p.line(a, { alt: true, dash: '5 4', width: 2 });
+    p.line(b, { width: 2.2 });
+
+    var bi = 0;
+    for (var u = 1; u < teE.length; u++) if (teE[u] < teE[bi]) bi = u;
+    p.dot(ks[bi], teE[bi], 5.5);
+    p.callout(ks[bi], teE[bi], 'k = ' + ks[bi], { dx: 20, dy: 24, tone: 'var(--seal)' });
+
+    out.setRaw('best', String(ks[bi]));
+    out.set('tr1', trE[0]);
+    out.set('te1', teE[0]);
+    out.set('sq', Math.sqrt(n));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '훈련 표본 수 n', min: 20, max: 200, step: 10, value: 60, digits: 0,
+    onInput: function (v) { n = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'data 의 잡음', min: 0.2, max: 1.4, step: 0.05, value: 0.6, digits: 2,
+    onInput: function (v) { noise = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 30, step: 1, value: 11, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 6 — 근사 탐색의 맞바꿈
+   ============================================================ */
+WIDGETS.register('ann-tradeoff', function (root, ctx) {
+  var target = 0.95, nLog = 6;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'r', label: '목표 recall@10' },
+    { key: 'sp', label: '전수 조사 대비 속도 배율', digits: 1 },
+    { key: 'brute', label: '전수 조사 비용 (곱셈 횟수)' },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  /* recall 이 1 에 가까울수록 비용이 급증하는 모형 */
+  function speedup(r) { return Math.max(1, 300 * Math.pow(1 - r, 0.55)); }
+
+  function draw() {
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 0.5, xmax: 1.0, ymin: 0, ymax: 220,
+      pad: { t: 30, r: 16, b: 34, l: 52 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(0.1, 55).axes('recall@10 (정확도)', '').ticks(0.1, 55);
+    p.text(0.5, 220, '속도 배율 · 오른쪽 끝으로 갈수록 비용이 급증한다', { size: 10, dy: -10 });
+    p.curve(function (r) { return Math.min(215, speedup(r)); }, { samples: 260 });
+    p.line([[0.95, 0], [0.95, 215]], { dash: '3 3' });
+
+    var s = speedup(target);
+    p.dot(target, Math.min(215, s), 5.5);
+    p.callout(target, Math.min(200, s), '×' + s.toFixed(0) + ' 빠르다',
+      { dx: -30, dy: -22, tone: 'var(--seal)' });
+
+    var n = Math.pow(10, nLog);
+    out.setRaw('r', target.toFixed(3));
+    out.set('sp', s);
+    out.setRaw('brute', (n * 768).toExponential(2) + '  (n = ' + n.toExponential(0) + ', d = 768)');
+    out.setRaw('note', target > 0.99 ? '거의 정확한 탐색 — 이득이 급격히 줄어든다'
+      : (target < 0.8 ? '너무 많이 놓친다' : '실무에서 쓰는 구간'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '목표 recall@10', min: 0.5, max: 0.999, step: 0.001, value: 0.95, digits: 3,
+    onInput: function (v) { target = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'log₁₀ 항목 수 n', min: 3, max: 9, step: 1, value: 6, digits: 0,
+    onInput: function (v) { nLog = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

@@ -172,7 +172,11 @@
         "4.2",
         "4.4",
         "4.6",
-        "4.9"
+        "4.9",
+        "5.10",
+        "5.11",
+        "5.4",
+        "5.9"
       ],
       "archived": {
         "path": "references/library/book/bishop2006-prml.pdf",
@@ -208,7 +212,17 @@
         "1.5",
         "1.6",
         "3.9",
-        "4.5"
+        "4.5",
+        "5.1",
+        "5.13",
+        "5.14",
+        "5.2",
+        "5.3",
+        "5.4",
+        "5.5",
+        "5.6",
+        "5.7",
+        "5.8"
       ],
       "archived": {
         "path": "references/library/book/hastie2009-esl.html",
@@ -246,7 +260,11 @@
         "4.3",
         "4.4",
         "4.5",
-        "4.6"
+        "4.6",
+        "5.1",
+        "5.4",
+        "5.5",
+        "5.6"
       ],
       "archived": {
         "path": "references/library/book/murphy2022-pml.html",
@@ -1099,7 +1117,8 @@
       ],
       "checked": "2026-07-25",
       "cited_by": [
-        "1.1"
+        "1.1",
+        "5.1"
       ]
     },
     "turing1950-machinery": {
@@ -1740,7 +1759,8 @@
       "archivable": true,
       "license": "JMLR 오픈액세스. 개인 학습용 보관.",
       "topics": [
-        "2"
+        "2",
+        "5"
       ],
       "checked": "2026-07-27",
       "archived": {
@@ -2526,7 +2546,8 @@
       ],
       "checked": "2026-07-29",
       "cited_by": [
-        "3.9"
+        "3.9",
+        "5.3"
       ]
     },
     "sutskever2013-momentum": {
@@ -3321,7 +3342,8 @@
       "license": "IEEE. 여러 대학이 강의자료로 공개한다. 링크로 인용한다.",
       "topics": [
         "4",
-        "10"
+        "10",
+        "5"
       ],
       "checked": "2026-07-29",
       "cited_by": [
@@ -3508,7 +3530,11 @@
         "4.3",
         "4.5",
         "4.6",
-        "4.8"
+        "4.8",
+        "5.4",
+        "5.5",
+        "5.6",
+        "5.7"
       ]
     },
     "3blue1brown-prob": {
@@ -3566,6 +3592,1415 @@
       "cited_by": [
         "4.2",
         "4.5"
+      ]
+    },
+    "chen2016-xgboost-a-scalable": {
+      "type": "paper",
+      "title": "XGBoost: A Scalable Tree Boosting System",
+      "authors": [
+        "Tianqi Chen",
+        "Carlos Guestrin"
+      ],
+      "year": 2016,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1603.02754",
+      "file_url": "https://arxiv.org/pdf/1603.02754",
+      "arxiv": "1603.02754",
+      "doi": "10.1145/2939672.2939785",
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/chen2016-xgboost-a-scalable.pdf",
+        "sha256": "52bc282c922a239134ee4d6f4367c58bf920a9bdd53acbb3b2aa3342e2bb7214",
+        "bytes": 944793,
+        "content_type": "application/pdf",
+        "pages": 13,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1603.02754"
+      },
+      "cited_by": [
+        "5.7"
+      ]
+    },
+    "prokhorenkova2017-catboost-unbiased-boosting": {
+      "type": "paper",
+      "title": "CatBoost: unbiased boosting with categorical features",
+      "authors": [
+        "Liudmila Prokhorenkova",
+        "Gleb Gusev",
+        "Aleksandr Vorobev",
+        "Anna Veronika Dorogush",
+        "Andrey Gulin"
+      ],
+      "year": 2017,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1706.09516",
+      "file_url": "https://arxiv.org/pdf/1706.09516",
+      "arxiv": "1706.09516",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/prokhorenkova2017-catboost-unbiased-boosting.pdf",
+        "sha256": "e682f177e24106a1c48a0dbba1d752a806526bd7ea85bd97e12bec07a2ed955b",
+        "bytes": 723079,
+        "content_type": "application/pdf",
+        "pages": 23,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1706.09516"
+      },
+      "cited_by": [
+        "5.7"
+      ]
+    },
+    "snoek2012-practical-bayesian-optimization": {
+      "type": "paper",
+      "title": "Practical Bayesian Optimization of Machine Learning Algorithms",
+      "authors": [
+        "Jasper Snoek",
+        "Hugo Larochelle",
+        "Ryan P. Adams"
+      ],
+      "year": 2012,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1206.2944",
+      "file_url": "https://arxiv.org/pdf/1206.2944",
+      "arxiv": "1206.2944",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/snoek2012-practical-bayesian-optimization.pdf",
+        "sha256": "9863ea49c983f3fce20baba203f798431e6808f231353a694b7d57c8caa59d68",
+        "bytes": 595633,
+        "content_type": "application/pdf",
+        "pages": 12,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1206.2944"
+      },
+      "cited_by": [
+        "5.14"
+      ]
+    },
+    "lundberg2018-consistent-individualized-feature": {
+      "type": "paper",
+      "title": "Consistent Individualized Feature Attribution for Tree Ensembles",
+      "authors": [
+        "Scott M. Lundberg",
+        "Gabriel G. Erion",
+        "Su-In Lee"
+      ],
+      "year": 2018,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1802.03888",
+      "file_url": "https://arxiv.org/pdf/1802.03888",
+      "arxiv": "1802.03888",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/lundberg2018-consistent-individualized-feature.pdf",
+        "sha256": "4bb594a16893a7534b8d3357c607e6ab356858a26d03b7d037d55f2ad2f7eef7",
+        "bytes": 3858958,
+        "content_type": "application/pdf",
+        "pages": 9,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1802.03888"
+      },
+      "topics": [
+        "5",
+        "18"
+      ]
+    },
+    "gorishniy2021-revisiting-deep-learning": {
+      "type": "paper",
+      "title": "Revisiting Deep Learning Models for Tabular Data",
+      "authors": [
+        "Yury Gorishniy",
+        "Ivan Rubachev",
+        "Valentin Khrulkov",
+        "Artem Babenko"
+      ],
+      "year": 2021,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/2106.11959",
+      "file_url": "https://arxiv.org/pdf/2106.11959",
+      "arxiv": "2106.11959",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/gorishniy2021-revisiting-deep-learning.pdf",
+        "sha256": "f2faa32ffd8c15ed8534677f978dc02730fdbe1f94e9c9557ada6aa19163478d",
+        "bytes": 1676287,
+        "content_type": "application/pdf",
+        "pages": 25,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/2106.11959"
+      },
+      "topics": [
+        "5",
+        "6"
+      ],
+      "cited_by": [
+        "5.7"
+      ]
+    },
+    "valiant1984-theory-of-learnable": {
+      "access": "free-online",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "A Theory of the Learnable",
+      "authors": [
+        "Leslie G. Valiant"
+      ],
+      "year": 1984,
+      "venue": "Communications of the ACM 27(11), 1134–1142",
+      "url": "https://dl.acm.org/doi/10.1145/1968.1972",
+      "license": "ACM. 저자 소속 기관들이 사본을 공개한다. 링크로 인용한다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.2"
+      ]
+    },
+    "vapnik1971-uniform-convergence": {
+      "access": "paywall",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "On the Uniform Convergence of Relative Frequencies of Events to Their Probabilities",
+      "authors": [
+        "Vladimir N. Vapnik",
+        "Alexey Ya. Chervonenkis"
+      ],
+      "year": 1971,
+      "venue": "Theory of Probability and Its Applications 16(2), 264–280",
+      "url": "https://doi.org/10.1137/1116025",
+      "license": "SIAM 페이월. 서지정보만 등록하고 링크로 인용한다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.2"
+      ]
+    },
+    "wolpert1996-no-free-lunch": {
+      "access": "paywall",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "The Lack of A Priori Distinctions Between Learning Algorithms",
+      "authors": [
+        "David H. Wolpert"
+      ],
+      "year": 1996,
+      "venue": "Neural Computation 8(7), 1341–1390",
+      "url": "https://doi.org/10.1162/neco.1996.8.7.1341",
+      "license": "MIT Press 페이월. 링크로만 인용한다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.1"
+      ]
+    },
+    "bartlett2002-rademacher": {
+      "access": "free-online",
+      "archivable": true,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Rademacher and Gaussian Complexities: Risk Bounds and Structural Results",
+      "authors": [
+        "Peter L. Bartlett",
+        "Shahar Mendelson"
+      ],
+      "year": 2002,
+      "venue": "JMLR 3, 463–482",
+      "url": "https://www.jmlr.org/papers/v3/bartlett02a.html",
+      "file_url": "https://www.jmlr.org/papers/volume3/bartlett02a/bartlett02a.pdf",
+      "license": "JMLR 오픈 액세스.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/bartlett2002-rademacher.pdf",
+        "sha256": "157a952bc8499febd05ea3115dfea40634891c93ca55e1838d5ae0c9fbb9b4bc",
+        "bytes": 285321,
+        "content_type": "application/pdf",
+        "pages": 20,
+        "fetched": "2026-07-29",
+        "source_url": "https://www.jmlr.org/papers/volume3/bartlett02a/bartlett02a.pdf"
+      },
+      "cited_by": [
+        "5.2"
+      ]
+    },
+    "shalev2014-uml": {
+      "access": "free-online",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "book",
+      "title": "Understanding Machine Learning: From Theory to Algorithms",
+      "authors": [
+        "Shai Shalev-Shwartz",
+        "Shai Ben-David"
+      ],
+      "year": 2014,
+      "publisher": "Cambridge University Press",
+      "url": "https://www.cs.huji.ac.il/~shais/UnderstandingMachineLearning/",
+      "license": "저자가 개인 학습용 PDF 를 공개하지만 서버가 자동 내려받기를 차단한다(WAF). 링크로만 인용한다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.1",
+        "5.2"
+      ]
+    },
+    "caltech-cs156": {
+      "access": "free-online",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "course",
+      "title": "Learning From Data (CS156)",
+      "authors": [
+        "Yaser S. Abu-Mostafa (Caltech)"
+      ],
+      "url": "https://work.caltech.edu/telecourse.html",
+      "license": "강의 영상·슬라이드 무료 공개. 영상은 링크와 강의 번호로 인용한다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.1",
+        "5.14",
+        "5.2"
+      ]
+    },
+    "stanford-cs229": {
+      "access": "free-online",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "course",
+      "title": "CS229: Machine Learning",
+      "authors": [
+        "Andrew Ng",
+        "Tengyu Ma (Stanford University)"
+      ],
+      "url": "https://cs229.stanford.edu/",
+      "license": "강의노트 무료 공개.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.3",
+        "5.4",
+        "5.8",
+        "5.9"
+      ]
+    },
+    "hoerl1970-ridge": {
+      "access": "paywall",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Ridge Regression: Biased Estimation for Nonorthogonal Problems",
+      "authors": [
+        "Arthur E. Hoerl",
+        "Robert W. Kennard"
+      ],
+      "year": 1970,
+      "venue": "Technometrics 12(1), 55–67",
+      "url": "https://doi.org/10.1080/00401706.1970.10488634",
+      "license": "Taylor & Francis 페이월. 링크로만 인용한다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.3"
+      ]
+    },
+    "zou2005-elastic-net": {
+      "access": "free-online",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Regularization and Variable Selection via the Elastic Net",
+      "authors": [
+        "Hui Zou",
+        "Trevor Hastie"
+      ],
+      "year": 2005,
+      "venue": "Journal of the Royal Statistical Society B 67(2), 301–320",
+      "url": "https://doi.org/10.1111/j.1467-9868.2005.00503.x",
+      "license": "저자(Hastie) 홈페이지에 사본이 공개되어 있다. 링크로 인용한다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.3"
+      ]
+    },
+    "cover1967-nearest-neighbor": {
+      "access": "free-online",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Nearest Neighbor Pattern Classification",
+      "authors": [
+        "Thomas M. Cover",
+        "Peter E. Hart"
+      ],
+      "year": 1967,
+      "venue": "IEEE Transactions on Information Theory 13(1), 21–27",
+      "url": "https://ieeexplore.ieee.org/document/1053964",
+      "license": "IEEE. 여러 대학이 강의자료로 공개한다. 링크로 인용한다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.5"
+      ]
+    },
+    "quinlan1986-induction-decision-trees": {
+      "access": "free-online",
+      "archivable": true,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Induction of Decision Trees",
+      "authors": [
+        "J. Ross Quinlan"
+      ],
+      "year": 1986,
+      "venue": "Machine Learning 1(1), 81–106",
+      "url": "https://link.springer.com/article/10.1007/BF00116251",
+      "file_url": "https://link.springer.com/content/pdf/10.1007/BF00116251.pdf",
+      "license": "Springer 오픈 아카이브.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/quinlan1986-induction-decision-trees.pdf",
+        "sha256": "f83a458d2dfbca86e3d65f37a3d304bab58ab0d807d62927885ae3bcedbf01cd",
+        "bytes": 1397963,
+        "content_type": "application/pdf",
+        "pages": 26,
+        "fetched": "2026-07-29",
+        "source_url": "https://link.springer.com/content/pdf/10.1007/BF00116251.pdf?error=cookies_not_supported&code=d07e86f4-6feb-48b0-a32b-f14a5204ab23"
+      },
+      "cited_by": [
+        "5.6"
+      ]
+    },
+    "breiman1996-bagging": {
+      "access": "free-online",
+      "archivable": true,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Bagging Predictors",
+      "authors": [
+        "Leo Breiman"
+      ],
+      "year": 1996,
+      "venue": "Machine Learning 24(2), 123–140",
+      "url": "https://link.springer.com/article/10.1007/BF00058655",
+      "file_url": "https://link.springer.com/content/pdf/10.1007/BF00058655.pdf",
+      "license": "Springer 오픈 아카이브.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/breiman1996-bagging.pdf",
+        "sha256": "24bcc99bb70fde41be33a89c529a49fb7487e278db7401745796f20af4301702",
+        "bytes": 829114,
+        "content_type": "application/pdf",
+        "pages": 18,
+        "fetched": "2026-07-29",
+        "source_url": "https://link.springer.com/content/pdf/10.1007/BF00058655.pdf?error=cookies_not_supported&code=c146b742-9ae7-4874-ad34-798230385d11"
+      },
+      "cited_by": [
+        "5.7"
+      ]
+    },
+    "breiman2001-random-forests": {
+      "access": "free-online",
+      "archivable": true,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Random Forests",
+      "authors": [
+        "Leo Breiman"
+      ],
+      "year": 2001,
+      "venue": "Machine Learning 45(1), 5–32",
+      "url": "https://link.springer.com/article/10.1023/A:1010933404324",
+      "file_url": "https://link.springer.com/content/pdf/10.1023/A:1010933404324.pdf",
+      "license": "Springer 오픈 아카이브.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/breiman2001-random-forests.pdf",
+        "sha256": "3ad0f6182280e8c0f763527be85d41bce08f6e4d1de3f8c674098f0de31138ce",
+        "bytes": 230664,
+        "content_type": "application/pdf",
+        "pages": 28,
+        "fetched": "2026-07-29",
+        "source_url": "https://link.springer.com/content/pdf/10.1023/A:1010933404324.pdf?error=cookies_not_supported&code=883c9455-3b07-4813-99ee-810348d875a6"
+      },
+      "cited_by": [
+        "5.7"
+      ]
+    },
+    "geurts2006-extremely-randomized": {
+      "access": "free-online",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Extremely Randomized Trees",
+      "authors": [
+        "Pierre Geurts",
+        "Damien Ernst",
+        "Louis Wehenkel"
+      ],
+      "year": 2006,
+      "venue": "Machine Learning 63(1), 3–42",
+      "url": "https://link.springer.com/article/10.1007/s10994-006-6226-1",
+      "license": "Springer. 저자 기관 사본이 공개되어 있다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.7"
+      ]
+    },
+    "freund1997-adaboost": {
+      "access": "free-online",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "A Decision-Theoretic Generalization of On-Line Learning and an Application to Boosting",
+      "authors": [
+        "Yoav Freund",
+        "Robert E. Schapire"
+      ],
+      "year": 1997,
+      "venue": "Journal of Computer and System Sciences 55(1), 119–139",
+      "url": "https://doi.org/10.1006/jcss.1997.1504",
+      "license": "Elsevier. 저자 사본이 공개되어 있다. 링크로 인용한다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.7"
+      ]
+    },
+    "friedman2001-gradient-boosting": {
+      "access": "free-online",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Greedy Function Approximation: A Gradient Boosting Machine",
+      "authors": [
+        "Jerome H. Friedman"
+      ],
+      "year": 2001,
+      "venue": "The Annals of Statistics 29(5), 1189–1232",
+      "url": "https://projecteuclid.org/journals/annals-of-statistics/volume-29/issue-5/Greedy-function-approximation-A-gradient-boosting-machine/10.1214/aos/1013203451.full",
+      "license": "Project Euclid 공개본.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.7"
+      ]
+    },
+    "ke2017-lightgbm": {
+      "access": "free-online",
+      "archivable": true,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "LightGBM: A Highly Efficient Gradient Boosting Decision Tree",
+      "authors": [
+        "Guolin Ke",
+        "Qi Meng",
+        "Thomas Finley",
+        "Taifeng Wang",
+        "Wei Chen",
+        "Weidong Ma",
+        "Qiwei Ye",
+        "Tie-Yan Liu"
+      ],
+      "year": 2017,
+      "venue": "NeurIPS 2017",
+      "url": "https://papers.nips.cc/paper_files/paper/2017/hash/6449f44a102fde848669bdd9eb6b76fa-Abstract.html",
+      "file_url": "https://papers.nips.cc/paper_files/paper/2017/file/6449f44a102fde848669bdd9eb6b76fa-Paper.pdf",
+      "license": "NeurIPS Proceedings 오픈 액세스.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/ke2017-lightgbm.pdf",
+        "sha256": "32ddfe0c7a8e1acb87c97cff904a16e0a556a8d79ebfecf772159843e736affc",
+        "bytes": 366352,
+        "content_type": "application/pdf",
+        "pages": 9,
+        "fetched": "2026-07-29",
+        "source_url": "https://papers.nips.cc/paper_files/paper/2017/file/6449f44a102fde848669bdd9eb6b76fa-Paper.pdf"
+      },
+      "cited_by": [
+        "5.7"
+      ]
+    },
+    "wolpert1992-stacked-generalization": {
+      "access": "paywall",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Stacked Generalization",
+      "authors": [
+        "David H. Wolpert"
+      ],
+      "year": 1992,
+      "venue": "Neural Networks 5(2), 241–259",
+      "url": "https://doi.org/10.1016/S0893-6080(05)80023-1",
+      "license": "Elsevier 페이월. 링크로만 인용한다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.7"
+      ]
+    },
+    "boser1992-optimal-margin": {
+      "access": "free-online",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "A Training Algorithm for Optimal Margin Classifiers",
+      "authors": [
+        "Bernhard E. Boser",
+        "Isabelle M. Guyon",
+        "Vladimir N. Vapnik"
+      ],
+      "year": 1992,
+      "venue": "COLT '92, 144–152",
+      "url": "https://dl.acm.org/doi/10.1145/130385.130401",
+      "license": "ACM. 저자 사본이 공개되어 있다. 링크로 인용한다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.8"
+      ]
+    },
+    "cortes1995-support-vector-networks": {
+      "access": "free-online",
+      "archivable": true,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Support-Vector Networks",
+      "authors": [
+        "Corinna Cortes",
+        "Vladimir Vapnik"
+      ],
+      "year": 1995,
+      "venue": "Machine Learning 20(3), 273–297",
+      "url": "https://link.springer.com/article/10.1007/BF00994018",
+      "file_url": "https://link.springer.com/content/pdf/10.1007/BF00994018.pdf",
+      "license": "Springer 오픈 아카이브.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/cortes1995-support-vector-networks.pdf",
+        "sha256": "4aed6fc3d300ce7552b341e3e01f3d795aa437de1045c022e6ee0b4309492531",
+        "bytes": 1502380,
+        "content_type": "application/pdf",
+        "pages": 25,
+        "fetched": "2026-07-29",
+        "source_url": "https://link.springer.com/content/pdf/10.1007/BF00994018.pdf?error=cookies_not_supported&code=84f63d80-5cf6-4a88-b17e-da9bbc5412c6"
+      },
+      "cited_by": [
+        "5.8"
+      ]
+    },
+    "scholkopf2001-oneclass-svm": {
+      "access": "paywall",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Estimating the Support of a High-Dimensional Distribution",
+      "authors": [
+        "Bernhard Schölkopf",
+        "John C. Platt",
+        "John Shawe-Taylor",
+        "Alex J. Smola",
+        "Robert C. Williamson"
+      ],
+      "year": 2001,
+      "venue": "Neural Computation 13(7), 1443–1471",
+      "url": "https://doi.org/10.1162/089976601750264965",
+      "license": "MIT Press 페이월. 링크로만 인용한다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.12",
+        "5.8"
+      ]
+    },
+    "dempster1977-em": {
+      "access": "paywall",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Maximum Likelihood from Incomplete Data via the EM Algorithm",
+      "authors": [
+        "Arthur P. Dempster",
+        "Nan M. Laird",
+        "Donald B. Rubin"
+      ],
+      "year": 1977,
+      "venue": "Journal of the Royal Statistical Society B 39(1), 1–38",
+      "url": "https://www.jstor.org/stable/2984875",
+      "license": "JSTOR 페이월. 서지정보만 등록하고 링크로 인용한다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.9"
+      ]
+    },
+    "lloyd1982-least-squares-quantization": {
+      "access": "free-online",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Least Squares Quantization in PCM",
+      "authors": [
+        "Stuart P. Lloyd"
+      ],
+      "year": 1982,
+      "venue": "IEEE Transactions on Information Theory 28(2), 129–137 (원고 1957)",
+      "url": "https://ieeexplore.ieee.org/document/1056489",
+      "license": "IEEE. 여러 대학이 강의자료로 공개한다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.10"
+      ]
+    },
+    "ester1996-dbscan": {
+      "access": "free-online",
+      "archivable": true,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "A Density-Based Algorithm for Discovering Clusters in Large Spatial Databases with Noise",
+      "authors": [
+        "Martin Ester",
+        "Hans-Peter Kriegel",
+        "Jörg Sander",
+        "Xiaowei Xu"
+      ],
+      "year": 1996,
+      "venue": "KDD-96, 226–231",
+      "url": "https://cdn.aaai.org/KDD/1996/KDD96-037.pdf",
+      "file_url": "https://cdn.aaai.org/KDD/1996/KDD96-037.pdf",
+      "license": "AAAI 가 KDD-96 논문집을 공개한다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/ester1996-dbscan.pdf",
+        "sha256": "686110b84ef05f4272b5b9899c51721f3dc666870e2ee2201eb2e291c63bac9c",
+        "bytes": 631443,
+        "content_type": "application/pdf",
+        "pages": 6,
+        "fetched": "2026-07-29",
+        "source_url": "https://cdn.aaai.org/KDD/1996/KDD96-037.pdf"
+      },
+      "cited_by": [
+        "5.10"
+      ]
+    },
+    "ng2001-spectral-clustering": {
+      "access": "free-online",
+      "archivable": true,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "On Spectral Clustering: Analysis and an Algorithm",
+      "authors": [
+        "Andrew Y. Ng",
+        "Michael I. Jordan",
+        "Yair Weiss"
+      ],
+      "year": 2001,
+      "venue": "NIPS 14",
+      "url": "https://papers.nips.cc/paper_files/paper/2001/hash/801272ee79cfde7fa5960571fee36b9b-Abstract.html",
+      "file_url": "https://papers.nips.cc/paper_files/paper/2001/file/801272ee79cfde7fa5960571fee36b9b-Paper.pdf",
+      "license": "NeurIPS Proceedings 오픈 액세스.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/ng2001-spectral-clustering.pdf",
+        "sha256": "1f58dcc61d489eed3e726e20e206d5c6bbe473f2c5d899551d95fc977dc4db3f",
+        "bytes": 1470733,
+        "content_type": "application/pdf",
+        "pages": 8,
+        "fetched": "2026-07-29",
+        "source_url": "https://papers.nips.cc/paper_files/paper/2001/file/801272ee79cfde7fa5960571fee36b9b-Paper.pdf"
+      },
+      "cited_by": [
+        "5.10"
+      ]
+    },
+    "rousseeuw1987-silhouettes": {
+      "access": "free-online",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Silhouettes: A Graphical Aid to the Interpretation and Validation of Cluster Analysis",
+      "authors": [
+        "Peter J. Rousseeuw"
+      ],
+      "year": 1987,
+      "venue": "Journal of Computational and Applied Mathematics 20, 53–65",
+      "url": "https://doi.org/10.1016/0377-0427(87)90125-7",
+      "license": "Elsevier 오픈 아카이브 (Open Archive).",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.10"
+      ]
+    },
+    "scholkopf1998-kernel-pca": {
+      "access": "paywall",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Nonlinear Component Analysis as a Kernel Eigenvalue Problem",
+      "authors": [
+        "Bernhard Schölkopf",
+        "Alexander Smola",
+        "Klaus-Robert Müller"
+      ],
+      "year": 1998,
+      "venue": "Neural Computation 10(5), 1299–1319",
+      "url": "https://doi.org/10.1162/089976698300017467",
+      "license": "MIT Press 페이월. 저자 사본이 공개되어 있다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.11"
+      ]
+    },
+    "hyvarinen2000-ica": {
+      "access": "free-online",
+      "archivable": true,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Independent Component Analysis: Algorithms and Applications",
+      "authors": [
+        "Aapo Hyvärinen",
+        "Erkki Oja"
+      ],
+      "year": 2000,
+      "venue": "Neural Networks 13(4–5), 411–430",
+      "url": "https://www.cs.helsinki.fi/u/ahyvarin/papers/NN00new.pdf",
+      "file_url": "https://www.cs.helsinki.fi/u/ahyvarin/papers/NN00new.pdf",
+      "license": "저자가 홈페이지에 사본을 공개.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/hyvarinen2000-ica.pdf",
+        "sha256": "3509069f3b32e3ee9070cb517893fa511f2085f5df72bf531145cb93e226cc55",
+        "bytes": 1659265,
+        "content_type": "application/pdf",
+        "pages": 31,
+        "fetched": "2026-07-29",
+        "source_url": "https://www.cs.helsinki.fi/u/ahyvarin/papers/NN00new.pdf"
+      },
+      "cited_by": [
+        "5.11"
+      ]
+    },
+    "tenenbaum2000-isomap": {
+      "access": "paywall",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "A Global Geometric Framework for Nonlinear Dimensionality Reduction",
+      "authors": [
+        "Joshua B. Tenenbaum",
+        "Vin de Silva",
+        "John C. Langford"
+      ],
+      "year": 2000,
+      "venue": "Science 290(5500), 2319–2323",
+      "url": "https://doi.org/10.1126/science.290.5500.2319",
+      "license": "Science 페이월. 저자 사본이 공개되어 있다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.11"
+      ]
+    },
+    "roweis2000-lle": {
+      "access": "paywall",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Nonlinear Dimensionality Reduction by Locally Linear Embedding",
+      "authors": [
+        "Sam T. Roweis",
+        "Lawrence K. Saul"
+      ],
+      "year": 2000,
+      "venue": "Science 290(5500), 2323–2326",
+      "url": "https://doi.org/10.1126/science.290.5500.2323",
+      "license": "Science 페이월. 저자 사본이 공개되어 있다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.11"
+      ]
+    },
+    "liu2008-isolation-forest": {
+      "access": "free-online",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Isolation Forest",
+      "authors": [
+        "Fei Tony Liu",
+        "Kai Ming Ting",
+        "Zhi-Hua Zhou"
+      ],
+      "year": 2008,
+      "venue": "ICDM 2008, 413–422",
+      "url": "https://ieeexplore.ieee.org/document/4781136",
+      "license": "IEEE. 저자 사본이 공개되어 있다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.12"
+      ]
+    },
+    "breunig2000-lof": {
+      "access": "free-online",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "LOF: Identifying Density-Based Local Outliers",
+      "authors": [
+        "Markus M. Breunig",
+        "Hans-Peter Kriegel",
+        "Raymond T. Ng",
+        "Jörg Sander"
+      ],
+      "year": 2000,
+      "venue": "SIGMOD 2000, 93–104",
+      "url": "https://dl.acm.org/doi/10.1145/342009.335388",
+      "license": "ACM. 저자 기관 사본이 공개되어 있다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.12"
+      ]
+    },
+    "fawcett2006-roc": {
+      "access": "free-online",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "An Introduction to ROC Analysis",
+      "authors": [
+        "Tom Fawcett"
+      ],
+      "year": 2006,
+      "venue": "Pattern Recognition Letters 27(8), 861–874",
+      "url": "https://doi.org/10.1016/j.patrec.2005.10.010",
+      "license": "Elsevier. 저자 사본이 널리 공개되어 있다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.13"
+      ]
+    },
+    "davis2006-pr-roc": {
+      "access": "free-online",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "The Relationship Between Precision-Recall and ROC Curves",
+      "authors": [
+        "Jesse Davis",
+        "Mark Goadrich"
+      ],
+      "year": 2006,
+      "venue": "ICML 2006, 233–240",
+      "url": "https://dl.acm.org/doi/10.1145/1143844.1143874",
+      "license": "ACM. 저자 기관 사본이 공개되어 있다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.13"
+      ]
+    },
+    "saito2015-pr-plot": {
+      "access": "free-online",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "The Precision-Recall Plot Is More Informative than the ROC Plot When Evaluating Binary Classifiers on Imbalanced Datasets",
+      "authors": [
+        "Takaya Saito",
+        "Marc Rehmsmeier"
+      ],
+      "year": 2015,
+      "venue": "PLOS ONE 10(3), e0118432",
+      "url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0118432",
+      "license": "CC BY. PLOS 오픈 액세스.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.13"
+      ]
+    },
+    "bergstra2012-random-search": {
+      "access": "free-online",
+      "archivable": true,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Random Search for Hyper-Parameter Optimization",
+      "authors": [
+        "James Bergstra",
+        "Yoshua Bengio"
+      ],
+      "year": 2012,
+      "venue": "JMLR 13, 281–305",
+      "url": "https://www.jmlr.org/papers/v13/bergstra12a.html",
+      "file_url": "https://www.jmlr.org/papers/volume13/bergstra12a/bergstra12a.pdf",
+      "license": "JMLR 오픈 액세스.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/bergstra2012-random-search.pdf",
+        "sha256": "01e88a175a36afa399e05dc97dce9c5de980130445269cc0e5100d0471887029",
+        "bytes": 728274,
+        "content_type": "application/pdf",
+        "pages": 25,
+        "fetched": "2026-07-29",
+        "source_url": "https://www.jmlr.org/papers/volume13/bergstra12a/bergstra12a.pdf"
+      },
+      "cited_by": [
+        "5.14"
+      ]
+    },
+    "cawley2010-model-selection-bias": {
+      "access": "free-online",
+      "archivable": true,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "On Over-fitting in Model Selection and Subsequent Selection Bias in Performance Evaluation",
+      "authors": [
+        "Gavin C. Cawley",
+        "Nicola L. C. Talbot"
+      ],
+      "year": 2010,
+      "venue": "JMLR 11, 2079–2107",
+      "url": "https://www.jmlr.org/papers/v11/cawley10a.html",
+      "file_url": "https://www.jmlr.org/papers/volume11/cawley10a/cawley10a.pdf",
+      "license": "JMLR 오픈 액세스.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/cawley2010-model-selection-bias.pdf",
+        "sha256": "db01ac8fabef3064a0297bfcf64fb9791bf35c4d03be7a51f5862260adfca206",
+        "bytes": 759286,
+        "content_type": "application/pdf",
+        "pages": 29,
+        "fetched": "2026-07-29",
+        "source_url": "https://www.jmlr.org/papers/volume11/cawley10a/cawley10a.pdf"
+      },
+      "cited_by": [
+        "5.14"
+      ]
+    },
+    "pedregosa2011-scikit-learn": {
+      "access": "free-online",
+      "archivable": true,
+      "topics": [
+        "5"
+      ],
+      "type": "paper",
+      "title": "Scikit-learn: Machine Learning in Python",
+      "authors": [
+        "Fabian Pedregosa",
+        "Gaël Varoquaux",
+        "Alexandre Gramfort",
+        "Vincent Michel",
+        "Bertrand Thirion",
+        "et al."
+      ],
+      "year": 2011,
+      "venue": "JMLR 12, 2825–2830",
+      "url": "https://www.jmlr.org/papers/v12/pedregosa11a.html",
+      "file_url": "https://www.jmlr.org/papers/volume12/pedregosa11a/pedregosa11a.pdf",
+      "license": "JMLR 오픈 액세스.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/pedregosa2011-scikit-learn.pdf",
+        "sha256": "1c338a6b3c6c1dcafda3990a8098b8b50dd6c77616361396fb75f6822c6e0778",
+        "bytes": 42310,
+        "content_type": "application/pdf",
+        "pages": 6,
+        "fetched": "2026-07-29",
+        "source_url": "https://www.jmlr.org/papers/volume12/pedregosa11a/pedregosa11a.pdf"
+      }
+    },
+    "sklearn-docs": {
+      "access": "free-online",
+      "archivable": false,
+      "topics": [
+        "5"
+      ],
+      "type": "doc",
+      "title": "scikit-learn User Guide",
+      "authors": [
+        "scikit-learn developers"
+      ],
+      "url": "https://scikit-learn.org/stable/user_guide.html",
+      "license": "BSD 3-Clause. 링크로 인용한다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.10",
+        "5.11",
+        "5.12",
+        "5.13",
+        "5.14",
+        "5.3",
+        "5.4",
+        "5.5",
+        "5.6",
+        "5.7",
+        "5.8",
+        "5.9"
+      ]
+    },
+    "malkov2016-efficient-and-robust": {
+      "type": "paper",
+      "title": "Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs",
+      "authors": [
+        "Yu. A. Malkov",
+        "D. A. Yashunin"
+      ],
+      "year": 2016,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1603.09320",
+      "file_url": "https://arxiv.org/pdf/1603.09320",
+      "arxiv": "1603.09320",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.5"
+      ],
+      "archived": {
+        "path": "references/library/paper/malkov2016-efficient-and-robust.pdf",
+        "sha256": "f78da128a3ea9ac08d37cfe6c4b641f371f88adb677d6d2bf637d90bad8d414a",
+        "bytes": 2636958,
+        "content_type": "application/pdf",
+        "pages": 13,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1603.09320"
+      }
+    },
+    "breiman1984-cart": {
+      "type": "book",
+      "title": "Classification and Regression Trees",
+      "authors": [
+        "Leo Breiman",
+        "Jerome H. Friedman",
+        "Richard A. Olshen",
+        "Charles J. Stone"
+      ],
+      "year": 1984,
+      "publisher": "Wadsworth / Chapman & Hall",
+      "url": "https://doi.org/10.1201/9781315139470",
+      "access": "paywall",
+      "archivable": false,
+      "license": "페이월. 서지정보만 등록하고 링크로 인용한다.",
+      "topics": [
+        "5"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.6"
+      ]
+    },
+    "ng2001-discriminative-vs-generative": {
+      "type": "paper",
+      "title": "On Discriminative vs. Generative Classifiers: A comparison of logistic regression and naive Bayes",
+      "authors": [
+        "Andrew Y. Ng",
+        "Michael I. Jordan"
+      ],
+      "year": 2001,
+      "venue": "NeurIPS 2001",
+      "url": "https://papers.nips.cc/paper_files/paper/2001/hash/7b7a53e239400a13bd6be6c91c4f6c4e-Abstract.html",
+      "access": "open",
+      "archivable": true,
+      "license": "NeurIPS 공개 논문. 링크로 인용한다.",
+      "topics": [
+        "5"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.9"
+      ],
+      "archived": {
+        "path": "references/library/paper/ng2001-discriminative-vs-generative.pdf",
+        "sha256": "b67f4f7398ba41bb5807adca4fedb87d3f499e2ba6d6af40fcfa34409a7ab228",
+        "bytes": 1608131,
+        "content_type": "application/pdf",
+        "pages": 8,
+        "fetched": "2026-07-29",
+        "source_url": "https://papers.nips.cc/paper_files/paper/2001/file/7b7a53e239400a13bd6be6c91c4f6c4e-Paper.pdf"
+      },
+      "file_url": "https://papers.nips.cc/paper_files/paper/2001/file/7b7a53e239400a13bd6be6c91c4f6c4e-Paper.pdf"
+    },
+    "rabiner1989-hmm": {
+      "type": "paper",
+      "title": "A Tutorial on Hidden Markov Models and Selected Applications in Speech Recognition",
+      "authors": [
+        "Lawrence R. Rabiner"
+      ],
+      "year": 1989,
+      "venue": "Proceedings of the IEEE 77(2)",
+      "url": "https://doi.org/10.1109/5.18626",
+      "access": "paywall",
+      "archivable": false,
+      "license": "IEEE 페이월. 서지정보만 등록하고 링크로 인용한다.",
+      "topics": [
+        "5"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.9"
+      ]
+    },
+    "arthur2007-kmeanspp": {
+      "type": "paper",
+      "title": "k-means++: The Advantages of Careful Seeding",
+      "authors": [
+        "David Arthur",
+        "Sergei Vassilvitskii"
+      ],
+      "year": 2007,
+      "venue": "SODA 2007",
+      "url": "https://dl.acm.org/doi/10.5555/1283383.1283494",
+      "access": "free-online",
+      "archivable": false,
+      "license": "ACM DL 이 자동 내려받기를 차단한다(403). 저자 사본이 공개되어 있으니 링크로만 인용한다.",
+      "topics": [
+        "5"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.10"
+      ]
+    },
+    "maaten2008-tsne": {
+      "type": "paper",
+      "title": "Visualizing Data using t-SNE",
+      "authors": [
+        "Laurens van der Maaten",
+        "Geoffrey Hinton"
+      ],
+      "year": 2008,
+      "venue": "JMLR 9",
+      "url": "https://www.jmlr.org/papers/v9/vandermaaten08a.html",
+      "access": "open",
+      "archivable": true,
+      "license": "JMLR 오픈액세스. 링크로 인용한다.",
+      "topics": [
+        "5"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.11"
+      ],
+      "archived": {
+        "path": "references/library/paper/maaten2008-tsne.pdf",
+        "sha256": "f05922e427639a08cb5214cc4ef314689ecf2d87333cb5050003323d7631017f",
+        "bytes": 3716712,
+        "content_type": "application/pdf",
+        "pages": 27,
+        "fetched": "2026-07-29",
+        "source_url": "https://www.jmlr.org/papers/volume9/vandermaaten08a/vandermaaten08a.pdf"
+      },
+      "file_url": "https://www.jmlr.org/papers/volume9/vandermaaten08a/vandermaaten08a.pdf"
+    },
+    "mcinnes2018-umap": {
+      "type": "paper",
+      "title": "UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction",
+      "authors": [
+        "Leland McInnes",
+        "John Healy",
+        "James Melville"
+      ],
+      "year": 2018,
+      "venue": "arXiv:1802.03426",
+      "url": "https://arxiv.org/abs/1802.03426",
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개본. 링크로 인용한다.",
+      "topics": [
+        "5"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.11"
+      ],
+      "archived": {
+        "path": "references/library/paper/mcinnes2018-umap.pdf",
+        "sha256": "45ca6cfcd08d5808ab20b5cf53364d2b2d5ab19dca95a594f54af515a15421c3",
+        "bytes": 7880321,
+        "content_type": "application/pdf",
+        "pages": 63,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1802.03426"
+      },
+      "file_url": "https://arxiv.org/pdf/1802.03426",
+      "arxiv": "1802.03426"
+    },
+    "rousseeuw1993-mad": {
+      "type": "paper",
+      "title": "Alternatives to the Median Absolute Deviation",
+      "authors": [
+        "Peter J. Rousseeuw",
+        "Christophe Croux"
+      ],
+      "year": 1993,
+      "venue": "JASA 88(424)",
+      "url": "https://doi.org/10.1080/01621459.1993.10476408",
+      "access": "paywall",
+      "archivable": false,
+      "license": "JASA 페이월. 서지정보만 등록하고 링크로 인용한다.",
+      "topics": [
+        "5"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.12"
+      ]
+    },
+    "chandola2009-anomaly-survey": {
+      "type": "paper",
+      "title": "Anomaly Detection: A Survey",
+      "authors": [
+        "Varun Chandola",
+        "Arindam Banerjee",
+        "Vipin Kumar"
+      ],
+      "year": 2009,
+      "venue": "ACM Computing Surveys 41(3)",
+      "url": "https://doi.org/10.1145/1541880.1541882",
+      "access": "free-online",
+      "archivable": false,
+      "license": "ACM DL 이 자동 내려받기를 차단한다(403). 저자 사본이 공개되어 있으니 링크로만 인용한다.",
+      "topics": [
+        "5"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.12"
+      ]
+    },
+    "guo2017-calibration": {
+      "type": "paper",
+      "title": "On Calibration of Modern Neural Networks",
+      "authors": [
+        "Chuan Guo",
+        "Geoff Pleiss",
+        "Yu Sun",
+        "Kilian Q. Weinberger"
+      ],
+      "year": 2017,
+      "venue": "ICML 2017",
+      "url": "https://arxiv.org/abs/1706.04599",
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개본. 링크로 인용한다.",
+      "topics": [
+        "4",
+        "5"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.13"
+      ],
+      "archived": {
+        "path": "references/library/paper/guo2017-calibration.pdf",
+        "sha256": "cb654a65acb785ed4387d6c2db1301d065075dddc2d363676836a2f2a14bc50d",
+        "bytes": 1349691,
+        "content_type": "application/pdf",
+        "pages": 14,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1706.04599"
+      },
+      "file_url": "https://arxiv.org/pdf/1706.04599",
+      "arxiv": "1706.04599"
+    },
+    "aggarwal2017-outlier-analysis": {
+      "type": "book",
+      "title": "Outlier Analysis",
+      "authors": [
+        "Charu C. Aggarwal"
+      ],
+      "year": 2017,
+      "publisher": "Springer",
+      "url": "https://doi.org/10.1007/978-3-319-47578-3",
+      "access": "paywall",
+      "archivable": false,
+      "license": "페이월. 서지정보만 등록하고 링크로 인용한다.",
+      "topics": [
+        "5"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "5.12"
       ]
     }
   }

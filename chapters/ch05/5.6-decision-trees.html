@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5.6 결정트리 — AI 이론 학습</title>
+<meta name="description" content="결정트리는 공간을 축에 나란한 상자로 재귀적으로 자른다. 어디를 자를지는 불순도가 가장 많이 줄어드는 곳으로 정하고, 언제 멈출지는 가지치기가 정한다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="5.6">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">5.6</span>
+        <span>5장 · 전통적 머신러닝</span>
+      </div>
+      <h1>결정트리</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 65분</span>
+        <span><b>난이도</b>★★☆☆☆</span>
+        <span><b>선수지식</b>
+          <a href="../ch04/4.7-information-theory.html">4.7 정보이론</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-recur">Recursive Partitioning</a>
+      <a class="chip" href="#c-ent">Entropy</a>
+      <a class="chip" href="#c-gini">Gini Impurity</a>
+      <a class="chip" href="#c-ig">Information Gain</a>
+      <a class="chip" href="#c-depth">Tree Depth</a>
+      <a class="chip" href="#c-leaf">Leaf Node</a>
+      <a class="chip" href="#c-prune">Pruning</a>
+      <a class="chip" href="#c-regtree">Regression Tree</a>
+      <a class="chip" href="#c-clstree">Classification Tree</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        결정트리는 공간을 <strong>축에 나란한 상자로 재귀적으로 자른다</strong>.
+        <strong>어디를 자를지</strong>는 불순도(entropy·Gini)가 가장 많이 줄어드는 곳으로 정하고,
+        <strong>언제 멈출지</strong>는 가지치기가 정한다.
+        각 잎은 그 상자 안의 <strong>다수결(분류) 또는 평균(회귀)</strong>을 내놓는다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>entropy 와 Gini 를 손으로 계산하고 information gain 으로 분할 feature 를 고를 수 있다.</li>
+        <li>회귀트리가 SSE 감소를 기준으로 자른다는 것을 유도하고 최적 분할점을 찾을 수 있다.</li>
+        <li>비용-복잡도 가지치기에서 $\alpha$ 가 어떤 서브트리를 고르는지 계산할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        스무고개를 생각하면 된다. <strong>"예/아니오"로 답할 수 있는 질문을 하나씩 던져</strong>
+        후보를 좁혀 간다. 좋은 질문이란 <strong>답을 듣고 나면 후보가 크게 갈리는 질문</strong>이다.
+        "동물인가?"는 좋은 첫 질문이고 "이름이 ㄱ으로 시작하나?"는 나쁘다.
+      </p>
+      <p>
+        결정트리가 하는 일이 정확히 이것이다. 매 단계에서
+        <strong>"어느 feature 를 어느 값에서 자를 때 답이 가장 깔끔하게 갈리는가"</strong>를 전부 시도해 보고 가장 좋은 것을 고른다.
+        "깔끔함"을 재는 자가 <strong>불순도</strong>이고, <a href="../ch04/4.7-information-theory.html">4.7</a>의 entropy 가 그중 하나다.
+      </p>
+      <p>
+        이 방식의 성격이 여기서 전부 결정된다.
+        질문이 <strong>"$x_3\le 2.7$?" 꼴</strong>이라 경계가 <strong>축에 나란한 계단</strong>이 되고,
+        <strong>단위를 바꿔도 순서가 안 바뀌어</strong> 스케일링이 필요 없으며,
+        <strong>끝까지 자르면 언제나 train 오차가 0</strong> 이 되어 멈출 때를 따로 정해야 한다.
+      </p>
+
+      <figure class="widget" data-widget="tree-build">
+        <figcaption class="widget__bar">Recursive Partitioning — 한 번에 한 칼씩</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">칼은 <strong>언제나 축에 나란</strong>합니다. 비스듬한 경계는 계단으로 흉내 낼 수밖에 없습니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          트리 학습은 <strong>탐욕적(greedy)</strong> 이다 — 매 단계에서 <em>지금</em> 가장 좋은 분할을 고르고 되돌아보지 않는다.
+          전역 최적 트리를 찾는 것은 <strong>NP-hard</strong> 라 현실적으로 불가능하고,
+          그래서 "지금 최선"을 쌓는 것이 <a href="5.1-ml-problem-definition.html">5.1</a>의 용어로
+          <strong>알고리즘에 숨어 있는 귀납적 편향</strong>이 된다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-recur"></span>
+      <span class="anchor" id="c-leaf"></span>
+      <h3>Recursive Partitioning &amp; Leaf Node</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \hat{h}(\mathbf{x})=\sum_{m=1}^{|\tilde{T}|} c_m\,\mathbb{1}\bigl[\mathbf{x}\in R_m\bigr], \qquad R_m \text{ 은 서로 겹치지 않고 전체를 덮는 상자} $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">트리는 입력 공간을 <strong>축에 나란한 상자 $R_m$ 들로 분할</strong>하고
+        각 상자(잎 노드)마다 상수 $c_m$ 을 내놓는 <strong>구간별 상수 함수</strong>다 —
+        분류면 다수 class, 회귀면 평균이다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>용어</th><th>뜻</th><th>메모</th></tr></thead>
+          <tbody>
+            <tr><td>루트 노드</td><td>전체 data</td><td>깊이 0</td></tr>
+            <tr><td>내부 노드</td><td>분할 규칙 $x_j\le s$</td><td>질문 하나</td></tr>
+            <tr><td><strong>잎 노드</strong> (leaf · terminal)</td><td>더 안 자르는 노드 — 예측값을 갖는다</td><td>개수 $|\tilde{T}|$ 가 곧 복잡도</td></tr>
+            <tr><td>깊이 (depth)</td><td>루트에서 잎까지의 최대 간선 수</td><td>깊이 $D$ 면 잎이 최대 $2^D$개</td></tr>
+            <tr><td>가지 (branch)</td><td>분할의 한쪽 결과</td><td>이진 분할이 표준</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>학습 절차는 재귀 세 줄로 끝난다.</p>
+      <div class="eq">
+        <div class="eq__body">$$ (j^\star,s^\star)=\arg\min_{j,s}\ \Bigl[\tfrac{n_L}{n}I(R_L)+\tfrac{n_R}{n}I(R_R)\Bigr], \qquad R_L=\{x_j\le s\},\ R_R=\{x_j>s\} $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        모든 feature $j$ 와 모든 <strong>후보 분할점 $s$</strong> 를 훑어 불순도의 가중평균이 최소인 것을 고른다.
+        연속 feature 에서 후보는 <strong>정렬한 뒤 이웃한 값의 중점</strong>들뿐이라
+        $n$개 값에 대해 $n-1$개만 시도하면 되고, 전체 비용은 <strong>$O(dn\log n)$</strong> 이다.
+      </p>
+
+      <span class="anchor" id="c-ent"></span>
+      <span class="anchor" id="c-gini"></span>
+      <h3>Entropy &amp; Gini Impurity 불순도</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ H(R)=-\sum_{c}p_c\log_2 p_c, \qquad G(R)=1-\sum_{c}p_c^2=\sum_{c}p_c(1-p_c) $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl">불순도는 <strong>"이 상자 안이 얼마나 섞여 있는가"</strong> 를 재며,
+        한 class 만 있으면 0, 고르게 섞이면 최대다.
+        entropy 는 <a href="../ch04/4.7-information-theory.html">4.7</a>의 그 entropy 이고,
+        Gini 는 <strong>무작위로 두 개를 뽑았을 때 class 가 다를 확률</strong>이다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$p$ (이진)</th><th>Entropy (bit)</th><th>Gini</th><th>오분류율</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0.0 / 1.0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr>
+            <tr><td class="num">0.1</td><td class="num">0.469</td><td class="num">0.180</td><td class="num">0.10</td></tr>
+            <tr><td class="num">0.3</td><td class="num">0.881</td><td class="num">0.420</td><td class="num">0.30</td></tr>
+            <tr><td class="num">0.5</td><td class="num"><strong>1.000</strong></td><td class="num"><strong>0.500</strong></td><td class="num"><strong>0.50</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        세 곡선의 결정적 차이는 <strong>휘어 있느냐</strong>다.
+        오분류율은 직선 두 개로 이루어져 있어 <strong>분할해도 값이 안 줄어드는 경우가 생기고</strong>,
+        그러면 알고리즘이 어느 분할을 고를지 판단할 수 없다.
+        entropy 와 Gini 는 <strong>엄격히 오목</strong>이라 그런 정체가 없다(유도 1) —
+        그래서 성장 단계에서는 이 둘을, <strong>가지치기 단계에서는 오분류율</strong>을 쓰는 것이 CART 의 표준이다<a class="cite" href="#ref-breiman1984-cart" data-ref="breiman1984-cart">1</a>.
+      </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>상자 안에 빨간 공과 파란 공이 섞여 있습니다. 불순도는 <strong>"눈 감고 하나 꺼냈을 때 색을 얼마나 못 맞히는가"</strong> 입니다. 한 색만 들어 있으면 0, 반반이면 최대입니다.</p>
+        <p>Gini 는 더 직접적입니다 — <strong>두 개를 꺼내 색이 다를 확률</strong>입니다. 반반이면 $2\times0.5\times0.5=0.5$ 이고, 한 색뿐이면 0 입니다. 좋은 질문이란 <strong>자르고 난 뒤 두 상자가 모두 더 순수해지는</strong> 질문입니다.</p>
+      </div>
+
+      <figure class="widget" data-widget="impurity-curve">
+        <figcaption class="widget__bar">Impurity — 세 자의 모양이 무엇을 바꾸나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">오분류율은 <strong>직선</strong>이라 분할 전후 값이 같아지는 경우가 생깁니다. 휘어 있는 두 자는 언제나 이득을 보여 줍니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-ig"></span>
+      <h3>Information Gain 정보 이득</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathrm{IG}(R,j,s)=I(R)-\frac{n_L}{n}I(R_L)-\frac{n_R}{n}I(R_R)\ \ge\ 0 $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        <span class="hl">information gain 은 <strong>분할로 줄어든 불순도</strong>이고,
+        불순도로 entropy 를 쓰면 이것이 정확히 <a href="../ch04/4.7-information-theory.html">4.7</a>의
+        <strong>mutual information $I(Y;\text{분할})$</strong> 이 된다 —
+        "이 질문이 답에 대해 몇 비트를 알려 주는가"다.</span>
+      </p>
+      <p>
+        음수가 될 수 없는 것은 불순도가 오목이기 때문이다(유도 1).
+        <strong>그래서 트리는 자를수록 언제나 좋아 보이고, 멈출 이유를 스스로 찾지 못한다</strong> —
+        가지치기가 필요한 근본 이유다.
+      </p>
+      <p>
+        gain 을 그대로 쓰면 <strong>값이 많은 feature 가 유리해지는 편향</strong>이 있다.
+        극단적으로 ID(고유번호) 열은 각 잎에 한 개씩 들어가 gain 이 최대가 되지만 아무 쓸모가 없다.
+        C4.5 는 이를 <strong>gain ratio</strong> 로 보정한다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \text{GainRatio}=\frac{\mathrm{IG}}{\mathrm{SplitInfo}}, \qquad \mathrm{SplitInfo}=-\sum_{v}\frac{n_v}{n}\log_2\frac{n_v}{n} $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        분모는 <strong>"몇 갈래로 얼마나 고르게 쪼갰는가"</strong> 라, 잘게 쪼갤수록 커져 벌점 역할을 한다.
+        CART 는 대신 <strong>이진 분할만 허용</strong>해 같은 문제를 구조적으로 피한다.
+      </p>
+
+      <figure class="widget" data-widget="split-choice">
+        <figcaption class="widget__bar">Split Choice — 어느 질문을 먼저 던질 것인가</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">Outlook 이 Humidity·Wind 보다 gain 이 큽니다. <strong>Gini 로 재도 순위가 같습니다</strong>.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-clstree"></span>
+      <span class="anchor" id="c-regtree"></span>
+      <h3>Classification Tree &amp; Regression Tree</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \text{분류: } c_m=\arg\max_c \hat{p}_{mc} \qquad\qquad \text{회귀: } c_m=\frac{1}{n_m}\sum_{i\in R_m}y_i $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        <span class="hl">회귀트리는 불순도 자리에 <strong>분산(또는 SSE)</strong> 을 넣은 것뿐이고,
+        각 잎의 예측값이 <strong>그 상자 안 $y$ 의 평균</strong>인 것은
+        <a href="5.1-ml-problem-definition.html">5.1</a>에서 본 대로 <strong>제곱손실을 최소로 하는 상수</strong>이기 때문이다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>분류트리</th><th>회귀트리</th></tr></thead>
+          <tbody>
+            <tr><td>불순도</td><td>Gini · entropy</td><td>$\sum_{i\in R}(y_i-\bar{y}_R)^2$ (SSE)</td></tr>
+            <tr><td>잎의 예측</td><td>다수 class (또는 class 비율)</td><td>평균</td></tr>
+            <tr><td>손실을 바꾸면</td><td>—</td><td>절대오차 → <strong>중앙값</strong>이 된다</td></tr>
+            <tr><td>출력의 모양</td><td>계단형 결정경계</td><td><strong>계단형 곡면</strong> — 매끄럽지 않다</td></tr>
+            <tr><td>외삽</td><td colspan="2"><strong>불가능</strong> — 훈련 범위 밖은 가장자리 잎의 값이 그대로</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        마지막 줄이 실무에서 자주 부딪히는 한계다 —
+        <strong>시계열에 추세가 있으면 트리는 미래를 예측하지 못한다</strong>.
+        훈련에서 본 최댓값 이상을 절대 내놓을 수 없기 때문이며,
+        추세를 먼저 제거하거나 선형 model 과 결합해야 한다.
+      </p>
+
+      <span class="anchor" id="c-depth"></span>
+      <h3>Tree Depth 트리 깊이</h3>
+      <p>
+        <span class="hl">깊이는 <strong>복잡도 손잡이</strong>다 — 깊이를 늘리면 잎이 잘게 쪼개져
+        편향이 줄고 분산이 늘며, <strong>끝까지 자르면 train 오차가 반드시 0</strong> 이 된다(중복 표본이 없다면).</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>멈춤 조건 (pre-pruning)</th><th>뜻</th><th>주의</th></tr></thead>
+          <tbody>
+            <tr><td><code>max_depth</code></td><td>깊이 상한</td><td>가장 직관적이지만 뭉툭하다</td></tr>
+            <tr><td><code>min_samples_split</code></td><td>이 수 미만이면 안 자른다</td><td></td></tr>
+            <tr><td><code>min_samples_leaf</code></td><td>잎에 최소 몇 개는 있어야</td><td><strong>잡음 잎을 막는 데 가장 효과적</strong></td></tr>
+            <tr><td><code>min_impurity_decrease</code></td><td>이 이상 줄지 않으면 안 자른다</td><td><strong>근시안적</strong> — 아래를 못 본다</td></tr>
+            <tr><td><code>max_leaf_nodes</code></td><td>잎 개수 상한</td><td>이득이 큰 순으로 자란다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        네 번째 줄의 문제가 pre-pruning 의 본질적 약점이다 —
+        <strong>지금 당장은 이득이 없지만 한 번 더 자르면 크게 좋아지는 분할</strong>(XOR 구조가 대표적)을
+        미리 잘라 버린다. 그래서 <strong>"끝까지 키운 뒤 되돌리는"</strong> post-pruning 이 이론적으로 더 낫다.
+      </p>
+
+      <span class="anchor" id="c-prune"></span>
+      <h3>Pruning 가지치기</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ R_\alpha(T)=R(T)+\alpha\,|\tilde{T}|, \qquad T_\alpha=\arg\min_{T\subseteq T_{\max}} R_\alpha(T) $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        <span class="hl">비용-복잡도 가지치기는 <strong>오차 + $\alpha\times$잎 개수</strong> 를 최소로 하는 서브트리를 고른다 —
+        <a href="5.2-statistical-learning-theory.html">5.2</a>의 SRM 을 트리에 적용한 것이고,
+        $\alpha$ 는 <strong>잎 하나의 값어치</strong>다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$\alpha$</th><th>고르는 트리</th><th>비고</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0</td><td>가장 큰 트리 $T_{\max}$</td><td>train 오차 0</td></tr>
+            <tr><td>작다</td><td>조금만 자름</td><td></td></tr>
+            <tr><td>크다</td><td>많이 자름</td><td></td></tr>
+            <tr><td class="num">$\infty$</td><td>루트만 (잎 1개)</td><td>항상 전체 다수 class</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        중요한 정리가 하나 있다 — <strong>$\alpha$ 를 0 에서 키우면 최적 서브트리들이 서로 포개어진 사슬을 이룬다</strong>.
+        그래서 모든 $\alpha$ 를 시도할 필요 없이 <strong>유한개의 후보 트리만 만들어 두고 교차검증으로 고르면 된다</strong>.
+        scikit-learn 의 <code>ccp_alpha</code> 와 <code>cost_complexity_pruning_path</code> 가 정확히 이 절차다.
+      </p>
+
+      <figure class="widget" data-widget="prune-alpha">
+        <figcaption class="widget__bar">Cost-Complexity Pruning — α 가 잎 하나의 값을 정한다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$\alpha$ 를 키우면 <strong>계단식으로</strong> 더 작은 트리로 건너뜁니다. 그 사이에서는 같은 트리가 계속 최적입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>트리 알고리즘 계보와 장단점을 정리한다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>알고리즘</th><th>불순도</th><th>분할</th><th>가지치기</th><th>회귀</th></tr></thead>
+          <tbody>
+            <tr><td>ID3 (1986)</td><td>entropy</td><td>범주형 다분할</td><td>없음</td><td>✗</td></tr>
+            <tr><td>C4.5 (1993)</td><td>gain ratio</td><td>연속형 지원 · 다분할</td><td>오차 기반</td><td>✗</td></tr>
+            <tr><td><strong>CART</strong> (1984)</td><td>Gini · SSE</td><td><strong>이진만</strong></td><td>비용-복잡도</td><td><strong>✓</strong></td></tr>
+            <tr><td>CHAID</td><td>$\chi^2$ 검정</td><td>다분할</td><td>검정 기반</td><td>✓</td></tr>
+            <tr><td>scikit-learn</td><td>Gini · entropy · SSE</td><td>이진 (CART 계열)</td><td><code>ccp_alpha</code></td><td>✓</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>장점</th><th>단점</th></tr></thead>
+          <tbody>
+            <tr><td><strong>해석 가능</strong> — 규칙을 그대로 읽는다</td><td><strong>불안정</strong> — 표본이 조금만 바뀌어도 트리가 통째로 달라진다</td></tr>
+            <tr><td><strong>스케일 불변</strong> — 전처리가 거의 필요 없다</td><td>축에 나란한 경계만 — 비스듬한 경계는 계단으로</td></tr>
+            <tr><td>범주형·결측치를 자연스럽게 다룬다</td><td>외삽 불가 · 매끄러운 함수에 비효율</td></tr>
+            <tr><td>feature 상호작용을 자동으로 잡는다</td><td>탐욕적이라 전역 최적이 아니다</td></tr>
+            <tr><td>변수 선택이 내장되어 있다</td><td>class 불균형에 편향된다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        오른쪽 첫 줄의 <strong>불안정성</strong>이 결정적이다 — 분산이 크다는 뜻이고,
+        <a href="5.2-statistical-learning-theory.html">5.2</a> 예제 ①에서 봤듯 <strong>평균을 내면 분산이 줄어든다</strong>.
+        <span class="hl">그래서 트리의 약점이 곧 <a href="5.7-ensemble.html">5.7</a> 앙상블이 존재하는 이유다 —
+        <strong>bagging·random forest 는 이 불안정성을 자산으로 바꾼 것</strong>이다.</span>
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$R_m$</td><td>R sub m · region</td><td>$m$ 번째 잎이 담당하는 상자</td><td>$\mathcal{X}$ 의 부분집합</td><td>서로소</td></tr>
+            <tr><td>$c_m$</td><td>c sub m</td><td>그 잎의 예측값</td><td>scalar 또는 class</td><td>—</td></tr>
+            <tr><td>$|\tilde{T}|$</td><td>size of T tilde</td><td><strong>잎 노드의 개수</strong></td><td>정수</td><td>$\ge1$</td></tr>
+            <tr><td>$I(R)$</td><td>impurity 불순도</td><td>$R$ 안이 섞인 정도</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$H$</td><td>entropy 엔트로피</td><td>$-\sum p\log_2 p$</td><td>scalar</td><td>$[0,\log_2 K]$</td></tr>
+            <tr><td>$G$</td><td>Gini impurity 지니 불순도</td><td>$1-\sum p^2$</td><td>scalar</td><td>$[0,1-1/K]$</td></tr>
+            <tr><td>$p_c$</td><td>p sub c</td><td>그 노드에서 class $c$ 의 비율</td><td>scalar</td><td>$[0,1]$, 합 1</td></tr>
+            <tr><td>IG</td><td>information gain 정보 이득</td><td>분할로 줄어든 불순도</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$(j,s)$</td><td>feature index · split point</td><td>분할 규칙 $x_j\le s$</td><td>정수 · 실수</td><td>—</td></tr>
+            <tr><td>$\alpha$</td><td>alpha 알파</td><td>잎 하나당 벌점</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$R(T)$</td><td>risk of T</td><td>트리의 오차 (오분류율 또는 SSE)</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$T_{\max}$</td><td>T max</td><td>끝까지 키운 트리</td><td>트리</td><td>—</td></tr>
+            <tr><td>$D$</td><td>depth 깊이</td><td>루트에서 잎까지의 최대 단계</td><td>정수</td><td>$\ge0$</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">같은 것을 다르게 부른다</span>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>이 사이트</th><th>같은 뜻으로 쓰이는 말</th><th>주의할 점</th></tr></thead>
+            <tbody>
+              <tr><td>information gain</td><td>mutual information, 불순도 감소, impurity decrease</td><td>entropy 를 쓸 때만 <strong>정확히 MI</strong> 다</td></tr>
+              <tr><td>Gini impurity</td><td>Gini index</td><td>경제학의 <strong>Gini 계수와 다른 것</strong>이다</td></tr>
+              <tr><td>잎 노드</td><td>leaf, terminal node, 말단 노드</td><td>$|\tilde{T}|$ 표기가 CART 책의 관례</td></tr>
+              <tr><td>비용-복잡도 가지치기</td><td>cost-complexity pruning, weakest-link pruning, CCP</td><td>sklearn 의 <code>ccp_alpha</code></td></tr>
+              <tr><td>pre-pruning</td><td>early stopping, 성장 제한</td><td>post-pruning 과 <strong>결과가 다르다</strong></td></tr>
+              <tr><td>feature importance</td><td>Gini importance, MDI</td><td><strong>편향이 있다</strong> — 값이 많은 feature 를 과대평가(오해 5)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — 불순도가 오목이면 gain 이 음수가 될 수 없다</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{p}=\frac{n_L}{n}\mathbf{p}_L+\frac{n_R}{n}\mathbf{p}_R $$</div>
+          <div class="derive__why">부모의 class 비율은 <strong>두 자식의 가중평균</strong>이다 (개수를 나눠 세면 그렇다)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ I \text{ 가 오목} \ \Rightarrow\ I\Bigl(\tfrac{n_L}{n}\mathbf{p}_L+\tfrac{n_R}{n}\mathbf{p}_R\Bigr)\ \ge\ \tfrac{n_L}{n}I(\mathbf{p}_L)+\tfrac{n_R}{n}I(\mathbf{p}_R) $$</div>
+          <div class="derive__why"><strong>Jensen 부등식</strong> (<a href="../ch04/4.3-expectation-variance.html">4.3</a>) — 오목함수는 평균 위에서 더 크다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore\ \mathrm{IG}=I(R)-\tfrac{n_L}{n}I(R_L)-\tfrac{n_R}{n}I(R_R)\ \ge\ 0 $$</div>
+          <div class="derive__why">식 (4). <strong>어떤 분할도 손해가 아니다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{등호} \iff \mathbf{p}_L=\mathbf{p}_R \ (\text{엄격히 오목일 때}) $$</div>
+          <div class="derive__why">두 자식의 비율이 같으면 <strong>아무것도 배우지 못한 분할</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{오분류율 } \min(p,1-p) \text{ 는 오목이지만 } \textbf{엄격하지 않다} $$</div>
+          <div class="derive__why">직선 구간이 있어 <strong>서로 다른 분할이 같은 값</strong>을 낼 수 있다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{예}:\ (400,400)\to(300,100)+(100,300) \ \text{과} \ \to(200,400)+(200,0) $$</div>
+          <div class="derive__why">둘 다 오분류율 감소가 $0.25$ 로 <strong>같지만</strong>, 두 번째가 순수한 잎을 만들어 명백히 낫다 — Gini·entropy 는 이를 구별한다</div>
+        </div>
+      </div>
+
+      <h3>유도 2 — 회귀트리의 잎 값이 평균인 이유</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \min_{c}\ \sum_{i\in R}(y_i-c)^2 $$</div>
+          <div class="derive__why">한 잎 안에서 상수 하나로 예측한다면</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{d}{dc}\sum_i(y_i-c)^2=-2\sum_i(y_i-c)=0 \ \Rightarrow\ c=\frac1{n_R}\sum_{i\in R}y_i=\bar{y}_R $$</div>
+          <div class="derive__why">미분해서 0 — <strong>평균</strong> (<a href="5.1-ml-problem-definition.html">5.1</a>의 loss 표와 같은 결과)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{그때의 값}=\sum_{i\in R}(y_i-\bar{y}_R)^2=n_R\cdot\mathrm{Var}(y\mid R) $$</div>
+          <div class="derive__why">SSE 가 곧 <strong>$n$ 배한 분산</strong> — 불순도로 쓰기에 자연스럽다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{SSE}(R)-\text{SSE}(R_L)-\text{SSE}(R_R)=\frac{n_Ln_R}{n}(\bar{y}_L-\bar{y}_R)^2 $$</div>
+          <div class="derive__why">정리하면 이렇게 된다 — <strong>두 자식 평균의 차이가 클수록 좋은 분할</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{한쪽이 너무 작으면}\ (n_L\to0)\ \text{이득도 작다} $$</div>
+          <div class="derive__why">$n_Ln_R$ 항이 <strong>균형 잡힌 분할을 선호</strong>하게 만든다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{절대오차를 쓰면}:\ \min_c\sum|y_i-c| \ \Rightarrow\ c=\text{중앙값} $$</div>
+          <div class="derive__why"><strong>손실을 바꾸면 잎의 값도 바뀐다</strong></div>
+        </div>
+      </div>
+
+      <h3>유도 3 — 가지치기의 임계 $\alpha$</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ R_\alpha(T)=R(T)+\alpha|\tilde{T}| $$</div>
+          <div class="derive__why">식 (7)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{노드 } t \text{ 를 잎으로 접으면}:\ R_\alpha(t)=R(t)+\alpha $$</div>
+          <div class="derive__why">잎이 하나가 된다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{그 아래 서브트리 } T_t:\ R_\alpha(T_t)=R(T_t)+\alpha|\tilde{T}_t| $$</div>
+          <div class="derive__why">$R(T_t)\le R(t)$ 이고 $|\tilde{T}_t|>1$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{접는 것이 유리} \iff R(t)+\alpha\ \le\ R(T_t)+\alpha|\tilde{T}_t| $$</div>
+          <div class="derive__why">두 값을 비교</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \iff \alpha\ \ge\ \frac{R(t)-R(T_t)}{|\tilde{T}_t|-1}\ \equiv\ g(t) $$</div>
+          <div class="derive__why">$g(t)$ 가 그 노드의 <strong>임계 $\alpha$</strong> — 잎 하나가 벌어 주는 오차 감소</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{절차}:\ g(t) \text{ 가 가장 작은 노드부터 접는다} \ (\text{weakest link}) $$</div>
+          <div class="derive__why"><strong>값어치가 가장 낮은 가지부터</strong> — 이래서 후보 트리가 사슬을 이룬다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{유한개의 } \alpha_1<\alpha_2<\cdots \text{ 와 그에 대응하는 } T_1\supset T_2\supset\cdots $$</div>
+          <div class="derive__why">모든 $\alpha$ 를 훑을 필요가 없다 — <strong>교차검증으로 하나만 고르면 된다</strong></div>
+        </div>
+      </div>
+
+      <details>
+        <summary>왜 최적 트리를 못 찾고 탐욕적으로 가는가</summary>
+        <p>
+          "잎 개수가 $L$ 이하인 트리 중 train 오차 최소" 를 찾는 문제는 <strong>NP-hard</strong> 로 알려져 있다.
+          $d$개 feature 와 $n$개 표본이면 첫 분할 후보만 $O(dn)$ 이고,
+          그 각각에 대해 아래 트리를 다시 최적화해야 하므로 경우의 수가 <strong>조합적으로 폭발</strong>한다.
+        </p>
+        <p>
+          그래서 <strong>매 단계 지금 최선</strong>을 고르는데, 이 근시안이 실제로 문제를 일으키는 대표적인 경우가 <strong>XOR</strong> 이다.
+          $y=x_1\oplus x_2$ 에서는 $x_1$ 만 봐도 $x_2$ 만 봐도 <strong>gain 이 정확히 0</strong> 이라
+          첫 분할을 고를 근거가 없다 — 그런데 두 번 자르면 완벽히 분리된다.
+        </p>
+        <p>
+          처방은 세 가지다. (1) <strong>일단 끝까지 키우고 가지치기</strong>(그러면 우연히 고른 첫 분할 뒤에서 회복된다),
+          (2) <strong>여러 트리를 만들어 평균</strong>(<a href="5.7-ensemble.html">5.7</a>),
+          (3) 최근의 <strong>최적 결정트리</strong> 연구처럼 정수계획법으로 작은 트리를 정확히 푸는 것.
+          실무에서는 (1)+(2) 가 표준이다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① 불순도를 손으로 — 14개 표본, 9 예 / 5 아니오</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ p_+=\tfrac{9}{14}=0.6429,\qquad p_-=\tfrac{5}{14}=0.3571 $$</div>
+          <div class="derive__why">비율부터</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ H=-0.6429\log_2 0.6429-0.3571\log_2 0.3571 $$</div>
+          <div class="derive__why">$\log_2 0.6429=-0.6374$, $\log_2 0.3571=-1.4854$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ =0.6429(0.6374)+0.3571(1.4854)=0.4098+0.5305=0.9403 \ \text{bit} $$</div>
+          <div class="derive__why">반반(1.0)에 가깝다 — <strong>꽤 섞여 있다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ G=1-(0.6429^2+0.3571^2)=1-(0.4133+0.1276)=1-0.5408=0.4592 $$</div>
+          <div class="derive__why">최대 0.5 에 가깝다 — 같은 이야기를 다른 자로 잰 것</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{오분류율}=\min(0.6429,\ 0.3571)=0.3571 $$</div>
+          <div class="derive__why">다수 class 로 찍었을 때의 오차</div>
+        </div>
+      </div>
+
+      <h3>② 어느 feature 로 자를 것인가 — Information Gain 비교</h3>
+      <p>같은 14개 표본을 세 가지 방법으로 나눠 본다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>feature</th><th>자식 노드 (예/아니오)</th><th>각 $H$</th><th>가중 $H$</th><th>IG</th></tr></thead>
+          <tbody>
+            <tr><td rowspan="3"><strong>Outlook</strong></td><td>Sunny (2/3), $n$=5</td><td class="num">0.9710</td><td rowspan="3" class="num">0.6935</td><td rowspan="3" class="num"><strong>0.2467</strong></td></tr>
+            <tr><td>Overcast (4/0), $n$=4</td><td class="num">0</td></tr>
+            <tr><td>Rain (3/2), $n$=5</td><td class="num">0.9710</td></tr>
+            <tr><td rowspan="2">Humidity</td><td>High (3/4), $n$=7</td><td class="num">0.9852</td><td rowspan="2" class="num">0.7885</td><td rowspan="2" class="num">0.1518</td></tr>
+            <tr><td>Normal (6/1), $n$=7</td><td class="num">0.5917</td></tr>
+            <tr><td rowspan="2">Wind</td><td>Weak (6/2), $n$=8</td><td class="num">0.8113</td><td rowspan="2" class="num">0.8922</td><td rowspan="2" class="num">0.0481</td></tr>
+            <tr><td>Strong (3/3), $n$=6</td><td class="num">1.0000</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ H(\text{Sunny})=-\tfrac25\log_2\tfrac25-\tfrac35\log_2\tfrac35=0.4(1.3219)+0.6(0.7370)=0.9710 $$</div>
+          <div class="derive__why">$2/5=0.4$, $3/5=0.6$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ H(\text{Overcast})=0 \quad (\text{4개가 전부 “예”}) $$</div>
+          <div class="derive__why"><strong>순수한 잎</strong> — 더 자를 필요가 없다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{가중 } H=\tfrac5{14}(0.9710)+\tfrac4{14}(0)+\tfrac5{14}(0.9710)=\tfrac{10}{14}(0.9710)=0.6935 $$</div>
+          <div class="derive__why">$n$ 에 비례해 가중</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{IG}(\text{Outlook})=0.9403-0.6935=0.2467 \ \text{bit} $$</div>
+          <div class="derive__why">이 질문이 답에 대해 <strong>0.25비트</strong>를 알려 준다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{IG}(\text{Humidity})=0.9403-0.7885=0.1518,\quad \mathrm{IG}(\text{Wind})=0.9403-0.8922=0.0481 $$</div>
+          <div class="derive__why">$0.247>0.152>0.048$ → <strong>Outlook 을 먼저 고른다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Gini 로 재도}:\ 0.1163>0.0918>0.0306 \ \text{— 순위 동일} $$</div>
+          <div class="derive__why">예제 ③에서 계산한다. <strong>두 자의 결론이 거의 항상 같다</strong></div>
+        </div>
+      </div>
+
+      <h3>③ Gini 로 다시 재기</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ G(\text{Sunny},\ 2/3)=1-0.4^2-0.6^2=1-0.16-0.36=0.48 $$</div>
+          <div class="derive__why">Outlook 의 첫 자식</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ G(\text{Overcast})=0,\qquad G(\text{Rain},\ 3/2)=1-0.36-0.16=0.48 $$</div>
+          <div class="derive__why">대칭이라 Sunny 와 같다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{가중}=\tfrac5{14}(0.48)+0+\tfrac5{14}(0.48)=\tfrac{10}{14}(0.48)=0.3429 $$</div>
+          <div class="derive__why"></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Delta G(\text{Outlook})=0.4592-0.3429=0.1163 $$</div>
+          <div class="derive__why">Gini gain</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ G(\text{High},3/4)=1-\bigl(\tfrac37\bigr)^2-\bigl(\tfrac47\bigr)^2=1-0.1837-0.3265=0.4898 $$</div>
+          <div class="derive__why">$3/7=0.4286$, $4/7=0.5714$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ G(\text{Normal},6/1)=1-0.7347-0.0204=0.2449 $$</div>
+          <div class="derive__why">$6/7=0.8571$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Delta G(\text{Humidity})=0.4592-\bigl[0.5(0.4898)+0.5(0.2449)\bigr]=0.4592-0.3673=0.0918 $$</div>
+          <div class="derive__why"><strong>0.1163 > 0.0918</strong> — entropy 와 같은 순위 ✓</div>
+        </div>
+      </div>
+
+      <h3>④ 회귀트리 — 최적 분할점을 손으로</h3>
+      <p>$x=(1,2,3,4,5,6)$, $y=(1,2,3,10,11,12)$. SSE 를 기준으로 자른다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \bar{y}=\frac{1+2+3+10+11+12}{6}=\frac{39}{6}=6.5 $$</div>
+          <div class="derive__why">부모 노드의 평균</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{SSE}=30.25+20.25+12.25+12.25+20.25+30.25=125.5 $$</div>
+          <div class="derive__why">$(1-6.5)^2=30.25$ 등</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ s=2.5:\ L=\{1,2\},\ \bar{y}_L=1.5,\ \text{SSE}_L=0.5;\quad R=\{3,10,11,12\},\ \bar{y}_R=9,\ \text{SSE}_R=50 $$</div>
+          <div class="derive__why">$R$: $(3-9)^2+(10-9)^2+(11-9)^2+(12-9)^2=36+1+4+9=50$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{합}=50.5 \ \Rightarrow\ \text{감소}=125.5-50.5=75.0 $$</div>
+          <div class="derive__why"></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ s=3.5:\ L=\{1,2,3\},\ \bar{y}_L=2,\ \text{SSE}_L=2;\quad R=\{10,11,12\},\ \bar{y}_R=11,\ \text{SSE}_R=2 $$</div>
+          <div class="derive__why">양쪽 다 $(±1)^2+0+(±1)^2=2$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{합}=4 \ \Rightarrow\ \text{감소}=121.5 \quad\textbf{← 최대} $$</div>
+          <div class="derive__why">유도 2 의 공식으로 검산: $\frac{3\times3}{6}(2-11)^2=1.5(81)=121.5$ ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ s=4.5:\ \bar{y}_L=4,\ \text{SSE}_L=1+4+1+36=42;\ \bar{y}_R=11.5,\ \text{SSE}_R=0.5 \ \Rightarrow\ \text{감소}=83.0 $$</div>
+          <div class="derive__why">$L=\{1,2,3,10\}$, 평균 4</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore\ s^\star=3.5,\quad \text{예측: } x\le3.5 \to 2,\ \ x>3.5 \to 11 $$</div>
+          <div class="derive__why"><strong>계단 두 개짜리 함수</strong> — 그 사이는 표현하지 못한다</div>
+        </div>
+      </div>
+
+      <h3>⑤ 가지치기 — $\alpha$ 가 트리를 고른다</h3>
+      <p>세 후보 서브트리의 오차와 잎 개수다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>트리</th><th>$R(T)$</th><th>$|\tilde{T}|$</th><th>$R_\alpha$ ($\alpha$=0.01)</th><th>($\alpha$=0.05)</th><th>($\alpha$=0.12)</th></tr></thead>
+          <tbody>
+            <tr><td>$T_{\max}$</td><td class="num">0.10</td><td class="num">8</td><td class="num"><strong>0.180</strong></td><td class="num">0.500</td><td class="num">1.060</td></tr>
+            <tr><td>$T_2$</td><td class="num">0.16</td><td class="num">4</td><td class="num">0.200</td><td class="num"><strong>0.360</strong></td><td class="num">0.640</td></tr>
+            <tr><td>루트만</td><td class="num">0.45</td><td class="num">1</td><td class="num">0.460</td><td class="num">0.500</td><td class="num"><strong>0.570</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ T_{\max} \text{ 와 } T_2 \text{ 가 같아지는 } \alpha:\ 0.10+8\alpha=0.16+4\alpha \ \Rightarrow\ 4\alpha=0.06 \ \Rightarrow\ \alpha=0.015 $$</div>
+          <div class="derive__why">유도 3 의 $g(t)$ — <strong>잎 4개가 오차를 0.06 벌어 준다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ T_2 \text{ 와 루트가 같아지는 } \alpha:\ 0.16+4\alpha=0.45+\alpha \ \Rightarrow\ 3\alpha=0.29 \ \Rightarrow\ \alpha=0.0967 $$</div>
+          <div class="derive__why">잎 3개가 0.29 를 벌어 준다 — <strong>훨씬 값어치가 크다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \alpha<0.015:\ T_{\max} \quad 0.015<\alpha<0.0967:\ T_2 \quad \alpha>0.0967:\ \text{루트} $$</div>
+          <div class="derive__why"><strong>구간마다 하나의 트리</strong> — 사슬을 이룬다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \alpha=0.05 \ \Rightarrow\ T_2 \ (0.360<0.500) $$</div>
+          <div class="derive__why">표에서 확인 ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{실무}:\ \{0,\ 0.015,\ 0.0967\} \text{ 세 후보만 교차검증하면 된다} $$</div>
+          <div class="derive__why">연속적인 $\alpha$ 를 훑을 필요가 없다</div>
+        </div>
+      </div>
+
+      <figure class="widget" data-widget="depth-overfit">
+        <figcaption class="widget__bar">Tree Depth — 깊이를 늘리면 train 은 0 으로, test 는 U 자로</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">깊이를 충분히 주면 <strong>train 오차가 정확히 0</strong> 이 됩니다. test 오차는 그 훨씬 전에 최소를 지납니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>재귀 분할</strong> · <strong>불순도 곡선</strong> ·
+        <strong>분할 선택</strong> · <strong>가지치기</strong> · <strong>깊이</strong> — 에 이어,
+        아래에서 <strong>회귀트리의 계단 함수</strong>를 직접 만들어 본다.
+      </p>
+
+      <figure class="widget" data-widget="reg-tree">
+        <figcaption class="widget__bar">Regression Tree — 매끄러운 함수를 계단으로 흉내 내기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">훈련 범위 <strong>바깥에서는 선이 평평합니다</strong> — 트리는 외삽하지 못합니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"Gini 와 entropy 중 무엇을 쓰느냐가 성능을 크게 좌우한다."</p>
+        <p>
+          <strong>실제로는</strong> 두 자는 <strong>거의 항상 같은 분할을 고른다</strong>(예제 ②·③).
+          곡선 모양이 비슷해서 순위가 뒤바뀌는 경우가 드물고,
+          실측 비교에서도 성능 차이가 <strong>잡음 수준</strong>이다.
+          Gini 가 기본값인 이유는 성능이 아니라 <strong>로그를 계산하지 않아 조금 빠르기</strong> 때문이다.
+          정말로 성능을 좌우하는 것은 <strong>깊이·잎 크기·가지치기</strong> 쪽이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"결정트리는 어떤 경계든 표현할 수 있으니 강력한 model 이다."</p>
+        <p>
+          <strong>실제로는</strong> 표현할 수는 있지만 <strong>효율이 나쁘다</strong>.
+          $x_1+x_2>1$ 같은 <strong>비스듬한 직선 하나</strong>를 계단으로 흉내 내려면 잎이 아주 많이 필요하고,
+          그만큼 표본도 더 필요하다 — 선형 model 이 parameter 두 개로 하는 일이다.
+          그리고 <strong>매끄러운 함수도 계단으로만</strong> 근사한다(위젯 6).
+          <strong>"표현 가능"과 "효율적으로 학습 가능"은 다른 말</strong>이며,
+          트리가 잘 맞는 것은 <strong>축에 나란한 임계값과 상호작용이 자연스러운 data</strong>(표 형태)다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"트리는 스케일 불변이니 전처리가 전혀 필요 없다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>단조 변환에는 불변이 맞다</strong> — 분할이 순서만 보기 때문에
+          로그를 씌우든 표준화하든 <strong>같은 트리</strong>가 나온다. 이것은 진짜 장점이다.
+          하지만 다른 전처리는 여전히 중요하다.
+          <strong>범주형을 one-hot 으로 펼치면 트리가 나빠진다</strong> —
+          희소한 이진 열 수백 개가 되어 각각의 gain 이 작아지고, 원래 하나면 될 분할이 여러 층으로 흩어진다.
+          <strong>순서형 인코딩이나 네이티브 범주형 지원</strong>(LightGBM·CatBoost)을 쓰는 편이 낫다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"pre-pruning(<code>max_depth</code>)으로 충분하니 post-pruning 은 필요 없다."</p>
+        <p>
+          <strong>실제로는</strong> pre-pruning 은 <strong>근시안적</strong>이다.
+          <strong>지금은 이득이 0 인데 한 번 더 자르면 완벽해지는</strong> 분할을 잘라 버린다 —
+          XOR 이 정확히 그 경우로, $x_1$ 도 $x_2$ 도 단독 gain 이 0 이라
+          <code>min_impurity_decrease</code> 를 걸면 <strong>루트에서 멈춰 버린다</strong>(접힌 상자).
+          post-pruning 은 <strong>일단 끝까지 키운 뒤</strong> 되돌리므로 이 함정이 없다.
+          다만 pre-pruning 이 <strong>계산이 훨씬 싸서</strong> 실무에서는 둘을 함께 쓴다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"트리의 feature importance 를 보면 어떤 변수가 중요한지 알 수 있다."</p>
+        <p>
+          <strong>실제로는</strong> 기본 importance(Gini importance · MDI)에는 <strong>구조적 편향</strong>이 있다.
+          <strong>값의 종류가 많은 feature</strong>(연속형·고유값이 많은 범주형)가 분할 후보를 많이 가져
+          우연히라도 gain 을 얻기 쉽고, 그래서 <strong>무작위 잡음 열이 실제 신호보다 높게 나오는</strong> 일이 생긴다.
+          또한 상관된 feature 끼리는 <strong>먼저 쓰인 쪽이 공을 독차지</strong>한다.
+          대안은 <strong>permutation importance</strong>(값을 섞어 성능이 얼마나 떨어지는지)나
+          SHAP 같은 기여도 분해이며, 둘 다 <strong>hold-out 에서 계산</strong>해야 한다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–⑤ 를 검산한다.</p>
+      <details>
+        <summary>NumPy — 불순도 · information gain · 회귀 분할 (20줄)</summary>
+<pre><code>import numpy as np
+H = lambda p: -sum(q * np.log2(q) for q in p if q &gt; 0)
+G = lambda p: 1 - sum(q * q for q in p)
+
+par = [9 / 14, 5 / 14]
+print(round(H(par), 4), round(G(par), 4), round(min(par), 4))     # 0.9403 0.4592 0.3571
+
+splits = {"Outlook":  [(5, [2/5, 3/5]), (4, [1., 0.]), (5, [3/5, 2/5])],
+          "Humidity": [(7, [3/7, 4/7]), (7, [6/7, 1/7])],
+          "Wind":     [(8, [6/8, 2/8]), (6, [3/6, 3/6])]}
+for name, ch in splits.items():
+    wH = sum(n / 14 * H(p) for n, p in ch)
+    wG = sum(n / 14 * G(p) for n, p in ch)
+    print(name, round(H(par) - wH, 4), round(G(par) - wG, 4))
+# Outlook 0.2467 0.1163 / Humidity 0.1518 0.0918 / Wind 0.0481 0.0306
+
+x = np.arange(1., 7); y = np.array([1., 2, 3, 10, 11, 12])
+sse = lambda v: ((v - v.mean())**2).sum() if len(v) else 0.0
+for s in [2.5, 3.5, 4.5]:
+    L, R = y[x &lt; s], y[x &gt; s]
+    print(s, round(sse(y) - sse(L) - sse(R), 2),
+          round(len(L) * len(R) / 6 * (L.mean() - R.mean())**2, 2))   # 두 계산이 일치
+
+for a in [0.01, 0.05, 0.12]:
+    print(a, [round(r + a * L, 3) for r, L in [(.10, 8), (.16, 4), (.45, 1)]])
+</code></pre>
+        <p>
+          <small>
+            세 번째 블록에서 <strong>직접 계산한 SSE 감소와 유도 2 의 공식
+            $\frac{n_Ln_R}{n}(\bar{y}_L-\bar{y}_R)^2$ 가 정확히 일치</strong>한다.
+            $s=3.5$ 에서 121.5 로 최대인 것도 예제 ④ 그대로다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            어떤 노드에 A 30개, B 10개가 있다. Gini 불순도는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>0.375</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.25</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0.811</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $p=(0.75,\ 0.25)$ → $G=1-0.5625-0.0625=0.375$.
+            <strong>나</strong>는 오분류율($\min(p)=0.25$)이고,
+            <strong>다</strong>는 entropy($0.75\times0.415+0.25\times2=0.811$)다.
+            <strong>세 자가 모두 다른 값을 주지만 순서는 같다</strong> — 어느 것을 써도 "얼마나 섞였나"를 잰다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            (40, 40) 노드를 (30, 10)과 (10, 30)으로 나눴다. Gini gain 은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>0.125</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.25</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            부모 $G=1-0.25-0.25=0.5$. 두 자식 모두 $G=0.375$ 이고 크기가 같으므로 가중평균도 0.375.
+            gain $=0.5-0.375=0.125$.
+            <strong>나</strong>는 오분류율로 잰 값이다 —
+            같은 분할을 <strong>어느 자로 재느냐에 따라 gain 의 크기가 다르다</strong>(순위는 대개 같다).
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $R(T_A)=0.20,\ |\tilde{T}_A|=6$ 과 $R(T_B)=0.26,\ |\tilde{T}_B|=2$ 가 같아지는 $\alpha$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>0.015</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.06</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0.03</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $0.20+6\alpha=0.26+2\alpha$ → $4\alpha=0.06$ → $\alpha=0.015$ (유도 3).
+            <strong>나</strong>는 오차 차이만 본 것이고, <strong>잎 개수 차이 4 로 나눠야</strong> 한다.
+            $\alpha>0.015$ 이면 <strong>작은 트리 $T_B$</strong> 가 이긴다 — 잎 하나가 0.015 보다 못 벌면 접는다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            information gain 이 음수가 될 수 없는 이유는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>불순도가 오목함수라 Jensen 부등식이 성립하기 때문</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>확률이 항상 양수이기 때문</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>알고리즘이 좋은 분할만 고르기 때문</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            부모 비율이 자식 비율의 가중평균이므로, 오목함수에서는
+            $I(\text{평균})\ge\text{평균}(I)$ 가 성립한다(유도 1).
+            <strong>어떤 분할이든</strong> — 알고리즘이 고르지 않은 것까지 — gain 이 0 이상이다.
+            <strong>그래서 트리는 스스로 멈출 이유를 찾지 못하고</strong> 가지치기가 필요해진다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            회귀트리로 $y=3x+2$ 를 학습했다. $x$ 가 훈련 범위를 넘어가면?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>가장 가장자리 잎의 값이 그대로 나온다 — 외삽하지 못한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>직선을 연장해 예측한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>오류를 낸다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            트리는 <strong>구간별 상수 함수</strong>라(식 1) 가장 바깥 상자의 평균값을 계속 내놓는다.
+            훈련에서 본 $y$ 의 최댓값을 <strong>절대 넘을 수 없다</strong>.
+            추세가 있는 시계열에 트리 계열(random forest·gradient boosting 포함)을 그대로 쓰면
+            <strong>미래를 과소예측</strong>하게 되며, 추세를 먼저 제거하거나 선형 model 과 결합해야 한다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            트리의 feature importance 에서 고객ID 열이 1위로 나왔다. 원인은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>값의 종류가 많아 분할 후보가 많고, MDI 가 그런 feature 를 과대평가한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>고객ID 에 실제로 신호가 들어 있다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>importance 계산에 버그가 있다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            고유값이 $n$개인 열은 분할 후보도 $n-1$개라 <strong>우연히라도 gain 을 얻기 쉽다</strong>(오해 5).
+            극단적으로 ID 는 각 잎에 한 개씩 담아 train 불순도를 0 으로 만들 수 있다.
+            <strong>나</strong>일 가능성도 배제할 수는 없지만(등록 순서가 시간을 담는 경우),
+            먼저 <strong>hold-out 에서 permutation importance</strong> 로 확인해야 하고
+            그때 0 이 나오면 순수한 편향이다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="5.7-ensemble.html">5.7 앙상블</a></strong> — 트리의 불안정성을 자산으로 바꾼다. random forest·gradient boosting.</li>
+        <li><strong><a href="5.12-anomaly-detection.html">5.12 이상치 탐지</a></strong> — isolation forest 가 무작위 분할의 깊이를 쓴다.</li>
+        <li><strong><a href="../ch04/4.7-information-theory.html">4.7 정보이론</a></strong> — information gain 이 곧 mutual information 이다.</li>
+        <li><strong>18장 모델 해석가능성</strong> — 트리의 규칙과 SHAP·permutation importance.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-breiman1984-cart" data-ref="breiman1984-cart">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Breiman, L., Friedman, J. H., Olshen, R. A. &amp; Stone, C. J. (1984). <em>Classification and Regression Trees</em>. Wadsworth.</span>
+          <span class="ref__where">2장 — 이진 재귀 분할의 정식화와 Gini 불순도 도입(식 3). 4장 — <strong>비용-복잡도 가지치기</strong>: $R_\alpha(T)=R(T)+\alpha|\tilde{T}|$ 의 정의, 임계 $g(t)$ 로 weakest link 부터 접는 절차, 그리고 <strong>최적 서브트리들이 포개어진 사슬을 이룬다</strong>는 정리(식 7, 유도 3, 예제 ⑤). 8장 — 회귀트리와 SSE 기준(유도 2). 4.1절 — 오분류율이 성장 기준으로 부적합한 이유(유도 1 의 마지막 두 줄)</span>
+          <a class="ref__link" href="https://doi.org/10.1201/9781315139470">doi.org</a>
+        </li>
+        <li class="ref" id="ref-quinlan1986-induction-decision-trees" data-ref="quinlan1986-induction-decision-trees">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Quinlan, J. R. (1986). <em>Induction of Decision Trees</em>. Machine Learning, 1(1), 81–106.</span>
+          <span class="ref__where">§4 — ID3 의 분할 기준으로 <strong>entropy 와 information gain</strong> 을 도입한 부분(식 4). 표 1 의 날씨 data(Outlook·Temperature·Humidity·Wind, 14개 표본)가 예제 ②·③에서 계산한 그 예제이며 $\mathrm{IG}(\text{Outlook})=0.247$ 도 이 논문의 값이다. §5 — <strong>값이 많은 feature 가 유리해지는 편향</strong>과 그 보정 필요성(식 5, 오해 5)</span>
+          <a class="ref__link" href="https://link.springer.com/article/10.1007/BF00116251">link.springer.com</a>
+        </li>
+        <li class="ref" id="ref-hastie2009-esl" data-ref="hastie2009-esl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em> (2nd ed.). Springer.</span>
+          <span class="ref__where">9.2.2절 — 회귀트리의 SSE 기준과 잎 값이 평균인 이유(유도 2), 그리고 <strong>탐욕적 분할이 필요한 계산량 논거</strong>. 9.2.3절 — Gini·entropy·오분류율 세 곡선을 겹쳐 그리고 <strong>오분류율이 성장에 부적합한 반례</strong>를 든 부분(유도 1, 위젯 2). 9.2.4절 — 트리의 장단점 표('장점/단점' 표)와 <strong>불안정성이 앙상블의 동기</strong>라는 지적</span>
+          <a class="ref__link" href="https://hastie.su.domains/ElemStatLearn/">hastie.su.domains</a>
+        </li>
+        <li class="ref" id="ref-murphy2022-pml" data-ref="murphy2022-pml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Murphy, K. P. (2022). <em>Probabilistic Machine Learning: An Introduction</em>. MIT Press.</span>
+          <span class="ref__where">18.1절 — CART 를 구간별 상수 함수로 정식화한 식(식 1)과 분할 탐색의 계산량 $O(dn\log n)$. 18.1.3절 — <strong>최적 트리 찾기가 NP-hard</strong> 라는 언급과 탐욕적 근사의 정당화(접힌 상자). 18.1.4절 — 트리의 고분산 문제를 짚고 <strong>18.3–18.5 의 앙상블로 이어지는</strong> 구성</span>
+          <a class="ref__link" href="https://probml.github.io/pml-book/book1.html">probml.github.io</a>
+        </li>
+        <li class="ref" id="ref-sklearn-docs" data-ref="sklearn-docs">
+          <span class="ref__type" data-type="doc">문서</span>
+          <span class="ref__cite">scikit-learn developers. <em>User Guide — 1.10 Decision Trees</em> · <em>4.2 Permutation feature importance</em>.</span>
+          <span class="ref__where">1.10.3절 — 멈춤 조건 hyperparameter 표('pre-pruning' 표)와 <code>min_samples_leaf</code> 를 권장하는 실무 조언. 1.10.7절 — <strong>비용-복잡도 가지치기</strong>와 <code>cost_complexity_pruning_path</code> 로 후보 $\alpha$ 사슬을 얻는 절차(예제 ⑤). 4.2절 — <strong>MDI 가 고카디널리티 feature 를 과대평가하므로 permutation importance 를 쓰라</strong>는 경고(오해 5, 퀴즈 6)</span>
+          <a class="ref__link" href="https://scikit-learn.org/stable/modules/tree.html">scikit-learn.org</a>
+        </li>
+        <li class="ref" id="ref-statquest" data-ref="statquest">
+          <span class="ref__type" data-type="video">영상</span>
+          <span class="ref__cite">Starmer, J. <em>Decision Trees, Clearly Explained</em> · <em>Regression Trees</em> · <em>How to Prune Regression Trees</em>. StatQuest.</span>
+          <span class="ref__where">'Decision Trees' 편 — Gini 불순도를 노드마다 계산해 가장 낮은 분할을 고르는 과정을 표로 따라간다(예제 ①·③). 'Regression Trees' 편 — 분할점을 옮겨 가며 SSE 를 재는 그림(예제 ④, 위젯 6). 'How to Prune' 편 — $\alpha$ 를 키우며 서브트리가 계단식으로 바뀌는 과정과 교차검증으로 고르는 절차(위젯 5)</span>
+          <a class="ref__link" href="https://statquest.org/video-index/">statquest.org</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+function panel(p) {
+  p.add(VIZ.el('rect', {
+    x: p.pad.l, y: p.pad.t, width: p.iw, height: p.ih,
+    fill: 'var(--ink-3)', 'fill-opacity': 0.03, stroke: 'none'
+  }));
+  return p;
+}
+function mkRand(seed) {
+  var s = seed || 12345;
+  return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+}
+function gauss(rnd) {
+  var u = Math.max(1e-9, rnd()), v = rnd();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+function gini(cnt) {
+  var n = cnt[0] + cnt[1];
+  if (!n) return 0;
+  var p = cnt[0] / n;
+  return 1 - p * p - (1 - p) * (1 - p);
+}
+
+/* 아주 작은 2D 결정트리 — 축 정렬 분할 */
+function buildTree(pts, depth, maxDepth, minLeaf) {
+  var cnt = [0, 0], i;
+  for (i = 0; i < pts.length; i++) cnt[pts[i][2]]++;
+  var node = { leaf: true, cls: cnt[1] > cnt[0] ? 1 : 0, n: pts.length, imp: gini(cnt) };
+  if (depth >= maxDepth || pts.length < 2 * minLeaf || cnt[0] === 0 || cnt[1] === 0) return node;
+
+  var best = null;
+  for (var j = 0; j < 2; j++) {
+    var vals = pts.map(function (q) { return q[j]; }).slice().sort(function (a, b) { return a - b; });
+    for (i = 0; i < vals.length - 1; i++) {
+      if (vals[i + 1] - vals[i] < 1e-9) continue;
+      var s = (vals[i] + vals[i + 1]) / 2;
+      var L = [], R = [];
+      for (var k = 0; k < pts.length; k++) (pts[k][j] <= s ? L : R).push(pts[k]);
+      if (L.length < minLeaf || R.length < minLeaf) continue;
+      var cL = [0, 0], cR = [0, 0], m;
+      for (m = 0; m < L.length; m++) cL[L[m][2]]++;
+      for (m = 0; m < R.length; m++) cR[R[m][2]]++;
+      var w = (L.length * gini(cL) + R.length * gini(cR)) / pts.length;
+      var gain = node.imp - w;
+      if (!best || gain > best.gain + 1e-12) best = { j: j, s: s, L: L, R: R, gain: gain };
+    }
+  }
+  if (!best || best.gain <= 1e-12) return node;
+  return {
+    leaf: false, j: best.j, s: best.s, gain: best.gain, n: pts.length,
+    L: buildTree(best.L, depth + 1, maxDepth, minLeaf),
+    R: buildTree(best.R, depth + 1, maxDepth, minLeaf)
+  };
+}
+function treePredict(t, x, y) {
+  while (!t.leaf) t = ((t.j === 0 ? x : y) <= t.s) ? t.L : t.R;
+  return t.cls;
+}
+function countLeaves(t) { return t.leaf ? 1 : countLeaves(t.L) + countLeaves(t.R); }
+
+/* ============================================================
+   위젯 1 — 재귀적 분할
+   ============================================================ */
+WIDGETS.register('tree-build', function (root, ctx) {
+  var maxDepth = 1, seed = 5, kind = 'diag';
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'd', label: '허용한 깊이' },
+    { key: 'leaf', label: '잎 노드 수' },
+    { key: 'tr', label: 'train 오차', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function data() {
+    var rnd = mkRand(seed * 977 + 13), pts = [];
+    for (var i = 0; i < 70; i++) {
+      var x = -2.6 + 5.2 * rnd(), y = -2.2 + 4.4 * rnd();
+      var c;
+      if (kind === 'diag') c = (x + y > 0.3) ? 1 : 0;
+      else if (kind === 'box') c = (Math.abs(x) < 1.1 && Math.abs(y) < 1.0) ? 1 : 0;
+      else c = ((x > 0) !== (y > 0)) ? 1 : 0;            /* XOR */
+      if (rnd() < 0.06) c = 1 - c;                       /* 잡음 */
+      pts.push([x, y, c]);
+    }
+    return pts;
+  }
+
+  function draw() {
+    var pts = data();
+    var t = buildTree(pts, 0, maxDepth, 2);
+
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -2.8, xmax: 2.8, ymin: -2.4, ymax: 2.4,
+      pad: { t: 30, r: 16, b: 30, l: 42 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x₁', '').ticks(1, 1);
+    p.text(-2.8, 2.4, 'x₂ · 배경 = 트리가 나눈 상자 · 경계는 언제나 축에 나란하다',
+      { size: 10, dy: -10 });
+
+    var GX = 34, GY = 26;
+    for (var gx = 0; gx < GX; gx++) {
+      for (var gy = 0; gy < GY; gy++) {
+        var x0 = -2.8 + 5.6 * gx / GX, x1 = -2.8 + 5.6 * (gx + 1) / GX;
+        var y0 = -2.4 + 4.8 * gy / GY, y1 = -2.4 + 4.8 * (gy + 1) / GY;
+        var c = treePredict(t, (x0 + x1) / 2, (y0 + y1) / 2);
+        p.add(VIZ.el('rect', {
+          x: p.X(x0), y: p.Y(y1),
+          width: Math.max(1, p.X(x1) - p.X(x0)), height: Math.max(1, p.Y(y0) - p.Y(y1)),
+          fill: c ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': 0.15
+        }));
+      }
+    }
+    var wrong = 0;
+    for (var i = 0; i < pts.length; i++) {
+      if (treePredict(t, pts[i][0], pts[i][1]) !== pts[i][2]) wrong++;
+      p.add(VIZ.el('circle', {
+        cx: p.X(pts[i][0]), cy: p.Y(pts[i][1]), r: 3.4,
+        fill: pts[i][2] ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': 0.9
+      }));
+    }
+
+    out.setRaw('d', String(maxDepth));
+    out.setRaw('leaf', String(countLeaves(t)));
+    out.set('tr', wrong / pts.length);
+    out.setRaw('note', kind === 'diag' ? '비스듬한 경계 — 계단으로 흉내 낸다 (오해 2)'
+      : (kind === 'xor' ? 'XOR — 첫 분할의 gain 이 거의 0 이라 근시안적 정지에 취약'
+      : '축에 나란한 상자 — 트리에 딱 맞는 구조'));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '참 경계의 모양',
+    options: [
+      { value: 'diag', label: '비스듬한 직선' },
+      { value: 'box', label: '축에 나란한 상자' },
+      { value: 'xor', label: 'XOR' }
+    ],
+    value: 'diag', onChange: function (v) { kind = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '허용 깊이', min: 1, max: 8, step: 1, value: 1, digits: 0,
+    onInput: function (v) { maxDepth = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 30, step: 1, value: 5, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — 불순도 곡선
+   ============================================================ */
+WIDGETS.register('impurity-curve', function (root, ctx) {
+  var pv = 0.3, pL = 0.75, pR = 0.25, frac = 0.5;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'ent', label: 'Entropy (bit)', digits: 4 },
+    { key: 'gini', label: 'Gini', digits: 4 },
+    { key: 'mis', label: '오분류율', digits: 4 },
+    { key: 'gain', label: '이 분할의 gain (entropy / Gini / 오분류율)' }
+  ]);
+
+  function H(p) { return (p <= 0 || p >= 1) ? 0 : -(p * Math.log(p) + (1 - p) * Math.log(1 - p)) / Math.LN2; }
+  function G(p) { return 2 * p * (1 - p); }
+  function M(p) { return Math.min(p, 1 - p); }
+
+  function draw() {
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 0, xmax: 1, ymin: 0, ymax: 1.08,
+      pad: { t: 30, r: 16, b: 34, l: 48 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(0.25, 0.25).axes('한 class 의 비율 p', '').ticks(0.25, 0.25);
+    p.text(0, 1.08, '불순도 · 실선 = Entropy · 점선 = Gini · 잔점선 = 오분류율',
+      { size: 10, dy: -10 });
+
+    p.curve(H, { samples: 300 });
+    p.curve(G, { samples: 300, alt: true, dash: '5 4' });
+    p.curve(M, { samples: 300, dash: '2 3' });
+
+    /* 분할을 잇는 현(chord) — 가중평균이 곡선 아래에 있음을 보인다 */
+    var pm = frac * pL + (1 - frac) * pR;
+    [[H, 'var(--seal)'], [M, 'var(--ink-3)']].forEach(function (fn) {
+      p.line([[pL, fn[0](pL)], [pR, fn[0](pR)]], { dash: '1 3' });
+    });
+    p.dot(pL, H(pL), 4);
+    p.dot(pR, H(pR), 4);
+    p.dot(pm, H(pm), 5.5);
+    p.dot(pm, frac * H(pL) + (1 - frac) * H(pR), 4.5);
+    p.callout(pm, H(pm), '부모', { dx: 18, dy: -20, tone: 'var(--seal)' });
+
+    out.set('ent', H(pv));
+    out.set('gini', G(pv));
+    out.set('mis', M(pv));
+    var gH = H(pm) - (frac * H(pL) + (1 - frac) * H(pR));
+    var gG = G(pm) - (frac * G(pL) + (1 - frac) * G(pR));
+    var gM = M(pm) - (frac * M(pL) + (1 - frac) * M(pR));
+    out.setRaw('gain', gH.toFixed(4) + ' / ' + gG.toFixed(4) + ' / ' + gM.toFixed(4)
+      + (Math.abs(gM) < 1e-9 ? '  ← 오분류율은 0 (구별 못 함)' : ''));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '읽을 위치 p', min: 0, max: 1, step: 0.01, value: 0.3, digits: 2,
+    onInput: function (v) { pv = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '왼쪽 자식의 p', min: 0, max: 1, step: 0.05, value: 0.75, digits: 2,
+    onInput: function (v) { pL = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '오른쪽 자식의 p', min: 0, max: 1, step: 0.05, value: 0.25, digits: 2,
+    onInput: function (v) { pR = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '왼쪽 자식의 비중', min: 0.05, max: 0.95, step: 0.05, value: 0.5, digits: 2,
+    onInput: function (v) { frac = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — 분할 선택 (날씨 예제)
+   ============================================================ */
+WIDGETS.register('split-choice', function (root, ctx) {
+  var crit = 'entropy';
+
+  var feats = {
+    Outlook: [[2, 3], [4, 0], [3, 2]],
+    Humidity: [[3, 4], [6, 1]],
+    Wind: [[6, 2], [3, 3]]
+  };
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'par', label: '부모의 불순도', digits: 4 },
+    { key: 'best', label: '가장 gain 이 큰 feature' },
+    { key: 'all', label: '세 feature 의 gain' },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function imp(a, b) {
+    var n = a + b;
+    if (!n) return 0;
+    var p = a / n;
+    if (crit === 'gini') return 1 - p * p - (1 - p) * (1 - p);
+    if (crit === 'mis') return Math.min(p, 1 - p);
+    return (p <= 0 || p >= 1) ? 0 : -(p * Math.log(p) + (1 - p) * Math.log(1 - p)) / Math.LN2;
+  }
+
+  function draw() {
+    var parent = imp(9, 5);
+    var names = Object.keys(feats), gains = {};
+    names.forEach(function (nm) {
+      var w = 0;
+      feats[nm].forEach(function (c) { w += (c[0] + c[1]) / 14 * imp(c[0], c[1]); });
+      gains[nm] = parent - w;
+    });
+
+    var W = 460, H0 = 260, padL = 86, baseY = 200;
+    var svg = VIZ.el('svg', { viewBox: '0 0 ' + W + ' ' + H0, role: 'img' });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(svg);
+    svg.appendChild(VIZ.el('line', { x1: padL - 12, y1: baseY, x2: W - 20, y2: baseY,
+      stroke: 'var(--ink-3)', 'stroke-width': 1, 'stroke-opacity': 0.5 }));
+    svg.appendChild(VIZ.el('text', { x: 12, y: 20, class: 'viz-label', 'font-size': 11,
+      text: '막대 = 분할로 줄어든 불순도 (gain) · 부모 = ' + parent.toFixed(4) }));
+
+    var mx = Math.max.apply(null, names.map(function (nm) { return gains[nm]; }));
+    var best = names[0];
+    names.forEach(function (nm) { if (gains[nm] > gains[best]) best = nm; });
+
+    names.forEach(function (nm, i) {
+      var x = padL + i * 110, h = mx > 0 ? gains[nm] / mx * 140 : 0;
+      svg.appendChild(VIZ.el('rect', {
+        x: x, y: baseY - h, width: 72, height: Math.max(1, h), rx: 3,
+        fill: nm === best ? 'var(--amber)' : 'var(--jade)',
+        'fill-opacity': nm === best ? 0.6 : 0.28,
+        stroke: nm === best ? 'var(--amber)' : 'var(--jade)', 'stroke-width': 1
+      }));
+      svg.appendChild(VIZ.el('text', { x: x + 36, y: baseY - h - 6, 'text-anchor': 'middle',
+        class: 'viz-label', 'font-size': 12, text: gains[nm].toFixed(4) }));
+      svg.appendChild(VIZ.el('text', { x: x + 36, y: baseY + 16, 'text-anchor': 'middle',
+        class: 'viz-label', 'font-size': 12, text: nm }));
+      svg.appendChild(VIZ.el('text', { x: x + 36, y: baseY + 32, 'text-anchor': 'middle',
+        class: 'viz-label', 'font-size': 10, 'fill-opacity': 0.7,
+        text: feats[nm].map(function (c) { return c[0] + '/' + c[1]; }).join(' ') }));
+    });
+
+    out.set('par', parent);
+    out.setRaw('best', best);
+    out.setRaw('all', names.map(function (nm) { return nm + ' ' + gains[nm].toFixed(4); }).join(' · '));
+    out.setRaw('note', '기준을 바꿔도 1위는 ' + best + ' — 순위가 잘 안 바뀐다');
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '불순도 기준',
+    options: [
+      { value: 'entropy', label: 'Entropy' },
+      { value: 'gini', label: 'Gini' },
+      { value: 'mis', label: '오분류율' }
+    ],
+    value: 'entropy', onChange: function (v) { crit = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — 가지치기
+   ============================================================ */
+WIDGETS.register('prune-alpha', function (root, ctx) {
+  var alpha = 0.03;
+
+  var trees = [
+    { name: 'T_max', R: 0.10, L: 8 },
+    { name: 'T₂', R: 0.16, L: 4 },
+    { name: 'T₃', R: 0.26, L: 2 },
+    { name: '루트', R: 0.45, L: 1 }
+  ];
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'pick', label: '이 α 에서 고르는 트리' },
+    { key: 'vals', label: '각 트리의 R + α|T̃|' },
+    { key: 'thr', label: '전환이 일어나는 α' },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function draw() {
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 0, xmax: 0.2, ymin: 0, ymax: 1.0,
+      pad: { t: 30, r: 16, b: 34, l: 50 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(0.05, 0.25).axes('α (잎 하나의 벌점)', '').ticks(0.05, 0.25);
+    p.text(0, 1.0, 'R + α|T̃| · 선 하나가 서브트리 하나 · 가장 아래 선이 선택된다',
+      { size: 10, dy: -10 });
+
+    trees.forEach(function (t, i) {
+      p.curve(function (a) { return Math.min(1.0, t.R + a * t.L); }, { samples: 60, alt: i % 2 === 1 });
+    });
+
+    var best = trees[0], bv = 9;
+    trees.forEach(function (t) { var v = t.R + alpha * t.L; if (v < bv) { bv = v; best = t; } });
+    p.line([[alpha, 0], [alpha, 1.0]], { dash: '3 3' });
+    p.dot(alpha, bv, 5.5);
+    p.callout(alpha, bv, best.name, { dx: 20, dy: 24, tone: 'var(--seal)' });
+
+    /* 전환점 */
+    var thrs = [];
+    for (var i = 0; i < trees.length - 1; i++) {
+      var a = trees[i], b = trees[i + 1];
+      var t0 = (b.R - a.R) / (a.L - b.L);
+      if (t0 > 0 && t0 < 0.2) thrs.push(a.name + '→' + b.name + ' @ ' + t0.toFixed(4));
+    }
+
+    out.setRaw('pick', best.name + '  (잎 ' + best.L + '개, R=' + best.R + ')');
+    out.setRaw('vals', trees.map(function (t) {
+      return t.name + ' ' + (t.R + alpha * t.L).toFixed(3);
+    }).join(' · '));
+    out.setRaw('thr', thrs.join(' · '));
+    out.setRaw('note', alpha < 0.015 ? 'α 가 작다 — 큰 트리를 그대로 쓴다'
+      : (alpha > 0.1 ? 'α 가 크다 — 거의 루트만 남는다' : '중간 크기의 트리'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'α', min: 0, max: 0.2, step: 0.001, value: 0.03, digits: 3,
+    onInput: function (v) { alpha = v; draw(); }
+  });
+  WIDGETS.matrix({
+    host: ctx.controls, rows: 1, cols: 4, values: [[0.10, 0.16, 0.26, 0.45]], step: 0.01,
+    label: '각 서브트리의 오차 R(T)  (잎 개수는 8, 4, 2, 1)',
+    onChange: function (nv) {
+      for (var i = 0; i < 4; i++) trees[i].R = nv[0][i];
+      draw();
+    }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — 깊이와 과적합
+   ============================================================ */
+WIDGETS.register('depth-overfit', function (root, ctx) {
+  var n = 80, noise = 0.12, seed = 3;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'best', label: 'test 오차가 최소인 깊이' },
+    { key: 'tr', label: '그때의 train 오차', digits: 4 },
+    { key: 'te', label: '그때의 test 오차', digits: 4 },
+    { key: 'zero', label: 'train 오차가 0 이 되는 깊이' }
+  ]);
+
+  function make(rnd, m) {
+    var pts = [];
+    for (var i = 0; i < m; i++) {
+      var x = -2.6 + 5.2 * rnd(), y = -2.2 + 4.4 * rnd();
+      var c = (x * x * 0.35 + y > 0.4) ? 1 : 0;
+      if (rnd() < noise) c = 1 - c;
+      pts.push([x, y, c]);
+    }
+    return pts;
+  }
+
+  function draw() {
+    var rnd = mkRand(seed * 761 + 9);
+    var tr = make(rnd, n), te = make(rnd, 400);
+    var ds = [], trE = [], teE = [], zeroAt = null;
+
+    for (var d = 1; d <= 12; d++) {
+      var t = buildTree(tr, 0, d, 1);
+      var w1 = 0, w2 = 0, i;
+      for (i = 0; i < tr.length; i++) if (treePredict(t, tr[i][0], tr[i][1]) !== tr[i][2]) w1++;
+      for (i = 0; i < te.length; i++) if (treePredict(t, te[i][0], te[i][1]) !== te[i][2]) w2++;
+      ds.push(d); trE.push(w1 / tr.length); teE.push(w2 / te.length);
+      if (zeroAt === null && w1 === 0) zeroAt = d;
+    }
+
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 0, xmax: 13, ymin: 0, ymax: 0.55,
+      pad: { t: 30, r: 16, b: 34, l: 48 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(2, 0.1).axes('트리 깊이', '').ticks(2, 0.1);
+    p.text(0, 0.55, '오차 · 점선 = train · 실선 = test', { size: 10, dy: -10 });
+
+    var a = [], b = [];
+    for (var k = 0; k < ds.length; k++) {
+      a.push([ds[k], Math.min(0.54, trE[k])]);
+      b.push([ds[k], Math.min(0.54, teE[k])]);
+    }
+    p.line(a, { alt: true, dash: '5 4', width: 2 });
+    p.line(b, { width: 2.2 });
+
+    var bi = 0;
+    for (var u = 1; u < teE.length; u++) if (teE[u] < teE[bi]) bi = u;
+    p.dot(ds[bi], teE[bi], 5.5);
+    p.callout(ds[bi], teE[bi], '깊이 ' + ds[bi], { dx: 20, dy: 24, tone: 'var(--seal)' });
+
+    out.setRaw('best', String(ds[bi]));
+    out.set('tr', trE[bi]);
+    out.set('te', teE[bi]);
+    out.setRaw('zero', zeroAt === null ? '12 이내에는 없다' : String(zeroAt));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '훈련 표본 수 n', min: 30, max: 200, step: 10, value: 80, digits: 0,
+    onInput: function (v) { n = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'label 잡음 비율', min: 0, max: 0.3, step: 0.02, value: 0.12, digits: 2,
+    onInput: function (v) { noise = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 30, step: 1, value: 3, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 6 — 회귀트리
+   ============================================================ */
+WIDGETS.register('reg-tree', function (root, ctx) {
+  var leaves = 4, noise = 0.25, seed = 6;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'leaf', label: '잎 개수' },
+    { key: 'sse', label: 'train SSE', digits: 4 },
+    { key: 'edge', label: '훈련 범위 밖의 예측' },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function truef(x) { return Math.sin(1.5 * x) + 0.25 * x; }
+
+  function draw() {
+    var rnd = mkRand(seed * 331 + 7), xs = [], ys = [], i;
+    for (i = 0; i < 40; i++) {
+      var x = -2 + 4 * i / 39;
+      xs.push(x); ys.push(truef(x) + noise * gauss(rnd));
+    }
+
+    /* 탐욕적으로 잎 개수만큼 자른다 */
+    var segs = [{ lo: -2.001, hi: 2.001, idx: xs.map(function (_, k) { return k; }) }];
+    function sse(idx) {
+      if (!idx.length) return 0;
+      var m = 0, k;
+      for (k = 0; k < idx.length; k++) m += ys[idx[k]] / idx.length;
+      var s = 0;
+      for (k = 0; k < idx.length; k++) s += Math.pow(ys[idx[k]] - m, 2);
+      return s;
+    }
+    while (segs.length < leaves) {
+      var bestSeg = -1, bestS = null, bestGain = 0;
+      for (var si = 0; si < segs.length; si++) {
+        var idx = segs[si].idx;
+        if (idx.length < 4) continue;
+        var base = sse(idx);
+        var sorted = idx.slice().sort(function (a, b) { return xs[a] - xs[b]; });
+        for (var c = 1; c < sorted.length; c++) {
+          var s = (xs[sorted[c - 1]] + xs[sorted[c]]) / 2;
+          var L = sorted.slice(0, c), R = sorted.slice(c);
+          var g = base - sse(L) - sse(R);
+          if (g > bestGain) { bestGain = g; bestSeg = si; bestS = { s: s, L: L, R: R }; }
+        }
+      }
+      if (bestSeg < 0) break;
+      var old = segs[bestSeg];
+      segs.splice(bestSeg, 1,
+        { lo: old.lo, hi: bestS.s, idx: bestS.L },
+        { lo: bestS.s, hi: old.hi, idx: bestS.R });
+    }
+    segs.sort(function (a, b) { return a.lo - b.lo; });
+
+    var p = VIZ.plot({ w: 460, h: 290, xmin: -3.2, xmax: 3.2, ymin: -2.2, ymax: 2.2,
+      pad: { t: 30, r: 16, b: 32, l: 44 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x', '').ticks(1, 1);
+    p.text(-3.2, 2.2, 'y · 점선 = 참 함수 · 계단 = 회귀트리 · 훈련 범위는 [−2, 2]',
+      { size: 10, dy: -10 });
+
+    p.curve(truef, { samples: 240, alt: true, dash: '5 4' });
+    p.line([[-2, -2.15], [2, -2.15]], { width: 3 });
+
+    var totalSse = 0;
+    segs.forEach(function (sg) {
+      var m = 0, k;
+      for (k = 0; k < sg.idx.length; k++) m += ys[sg.idx[k]] / Math.max(1, sg.idx.length);
+      totalSse += sse(sg.idx);
+      var lo = Math.max(-3.2, sg.lo), hi = Math.min(3.2, sg.hi);
+      p.line([[lo, m], [hi, m]], { width: 2.4 });
+      sg.mean = m;
+    });
+    /* 범위 밖은 가장자리 잎의 값이 그대로 */
+    p.line([[-3.2, segs[0].mean], [-2, segs[0].mean]], { width: 2.4, dash: '2 3' });
+    p.line([[2, segs[segs.length - 1].mean], [3.2, segs[segs.length - 1].mean]],
+      { width: 2.4, dash: '2 3' });
+    for (i = 0; i < xs.length; i++) p.dot(xs[i], Math.max(-2.1, Math.min(2.1, ys[i])), 3);
+    p.text(-3.15, -1.75, '훈련 범위 밖(x < −2, x > 2)에서는 선이 평평하다', { size: 10 });
+
+    out.setRaw('leaf', String(segs.length));
+    out.set('sse', totalSse);
+    out.setRaw('edge', 'x < −2 → ' + segs[0].mean.toFixed(3)
+      + '  ·  x > 2 → ' + segs[segs.length - 1].mean.toFixed(3));
+    out.setRaw('note', leaves <= 2 ? '너무 거칠다' : (leaves >= 14 ? '잡음까지 따라간다' : '적당하다'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '잎 개수', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { leaves = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '잡음 크기', min: 0, max: 0.6, step: 0.05, value: 0.25, digits: 2,
+    onInput: function (v) { noise = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 30, step: 1, value: 6, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

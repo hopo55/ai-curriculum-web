@@ -292,6 +292,26 @@
         서로 다른 입력이 같은 출력으로 가므로 <strong>되돌릴 수 없다</strong>.
         null space는 언제나 subspace(부분공간)다(<a href="#s-derivation">유도 2</a>).
       </p>
+      <div class="note">
+        <span class="note__label">같은 것을 부르는 두 가지 이름</span>
+        <p>
+          matrix 쪽 어휘와 함수 쪽 어휘가 따로 굳어져 있어, 교재·강의마다 부르는 이름이 다르다.
+          <strong>가리키는 대상은 완전히 같다.</strong>
+        </p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>matrix 로 볼 때</th><th>함수 $T$ 로 볼 때</th><th>무엇인가</th></tr></thead>
+            <tbody>
+              <tr><td>$\operatorname{Col}(\mathbf{A})$ — column space</td><td><strong>image</strong>(상), $\operatorname{im}(T)$</td><td>도달 가능한 출력 전부</td></tr>
+              <tr><td>$\operatorname{Null}(\mathbf{A})$ — null space</td><td><strong>kernel</strong>(핵), $\ker(T)$</td><td>$\mathbf{0}$ 으로 뭉개지는 입력 전부</td></tr>
+              <tr><td>$\operatorname{rank}(\mathbf{A})$</td><td>$\dim\operatorname{im}(T)$</td><td>살아남은 dimension</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          그래서 rank–nullity 정리를 "$\dim\operatorname{im}+\dim\ker=\dim$ 정의역"으로 적은 책을 만나도 같은 식이다.
+        </p>
+      </div>
 
       <span class="anchor" id="c-row"></span>
       <h3>Row Space 행공간</h3>
@@ -303,6 +323,34 @@
       <div class="eq">
         <div class="eq__body">$$ \operatorname{Row}(\mathbf{A}) \perp \operatorname{Null}(\mathbf{A}), \qquad \dim\operatorname{Row} + \dim\operatorname{Null} = n $$</div>
         <span class="eq__tag num">(10)</span>
+      </div>
+      <p>
+        이 관계에는 이름이 있다. subspace $V \subseteq \mathbb{R}^n$ 에 대해
+        <span class="hl"><strong>orthogonal complement(직교여공간)</strong> $V^{\perp}$ 는 $V$ 의 <em>모든</em> vector와 orthogonal 한 vector를 전부 모은 것이다.</span>
+      </p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ V^{\perp} = \{\mathbf{x}\in\mathbb{R}^n : \mathbf{x}^\top\mathbf{v}=0 \ \text{ for all } \mathbf{v}\in V\},
+        \qquad \dim V + \dim V^{\perp} = n $$</div>
+        <span class="eq__tag num">(10′)</span>
+      </div>
+      <p>
+        식 (10)은 결국 <span class="hl">$\operatorname{Null}(\mathbf{A}) = \operatorname{Row}(\mathbf{A})^{\perp}$</span> 라는 말이다.
+        그래서 입력공간 $\mathbb{R}^n$ 의 모든 vector는 <strong>row space 성분과 null space 성분으로 딱 한 가지 방법으로 쪼개진다</strong>.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbf{x} = \underbrace{\mathbf{x}_{\text{row}}}_{\in\,\operatorname{Row}(\mathbf{A})} + \underbrace{\mathbf{x}_{\text{null}}}_{\in\,\operatorname{Null}(\mathbf{A})}
+        \qquad\Longrightarrow\qquad \mathbf{A}\mathbf{x} = \mathbf{A}\mathbf{x}_{\text{row}} $$</div>
+        <span class="eq__tag num">(10″)</span>
+      </div>
+      <p>
+        <span class="hl">$\mathbf{A}$ 가 실제로 보는 것은 $\mathbf{x}_{\text{row}}$ 뿐이다.</span>
+        null space 성분은 곱하는 순간 사라지므로 출력에 아무 흔적도 남기지 못한다.
+        같은 출력을 내는 입력이 무한히 많은 이유가 이 한 줄에 다 들어 있다.
+      </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>방 안의 물건에 천장 조명을 비춰 바닥에 그림자를 만든다고 합시다. 물건의 위치는 <strong>바닥에서의 자리</strong>와 <strong>높이</strong>로 나뉩니다.</p>
+        <p>그림자는 바닥에서의 자리만 따라갑니다 — 높이는 아무 영향도 주지 않습니다. 바닥이 row space, 높이 방향이 null space입니다. 둘은 서로 수직이고, 둘을 합치면 방 전체가 됩니다.</p>
       </div>
 
       <span class="anchor" id="c-rank"></span>
@@ -333,6 +381,41 @@
         <p>$3$ 차원을 종이에 그림자로 비추면 $2$ 차원이 남고 $1$ 차원이 사라집니다 — rank 2, nullity 1. 둘을 더하면 언제나 원래 차원입니다.</p>
       </div>
 
+      <p>
+        linear map을 <strong>함수</strong>로 보면 rank와 null space는 함수의 두 성질을 그대로 번역한 것이 된다.
+        되돌릴 수 있는가라는 질문이 <span class="hl">rank 하나로 전부 판정된다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>함수로서의 성질</th><th>뜻</th><th>선형대수 조건</th><th>rank 조건</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>one-to-one</strong> (단사, injective)</td>
+              <td>서로 다른 입력은 서로 다른 출력으로</td>
+              <td>$\operatorname{Null}(\mathbf{A})=\{\mathbf{0}\}$</td>
+              <td class="num">$r = n$</td>
+            </tr>
+            <tr>
+              <td><strong>onto</strong> (전사, surjective)</td>
+              <td>$\mathbb{R}^m$ 의 모든 점에 도달</td>
+              <td>$\operatorname{Col}(\mathbf{A})=\mathbb{R}^m$</td>
+              <td class="num">$r = m$</td>
+            </tr>
+            <tr>
+              <td><strong>invertible</strong> (가역, bijective)</td>
+              <td>되돌릴 수 있다</td>
+              <td>위 둘을 동시에</td>
+              <td class="num">$r = m = n$</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        표의 마지막 줄이 <span class="hl">정사각행렬이 아니면 결코 invertible 할 수 없는 이유</span>다 —
+        $m \neq n$ 이면 $r=n$ 과 $r=m$ 을 동시에 만족시킬 방법이 없다.
+        세로로 긴 matrix($m>n$)는 기껏해야 one-to-one, 가로로 긴 matrix($m<n$)는 기껏해야 onto 다.
+        각각이 <a href="2.6-linear-systems.html">2.6</a>의 overdetermined·underdetermined 상황이다.
+      </p>
 
       <figure class="widget" data-widget="rank-null">
         <figcaption class="widget__bar">rank · null space · column space를 한 화면에</figcaption>
@@ -351,6 +434,20 @@
           <div class="controls" data-controls></div>
           <div class="readout" data-readout></div>
           <p class="watch">rank를 바꾸면 네 상자의 dimension이 함께 움직입니다. 왼쪽 두 개의 합은 항상 n, 오른쪽 두 개의 합은 항상 m 입니다.</p>
+        </div>
+      </figure>
+
+      <p>
+        위 상자 그림은 dimension의 <em>장부</em>다. 그 장부를 실제 공간에 옮겨 놓으면 아래 그림이 된다 —
+        $\mathbb{R}^3$ 안에서 row space와 null space가 <strong>직각으로 만나</strong> 공간을 나눠 갖는 모습이다.
+      </p>
+      <figure class="widget" data-widget="orthogonal-complement">
+        <figcaption class="widget__bar">row space ⊥ null space — 입력공간이 쪼개지는 방식</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">rank를 올리면 평면(row space)이 자라고 수직선(null space)이 줄어듭니다. 둘의 dimension 합은 언제나 3이고, 높이를 아무리 바꿔도 <strong>Ax 는 꿈쩍하지 않습니다</strong>.</p>
         </div>
       </figure>
     </section>
@@ -871,6 +968,12 @@ print(np.linalg.det(D), np.linalg.det(Ap))  # 6.0 6.0
           <span class="ref__where">1.2절(Trace)과 1.3절(Determinant) — $\operatorname{tr}(\mathbf{AB})=\operatorname{tr}(\mathbf{BA})$, $\det(\mathbf{AB})=\det\mathbf{A}\det\mathbf{B}$. 예제 ④의 불변량 보존을 뒷받침한다</span>
           <a class="ref__link" href="https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf">matrixcookbook.pdf</a>
         </li>
+        <li class="ref" id="ref-khan-linear-algebra" data-ref="khan-linear-algebra">
+          <span class="ref__type" data-type="video">영상</span>
+          <span class="ref__cite">Khan Academy. <em>Linear Algebra</em> (144편 재생목록). YouTube.</span>
+          <span class="ref__where">45–53편(Vector transformations · Linear transformations · im(T) · Preimage and kernel) — matrix를 함수로 보는 틀. 67–74편(Introduction to the inverse of a function ~ Simplifying conditions for invertibility) — one-to-one·onto와 가역성을 rank 조건으로 정리한 표의 근거. 97–104편(Rowspace and left nullspace · Orthogonal complements · Orthogonal complement of the nullspace) — 식 (10′)·(10″)와 'row space ⊥ null space' 위젯의 구성</span>
+          <a class="ref__link" href="https://youtube.com/playlist?list=PLFD0EB975BA0CC1E0">youtube.com</a>
+        </li>
       </ol>
     </section>
 
@@ -1329,6 +1432,140 @@ WIDGETS.register('four-subspaces', function (root, ctx) {
   WIDGETS.slider({
     host: ctx.controls, label: 'rank r', min: 0, max: 3, step: 1, value: 2, digits: 0,
     onInput: function (v) { r = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 6-b — row space ⊥ null space (직교여공간)
+   상자 그림(위젯 6)을 실제 R³ 기하로 옮긴 것.
+   rank r 에 따라 Row(A) 와 Null(A) 가 서로 수직인 채로 자리를 나눠 갖고,
+   x = x_row + x_null 로 쪼개진다. 높이를 바꿔도 Ax 는 변하지 않는다.
+   ============================================================ */
+WIDGETS.register('orthogonal-complement', function (root, ctx) {
+  var el = VIZ.el;
+  var r = 2, h = 1.2;
+  var XY = [1.4, 0.9];              /* x 의 앞 두 성분은 고정, 세 번째만 슬라이더로 */
+
+  /* 축측투영 — 2.1 의 space-ladder 와 같은 시선 */
+  function proj(v) { return [v[0] - 0.55 * v[1], v[2] - 0.35 * v[1]]; }
+
+  var p = VIZ.plot({ w: 470, h: 340, xmin: -3.5, xmax: 3.5, ymin: -2.6, ymax: 2.6 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'row', label: 'Row(A)' },
+    { key: 'nul', label: 'Null(A)' },
+    { key: 'split', label: 'x = x_row + x_null' },
+    { key: 'perp', label: '두 성분의 inner product' },
+    { key: 'ax', label: 'Ax' }
+  ]);
+
+  function seg(a, b, opts) { p.line([proj(a), proj(b)], opts || {}); }
+  function poly(pts, fill, stroke, op) {
+    var q = pts.map(proj);
+    p.add(el('path', {
+      d: 'M' + q.map(function (z) { return p.X(z[0]).toFixed(1) + ' ' + p.Y(z[1]).toFixed(1); }).join(' L') + ' Z',
+      fill: fill, 'fill-opacity': op === undefined ? 0.16 : op,
+      stroke: stroke || 'none', 'stroke-width': 2
+    }));
+  }
+
+  var JADE = 'var(--jade)', SEAL = 'var(--seal)', AMBER = 'var(--amber)';
+  var NAME_ROW = ['원점 {0} — dim 0', 'x 축 (직선) — dim 1', '바닥 평면 z=0 — dim 2', '공간 전체 R³ — dim 3'];
+  var NAME_NUL = ['공간 전체 R³ — dim 3', 'y–z 평면 — dim 2', 'z 축 (수직선) — dim 1', '원점 {0} — dim 0'];
+
+  /* 직각 표시 — 원점에서 두 방향 사이에 작은 사각형 */
+  function rightAngle(u, v) {
+    var s = 0.42;
+    poly([[0, 0, 0],
+          [u[0] * s, u[1] * s, u[2] * s],
+          [(u[0] + v[0]) * s, (u[1] + v[1]) * s, (u[2] + v[2]) * s],
+          [v[0] * s, v[1] * s, v[2] * s]], 'none', 'var(--ink-3)', 0);
+  }
+
+  function draw() {
+    p.clear();
+    var K = 1.9, i;
+
+    /* 방의 뼈대 */
+    var C = [];
+    for (i = 0; i < 8; i++) C.push([(i & 1 ? K : -K), (i & 2 ? K : -K), (i & 4 ? K : -K)]);
+    [[0,1],[1,3],[3,2],[2,0],[4,5],[5,7],[7,6],[6,4],[0,4],[1,5],[2,6],[3,7]].forEach(function (e) {
+      seg(C[e[0]], C[e[1]], { dash: '3 5' });
+    });
+
+    /* ---- Null(A) 를 먼저 (뒤에 깔리도록) ---- */
+    if (r === 0) {
+      poly([C[0], C[1], C[5], C[4]], SEAL, 'none', 0.13);
+      poly([C[0], C[2], C[6], C[4]], SEAL, 'none', 0.13);
+    } else if (r === 1) {
+      poly([[0, -K, -K], [0, K, -K], [0, K, K], [0, -K, K]], SEAL, SEAL, 0.16);
+    } else if (r === 2) {
+      seg([0, 0, -K], [0, 0, K], { alt: true, width: 4 });
+    }
+
+    /* ---- Row(A) ---- */
+    if (r === 1) {
+      seg([-K, 0, 0], [K, 0, 0], { width: 4 });
+    } else if (r === 2) {
+      poly([[-K, -K, 0], [K, -K, 0], [K, K, 0], [-K, K, 0]], JADE, JADE, 0.18);
+      for (i = -1; i <= 1; i++) {
+        if (!i) continue;
+        seg([-K, i, 0], [K, i, 0], { dash: '3 4' });
+        seg([i, -K, 0], [i, K, 0], { dash: '3 4' });
+      }
+    } else if (r === 3) {
+      poly([C[0], C[1], C[5], C[4]], JADE, 'none', 0.13);
+      poly([C[0], C[2], C[6], C[4]], JADE, 'none', 0.13);
+    }
+
+    if (r === 1 || r === 2) rightAngle([1, 0, 0], [0, 0, 1]);
+
+    /* ---- x 와 그 분해 ---- */
+    var x = [XY[0], XY[1], h];
+    var xr = [r >= 1 ? x[0] : 0, r >= 2 ? x[1] : 0, r >= 3 ? x[2] : 0];
+    var xn = [x[0] - xr[0], x[1] - xr[1], x[2] - xr[2]];
+
+    var pr = proj(xr), px = proj(x);
+    if (xr[0] || xr[1] || xr[2]) {
+      p.vector(pr[0], pr[1], { stroke: JADE, width: 3, label: 'x_row', lx: 6, ly: 16 });
+    }
+    seg(xr, x, { alt: true, dash: '5 4', width: 2.5 });
+    p.vector(px[0], px[1], { stroke: AMBER, width: 2.5, label: 'x', lx: 8, ly: -8 });
+    p.dot(0, 0, 5);
+
+    if (r === 1 || r === 2) {
+      var mid = proj([(xr[0] + x[0]) / 2, (xr[1] + x[1]) / 2, (xr[2] + x[2]) / 2]);
+      p.callout(mid[0], mid[1], 'x_null — A 가 보지 못하는 부분',
+        { dx: 24, dy: -16, tone: 'var(--seal-ink)' });
+    }
+
+    /* ---- 판독값 ---- */
+    function v3(v) { return '(' + v.map(function (z) { return z.toFixed(2); }).join(', ') + ')'; }
+    var ax = r === 0 ? '(0)'
+           : r === 1 ? '(' + x[0].toFixed(2) + ')'
+           : r === 2 ? '(' + x[0].toFixed(2) + ', ' + x[1].toFixed(2) + ')'
+           : v3(x);
+    var dotv = xr[0] * xn[0] + xr[1] * xn[1] + xr[2] * xn[2];
+
+    out.setRaw('row', NAME_ROW[r]);
+    out.setRaw('nul', NAME_NUL[r]);
+    out.setRaw('split', v3(x) + ' = ' + v3(xr) + ' + ' + v3(xn));
+    out.setRaw('perp', 'x_row · x_null = ' + Math.abs(dotv).toFixed(2) + '   (언제나 0 — 서로 orthogonal)');
+    out.setRaw('ax', ax + (r === 3 ? '   ← null space가 없어 높이도 그대로 전달된다'
+                                   : '   ← 높이를 바꿔도 변하지 않는다'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'rank r — row space를 키우면 null space가 줄어든다',
+    min: 0, max: 3, step: 1, value: 2, digits: 0,
+    onInput: function (v) { r = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'x 의 높이 (세 번째 성분)',
+    min: -1.8, max: 1.8, step: 0.1, value: 1.2, digits: 1,
+    onInput: function (v) { h = v; draw(); }
   });
   draw();
 });

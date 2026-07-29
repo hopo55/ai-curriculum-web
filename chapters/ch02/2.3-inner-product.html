@@ -205,6 +205,36 @@
         $\mathbf{u}$ 가 단위벡터면 분모가 1이라 $\operatorname{proj}_{\hat{\mathbf{u}}}(\mathbf{v}) = (\hat{\mathbf{u}}^\top\mathbf{v})\,\hat{\mathbf{u}}$ 로 단순해진다.
         orthogonal projection은 least squares(최소제곱법) · PCA · attention(어텐션)의 값 혼합까지 계속 등장한다.
       </p>
+      <p>
+        식 (3)은 $\mathbf{v}$ 에 대한 <strong>linear map</strong>이다. 그렇다면 이것을 <em>행렬 하나</em>로 적을 수 있어야 한다.
+        분수의 스칼라를 앞으로 빼내기만 하면 실제로 그렇게 된다.
+      </p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \operatorname{proj}_{\mathbf{u}}(\mathbf{v}) = \mathbf{u}\,\frac{\mathbf{u}^\top\mathbf{v}}{\mathbf{u}^\top\mathbf{u}}
+        = \underbrace{\frac{\mathbf{u}\mathbf{u}^\top}{\mathbf{u}^\top\mathbf{u}}}_{\textstyle \mathbf{P}}\,\mathbf{v},
+        \qquad \mathbf{P}^\top=\mathbf{P},\quad \mathbf{P}^2=\mathbf{P} $$</div>
+        <span class="eq__tag num">(3′)</span>
+      </div>
+      <p>
+        <span class="hl">$\mathbf{u}\mathbf{u}^\top$ 는 vector 두 개로 만든 <strong>rank 1 matrix</strong>이고, 이것이 projection matrix(사영행렬) $\mathbf{P}$ 다.</span>
+        $\mathbf{u}^\top\mathbf{v}$ 는 수 하나, $\mathbf{u}\mathbf{u}^\top$ 는 행렬 —
+        <strong>같은 두 vector를 어느 순서로 곱하느냐만 다르다</strong>(<a href="2.4-matrix-operations.html">2.4</a>의 outer product).
+      </p>
+      <p>
+        성질 두 개는 이름값을 한다. <span class="hl">$\mathbf{P}^2=\mathbf{P}$ 는 <strong>이미 그림자인 것을 다시 비춰도 그대로</strong>라는 뜻</span>이고,
+        $\mathbf{P}^\top=\mathbf{P}$ 는 그 그림자가 비스듬하지 않고 <strong>수직</strong>이라는 뜻이다.
+        직선 대신 평면 위로 내릴 때는 $\mathbf{u}$ 자리에 열이 여럿인 $\mathbf{A}$ 가 들어와
+        $\mathbf{P}=\mathbf{A}(\mathbf{A}^\top\mathbf{A})^{-1}\mathbf{A}^\top$ 가 된다 —
+        생김새가 식 (3′)과 똑같다(<a href="2.6-linear-systems.html">2.6</a>).
+      </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>$2\times2$ 로 직접 확인해 봅시다. $\mathbf{u}=(1,1)^\top$ 이면 $\mathbf{u}^\top\mathbf{u}=2$ 이고
+          $\mathbf{u}\mathbf{u}^\top=\begin{bmatrix}1&1\\1&1\end{bmatrix}$ 이므로
+          $\mathbf{P}=\tfrac12\begin{bmatrix}1&1\\1&1\end{bmatrix}$ 입니다.</p>
+        <p>$\mathbf{v}=(4,0)^\top$ 을 넣으면 $\mathbf{P}\mathbf{v}=(2,2)^\top$ — 대각선 위로 내려온 그림자가 맞습니다.
+          한 번 더 넣어도 $\mathbf{P}(2,2)^\top=(2,2)^\top$ 로 <strong>꿈쩍하지 않습니다</strong>. 이것이 $\mathbf{P}^2=\mathbf{P}$ 입니다.</p>
+      </div>
 
       <span class="anchor" id="c-cos"></span>
       <h3>Cosine Similarity 코사인 유사도</h3>
@@ -883,6 +913,12 @@ print(dc(a, b) + dc(b, c), dc(a, c))         # 0.5858 1.0  <- 삼각부등식 �
           <span class="ref__cite">3Blue1Brown. <em>Essence of Linear Algebra</em>, Ch.9 <em>Dot products and duality</em>.</span>
           <span class="ref__where">01:30–07:00 — inner product를 '투영 길이 × 기준 길이'로 보는 시각과, 순서를 바꿔도 값이 같은 이유. 'orthogonal projection' 위젯과 직관 절의 그림자 설명의 원형</span>
           <a class="ref__link" href="https://www.3blue1brown.com/topics/linear-algebra">3blue1brown.com</a>
+        </li>
+        <li class="ref" id="ref-khan-linear-algebra" data-ref="khan-linear-algebra">
+          <span class="ref__type" data-type="video">영상</span>
+          <span class="ref__cite">Khan Academy. <em>Linear Algebra</em> (144편 재생목록). YouTube.</span>
+          <span class="ref__where">21–25편(Vector dot product and vector length ~ Defining the angle between vectors) — 길이·Cauchy–Schwarz·삼각부등식을 거쳐 각도를 <em>정의</em>하는 순서. 유도 2 의 구성이 이 순서를 따른다. 60–61편(Introduction to projections · Expressing a projection on to a line as a matrix vector product) — 식 (3′)의 projection matrix $\mathbf{P}=\mathbf{u}\mathbf{u}^\top/\mathbf{u}^\top\mathbf{u}$ 와 $\mathbf{P}^2=\mathbf{P}$</span>
+          <a class="ref__link" href="https://youtube.com/playlist?list=PLFD0EB975BA0CC1E0">youtube.com</a>
         </li>
         <li class="ref" id="ref-zhang2023-d2l" data-ref="zhang2023-d2l">
           <span class="ref__type" data-type="book">교재</span>

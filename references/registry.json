@@ -1500,6 +1500,27 @@
       "cited_by": [
         "2.7"
       ]
+    },
+    "khan-linear-algebra": {
+      "type": "video",
+      "title": "Linear Algebra (144편 강의 재생목록)",
+      "authors": [
+        "Salman Khan (Khan Academy)"
+      ],
+      "url": "https://www.youtube.com/playlist?list=PLFD0EB975BA0CC1E0",
+      "access": "free-online",
+      "archivable": false,
+      "license": "영상 재배포 불가. 링크와 편 번호로만 인용한다. (Khan Academy 본문은 CC BY-NC-SA)",
+      "topics": [
+        "2"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "2.3",
+        "2.4",
+        "2.5",
+        "2.6"
+      ]
     }
   }
 }

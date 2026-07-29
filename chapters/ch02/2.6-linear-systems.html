@@ -183,6 +183,42 @@
         </div>
       </figure>
 
+      <p>
+        소거를 여기서 멈추지 않고 <strong>pivot을 1로 만들고 pivot 위쪽까지 0으로</strong> 비우면
+        <span class="hl"><strong>reduced row echelon form(기약 행 사다리꼴, RREF)</strong>가 된다 — 행렬마다 딱 하나로 정해지는 표준형이다.</span>
+        back substitution 없이 해를 그대로 읽을 수 있고, 그보다 중요한 쓸모가 하나 더 있다.
+      </p>
+      <div class="note note--key">
+        <span class="note__label">RREF 하나로 네 가지를 동시에 읽는다</span>
+        <p>
+          $\mathbf{A}=\begin{bmatrix}1&2&1\\2&4&3\\3&6&4\end{bmatrix}$ 에서
+          2행 $-\,2\times$1행 $=[0\ 0\ 1]$, 3행 $-\,3\times$1행 $=[0\ 0\ 1]$, 다시 3행 $-$ 2행 $=[0\ 0\ 0]$,
+          마지막으로 1행 $-$ 2행 을 하면
+          $\ \mathbf{R}=\begin{bmatrix}1&2&0\\0&0&1\\0&0&0\end{bmatrix}$ 이다. pivot은 <strong>1열과 3열</strong>에 있다.
+        </p>
+        <ul>
+          <li><strong>rank</strong> = pivot 개수 = $2$</li>
+          <li><strong>$\operatorname{Col}(\mathbf{A})$ 의 basis</strong> = pivot 열에 해당하는 <em>원래 $\mathbf{A}$ 의</em> 열 = $\{(1,2,3)^\top,\ (1,3,4)^\top\}$</li>
+          <li><strong>$\operatorname{Row}(\mathbf{A})$ 의 basis</strong> = $\mathbf{R}$ 의 0이 아닌 행 = $\{(1,2,0),\ (0,0,1)\}$</li>
+          <li><strong>$\operatorname{Null}(\mathbf{A})$ 의 basis</strong> = free variable마다 하나씩. 여기선 $x_2$ 가 free 이고
+            $x_1+2x_2=0,\ x_3=0$ 이므로 $(-2,1,0)^\top$ 하나뿐이다</li>
+        </ul>
+        <p>
+          검산: $\mathbf{A}(-2,1,0)^\top = (-2+2+0,\ -4+4+0,\ -6+6+0)^\top = \mathbf{0}$ ✓ &nbsp;
+          rank $2$ $+$ nullity $1$ $=$ 열 개수 $3$ ✓
+        </p>
+      </div>
+      <div class="note note--trap">
+        <span class="note__label">basis는 R 의 열이 아니라 A 의 열이다</span>
+        <p>
+          $\operatorname{Col}(\mathbf{A})$ 의 basis를 고를 때 <strong>$\mathbf{R}$ 의 pivot 열을 그대로 쓰면 틀린다</strong>.
+          행 연산은 열들 사이의 <em>종속 관계</em>는 보존하지만 <strong>column space 자체는 바꿔 버리기</strong> 때문이다.
+          RREF 는 "몇 번째 열을 고를지"만 알려 주고, 값은 원래 $\mathbf{A}$ 에서 가져와야 한다.
+          위 예에서 $\mathbf{R}$ 의 pivot 열이 만드는 평면은 $z=0$ 인 바닥이지만,
+          $\operatorname{Col}(\mathbf{A})$ 는 $(1,2,3)^\top$ 과 $(1,3,4)^\top$ 이 만드는 <strong>완전히 다른 평면</strong>이다.
+        </p>
+      </div>
+
       <span class="anchor" id="c-lu"></span>
       <h3>LU Decomposition LU 분해</h3>
       <p>
@@ -270,6 +306,15 @@
         <p>그 자리는 목표점에서 평면으로 <em>수직으로</em> 내려온 발입니다. 비스듬히 내려오면 더 멀어지기 때문입니다. "수직"이라는 이 한 조건이 normal equation을 통째로 만들어 냅니다.</p>
       </div>
 
+      <figure class="widget" data-widget="lsq-projection">
+        <figcaption class="widget__bar">b 를 column space 위로 내리기 — normal equation이 나오는 그림</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">비교점을 평면 위에서 아무 데로나 옮겨 보세요. 거리는 <strong>수직으로 내린 발에서만 최소</strong>이고, 그때만 residual과 두 열의 inner product가 동시에 0이 됩니다 — 그 두 식이 곧 $\mathbf{A}^\top\mathbf{e}=\mathbf{0}$ 입니다.</p>
+        </div>
+      </figure>
 
       <span class="anchor" id="c-normal"></span>
       <h3>Normal Equation 정규방정식</h3>
@@ -316,6 +361,30 @@
         해가 무한히 많으므로 <strong>어떤 해로 가느냐를 정하는 것은 optimization(최적화) algorithm(알고리즘)과 normalization(정규화)</strong>이지
         data가 아니다. 이것이 "implicit bias(암묵적 편향)" 논의의 선형대수적 뿌리다.
       </p>
+      <p>
+        해가 무한히 많을 때 그 무한이 아무렇게나 흩어져 있는 것은 아니다.
+        <span class="hl">해집합은 언제나 <strong>특수해 하나에 null space를 통째로 평행이동시킨 것</strong>이다</span> —
+        원점을 지나지 않는다는 점만 빼면 null space와 똑같이 생긴 도형(affine subspace)이다.
+      </p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \{\mathbf{x} : \mathbf{A}\mathbf{x}=\mathbf{b}\} \;=\; \mathbf{x}_p + \operatorname{Null}(\mathbf{A})
+        \;=\; \{\mathbf{x}_p + \mathbf{n} : \mathbf{n}\in\operatorname{Null}(\mathbf{A})\} $$</div>
+        <span class="eq__tag num">(8′)</span>
+      </div>
+      <p>
+        그 직선(또는 평면) 위의 무수한 점 가운데 식 (8)이 고르는 것은 <strong>원점에서 가장 가까운 점</strong>이고,
+        그 점은 <span class="hl">해집합과 row space가 만나는 자리</span>다. 나머지 해들은 전부 여기에 null space 성분을 얹은 것이라
+        길이만 길어질 뿐이다(<a href="2.5-linear-transformation.html">2.5</a> 식 (10″)).
+      </p>
+      <figure class="widget" data-widget="solution-set">
+        <figcaption class="widget__bar">해집합 = 특수해 + null space</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$b$ 를 바꾸면 해 직선이 <strong>기울기는 그대로인 채 평행하게</strong> 밀려납니다 — 방향을 정하는 것은 $\mathbf{b}$ 가 아니라 null space입니다. $t$ 를 움직이면 $\|\mathbf{x}\|$ 는 $t=0$ 에서만 최소입니다.</p>
+        </div>
+      </figure>
     </section>
 
     <!-- ===== 5. 수식과 기호 ===== -->
@@ -879,6 +948,12 @@ print(np.linalg.cond(M), np.linalg.cond(M.T @ M))   # 4e4,  1.6e9  <- 제곱된�
           <span class="ref__where">3.4절(Pseudo Inverse)과 5.5–5.6절(Solutions to Systems of Equations / LU·QR 관련 항등식) — pseudo-inverse의 정의와 least squares·최소노름 해 공식의 대조 확인</span>
           <a class="ref__link" href="https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf">matrixcookbook.pdf</a>
         </li>
+        <li class="ref" id="ref-khan-linear-algebra" data-ref="khan-linear-algebra">
+          <span class="ref__type" data-type="video">영상</span>
+          <span class="ref__cite">Khan Academy. <em>Linear Algebra</em> (144편 재생목록). YouTube.</span>
+          <span class="ref__where">30–32편(Matrices: Reduced row echelon form 1–3)과 38·43–44편(Null space and column space basis · Showing relation between basis cols and pivot cols) — RREF 정의와 "pivot 열에 해당하는 <em>원래</em> A 의 열이 Col(A) 의 basis"라는 서술. 여기서 뽑은 것이 RREF 상자와 그 아래 함정이다. 72편(Exploring the solution set of Ax = b)과 105–107편(Rowspace solution to Ax = b) — 식 (8′)과 '해집합 = 특수해 + null space' 위젯, 최소 노름해가 row space 위에 있다는 사실. 109–115편(Projections onto subspaces ~ Least squares approximation) — 'b 를 column space 위로 내리기' 위젯과 피타고라스 논증</span>
+          <a class="ref__link" href="https://youtube.com/playlist?list=PLFD0EB975BA0CC1E0">youtube.com</a>
+        </li>
       </ol>
     </section>
 
@@ -1294,6 +1369,199 @@ WIDGETS.register('least-squares', function (root, ctx) {
     onInput: function (v) { a = v; draw(); } });
   WIDGETS.slider({ host: ctx.controls, label: 'gradient b', min: -0.5, max: 1.5, step: 0.01, value: 0.9, digits: 2,
     onInput: function (v) { b = v; draw(); } });
+  draw();
+});
+
+/* ============================================================
+   위젯 6-b — b 를 column space 위로 내리기
+   Col(A) 는 z=0 평면(열 두 개가 만든다), b 는 그 위에 떠 있다.
+   수직으로 내린 발 p 가 가장 가깝고, 그때 residual 이 두 열 모두와
+   직교한다 — 그 두 식이 곧 Aᵀe = 0, 정규방정식이다.
+   ============================================================ */
+WIDGETS.register('lsq-projection', function (root, ctx) {
+  var el = VIZ.el;
+  var h = 1.3;                       /* b 가 평면에서 떠 있는 높이 */
+  var s = 0.9;                       /* 비교점 q 가 p 에서 떨어진 거리 */
+  var A1 = [1.5, 0, 0], A2 = [0.7, 1.4, 0];   /* A 의 두 열 */
+  var B0 = [0.5, 0.4];               /* b 의 평면 성분 (= p) */
+  var D = [0.832, -0.555, 0];        /* 평면 안의 단위 방향 — q 는 이 위를 움직인다 */
+
+  function proj(v) { return [v[0] - 0.55 * v[1], v[2] - 0.35 * v[1]]; }
+
+  var p = VIZ.plot({ w: 470, h: 340, xmin: -3.5, xmax: 3.5, ymin: -2.6, ymax: 2.6 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'p', label: 'p = A x̂ (평면 위의 발)' },
+    { key: 'e', label: 'e = b − p (residual)' },
+    { key: 'perp', label: 'Aᵀe — 열마다 하나씩' },
+    { key: 'dist', label: '거리 비교' },
+    { key: 'why', label: '왜 수직이 최소인가' }
+  ]);
+
+  function seg(a, b, opts) { p.line([proj(a), proj(b)], opts || {}); }
+  function poly(pts, fill, stroke, op) {
+    var q = pts.map(proj);
+    p.add(el('path', {
+      d: 'M' + q.map(function (z) { return p.X(z[0]).toFixed(1) + ' ' + p.Y(z[1]).toFixed(1); }).join(' L') + ' Z',
+      fill: fill, 'fill-opacity': op === undefined ? 0.16 : op,
+      stroke: stroke || 'none', 'stroke-width': 2
+    }));
+  }
+
+  function draw() {
+    p.clear();
+    var K = 1.9, i;
+
+    var C = [];
+    for (i = 0; i < 8; i++) C.push([(i & 1 ? K : -K), (i & 2 ? K : -K), (i & 4 ? K : -K)]);
+    [[0,1],[1,3],[3,2],[2,0],[4,5],[5,7],[7,6],[6,4],[0,4],[1,5],[2,6],[3,7]].forEach(function (e) {
+      seg(C[e[0]], C[e[1]], { dash: '3 5' });
+    });
+
+    /* Col(A) — 두 열이 만드는 평면 */
+    poly([[-K, -K, 0], [K, -K, 0], [K, K, 0], [-K, K, 0]], 'var(--jade)', 'var(--jade)', 0.16);
+    var e1 = proj(A1), e2 = proj(A2);
+    p.vector(e1[0], e1[1], { stroke: 'var(--jade)', width: 2.5, label: 'a₁', lx: 4, ly: 16 });
+    p.vector(e2[0], e2[1], { stroke: 'var(--jade)', width: 2.5, label: 'a₂', lx: -24, ly: 14 });
+
+    var bv = [B0[0], B0[1], h];
+    var pv = [B0[0], B0[1], 0];
+    var qv = [pv[0] + D[0] * s, pv[1] + D[1] * s, 0];
+
+    /* 비교점 q 와 그 거리 */
+    seg(qv, bv, { alt: true, dash: '4 4', width: 2 });
+    var qq = proj(qv);
+    p.dot(qq[0], qq[1], 5);
+    p.text(qq[0], qq[1], 'q', { dx: 6, dy: 16, size: 12 });
+
+    /* residual — 수직으로 내린 발 */
+    seg(pv, bv, { width: 3 });
+    /* 직각 표시 (평면 안의 한 방향과 수직선 사이) */
+    var t = 0.34;
+    poly([pv, [pv[0] + t, pv[1], 0], [pv[0] + t, pv[1], t], [pv[0], pv[1], t]],
+         'none', 'var(--ink-3)', 0);
+
+    var pp = proj(pv), pb = proj(bv);
+    p.add(el('circle', { cx: p.X(pp[0]), cy: p.Y(pp[1]), r: 6, fill: 'var(--amber)' }));
+    p.vector(pb[0], pb[1], { stroke: 'var(--amber)', width: 2.5, label: 'b', lx: 8, ly: -8 });
+    p.text(pp[0], pp[1], 'p', { dx: -16, dy: 16, size: 12 });
+    p.dot(0, 0, 4);
+
+    p.callout((pp[0] + pb[0]) / 2, (pp[1] + pb[1]) / 2, 'e = b − p, 평면과 직각',
+      { dx: 26, dy: -6, tone: 'var(--amber)' });
+
+    /* 판독값 */
+    var x2 = B0[1] / A2[1];
+    var x1 = (B0[0] - A2[0] * x2) / A1[0];
+    var dp = Math.abs(h);
+    var dq = Math.sqrt(h * h + s * s);
+
+    out.setRaw('p', '(' + B0[0].toFixed(2) + ', ' + B0[1].toFixed(2) + ', 0.00)   [x̂ = (' +
+      x1.toFixed(3) + ', ' + x2.toFixed(3) + ')]');
+    out.setRaw('e', '(0.00, 0.00, ' + h.toFixed(2) + ')   — 평면에 수직인 성분만 남는다');
+    out.setRaw('perp', 'eᵀa₁ = 0.00,  eᵀa₂ = 0.00   ← 이 두 줄이 곧 AᵀA x̂ = Aᵀb');
+    out.setRaw('dist', '‖b − p‖ = ' + dp.toFixed(3) + '   vs   ‖b − q‖ = ' + dq.toFixed(3) +
+      (s === 0 ? '   (q 가 p 와 같은 자리)' : '   → q 쪽이 ' + (dq - dp).toFixed(3) + ' 만큼 멀다'));
+    out.setRaw('why', '‖b−q‖² = ‖e‖² + s² = ' + (h * h).toFixed(2) + ' + ' + (s * s).toFixed(2) +
+      '   — 피타고라스. s ≠ 0 이면 반드시 더 멀다');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'b 가 평면에서 떠 있는 높이',
+    min: -1.8, max: 1.8, step: 0.1, value: 1.3, digits: 1,
+    onInput: function (v) { h = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '비교점 q 를 평면 위에서 옮기기 (0 이면 p 와 같은 자리)',
+    min: -1.4, max: 1.4, step: 0.05, value: 0.9, digits: 2,
+    onInput: function (v) { s = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 6-c — 해집합 = 특수해 + null space
+   A = [1  2] 한 줄짜리 방정식. 해집합은 null space 를 평행이동한 직선이고,
+   그 직선과 row space 가 만나는 점이 최소 노름해다.
+   ============================================================ */
+WIDGETS.register('solution-set', function (root, ctx) {
+  var b = 2, t = 0.6;
+  var N = [2, -1];       /* null space 방향 — [1 2]·[2 −1] = 0 */
+  var R = [1, 2];        /* row space 방향 */
+
+  var p = VIZ.plot({ w: 470, h: 340, xmin: -4.6, xmax: 4.6, ymin: -3.4, ymax: 3.4 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'set', label: '해집합' },
+    { key: 'xp', label: '특수해 x_p (최소 노름해)' },
+    { key: 'x', label: '현재 해 x = x_p + t·n' },
+    { key: 'check', label: '검산 Ax' },
+    { key: 'norm', label: '‖x‖' }
+  ]);
+
+  /* 직선을 그림판 안으로 잘라 낸다 (Liang–Barsky) */
+  function clip(P, d) {
+    var t0 = -1e9, t1 = 1e9, ok = true;
+    function edge(pv, qv) {
+      if (Math.abs(pv) < 1e-12) return qv >= 0;
+      var r = qv / pv;
+      if (pv < 0) { if (r > t1) return false; if (r > t0) t0 = r; }
+      else { if (r < t0) return false; if (r < t1) t1 = r; }
+      return true;
+    }
+    ok = edge(-d[0], P[0] - p.xmin) && edge(d[0], p.xmax - P[0]) &&
+         edge(-d[1], P[1] - p.ymin) && edge(d[1], p.ymax - P[1]);
+    if (!ok || t0 > t1) return null;
+    return [[P[0] + d[0] * t0, P[1] + d[1] * t0], [P[0] + d[0] * t1, P[1] + d[1] * t1]];
+  }
+  function ray(P, d, opts) { var q = clip(P, d); if (q) p.line(q, opts || {}); }
+
+  function draw() {
+    p.clear().grid(1, 1).axes('x₁', 'x₂').ticks(1, 1);
+
+    var xp = [b / 5 * R[0], b / 5 * R[1]];
+    var x  = [xp[0] + t * N[0], xp[1] + t * N[1]];
+
+    /* null space (원점을 지난다) 와 row space */
+    ray([0, 0], N, { alt: true, dash: '6 4' });
+    ray([0, 0], R, { dash: '2 5' });
+
+    /* 해집합 — null space 를 x_p 만큼 평행이동한 직선 */
+    ray(xp, N, { alt: true, width: 3.5 });
+
+    p.add(VIZ.el('circle', { cx: p.X(xp[0]), cy: p.Y(xp[1]), r: 6, fill: 'var(--jade)' }));
+    p.line([xp, x], { dash: '3 3', width: 2 });
+    p.vector(x[0], x[1], { stroke: 'var(--amber)', width: 2.5, label: 'x', lx: 8, ly: -8 });
+    p.dot(0, 0, 4);
+
+    p.callout(xp[0], xp[1], 'x_p — 원점에서 가장 가까운 해', { dx: 18, dy: -22, tone: 'var(--jade)' });
+    var far = [N[0] * 2.0, N[1] * 2.0];
+    p.callout(far[0], far[1], 'null space (원점을 지난다)', { dx: 14, dy: 18, tone: 'var(--seal-ink)' });
+
+    function v2(v) { return '(' + v[0].toFixed(2) + ', ' + v[1].toFixed(2) + ')'; }
+    var ax = x[0] + 2 * x[1];
+    var nx = Math.hypot(x[0], x[1]), np = Math.hypot(xp[0], xp[1]);
+
+    out.setRaw('set', 'x₁ + 2x₂ = ' + b.toFixed(1) + ' 인 점 전부 — 방향 (2, −1) 인 직선');
+    out.setRaw('xp', v2(xp) + '   = (b/5)·(1, 2), row space 위의 유일한 해');
+    out.setRaw('x', v2(x) + '   (t = ' + t.toFixed(2) + ')');
+    out.setRaw('check', 'x₁ + 2x₂ = ' + ax.toFixed(2) + '  = b ✓   — t 를 아무리 바꿔도 그대로');
+    out.setRaw('norm', nx.toFixed(3) + '   (최소값 ‖x_p‖ = ' + np.toFixed(3) +
+      (Math.abs(t) < 1e-9 ? ' — 지금이 최소' : ', t = 0 일 때') + ')');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '우변 b — 해 직선이 평행하게 밀린다',
+    min: -4, max: 4, step: 0.5, value: 2, digits: 1,
+    onInput: function (v) { b = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 't — 해 직선 위를 움직인다 (null space 성분)',
+    min: -1.5, max: 1.5, step: 0.05, value: 0.6, digits: 2,
+    onInput: function (v) { t = v; draw(); }
+  });
   draw();
 });
 

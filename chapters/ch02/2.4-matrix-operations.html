@@ -690,6 +690,31 @@
           <strong>sparse 연산이 느린 경우도 흔하다</strong>. 메모리와 속도는 따로 판단해야 한다.
         </p>
       </div>
+      <div class="note note--trap">
+        <span class="note__label">오해 6</span>
+        <p>"외적은 cross product 다."</p>
+        <p>
+          <strong>실제로는</strong> 한국어 '외적'이 서로 다른 두 연산에 모두 쓰인다. 이 커리큘럼에서
+          <strong>외적 = outer product</strong> $\mathbf{x}\mathbf{y}^\top$ 이며, 두 vector로 <strong>rank 1 matrix</strong>를 만든다.
+          영어 강의에서 자주 나오는 <strong>cross product</strong> $\mathbf{u}\times\mathbf{v}$ 는 이름만 겹치는 다른 연산이다 —
+          <em>3-dimensional에서만</em> 정의되고, 결과가 <strong>vector</strong>이며, 두 vector에 수직인 방향을 가리킨다.
+        </p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th></th><th>outer product (외적)</th><th>cross product (벡터곱)</th></tr></thead>
+            <tbody>
+              <tr><td>기호</td><td>$\mathbf{x}\mathbf{y}^\top$</td><td>$\mathbf{u}\times\mathbf{v}$</td></tr>
+              <tr><td>결과</td><td>$(m,p)$ matrix, rank 1</td><td>vector 하나</td></tr>
+              <tr><td>차원 제한</td><td>없음</td><td>$\mathbb{R}^3$ 전용</td></tr>
+              <tr><td>AI 에서</td><td>SVD·LoRA·gradient 계산의 뼈대</td><td>거의 쓰지 않는다</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          cross product를 이 커리큘럼에서 다루지 않는 것은 <strong>중요하지 않아서가 아니라 쓰임이 다른 분야에 있어서</strong>다 —
+          물리·그래픽스의 회전축과 법선 계산에 쓰이고, 고차원 data를 다루는 머신러닝에서는 $\mathbb{R}^3$ 제한 때문에 자리가 없다.
+        </p>
+      </div>
     </section>
 
     <!-- ===== 10. 코드 ===== -->
@@ -871,6 +896,12 @@ print(Z1 @ Z2)            # [[0. 0.] [0. 0.]]  둘 다 0이 아닌데 곱은 0
           <span class="ref__cite">3Blue1Brown. <em>Essence of Linear Algebra</em>, Ch.4 <em>Matrix multiplication as composition</em>.</span>
           <span class="ref__where">02:00–08:00 — 곱셈 순서가 왜 바뀌면 안 되는지를 변환 합성으로 설명. 오해 1·2와 예제 ②(행 교환 vs 열 교환)의 직관</span>
           <a class="ref__link" href="https://www.3blue1brown.com/topics/linear-algebra">3blue1brown.com</a>
+        </li>
+        <li class="ref" id="ref-khan-linear-algebra" data-ref="khan-linear-algebra">
+          <span class="ref__type" data-type="video">영상</span>
+          <span class="ref__cite">Khan Academy. <em>Linear Algebra</em> (144편 재생목록). YouTube.</span>
+          <span class="ref__where">27–29편(Cross product introduction · Dot and cross product comparison/intuition) — cross product의 정의와 $\mathbb{R}^3$ 제한. 오해 6의 대조표가 여기서 나왔다. 92–96편(Transpose of a matrix ~ Transpose of a vector) — $(\mathbf{AB})^\top=\mathbf{B}^\top\mathbf{A}^\top$ 를 비롯한 전치 규칙</span>
+          <a class="ref__link" href="https://youtube.com/playlist?list=PLFD0EB975BA0CC1E0">youtube.com</a>
         </li>
       </ol>
     </section>

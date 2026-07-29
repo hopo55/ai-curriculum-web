@@ -290,6 +290,138 @@ window.PAGES = {
       "BatchNorm", "effective learning rate", "mode connectivity",
       "기울기 소실", "기울기 폭주", "손실 지형", "일반화", "스케일 불변성"
     ]
+  },
+
+  "4.1": {
+    href: "chapters/ch04/4.1-probability-basics.html",
+    updated: "2026-07-29",
+    summary: "확률은 집합에 붙는 넓이이고, 조건부확률은 표본공간을 줄여 다시 재는 것이며, Bayes' theorem은 그 방향을 뒤집는다.",
+    tags: [
+      "sample space", "event", "probability", "Kolmogorov axioms",
+      "conditional probability", "chain rule", "independence", "dependence",
+      "mutually exclusive", "law of total probability", "Bayes theorem",
+      "prior", "likelihood", "evidence", "posterior", "base rate fallacy",
+      "odds", "likelihood ratio", "Monty Hall",
+      "표본공간", "사건", "조건부확률", "독립", "종속", "전확률법칙", "베이즈 정리", "기저율"
+    ]
+  },
+  "4.2": {
+    href: "chapters/ch04/4.2-random-variables.html",
+    updated: "2026-07-29",
+    summary: "확률변수는 변수가 아니라 Ω에서 실수로 가는 함수다. PMF·PDF·CDF는 그 함수가 만든 확률을 적는 세 문법.",
+    tags: [
+      "random variable", "discrete", "continuous", "PMF", "PDF", "CDF",
+      "joint distribution", "marginal", "conditional", "marginalize",
+      "support", "quantile", "inverse transform sampling", "Jacobian",
+      "확률변수", "확률질량함수", "확률밀도함수", "누적분포함수",
+      "결합분포", "주변분포", "조건부분포", "역변환 샘플링"
+    ]
+  },
+  "4.3": {
+    href: "chapters/ch04/4.3-expectation-variance.html",
+    updated: "2026-07-29",
+    summary: "기댓값은 무게중심, 분산은 관성모멘트. 기댓값은 언제나 선형이지만 분산은 무상관일 때만 더해진다.",
+    tags: [
+      "expectation", "variance", "standard deviation", "covariance", "correlation",
+      "moment", "skewness", "kurtosis", "MGF", "law of large numbers",
+      "central limit theorem", "standard error", "LOTUS", "Jensen", "Chebyshev",
+      "기댓값", "분산", "표준편차", "공분산", "상관계수", "모멘트",
+      "중심극한정리", "대수의 법칙", "표준오차", "왜도", "첨도"
+    ]
+  },
+  "4.4": {
+    href: "chapters/ch04/4.4-common-distributions.html",
+    updated: "2026-07-29",
+    summary: "열한 개 분포는 하나의 계보다. Bernoulli에서 셋이 갈라지고, Poisson·Gaussian은 극한, Beta·Dirichlet은 확률 위의 분포.",
+    tags: [
+      "Bernoulli", "Binomial", "Categorical", "Multinomial", "Uniform",
+      "Gaussian", "normal", "multivariate Gaussian", "Exponential", "Poisson",
+      "Beta", "Dirichlet", "conjugate prior", "exponential family",
+      "memoryless", "Mahalanobis", "overdispersion", "68-95-99.7",
+      "베르누이", "이항분포", "범주분포", "다항분포", "균등분포", "정규분포",
+      "지수분포", "푸아송", "켤레사전분포", "지수족"
+    ]
+  },
+  "4.5": {
+    href: "chapters/ch04/4.5-statistical-estimation.html",
+    updated: "2026-07-29",
+    summary: "추정량은 숫자가 아니라 확률변수다. MSE = 편향² + 분산 한 줄이 네 가지 평가 기준을 잇는다.",
+    tags: [
+      "sample", "population", "estimator", "estimate", "point estimation",
+      "interval estimation", "confidence interval", "bias", "variance",
+      "consistency", "efficiency", "sufficient statistic", "Fisher information",
+      "Cramer-Rao", "MSE", "degrees of freedom", "ddof", "bootstrap",
+      "표본", "모집단", "추정량", "점추정", "구간추정", "편향", "일치성",
+      "효율성", "충분통계량", "신뢰구간", "자유도", "피셔 정보량"
+    ]
+  },
+  "4.6": {
+    href: "chapters/ch04/4.6-likelihood-estimation.html",
+    updated: "2026-07-29",
+    summary: "likelihood는 data를 고정하고 parameter를 움직인 함수다. MAP에 더해진 log prior가 곧 L2·L1 정규화 항이다.",
+    tags: [
+      "likelihood", "log-likelihood", "maximum likelihood", "MLE", "MAP",
+      "prior", "posterior", "evidence", "conjugate prior", "Bayesian inference",
+      "posterior predictive", "NLL", "cross-entropy", "ridge", "lasso",
+      "pseudo-count", "smoothing", "credible interval",
+      "가능도", "로그가능도", "최대가능도추정", "최대사후확률", "사전분포",
+      "사후분포", "켤레사전분포", "베이지안 추론", "정규화"
+    ]
+  },
+  "4.7": {
+    href: "chapters/ch04/4.7-information-theory.html",
+    updated: "2026-07-29",
+    summary: "정보량은 −log p 하나에서 나온다. cross-entropy는 틀린 코드북의 평균 길이, KL은 그 낭비분, MI는 독립에서 벗어난 정도.",
+    tags: [
+      "information content", "surprisal", "entropy", "cross-entropy",
+      "KL divergence", "relative entropy", "mutual information",
+      "conditional entropy", "Jensen-Shannon", "information bottleneck",
+      "Shannon", "bit", "nat", "perplexity", "source coding", "Gibbs inequality",
+      "data processing inequality", "mode covering", "mode seeking",
+      "정보량", "엔트로피", "교차엔트로피", "상호정보량", "조건부 엔트로피", "정보 병목"
+    ]
+  },
+  "4.8": {
+    href: "chapters/ch04/4.8-hypothesis-testing.html",
+    updated: "2026-07-29",
+    summary: "p-value는 귀무가설이 참일 확률이 아니다. 검정력과 효과크기 없이 p만 보면 model 비교가 잡음을 좇는다.",
+    tags: [
+      "null hypothesis", "alternative hypothesis", "p-value", "significance level",
+      "type I error", "type II error", "power", "multiple testing", "effect size",
+      "confidence interval", "Bonferroni", "Benjamini-Hochberg", "FDR", "FWER",
+      "McNemar", "paired test", "p-hacking", "winner's curse", "Cohen's d",
+      "귀무가설", "대립가설", "유의수준", "1종 오류", "2종 오류", "검정력",
+      "다중검정", "효과크기", "신뢰구간", "사전등록"
+    ]
+  },
+  "4.9": {
+    href: "chapters/ch04/4.9-uncertainty.html",
+    updated: "2026-07-29",
+    summary: "data로 줄일 수 있는 불확실성과 없는 불확실성은 처방이 다르다. softmax 확률은 그 자체로 확신의 척도가 아니다.",
+    tags: [
+      "aleatoric", "epistemic", "predictive uncertainty", "calibration",
+      "confidence", "ECE", "reliability diagram", "temperature scaling",
+      "entropy-based uncertainty", "BALD", "ensemble", "deep ensemble",
+      "Bayesian neural network", "MC dropout", "variational inference",
+      "OOD", "heteroscedastic", "Brier score", "abstention",
+      "불확실성", "보정", "앙상블", "베이지안 신경망", "분포 이동"
+    ]
+  },
+  "4.10": {
+    href: "chapters/ch04/4.10-ai-and-probability.html",
+    updated: "2026-07-29",
+    summary: "AI는 확률분포를 다루는 기계다. 분류는 p(y|x), 언어 모델은 chain rule, 잠재변수 모델은 적분, 디코딩은 뽑기 규칙.",
+    tags: [
+      "probabilistic classification", "language model", "perplexity",
+      "generative model", "latent variable model", "ELBO", "VAE", "diffusion",
+      "Markov chain", "HMM", "MDP", "stationary distribution",
+      "uncertainty estimation", "sampling", "ancestral sampling",
+      "reparameterization", "rejection sampling", "MCMC", "Gumbel-max",
+      "decoding", "greedy", "beam search", "temperature", "top-k", "top-p",
+      "nucleus sampling", "self-consistency",
+      "확률적 분류", "언어 모델 확률", "생성 모델", "잠재변수 모델",
+      "확률적 상태전이", "샘플링", "확률적 디코딩", "정상분포"
+    ]
   }
 
   // 새 절을 만들면 이 형태로 추가한다 (등록해야 목차·검색에 나타난다):

@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.2 확률변수 — AI 이론 학습</title>
+<meta name="description" content="확률변수는 변수가 아니라 표본공간에서 실수로 가는 함수다. PMF·PDF·CDF는 그 함수가 만든 확률을 적는 세 가지 방식이고, CDF만이 이산과 연속에 공통으로 통한다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="4.2">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">4.2</span>
+        <span>4장 · 확률과 통계</span>
+      </div>
+      <h1>확률변수</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 60분</span>
+        <span><b>난이도</b>★★★☆☆</span>
+        <span><b>선수지식</b>
+          <a href="4.1-probability-basics.html">4.1 확률의 기본</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-discrete">Discrete Random Variable</a>
+      <a class="chip" href="#c-continuous">Continuous Random Variable</a>
+      <a class="chip" href="#c-pmf">Probability Mass Function</a>
+      <a class="chip" href="#c-pdf">Probability Density Function</a>
+      <a class="chip" href="#c-cdf">Cumulative Distribution Function</a>
+      <a class="chip" href="#c-joint">Joint Distribution</a>
+      <a class="chip" href="#c-marginal">Marginal Distribution</a>
+      <a class="chip" href="#c-condist">Conditional Distribution</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        random variable(확률변수)은 변수가 아니라 <strong>$\Omega$ 에서 실수로 가는 함수</strong>이고,
+        PMF·PDF·CDF 는 그 함수가 만들어 낸 확률을 적는 <strong>세 가지 문법</strong>이다.
+        이산과 연속을 가로지르며 항상 통하는 것은 <strong>CDF 뿐</strong>이다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>random variable 을 $X:\Omega\to\mathbb{R}$ 라는 함수로 적고, $\{X=x\}$ 가 사건임을 설명할 수 있다.</li>
+        <li>PMF 와 PDF 의 차이를 "값이 확률인가 아닌가"로 구분하고, $f(x)>1$ 이 왜 모순이 아닌지 설명할 수 있다.</li>
+        <li>결합분포표에서 marginal 과 conditional 을 손으로 뽑아내고 독립 여부를 판정할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        <a href="4.1-probability-basics.html">4.1</a>에서 확률은 "집합에 붙는 넓이"였다.
+        그런데 실제 문제에서 관심 있는 것은 집합이 아니라 <strong>숫자</strong>다 —
+        "주사위 두 개의 합", "고객의 구매액", "model 이 뱉은 logit".
+        random variable 은 그 <strong>번역기</strong>다. 표본공간의 각 결과에 숫자 하나를 붙여 준다.
+      </p>
+      <p>
+        번역기가 정해지면 확률도 따라 옮겨 간다. $\Omega$ 위에 흩어져 있던 확률이
+        수직선 위로 <strong>밀려 내려와 쌓인다</strong>. 쌓인 모양이 곧 <strong>분포</strong>다.
+        어떤 지점에 뭉쳐 쌓이면 그 값은 확률 덩어리(mass)이고, 얇게 펴 발라지면 밀도(density)다.
+      </p>
+      <p>
+        이 두 경우를 하나로 다루는 방법이 하나 있다 — <strong>왼쪽부터 쓸어 담으며 누적한 양</strong>을 기록하는 것이다.
+        덩어리든 도포든 누적은 항상 정의되고, 0 에서 시작해 1 에서 끝난다. 그것이 CDF 다.
+      </p>
+
+      <figure class="widget" data-widget="pushforward">
+        <figcaption class="widget__bar">Random Variable — 표본공간의 확률이 수직선으로 밀려 내려온다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">36개의 칸이 11개의 막대로 <strong>모입니다</strong>. 같은 값으로 가는 칸이 여럿이면 그만큼 막대가 높아집니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          random variable 은 확률을 <strong>실수 위로 옮겨 싣는 장치</strong>다.
+          옮기고 나면 원래의 $\Omega$ 는 잊어도 된다 — 이후의 모든 계산은 수직선 위에서 이루어진다.
+          그래서 "동전 던지기"와 "spam 여부"가 같은 Bernoulli 분포로 취급될 수 있다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <h3>Random Variable 확률변수</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ X:\Omega\to\mathbb{R}, \qquad \{X\le x\} := \{\omega\in\Omega : X(\omega)\le x\} \ \text{ 가 사건이어야 한다} $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">random variable 은 표본공간의 각 outcome 에 실수 하나를 대응시키는 <strong>함수</strong>이고,
+        "$X$ 가 어떤 값 이하일 사건"이 확률을 잴 수 있는 집합이어야 한다는 조건(measurability)이 붙는다.</span>
+        이름과 달리 <strong>변수도 아니고 확률적이지도 않다</strong> — 무작위성은 $\omega$ 를 뽑는 데 있고 $X$ 자체는 결정적인 규칙이다.
+      </p>
+      <p>
+        표기 관습이 중요하다. <strong>대문자 $X$ 는 함수(확률변수), 소문자 $x$ 는 그것이 취한 구체적인 값</strong>이다.
+        $P(X=x)$ 는 "함수 $X$ 의 값이 $x$ 가 되는 $\omega$ 들의 확률"을 뜻한다.
+      </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>추첨함에서 종이를 하나 뽑습니다. 종이에는 이름·나이·주소가 적혀 있지만 우리는 <strong>나이만 읽습니다</strong>. 이 "나이만 읽는 규칙"이 random variable 입니다.</p>
+        <p>규칙 자체는 매번 똑같습니다. 매번 달라지는 것은 어떤 종이가 뽑히느냐뿐입니다. 그래서 "확률변수"라는 말보다 "확률적으로 뽑힌 것을 재는 자"라고 생각하는 편이 정확합니다.</p>
+      </div>
+
+      <span class="anchor" id="c-discrete"></span>
+      <span class="anchor" id="c-pmf"></span>
+      <h3>Discrete Random Variable &amp; PMF</h3>
+      <p>
+        <span class="hl">$X$ 가 취할 수 있는 값이 가산개(유한 또는 가산 무한)면 discrete random variable(이산 확률변수)이고,
+        각 값의 확률을 직접 적은 $p_X(x)=P(X=x)$ 를 probability mass function(확률질량함수, PMF)이라 한다.</span>
+      </p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ p_X(x) = P(X=x), \qquad 0\le p_X(x)\le 1, \qquad \sum_{x\in\mathcal{X}} p_X(x) = 1 $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        PMF 의 값은 <strong>그 자체가 확률</strong>이다. 그래서 1 을 넘을 수 없고 다 더하면 1 이다.
+        구간의 확률은 그냥 더한다: $P(a\le X\le b)=\sum_{a\le x\le b}p_X(x)$.
+        support(지지집합) $\mathcal{X}=\{x: p_X(x)>0\}$ 는 확률이 실제로 얹혀 있는 값들의 집합이다.
+      </p>
+
+      <span class="anchor" id="c-continuous"></span>
+      <span class="anchor" id="c-pdf"></span>
+      <h3>Continuous Random Variable &amp; PDF</h3>
+      <p>
+        <span class="hl">$X$ 의 값이 구간을 연속적으로 채우면 어떤 한 값의 확률이 전부 0 이 되므로,
+        확률을 값이 아니라 <strong>구간의 적분</strong>으로 준다 — 그 피적분함수 $f_X$ 가
+        probability density function(확률밀도함수, PDF)이다.</span>
+      </p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ P(a\le X\le b) = \int_a^b f_X(x)\,dx, \qquad f_X(x)\ge 0, \qquad \int_{-\infty}^{\infty} f_X(x)\,dx = 1 $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <div class="note note--trap">
+        <span class="note__label">여기가 가장 많이 미끄러지는 곳</span>
+        <p>
+          <strong>$f_X(x)$ 는 확률이 아니다.</strong> 단위가 "확률 / 길이"이므로 1 을 넘어도 아무 문제가 없다.
+          $\mathrm{Uniform}(0,\,0.5)$ 의 밀도는 상수 $2$ 다 — 폭 $0.5$ 인 구간에 넓이 1 을 채우려면 높이가 2 여야 하기 때문이다.
+          확률이 되는 것은 <strong>밀도 × 폭</strong>, 즉 넓이다.
+        </p>
+        <p>
+          그래서 연속에서는 $P(X=x)=0$ 이고, 부등호에 등호를 붙이든 말든 값이 같다:
+          $P(a&lt;X&lt;b)=P(a\le X\le b)$. 이산에서는 <strong>절대 그렇지 않다</strong>.
+        </p>
+      </div>
+
+      <figure class="widget" data-widget="density-area">
+        <figcaption class="widget__bar">PDF — 확률은 높이가 아니라 넓이</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">폭을 0 으로 좁히면 <strong>넓이도 0 으로</strong> 갑니다. 밀도값은 그대로인데 확률만 사라지는 것 — 이것이 $P(X=x)=0$ 의 뜻입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-cdf"></span>
+      <h3>Cumulative Distribution Function 누적분포함수</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ F_X(x) = P(X\le x) $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        <span class="hl">CDF 는 이산이든 연속이든 <strong>항상</strong> 정의되며, 비감소·우연속이고
+        $F(-\infty)=0$, $F(+\infty)=1$ 을 만족한다. 실제로 CDF 가 분포의 정의다 — PMF·PDF 는 거기서 파생된다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>이산</th><th>연속</th></tr></thead>
+          <tbody>
+            <tr><td>$F$ 의 모양</td><td><strong>계단</strong> — 각 값에서 뛴다</td><td>매끄럽게 증가</td></tr>
+            <tr><td>$F$ 와의 관계</td><td>$p(x)=F(x)-F(x^-)$ (뛴 높이)</td><td>$f(x)=F'(x)$ (기울기)</td></tr>
+            <tr><td>구간 확률</td><td colspan="2">$P(a&lt;X\le b)=F(b)-F(a)$ &nbsp;(양쪽 공통)</td></tr>
+            <tr><td>$P(X=x)$</td><td>뛴 높이 $>0$</td><td>$0$</td></tr>
+            <tr><td>역함수의 쓸모</td><td colspan="2">$F^{-1}(u)$ 로 <strong>균등난수에서 표본을 만든다</strong> (역변환 샘플링, <a href="4.10-ai-and-probability.html">4.10</a>)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        마지막 줄이 CDF 를 배워야 하는 실용적 이유다. 어떤 분포에서든 표본을 뽑는 가장 일반적인 방법이
+        <strong>$U\sim\mathrm{Uniform}(0,1)$ 을 뽑아 $F^{-1}(U)$ 를 계산하는 것</strong>이다.
+        quantile · 신뢰구간 · $p$-value 도 전부 CDF 의 값이거나 역함수 값이다
+        (<a href="4.8-hypothesis-testing.html">4.8</a>).
+      </p>
+
+      <figure class="widget" data-widget="pmf-cdf">
+        <figcaption class="widget__bar">PMF ↔ CDF — 계단의 높이가 곧 질량</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">CDF 계단이 뛰는 <strong>높이</strong>가 PMF 막대의 높이와 정확히 같습니다. 연속으로 바꾸면 계단이 사라지고 기울기만 남습니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-joint"></span>
+      <h3>Joint Distribution 결합분포</h3>
+      <p>
+        <span class="hl">두 확률변수를 <strong>동시에</strong> 본 확률이 joint distribution(결합분포)이며,
+        각각의 분포를 따로 알아도 결합분포는 복원되지 않는다.</span>
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ p_{X,Y}(x,y)=P(X=x,\,Y=y) \qquad\text{또는}\qquad P\bigl((X,Y)\in A\bigr)=\iint_A f_{X,Y}(x,y)\,dx\,dy $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        결합분포는 두 변수 <strong>사이의 관계까지</strong> 담고 있어서 정보량이 훨씬 많다.
+        변수가 $d$ 개이고 각각 $K$ 개 값을 가지면 표의 칸이 $K^d$ 개가 된다 —
+        이것이 고차원에서 결합분포를 직접 추정할 수 없는 이유이고, graphical model 과
+        <a href="4.10-ai-and-probability.html">4.10</a>의 자기회귀 분해가 필요한 이유다.
+      </p>
+
+      <span class="anchor" id="c-marginal"></span>
+      <h3>Marginal Distribution 주변분포</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ p_X(x)=\sum_y p_{X,Y}(x,y), \qquad f_X(x)=\int f_{X,Y}(x,y)\,dy $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        <span class="hl">관심 없는 변수를 <strong>모든 경우에 대해 합(적분)해서 지우는</strong> 연산이 marginalization 이고,
+        그 결과가 그 변수만 따로 본 분포다.</span>
+        이름은 결합확률표의 <strong>가장자리(margin)</strong> 에 행·열 합을 적던 관행에서 왔다.
+        평균이 아니라 <em>합</em>이라는 점이 중요하다 — 나누지 않는다.
+      </p>
+
+      <span class="anchor" id="c-condist"></span>
+      <h3>Conditional Distribution 조건부분포</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ p_{Y\mid X}(y\mid x) = \frac{p_{X,Y}(x,y)}{p_X(x)}, \qquad p_X(x)>0 $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        <span class="hl">$X=x$ 인 줄(row) 하나만 떼어 내어 <strong>그 줄의 합이 1 이 되도록 다시 정규화한 것</strong>이 조건부분포다.</span>
+        4.1의 조건부확률을 각 값마다 적용한 것이고, 나누는 분모 $p_X(x)$ 가 바로 marginal 이다.
+        그래서 계산 순서는 언제나 <strong>결합 → 주변 → 조건부</strong> 다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ X\perp Y \iff p_{X,Y}(x,y)=p_X(x)\,p_Y(y)\ \ \text{(모든 } x,y) \iff p_{Y\mid X}(y\mid x)=p_Y(y) $$</div>
+        <span class="eq__tag num">(8)</span>
+      </div>
+      <p>
+        독립이면 결합분포가 두 marginal 의 곱으로 <strong>완전히 복원</strong>된다.
+        표의 칸 수가 $K^2$ 에서 $2K$ 로 줄어드는 것이라, 독립 가정은 정확도를 내주고 추정 가능성을 사는 거래다.
+      </p>
+
+      <figure class="widget" data-widget="joint-explore">
+        <figcaption class="widget__bar">Joint · Marginal · Conditional — 한 표에서 셋을 모두 읽기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">한 행을 고르면 그 행이 <strong>합 1 로 다시 늘어납니다</strong>. marginal 은 가장자리 합, conditional 은 그 행의 재정규화입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>이산과 연속의 대응을 한 장으로 정리한다. <strong>$\sum \leftrightarrow \int$ 를 바꾸면 같은 식</strong>이다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>이산 (PMF)</th><th>연속 (PDF)</th></tr></thead>
+          <tbody>
+            <tr><td>기본 함수</td><td>$p(x)=P(X=x)$</td><td>$f(x)=F'(x)$</td></tr>
+            <tr><td>값의 의미</td><td><strong>확률 자체</strong> — $[0,1]$</td><td><strong>확률 밀도</strong> — $[0,\infty)$, 1 초과 가능</td></tr>
+            <tr><td>정규화</td><td>$\sum_x p(x)=1$</td><td>$\int f(x)\,dx=1$</td></tr>
+            <tr><td>구간 확률</td><td>$\sum_{x\in A}p(x)$</td><td>$\int_A f(x)\,dx$</td></tr>
+            <tr><td>CDF</td><td>$F(x)=\sum_{t\le x}p(t)$</td><td>$F(x)=\int_{-\infty}^{x}f(t)\,dt$</td></tr>
+            <tr><td>주변</td><td>$p_X(x)=\sum_y p(x,y)$</td><td>$f_X(x)=\int f(x,y)\,dy$</td></tr>
+            <tr><td>조건부</td><td>$p(y\mid x)=p(x,y)/p_X(x)$</td><td>$f(y\mid x)=f(x,y)/f_X(x)$</td></tr>
+            <tr><td>변수변환 $Y=g(X)$</td><td>$p_Y(y)=\sum_{x:g(x)=y}p_X(x)$</td><td>$f_Y(y)=f_X\bigl(g^{-1}(y)\bigr)\left|\dfrac{dg^{-1}}{dy}\right|$</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        마지막 줄의 <strong>Jacobian 절댓값</strong>이 연속에만 붙는다. 이산은 확률 덩어리를 옮겨 놓기만 하면 되지만,
+        연속은 축이 늘어나거나 줄어들면 <strong>밀도가 그만큼 묽어지거나 진해지기</strong> 때문이다.
+        normalizing flow 계열 생성 모델이 계산량을 쏟는 지점이 정확히 이 항이다(<a href="4.10-ai-and-probability.html">4.10</a>).
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$X$, $Y$</td><td>대문자 X · Y</td><td>random variable (함수)</td><td>$\Omega\to\mathbb{R}$</td><td>—</td></tr>
+            <tr><td>$x$, $y$</td><td>소문자 x · y</td><td>$X$ 가 취한 구체적인 값</td><td>실수</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$p_X(x)$</td><td>p sub X of x · PMF</td><td>확률질량함수</td><td>함수</td><td>$[0,1]$</td></tr>
+            <tr><td>$f_X(x)$</td><td>f sub X of x · PDF</td><td>확률밀도함수</td><td>함수</td><td>$[0,\infty)$</td></tr>
+            <tr><td>$F_X(x)$</td><td>대문자 F · CDF</td><td>누적분포함수 $P(X\le x)$</td><td>함수</td><td>$[0,1]$, 비감소</td></tr>
+            <tr><td>$F(x^-)$</td><td>F of x minus · 좌극한</td><td>$x$ 바로 왼쪽에서의 값</td><td>실수</td><td>$[0,1]$</td></tr>
+            <tr><td>$\mathcal{X}$</td><td>script X · support</td><td>확률이 0 이 아닌 값들의 집합</td><td>집합</td><td>—</td></tr>
+            <tr><td>$\sim$</td><td>tilde 틸데 · "~ 를 따른다"</td><td>$X\sim\mathcal{N}(0,1)$ 처럼 분포 지정</td><td>관계</td><td>—</td></tr>
+            <tr><td>$\int f\,dx$</td><td>integral 인테그랄</td><td>적분 (연속판 합)</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$p_{X,Y}(x,y)$</td><td>p sub X comma Y</td><td>결합분포</td><td>2변수 함수</td><td>$[0,1]$ 또는 $[0,\infty)$</td></tr>
+            <tr><td>$p_{Y\mid X}(y\mid x)$</td><td>p of y given x</td><td>조건부분포</td><td>2변수 함수</td><td>$y$ 에 대해 합 1</td></tr>
+            <tr><td>$\{X\le x\}$</td><td>the event X is at most x</td><td>사건 $\{\omega:X(\omega)\le x\}$</td><td>집합</td><td>$\subseteq\Omega$</td></tr>
+            <tr><td>$g^{-1}$</td><td>g inverse 인버스</td><td>역함수</td><td>함수</td><td>—</td></tr>
+            <tr><td>$\left|\frac{dg^{-1}}{dy}\right|$</td><td>Jacobian 야코비안 절댓값</td><td>변수변환 시 밀도 보정</td><td>스칼라</td><td>$>0$</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">같은 것을 다르게 부른다</span>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>이 사이트</th><th>같은 뜻으로 쓰이는 말</th><th>주의할 점</th></tr></thead>
+            <tbody>
+              <tr><td>PMF $p(x)$</td><td>분포(distribution), 확률함수</td><td>딥러닝 논문은 이산·연속을 가리지 않고 그냥 $p(x)$ 라 쓴다</td></tr>
+              <tr><td>PDF $f(x)$</td><td>density, $p(x)$</td><td>Bishop·Murphy 는 <strong>연속도 $p$ 로</strong> 쓴다. 문맥으로 구분해야 한다</td></tr>
+              <tr><td>marginal</td><td>주변화(marginalize out), 적분해 없앤다</td><td>"marginalize" 는 <strong>동사</strong>로 더 자주 쓰인다</td></tr>
+              <tr><td>CDF $F$</td><td>분포함수(distribution function)</td><td>통계학 문헌의 "distribution function" 은 <strong>CDF</strong> 를 뜻한다</td></tr>
+              <tr><td>$1-F(x)$</td><td>survival function, tail probability</td><td>신뢰성 공학·생존분석에서 기본 도구</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — 왜 연속에서는 $P(X=x)=0$ 인가</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \{X=x\} \subseteq \Bigl\{x-\tfrac1n \le X \le x+\tfrac1n\Bigr\} \quad (\forall n) $$</div>
+          <div class="derive__why">한 점은 아무리 좁은 구간에도 들어 있다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P(X=x) \le \int_{x-1/n}^{x+1/n} f(t)\,dt \le \frac{2}{n}\max_{|t-x|\le 1/n} f(t) $$</div>
+          <div class="derive__why">단조성 + 적분을 (폭)×(최댓값)으로 위에서 눌렀다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ n\to\infty \Rightarrow \frac{2}{n}\max f \to 0 $$</div>
+          <div class="derive__why">$f$ 가 유계이면 폭이 0 으로 가면서 <strong>넓이도 0</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore\ P(X=x)=0 \quad\text{이지만}\quad f(x)\ne 0 \ \text{일 수 있다} $$</div>
+          <div class="derive__why"><strong>높이는 남고 넓이만 사라진다</strong> — PDF 와 확률이 다른 것의 정확한 뜻</div>
+        </div>
+      </div>
+
+      <h3>유도 2 — $f=F'$ 은 왜 성립하는가</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ F(x+h)-F(x) = P(x&lt;X\le x+h) = \int_x^{x+h} f(t)\,dt $$</div>
+          <div class="derive__why">CDF 의 차가 구간 확률 (정의 4 + 가법성)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{F(x+h)-F(x)}{h} = \frac1h\int_x^{x+h} f(t)\,dt $$</div>
+          <div class="derive__why">양변을 $h$ 로 나눴다 — 오른쪽은 <strong>구간의 평균 밀도</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lim_{h\to0}\frac1h\int_x^{x+h}f(t)\,dt = f(x) $$</div>
+          <div class="derive__why">미적분학의 기본정리 (<a href="../ch03/3.2-derivatives.html">3.2</a>) — $f$ 가 연속인 점에서</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore\ F'(x)=f(x) $$</div>
+          <div class="derive__why"><strong>밀도는 누적의 변화율</strong>. 이산에서 "뛴 높이"에 해당하는 것</div>
+        </div>
+      </div>
+
+      <h3>유도 3 — 결합에서 주변으로, 주변에서 조건부로</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \{X=x\} = \bigcup_{y}\{X=x,\ Y=y\} $$</div>
+          <div class="derive__why">$Y$ 가 어떤 값이든 하나는 가지므로 $y$ 별 조각으로 <strong>전부 덮인다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \{X=x,Y=y\}\cap\{X=x,Y=y'\}=\varnothing \quad (y\ne y') $$</div>
+          <div class="derive__why">$Y$ 가 두 값을 동시에 가질 수 없으므로 <strong>서로소</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ p_X(x) = \sum_y p_{X,Y}(x,y) $$</div>
+          <div class="derive__why">axiom A3 (<a href="4.1-probability-basics.html">4.1</a>)로 더한다 — <strong>전확률법칙의 확률변수 판</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sum_y p_{Y\mid X}(y\mid x) = \sum_y \frac{p_{X,Y}(x,y)}{p_X(x)} = \frac{p_X(x)}{p_X(x)} = 1 $$</div>
+          <div class="derive__why">조건부분포가 <strong>진짜 분포임을 확인</strong> — 분모가 곧 그 행의 합이기 때문</div>
+        </div>
+      </div>
+
+      <details>
+        <summary>이산도 연속도 아닌 분포 (혼합형)</summary>
+        <p>
+          $F$ 가 계단이면 이산, 매끄러우면 연속인데 <strong>둘이 섞인 경우</strong>도 흔하다.
+          ReLU 를 통과한 출력 $Y=\max(0,X)$ 가 대표적이다 — $X$ 가 연속이어도
+          $P(Y=0)=P(X\le0)>0$ 이라 0 에서 확률 덩어리가 생기고, 양수 쪽에는 밀도가 깔린다.
+        </p>
+        <p>
+          이런 분포는 PMF 로도 PDF 로도 적을 수 없지만 <strong>CDF 로는 아무 문제 없이</strong> 적힌다.
+          "CDF 가 분포의 정의"라는 말이 형식적 겉치레가 아닌 이유다.
+          비 오는 양(0 에 덩어리 + 양수에 밀도), 보험 청구액, censored data 가 모두 이 형태다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① 주사위 두 개의 합 — PMF 와 CDF 를 손으로</h3>
+      <p>$S=X_1+X_2$ 라 두면 $\Omega$ 의 36칸이 11개의 값으로 모인다. 각 값이 몇 칸에서 오는지 세면 PMF 가 나온다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$s$</th><th class="num">2</th><th class="num">3</th><th class="num">4</th><th class="num">5</th><th class="num">6</th><th class="num">7</th><th class="num">8</th><th class="num">9</th><th class="num">10</th><th class="num">11</th><th class="num">12</th></tr></thead>
+          <tbody>
+            <tr><td>칸 수</td><td class="num">1</td><td class="num">2</td><td class="num">3</td><td class="num">4</td><td class="num">5</td><td class="num"><strong>6</strong></td><td class="num">5</td><td class="num">4</td><td class="num">3</td><td class="num">2</td><td class="num">1</td></tr>
+            <tr><td>$p(s)$</td><td class="num">1/36</td><td class="num">2/36</td><td class="num">3/36</td><td class="num">4/36</td><td class="num">5/36</td><td class="num"><strong>6/36</strong></td><td class="num">5/36</td><td class="num">4/36</td><td class="num">3/36</td><td class="num">2/36</td><td class="num">1/36</td></tr>
+            <tr><td>$F(s)$</td><td class="num">1/36</td><td class="num">3/36</td><td class="num">6/36</td><td class="num">10/36</td><td class="num">15/36</td><td class="num">21/36</td><td class="num">26/36</td><td class="num">30/36</td><td class="num">33/36</td><td class="num">35/36</td><td class="num"><strong>36/36</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \sum_s p(s) = \frac{1+2+3+4+5+6+5+4+3+2+1}{36} = \frac{36}{36} = 1 $$</div>
+          <div class="derive__why">정규화 검산 ✓ — 세어 보면 정확히 36칸</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P(5&lt;S\le 8) = F(8)-F(5) = \tfrac{26}{36}-\tfrac{10}{36} = \tfrac{16}{36} = \tfrac49 $$</div>
+          <div class="derive__why">직접 더해도 같다: $(5+6+5)/36=16/36$ ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ p(7) = F(7)-F(7^-) = \tfrac{21}{36}-\tfrac{15}{36} = \tfrac{6}{36} $$</div>
+          <div class="derive__why"><strong>계단이 뛴 높이가 곧 PMF</strong> ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P(S\le 7)=\tfrac{21}{36}\ \ne\ P(S&lt;7)=\tfrac{15}{36} $$</div>
+          <div class="derive__why">이산에서는 <strong>등호 하나가 6/36 을 가른다</strong> — 연속과 결정적으로 다른 점</div>
+        </div>
+      </div>
+
+      <h3>② 연속 — $f(x)=2x$ 위에서 전부 계산해 보기</h3>
+      <p>$f(x)=2x$ ($0\le x\le1$), 그 밖에서는 0 이다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \int_0^1 2x\,dx = \bigl[x^2\bigr]_0^1 = 1-0 = 1 $$</div>
+          <div class="derive__why">정규화 확인 ✓ (밀도의 자격을 갖췄다)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ F(x)=\int_0^x 2t\,dt = x^2 \quad (0\le x\le 1) $$</div>
+          <div class="derive__why">CDF. 검산: $F(1)=1$ ✓, $F'(x)=2x=f(x)$ ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P(0.5\le X\le 0.8) = F(0.8)-F(0.5) = 0.64-0.25 = 0.39 $$</div>
+          <div class="derive__why">넓이. 폭 0.3 에 평균 높이 $(1.0+1.6)/2=1.3$ → $0.3\times1.3=0.39$ ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f(0.9)=1.8 > 1 \quad\text{인데도}\quad P(X=0.9)=0 $$</div>
+          <div class="derive__why"><strong>밀도가 1 을 넘어도 아무 문제 없다</strong> — 값이 확률이 아니기 때문</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ F^{-1}(u)=\sqrt{u} \ \Rightarrow\ u=0.25\mapsto 0.5,\quad u=0.64\mapsto 0.8 $$</div>
+          <div class="derive__why">역변환 샘플링. $u$ 를 균등하게 뽑으면 <strong>$\sqrt{u}$ 가 이 분포를 따른다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{중앙값}: F(m)=0.5 \Rightarrow m^2=0.5 \Rightarrow m=\tfrac{1}{\sqrt2}\approx 0.707 $$</div>
+          <div class="derive__why">quantile 은 <strong>CDF 의 역함수 값</strong>이다</div>
+        </div>
+      </div>
+
+      <h3>③ 결합분포표 — 주변과 조건부를 뽑아내기</h3>
+      <p>$X\in\{0,1\}$ (spam 여부), $Y\in\{$없음, 1회, 2회 이상$\}$ ("무료"의 등장 횟수).</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$p(x,y)$</th><th>$y$=없음</th><th>$y$=1회</th><th>$y$=2회↑</th><th>행 합 $p_X(x)$</th></tr></thead>
+          <tbody>
+            <tr><td>$x$=0 (정상)</td><td class="num">0.54</td><td class="num">0.05</td><td class="num">0.01</td><td class="num"><strong>0.60</strong></td></tr>
+            <tr><td>$x$=1 (spam)</td><td class="num">0.10</td><td class="num">0.14</td><td class="num">0.16</td><td class="num"><strong>0.40</strong></td></tr>
+            <tr><td>열 합 $p_Y(y)$</td><td class="num"><strong>0.64</strong></td><td class="num"><strong>0.19</strong></td><td class="num"><strong>0.17</strong></td><td class="num">1.00</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ 0.54+0.05+0.01+0.10+0.14+0.16 = 1.00 $$</div>
+          <div class="derive__why">여섯 칸의 합이 1 ✓ — 결합분포의 자격</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ p_X(1) = 0.10+0.14+0.16 = 0.40 $$</div>
+          <div class="derive__why">marginal — $y$ 를 <strong>더해서 지웠다</strong> (평균이 아니라 합)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ p_{Y\mid X}(\cdot\mid 1) = \frac{(0.10,\,0.14,\,0.16)}{0.40} = (0.25,\ 0.35,\ 0.40) $$</div>
+          <div class="derive__why">spam 인 행을 <strong>합 1 로 재정규화</strong>. 검산: $0.25+0.35+0.40=1$ ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ p_{Y\mid X}(\cdot\mid 0) = \frac{(0.54,\,0.05,\,0.01)}{0.60} = (0.90,\ 0.08\overline{3},\ 0.01\overline{6}) $$</div>
+          <div class="derive__why">정상 메일의 행. spam 행과 <strong>모양이 완전히 다르다</strong> → 종속</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ p_X(1)p_Y(\text{2회↑}) = 0.40\times0.17 = 0.068 \ \ne\ 0.16 $$</div>
+          <div class="derive__why">독립이었다면 0.068 이어야 한다. <strong>실제는 2.35배</strong> — 강한 종속</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ p_{X\mid Y}(1\mid \text{2회↑}) = \frac{0.16}{0.17} \approx 0.941 $$</div>
+          <div class="derive__why">방향을 뒤집은 조건부 — <strong>"무료"가 2번 이상이면 94% 가 spam</strong></div>
+        </div>
+      </div>
+      <p>
+        마지막 줄이 실제 분류기가 내놓는 값이다.
+        <span class="hl">같은 결합분포표에서 <strong>어느 축으로 자르느냐</strong>에 따라
+        $p(y\mid x)$(생성 관점)와 $p(x\mid y)$(판별 관점)가 나오고, 그 둘을 잇는 것이 Bayes' theorem 이다.</span>
+      </p>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>확률의 이동</strong> · <strong>밀도와 넓이</strong> ·
+        <strong>PMF↔CDF</strong> · <strong>결합/주변/조건부</strong> — 에 이어,
+        아래에서 <strong>CDF 의 역함수로 표본을 만드는</strong> 과정을 본다.
+        분포를 다루는 모든 라이브러리가 내부에서 하는 일이다.
+      </p>
+
+      <figure class="widget" data-widget="inverse-sampling">
+        <figcaption class="widget__bar">Inverse Transform — 균등난수를 원하는 분포로 바꾸기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">세로축(균등)에서 <strong>같은 간격</strong>으로 자른 것이 가로축에서는 <strong>다른 간격</strong>이 됩니다. CDF 가 가파른 곳에 표본이 몰립니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"PDF 값 $f(x)$ 는 $X$ 가 $x$ 일 확률이다."</p>
+        <p>
+          <strong>실제로는</strong> $P(X=x)=0$ 이고 $f(x)$ 는 <strong>단위 길이당 확률</strong>이다.
+          그래서 $f(x)>1$ 이 얼마든지 가능하고($\mathrm{Uniform}(0,0.5)$ 의 밀도는 2),
+          $x$ 의 단위를 바꾸면 값도 바뀐다(미터 → 센티미터면 밀도가 1/100 이 된다).
+          확률이 되는 것은 언제나 <strong>$f(x)\,dx$</strong> — 밀도에 폭을 곱한 넓이다.
+          log-likelihood 가 양수로 나와도 버그가 아닌 이유가 이것이다(<a href="4.6-likelihood-estimation.html">4.6</a>).
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"$X$ 와 $Y$ 의 분포를 각각 알면 $(X,Y)$ 의 분포도 안다."</p>
+        <p>
+          <strong>실제로는</strong> marginal 두 개로는 결합분포가 <strong>결정되지 않는다</strong>.
+          예제 ③의 표와, 같은 행·열 합을 가지면서 독립인 표($0.384,\,0.114,\,0.102\,/\,0.256,\,0.076,\,0.068$)는
+          marginal 이 완전히 같지만 전혀 다른 분포다.
+          결합에서 marginal 로 가는 것은 정보를 <strong>버리는</strong> 일이라 되돌릴 수 없다.
+          독립을 가정할 때만 곱으로 복원되며, 그 가정이 틀리면 상관 구조가 통째로 사라진다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"확률변수는 값이 무작위로 변하는 변수다."</p>
+        <p>
+          <strong>실제로는</strong> $X$ 는 <strong>고정된 함수</strong>다. 무작위성은 $\omega$ 를 뽑는 데 있고,
+          같은 $\omega$ 를 넣으면 $X(\omega)$ 는 언제나 같은 값이다.
+          이 구분이 중요해지는 자리가 <a href="4.6-likelihood-estimation.html">4.6</a>이다 —
+          likelihood 를 볼 때는 <strong>data 를 고정하고 parameter 를 움직이는데</strong>,
+          "확률변수가 무작위로 변한다"는 그림을 갖고 있으면 무엇을 고정한 것인지 헷갈린다.
+          여러 확률변수가 <strong>같은 $\omega$</strong> 를 공유한다는 것도 이 관점에서만 보인다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"주변분포를 구할 때 평균을 낸다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>더한다</strong>. $p_X(x)=\sum_y p(x,y)$ 이지 $\frac1{|\mathcal{Y}|}\sum_y$ 가 아니다.
+          평균을 내면 합이 1 이 안 된다.
+          헷갈리는 이유는 <em>조건부</em>를 marginal 로 되돌릴 때는 가중평균이 맞기 때문이다:
+          $p_X(x)=\sum_y p(x\mid y)p(y)$. <strong>결합을 더하는 것</strong>과
+          <strong>조건부를 가중평균하는 것</strong>은 같은 식의 두 얼굴이다(chain rule 을 대입하면 같아진다).
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"$P(X\le x)$ 와 $P(X&lt;x)$ 는 어차피 같다."</p>
+        <p>
+          <strong>실제로는</strong> 연속에서만 같다. 이산에서는 $P(X\le7)=21/36$, $P(X&lt;7)=15/36$ 으로
+          $p(7)=6/36$ 만큼 차이가 난다(예제 ①).
+          CDF 를 <strong>우연속</strong>으로 정의하는 것도 이 때문이다 — $F(x)$ 는 $x$ 에서의 덩어리를 <em>포함</em>한다.
+          이산 분포로 $p$-value 나 quantile 을 계산할 때 이 한 칸 때문에 결과가 갈린다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–③ 을 검산한다.</p>
+      <details>
+        <summary>NumPy — PMF/CDF · 밀도의 넓이 · 결합분포 (20줄)</summary>
+<pre><code>import numpy as np
+
+s = np.add.outer(np.arange(1, 7), np.arange(1, 7)).ravel()      # 36칸의 합
+pmf = np.bincount(s, minlength=13)[2:] / 36
+cdf = np.cumsum(pmf)
+print(pmf.round(4), cdf.round(4))                # 6/36=0.1667 이 최댓값
+print(cdf[8 - 2] - cdf[5 - 2], 16 / 36)          # P(5&lt;S&lt;=8) 두 방법이 일치
+
+x = np.linspace(0, 1, 100001)
+f = 2 * x
+print(np.trapz(f, x))                            # 1.0  (정규화)
+m = (x &gt;= 0.5) &amp; (x &lt;= 0.8)
+print(np.trapz(f[m], x[m]), 0.8**2 - 0.5**2)     # 0.39  0.39
+
+J = np.array([[0.54, 0.05, 0.01], [0.10, 0.14, 0.16]])
+px, py = J.sum(1), J.sum(0)
+print(px, py, J.sum())                           # [0.6 0.4] [0.64 0.19 0.17] 1.0
+print((J / px[:, None]).round(4))                # 조건부 p(y|x): 각 행의 합이 1
+print(np.abs(J - np.outer(px, py)).max().round(4))  # 0 이 아니면 종속
+</code></pre>
+        <p>
+          <small>
+            마지막 줄의 <code>np.outer(px, py)</code> 가 <strong>독립이었다면 나왔을 표</strong>다.
+            실제 표와의 최대 차이가 0.092 로 크다 — 예제 ③에서 손으로 확인한 종속이 그대로 나온다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $f(x)=3x^2$ ($0\le x\le1$) 일 때 $P(X\le 0.5)$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>0.125</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.75</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0.5</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $F(x)=\int_0^x 3t^2dt=x^3$ 이므로 $F(0.5)=0.125$.
+            <strong>나</strong>는 밀도값 $f(0.5)=3(0.25)=0.75$ 를 확률로 착각한 것이다 —
+            <strong>밀도는 확률이 아니다</strong>(오해 1).
+            검산: $F(1)=1$ ✓, $F'(x)=3x^2=f(x)$ ✓.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            예제 ③의 표에서 $p_{X\mid Y}(1\mid \text{1회})$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$0.14/0.19 \approx 0.737$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$0.14/0.40 = 0.35$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$0.14$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            조건이 $Y$ 이므로 분모는 <strong>$Y$ 의 marginal</strong> 인 열 합 $p_Y(\text{1회})=0.05+0.14=0.19$.
+            <strong>나</strong>는 분모를 행 합으로 잘못 잡은 것으로, 그 값은 반대 방향인 $p_{Y\mid X}(\text{1회}\mid 1)$ 다.
+            <strong>조건으로 건 변수의 marginal 로 나눈다</strong>는 것만 기억하면 방향을 틀리지 않는다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\mathrm{Uniform}(0,\,0.2)$ 의 PDF 값 $f(0.1)$ 은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>5</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>1</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0.2</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            폭 0.2 인 직사각형의 넓이가 1 이 되려면 높이가 $1/0.2=5$ 여야 한다.
+            <strong>밀도가 5 라는 것이 "확률 5"를 뜻하지 않는다</strong> — 어떤 구간의 확률도 1 을 넘지 않는다
+            (가장 넓은 구간 $[0,0.2]$ 의 확률이 $5\times0.2=1$).
+            구간을 좁힐수록 밀도는 커질 수 있고, 이것이 밀도가 상한 없이 정의되는 이유다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            이산과 연속을 통틀어 <strong>항상</strong> 정의되는 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>CDF $F(x)=P(X\le x)$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>PDF $f(x)$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>PMF $p(x)$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            이산에는 PDF 가 없고 연속에는 (0 이 아닌) PMF 가 없지만 CDF 는 양쪽 모두, 심지어
+            <strong>둘이 섞인 분포에서도</strong> 정의된다(ReLU 출력처럼).
+            그래서 "분포를 안다"는 말의 가장 정확한 뜻은 <strong>CDF 를 안다</strong>는 것이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            $X$ 와 $Y$ 가 독립일 때 결합분포표에 대해 참인 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>모든 칸이 (행 합)×(열 합) 과 같고, 각 행의 조건부분포가 전부 동일하다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>대각선 칸만 0 이 아니다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>모든 칸의 값이 같다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            독립의 정의 $p(x,y)=p_X(x)p_Y(y)$ 를 표로 옮기면 "칸 = 행 합 × 열 합"이고,
+            그때 $p(y\mid x)=p_X(x)p_Y(y)/p_X(x)=p_Y(y)$ 라 <strong>어느 행을 봐도 같은 분포</strong>가 된다.
+            <strong>나</strong>는 오히려 <strong>완전한 종속</strong>($X$ 를 알면 $Y$ 가 결정됨)의 모습이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            어떤 model 의 log-likelihood 가 <strong>+3.2</strong> 로 나왔다. 판단은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>연속 분포라면 정상이다 — 밀도는 1 을 넘을 수 있다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>확률이 1 을 넘었으므로 반드시 버그다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>부호를 반대로 출력한 것이다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\log f(x)>0$ 은 $f(x)>1$ 을 뜻하고, 밀도는 1 을 넘어도 된다(오해 1).
+            분산이 아주 작은 Gaussian 을 맞히면 흔히 일어난다 — $\sigma=0.01$ 이면 최고 밀도가 약 $39.9$ 다.
+            반면 <strong>이산 분포(분류·언어 모델)에서 양수가 나오면 확실한 버그</strong>다 —
+            그때는 $p\le1$ 이라 $\log p\le0$ 이어야 한다. <strong>이산인지 연속인지를 먼저 확인</strong>하는 것이 진단의 첫 단계다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="4.3-expectation-variance.html">4.3 기댓값과 분산</a></strong> — 분포를 몇 개의 숫자로 요약한다.</li>
+        <li><strong><a href="4.4-common-distributions.html">4.4 주요 확률분포</a></strong> — 이 절의 문법으로 적힌 구체적인 분포들.</li>
+        <li><strong><a href="4.6-likelihood-estimation.html">4.6 가능도 기반 추정</a></strong> — PDF/PMF 를 parameter 의 함수로 다시 읽는다.</li>
+        <li><strong><a href="4.10-ai-and-probability.html">4.10 AI와 확률</a></strong> — 역변환 샘플링과 자기회귀 분해가 여기서 나온다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Deisenroth, M. P., Faisal, A. A. &amp; Ong, C. S. (2020). <em>Mathematics for Machine Learning</em>. Cambridge University Press.</span>
+          <span class="ref__where">6.1.2절 — random variable 을 $\Omega\to\mathcal{T}$ 함수로 정의하고 확률을 밀어 보내는(pushforward) 구성('직관' 절의 위젯). 6.2절 — 이산 PMF·연속 PDF·CDF 의 정의와 표 대응(수식 절의 대응표). 6.7절 — 변수변환과 Jacobian 항</span>
+          <a class="ref__link" href="https://mml-book.github.io/">mml-book.github.io</a>
+        </li>
+        <li class="ref" id="ref-blitzstein2019-intro-prob" data-ref="blitzstein2019-intro-prob">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Blitzstein, J. K. &amp; Hwang, J. (2019). <em>Introduction to Probability</em> (2nd ed.). CRC Press.</span>
+          <span class="ref__where">3.1–3.2절 — "random variable 은 변수가 아니라 함수"라는 강조와 PMF 의 정의(오해 3). 5.1–5.3절 — CDF 를 분포의 정의로 두는 이유, PDF 값이 확률이 아니라는 설명(오해 1), 역변환 샘플링(위젯 5). 7.1절 — 결합·주변·조건부의 표 계산(예제 ③)</span>
+          <a class="ref__link" href="http://probabilitybook.net/">probabilitybook.net</a>
+        </li>
+        <li class="ref" id="ref-bishop2006-prml" data-ref="bishop2006-prml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Bishop, C. M. (2006). <em>Pattern Recognition and Machine Learning</em>. Springer.</span>
+          <span class="ref__where">1.2절 — sum rule(주변화, 식 6)과 product rule(조건부, 식 7)을 확률의 두 규칙으로 제시하는 구성. 1.2.1절 — 연속 확률밀도의 정의와 변수변환에서 Jacobian 이 붙는 이유. 이 책이 연속에도 $p(x)$ 표기를 쓰는 대표적 예다('같은 것을 다르게 부른다' 표)</span>
+          <a class="ref__link" href="https://www.microsoft.com/en-us/research/publication/pattern-recognition-machine-learning/">microsoft.com/research</a>
+        </li>
+        <li class="ref" id="ref-harvard-stat110" data-ref="harvard-stat110">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Blitzstein, J. K. <em>Statistics 110: Probability</em>. Harvard University.</span>
+          <span class="ref__where">Lecture 8 — random variable 을 함수로 그리는 도식과 "무작위성은 어디에 있는가"라는 물음. Lecture 13–14 — PDF·CDF 의 관계, 밀도가 1 을 넘을 수 있는 이유, universality of the uniform(역변환 샘플링)의 증명</span>
+          <a class="ref__link" href="https://projects.iq.harvard.edu/stat110/home">projects.iq.harvard.edu/stat110</a>
+        </li>
+        <li class="ref" id="ref-khan-statistics" data-ref="khan-statistics">
+          <span class="ref__type" data-type="video">영상</span>
+          <span class="ref__cite">Khan Academy. <em>Random variables · Probability distributions</em> (Statistics and Probability).</span>
+          <span class="ref__where">'Constructing probability distributions' 와 'Probability density functions' 단원 — 주사위 두 개의 합에서 PMF 를 세어 만드는 과정(예제 ①)과, 연속에서 "한 점의 확률은 0"을 넓이로 설명하는 그림(유도 1)</span>
+          <a class="ref__link" href="https://www.khanacademy.org/math/statistics-probability">khanacademy.org</a>
+        </li>
+        <li class="ref" id="ref-scipy-stats-docs" data-ref="scipy-stats-docs">
+          <span class="ref__type" data-type="doc">문서</span>
+          <span class="ref__cite">SciPy developers. <em>scipy.stats — Statistical functions</em>.</span>
+          <span class="ref__where">rv_continuous / rv_discrete 의 메서드 규약 — <code>pdf</code>·<code>pmf</code>·<code>cdf</code>·<code>ppf</code>(역CDF)가 이 절의 네 함수에 그대로 대응한다. <code>ppf</code> 문서가 역변환 샘플링의 실무 인터페이스이며, 이산 분포에서 <code>cdf</code> 가 $P(X\le x)$ 로 우연속임을 명시한 부분이 오해 5 의 근거</span>
+          <a class="ref__link" href="https://docs.scipy.org/doc/scipy/reference/stats.html">docs.scipy.org</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+/* 플롯 영역 배경 — 축 라벨이 놓이는 '칸'을 눈에 보이게 만든다.
+   (tools/check-visual.mjs 의 '칸초과' 는 같은 그룹의 첫 rect 를 칸으로 본다) */
+function panel(p) {
+  p.add(VIZ.el('rect', {
+    x: p.pad.l, y: p.pad.t, width: p.iw, height: p.ih,
+    fill: 'var(--ink-3)', 'fill-opacity': 0.03, stroke: 'none'
+  }));
+  return p;
+}
+
+/* ============================================================
+   위젯 1 — 표본공간 → 수직선 (pushforward)
+   ============================================================ */
+WIDGETS.register('pushforward', function (root, ctx) {
+  var pick = 7;
+
+  var p = VIZ.plot({ w: 460, h: 290, xmin: 1.5, xmax: 12.5, ymin: 0, ymax: 0.20,
+    pad: { t: 20, r: 14, b: 30, l: 46 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'val', label: '고른 값 s' },
+    { key: 'cells', label: '이 값으로 오는 칸 수' },
+    { key: 'pmf', label: 'p(s) = 칸 수 / 36', digits: 4 },
+    { key: 'cdf', label: 'F(s) = P(S ≤ s)', digits: 4 }
+  ]);
+
+  function count(s) { return s <= 7 ? s - 1 : 13 - s; }
+
+  function draw() {
+    panel(p.clear()).grid(1, 0.05).axes('s = 두 눈의 합', 'p(s)').ticks(1, 0.05);
+    var cum = 0;
+    for (var s = 2; s <= 12; s++) {
+      var h = count(s) / 36;
+      if (s <= pick) cum += h;
+      var on = (s === pick);
+      p.add(VIZ.el('rect', {
+        x: p.X(s - 0.38), y: p.Y(h),
+        width: p.X(s + 0.38) - p.X(s - 0.38), height: p.Y(0) - p.Y(h),
+        fill: on ? 'var(--amber)' : 'var(--jade)', 'fill-opacity': on ? 0.62 : 0.28,
+        stroke: on ? 'var(--amber)' : 'var(--jade)', 'stroke-width': 1.1, rx: 2
+      }));
+    }
+    p.callout(pick, count(pick) / 36, count(pick) + '칸이 여기로 모인다',
+      { dx: 24, dy: -18, tone: 'var(--seal)' });
+
+    out.setRaw('val', String(pick));
+    out.setRaw('cells', count(pick) + ' / 36');
+    out.set('pmf', count(pick) / 36);
+    out.set('cdf', cum);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '값 s 고르기', min: 2, max: 12, step: 1, value: 7, digits: 0,
+    onInput: function (v) { pick = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — 밀도 아래 넓이
+   ============================================================ */
+WIDGETS.register('density-area', function (root, ctx) {
+  var center = 0.65, width = 0.30, kind = 'lin';
+
+  var p = VIZ.plot({ w: 460, h: 280, xmin: -0.05, xmax: 1.05, ymin: 0, ymax: 3.2,
+    pad: { t: 20, r: 16, b: 30, l: 46 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'a', label: '구간 [a, b]' },
+    { key: 'h', label: '중앙에서의 밀도 f(중앙)', digits: 3 },
+    { key: 'area', label: '넓이 = P(a ≤ X ≤ b)', digits: 4 },
+    { key: 'note', label: '확인' }
+  ]);
+
+  function f(x) {
+    if (x < 0 || x > 1) return 0;
+    if (kind === 'lin') return 2 * x;
+    if (kind === 'quad') return 3 * x * x;
+    return 1;                                   /* uniform */
+  }
+  function F(x) {
+    x = Math.max(0, Math.min(1, x));
+    if (kind === 'lin') return x * x;
+    if (kind === 'quad') return x * x * x;
+    return x;
+  }
+
+  function draw() {
+    p.clear().grid(0.25, 0.5).axes('x', 'f(x)').ticks(0.25, 1);
+    var a = Math.max(0, center - width / 2), b = Math.min(1, center + width / 2);
+
+    /* 넓이 채우기 */
+    var pts = 'M' + p.X(a) + ' ' + p.Y(0);
+    for (var i = 0; i <= 60; i++) {
+      var x = a + (b - a) * i / 60;
+      pts += ' L' + p.X(x) + ' ' + p.Y(f(x));
+    }
+    pts += ' L' + p.X(b) + ' ' + p.Y(0) + ' Z';
+    p.add(VIZ.el('path', { d: pts, fill: 'var(--amber)', 'fill-opacity': 0.42,
+      stroke: 'var(--amber)', 'stroke-width': 1 }));
+
+    p.curve(f, { samples: 300 });
+    p.line([[a, 0], [a, f(a)]], { dash: '3 3' });
+    p.line([[b, 0], [b, f(b)]], { dash: '3 3' });
+    p.callout(center, f(center) / 2, '넓이 = ' + (F(b) - F(a)).toFixed(4),
+      { dx: 22, dy: -14, tone: 'var(--ink-2)' });
+
+    out.setRaw('a', '[' + a.toFixed(3) + ', ' + b.toFixed(3) + ']');
+    out.set('h', f(center));
+    out.set('area', F(b) - F(a));
+    out.setRaw('note', width < 0.02 ? '폭 → 0 이면 넓이 → 0  (P(X=x)=0)'
+      : (f(center) > 1 ? '밀도가 1 을 넘어도 넓이는 1 이하' : '밀도 ≤ 1'));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '밀도 f(x)',
+    options: [
+      { value: 'unif', label: 'f = 1 (균등)' },
+      { value: 'lin', label: 'f = 2x' },
+      { value: 'quad', label: 'f = 3x²' }
+    ],
+    value: 'lin', onChange: function (v) { kind = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '구간 중앙', min: 0.05, max: 0.95, step: 0.01, value: 0.65, digits: 2,
+    onInput: function (v) { center = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '구간 폭', min: 0.001, max: 0.6, step: 0.001, value: 0.30, digits: 3,
+    onInput: function (v) { width = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — PMF ↔ CDF
+   ============================================================ */
+WIDGETS.register('pmf-cdf', function (root, ctx) {
+  var mode = 'dice', at = 7;
+
+  var p = VIZ.plot({ w: 460, h: 300, xmin: 1.5, xmax: 12.5, ymin: -0.02, ymax: 1.08,
+    pad: { t: 20, r: 16, b: 30, l: 46 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'p', label: '그 값의 질량 p(x) (계단이 뛴 높이)', digits: 4 },
+    { key: 'le', label: 'F(x) = P(X ≤ x)', digits: 4 },
+    { key: 'lt', label: 'P(X < x)', digits: 4 },
+    { key: 'gap', label: '두 값의 차 (= p(x))', digits: 4 }
+  ]);
+
+  function pmf(s) {
+    if (mode === 'dice') return (s >= 2 && s <= 12) ? (s <= 7 ? s - 1 : 13 - s) / 36 : 0;
+    /* 삼각형 모양 연속 근사 — 잘게 쪼갠 이산 */
+    return 0;
+  }
+
+  function draw() {
+    p.clear().grid(1, 0.25).axes('x', '').ticks(1, 0.25);
+    p.text(1.6, 1.06, mode === 'dice' ? '막대 = PMF · 계단 = CDF' : '곡선 = CDF (연속)', { size: 11 });
+
+    if (mode === 'dice') {
+      var cum = 0;
+      for (var s = 2; s <= 12; s++) {
+        var q = pmf(s);
+        /* PMF 막대 (5배 확대해서 같은 축에 그린다) */
+        p.add(VIZ.el('rect', {
+          x: p.X(s - 0.3), y: p.Y(q * 3), width: p.X(s + 0.3) - p.X(s - 0.3),
+          height: p.Y(0) - p.Y(q * 3), fill: 'var(--jade)', 'fill-opacity': 0.30,
+          stroke: 'var(--jade)', 'stroke-width': 1, rx: 2
+        }));
+        /* CDF 계단 — 세로로 q 만큼 뛰고, 가로로 한 칸 간다 */
+        p.line([[s - 0.5, cum], [s - 0.5, cum + q]], { width: 2 });
+        cum += q;
+        p.line([[s - 0.5, cum], [s + 0.5, cum]], { width: 2 });
+        p.dot(s, cum, 3.2);
+      }
+      var F = 0, Flt = 0;
+      for (var t = 2; t <= 12; t++) { if (t <= at) F += pmf(t); if (t < at) Flt += pmf(t); }
+      p.dot(at, F, 6);
+      p.callout(at, F, 'F(' + at + ') = ' + F.toFixed(3), { dx: 20, dy: -18, tone: 'var(--seal)' });
+      out.set('p', pmf(at));
+      out.set('le', F);
+      out.set('lt', Flt);
+      out.set('gap', F - Flt);
+    } else {
+      /* 연속 비교: 같은 평균·분산의 매끄러운 CDF */
+      var mu = 7, sd = 2.415;
+      var Fc = function (x) { return 0.5 * (1 + erf((x - mu) / (sd * Math.SQRT2))); };
+      p.curve(Fc, { samples: 300 });
+      p.dot(at, Fc(at), 6);
+      p.callout(at, Fc(at), '계단이 없다 → P(X = x) = 0', { dx: 18, dy: -20, tone: 'var(--seal)' });
+      out.set('p', 0);
+      out.set('le', Fc(at));
+      out.set('lt', Fc(at));
+      out.set('gap', 0);
+    }
+  }
+
+  function erf(z) {
+    var t = 1 / (1 + 0.3275911 * Math.abs(z));
+    var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-z * z);
+    return z >= 0 ? y : -y;
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '분포',
+    options: [{ value: 'dice', label: '이산 (주사위 합)' }, { value: 'cont', label: '연속 (Gaussian)' }],
+    value: 'dice', onChange: function (v) { mode = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '읽을 위치 x', min: 2, max: 12, step: 1, value: 7, digits: 0,
+    onInput: function (v) { at = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — 결합 · 주변 · 조건부
+   ============================================================ */
+WIDGETS.register('joint-explore', function (root, ctx) {
+  var J = [[0.54, 0.05, 0.01], [0.10, 0.14, 0.16]];
+  var view = 'joint', row = 1;
+
+  var cell = 84, padL = 78, padT = 40;
+  var svg = VIZ.el('svg', { viewBox: '0 0 ' + (padL + 3 * cell + 66) + ' ' + (padT + 2 * cell + 34), role: 'img' });
+  ctx.stage.appendChild(svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'px', label: 'marginal p_X (행 합)' },
+    { key: 'py', label: 'marginal p_Y (열 합)' },
+    { key: 'cond', label: '고른 행의 조건부 p(y | x)' },
+    { key: 'indep', label: '독립인가' }
+  ]);
+
+  var rowNames = ['x=0 정상', 'x=1 spam'];
+  var colNames = ['없음', '1회', '2회↑'];
+
+  function draw() {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var px = J.map(function (r) { return r[0] + r[1] + r[2]; });
+    var py = [0, 1, 2].map(function (j) { return J[0][j] + J[1][j]; });
+    var maxGap = 0;
+    for (var i = 0; i < 2; i++) for (var j = 0; j < 3; j++)
+      maxGap = Math.max(maxGap, Math.abs(J[i][j] - px[i] * py[j]));
+
+    for (var i2 = 0; i2 < 2; i2++) {
+      for (var j2 = 0; j2 < 3; j2++) {
+        var raw = J[i2][j2];
+        var shown = (view === 'cond' && i2 === row) ? raw / px[i2] : raw;
+        var dim = (view === 'cond' && i2 !== row);
+        svg.appendChild(VIZ.el('rect', {
+          x: padL + j2 * cell, y: padT + i2 * cell, width: cell - 8, height: cell - 8, rx: 4,
+          fill: 'var(--jade)', 'fill-opacity': dim ? 0.04 : (0.08 + 0.7 * shown),
+          stroke: 'var(--ink-3)', 'stroke-width': 0.6, 'stroke-opacity': 0.4
+        }));
+        svg.appendChild(VIZ.el('text', {
+          x: padL + j2 * cell + (cell - 8) / 2, y: padT + i2 * cell + (cell - 8) / 2 + 5,
+          'text-anchor': 'middle', class: 'viz-label', 'font-size': 13,
+          'fill-opacity': dim ? 0.3 : 1,
+          text: shown.toFixed(3)
+        }));
+      }
+    }
+    colNames.forEach(function (L, j) {
+      svg.appendChild(VIZ.el('text', { x: padL + j * cell + (cell - 8) / 2, y: padT - 12,
+        'text-anchor': 'middle', class: 'viz-label', 'font-size': 12, text: L }));
+    });
+    rowNames.forEach(function (L, i) {
+      svg.appendChild(VIZ.el('text', { x: padL - 10, y: padT + i * cell + (cell - 8) / 2 + 5,
+        'text-anchor': 'end', class: 'viz-label', 'font-size': 12, text: L }));
+    });
+    /* 주변합 */
+    if (view !== 'cond') {
+      for (var i3 = 0; i3 < 2; i3++) {
+        svg.appendChild(VIZ.el('text', { x: padL + 3 * cell + 4, y: padT + i3 * cell + (cell - 8) / 2 + 5,
+          'text-anchor': 'start', class: 'viz-label', 'font-size': 12,
+          fill: view === 'marg' ? 'var(--seal)' : null,
+          text: '→ ' + px[i3].toFixed(2) }));
+      }
+      for (var j3 = 0; j3 < 3; j3++) {
+        svg.appendChild(VIZ.el('text', { x: padL + j3 * cell + (cell - 8) / 2, y: padT + 2 * cell + 16,
+          'text-anchor': 'middle', class: 'viz-label', 'font-size': 12,
+          fill: view === 'marg' ? 'var(--seal)' : null,
+          text: '↓ ' + py[j3].toFixed(2) }));
+      }
+    } else {
+      svg.appendChild(VIZ.el('text', { x: padL + 3 * cell + 4, y: padT + row * cell + (cell - 8) / 2 + 5,
+        'text-anchor': 'start', class: 'viz-label', 'font-size': 12, fill: 'var(--seal)', text: '→ 1.00' }));
+    }
+
+    out.setRaw('px', '[' + px.map(function (v) { return v.toFixed(2); }).join(', ') + ']');
+    out.setRaw('py', '[' + py.map(function (v) { return v.toFixed(2); }).join(', ') + ']');
+    out.setRaw('cond', '[' + J[row].map(function (v) { return (v / px[row]).toFixed(3); }).join(', ') + ']');
+    out.setRaw('indep', maxGap < 0.005 ? '독립 ✓' : '종속 (최대 어긋남 ' + maxGap.toFixed(3) + ')');
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '무엇을 볼까',
+    options: [
+      { value: 'joint', label: '결합 p(x,y)' },
+      { value: 'marg', label: '주변 (가장자리 합)' },
+      { value: 'cond', label: '조건부 p(y|x)' }
+    ],
+    value: 'joint', onChange: function (v) { view = v; draw(); }
+  });
+  WIDGETS.toggle({
+    host: ctx.controls, label: '조건으로 걸 행',
+    options: [{ value: 0, label: 'x=0 정상' }, { value: 1, label: 'x=1 spam' }],
+    value: 1, onChange: function (v) { row = Number(v); draw(); }
+  });
+  WIDGETS.matrix({
+    host: ctx.controls, rows: 2, cols: 3, values: J, step: 0.01,
+    label: '결합확률 (합이 1 이 되게)',
+    onChange: function (nv) { J = nv; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — 역변환 샘플링
+   ============================================================ */
+WIDGETS.register('inverse-sampling', function (root, ctx) {
+  var kind = 'lin', k = 10;
+
+  var p = VIZ.plot({ w: 460, h: 300, xmin: -0.08, xmax: 1.08, ymin: -0.12, ymax: 1.08,
+    pad: { t: 20, r: 16, b: 30, l: 44 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'k', label: '균등하게 자른 조각 수' },
+    { key: 'narrow', label: '가장 좁은 x 간격', digits: 4 },
+    { key: 'wide', label: '가장 넓은 x 간격', digits: 4 },
+    { key: 'ratio', label: '넓은 쪽 / 좁은 쪽', digits: 2 }
+  ]);
+
+  function Finv(u) {
+    if (kind === 'lin') return Math.sqrt(u);            /* f = 2x */
+    if (kind === 'quad') return Math.pow(u, 1 / 3);     /* f = 3x^2 */
+    return u;                                           /* uniform */
+  }
+  function F(x) {
+    if (kind === 'lin') return x * x;
+    if (kind === 'quad') return x * x * x;
+    return x;
+  }
+
+  function draw() {
+    p.clear().grid(0.25, 0.25).axes('x', 'F(x)').ticks(0.25, 0.25);
+    p.curve(F, { samples: 300 });
+
+    var xs = [], minG = 9, maxG = 0;
+    for (var i = 0; i <= k; i++) {
+      var u = i / k, x = Finv(u);
+      xs.push(x);
+      p.line([[0, u], [x, u]], { dash: '2 3' });
+      p.line([[x, 0], [x, u]], { dash: '2 3' });
+      p.dot(x, -0.06, 3.4);
+    }
+    for (var j = 1; j <= k; j++) {
+      var g = xs[j] - xs[j - 1];
+      if (g < minG) minG = g;
+      if (g > maxG) maxG = g;
+    }
+    p.text(-0.06, 1.05, 'u (균등)', { size: 10 });
+    p.callout(xs[Math.floor(k * 0.15)], -0.06, '왼쪽은 성기다', { dx: 16, dy: -22, tone: 'var(--ink-3)' });
+
+    out.setRaw('k', String(k));
+    out.set('narrow', minG);
+    out.set('wide', maxG);
+    out.set('ratio', minG ? maxG / minG : 0);
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '목표 분포',
+    options: [
+      { value: 'unif', label: 'f = 1' },
+      { value: 'lin', label: 'f = 2x' },
+      { value: 'quad', label: 'f = 3x²' }
+    ],
+    value: 'lin', onChange: function (v) { kind = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'u 를 몇 조각으로 자를까', min: 4, max: 40, step: 1, value: 10, digits: 0,
+    onInput: function (v) { k = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 
 > 이 파일은 자동 생성됩니다. 손으로 고치지 말고 `node tools/build-progress.mjs` 를 실행하세요.
 
-**전체: 26 / 347 절 (7%)**
+**전체: 36 / 347 절 (10%)**
 · 28장 · 2884개 개념 항목
 
 | 장 | 제목 | 절 | 작성됨 | 진행 |
@@ -10,7 +10,7 @@
 | 1 | AI 개론 | 6 | 6 | `██████████` 100% |
 | 2 | 선형대수 | 10 | 10 | `██████████` 100% |
 | 3 | 미적분과 최적화 | 10 | 10 | `██████████` 100% |
-| 4 | 확률과 통계 | 10 | 0 | `░░░░░░░░░░` 0% |
+| 4 | 확률과 통계 | 10 | 10 | `██████████` 100% |
 | 5 | 전통적 머신러닝 | 14 | 0 | `░░░░░░░░░░` 0% |
 | 6 | 딥러닝 기초 | 11 | 0 | `░░░░░░░░░░` 0% |
 | 7 | 컴퓨터 비전 | 8 | 0 | `░░░░░░░░░░` 0% |
@@ -66,6 +66,16 @@
 | [3.8](chapters/ch03/3.8-learning-rate-schedules.html) | 학습률 전략 | 2026-07-29 | 학습률은 숫자가 아니라 시간의 함수다. 초반엔 크게, 후반엔 작게 — 오늘날의 표준은 linear warmup + cosine decay. |
 | [3.9](chapters/ch03/3.9-constraints-regularization.html) | 제약과 정규화 | 2026-07-29 | 제약과 벌점은 같은 것의 두 얼굴이다. L1은 마름모의 모서리에서 접해 파라미터를 정확히 0으로 만든다. |
 | [3.10](chapters/ch03/3.10-deep-learning-optimization.html) | 딥러닝 최적화 | 2026-07-29 | Jacobian이 L번 곱해져 gradient가 지수적으로 죽거나 터진다. 도달한 최소점의 모양이 일반화를 좌우한다. |
+| [4.1](chapters/ch04/4.1-probability-basics.html) | 확률의 기본 | 2026-07-29 | 확률은 집합에 붙는 넓이이고, 조건부확률은 표본공간을 줄여 다시 재는 것이며, Bayes' theorem은 그 방향을 뒤집는다. |
+| [4.2](chapters/ch04/4.2-random-variables.html) | 확률변수 | 2026-07-29 | 확률변수는 변수가 아니라 Ω에서 실수로 가는 함수다. PMF·PDF·CDF는 그 함수가 만든 확률을 적는 세 문법. |
+| [4.3](chapters/ch04/4.3-expectation-variance.html) | 기댓값과 분산 | 2026-07-29 | 기댓값은 무게중심, 분산은 관성모멘트. 기댓값은 언제나 선형이지만 분산은 무상관일 때만 더해진다. |
+| [4.4](chapters/ch04/4.4-common-distributions.html) | 주요 확률분포 | 2026-07-29 | 열한 개 분포는 하나의 계보다. Bernoulli에서 셋이 갈라지고, Poisson·Gaussian은 극한, Beta·Dirichlet은 확률 위의 분포. |
+| [4.5](chapters/ch04/4.5-statistical-estimation.html) | 통계적 추정 | 2026-07-29 | 추정량은 숫자가 아니라 확률변수다. MSE = 편향² + 분산 한 줄이 네 가지 평가 기준을 잇는다. |
+| [4.6](chapters/ch04/4.6-likelihood-estimation.html) | 가능도 기반 추정 | 2026-07-29 | likelihood는 data를 고정하고 parameter를 움직인 함수다. MAP에 더해진 log prior가 곧 L2·L1 정규화 항이다. |
+| [4.7](chapters/ch04/4.7-information-theory.html) | 정보이론 | 2026-07-29 | 정보량은 −log p 하나에서 나온다. cross-entropy는 틀린 코드북의 평균 길이, KL은 그 낭비분, MI는 독립에서 벗어난 정도. |
+| [4.8](chapters/ch04/4.8-hypothesis-testing.html) | 가설검정과 통계적 비교 | 2026-07-29 | p-value는 귀무가설이 참일 확률이 아니다. 검정력과 효과크기 없이 p만 보면 model 비교가 잡음을 좇는다. |
+| [4.9](chapters/ch04/4.9-uncertainty.html) | 불확실성 | 2026-07-29 | data로 줄일 수 있는 불확실성과 없는 불확실성은 처방이 다르다. softmax 확률은 그 자체로 확신의 척도가 아니다. |
+| [4.10](chapters/ch04/4.10-ai-and-probability.html) | AI와 확률 | 2026-07-29 | AI는 확률분포를 다루는 기계다. 분류는 p(y|x), 언어 모델은 chain rule, 잠재변수 모델은 적분, 디코딩은 뽑기 규칙. |
 
 ## 권장 진행 순서
 

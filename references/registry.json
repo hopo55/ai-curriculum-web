@@ -141,7 +141,11 @@
         "2.9",
         "3.1",
         "3.2",
-        "3.3"
+        "3.3",
+        "4.1",
+        "4.2",
+        "4.3",
+        "4.4"
       ]
     },
     "bishop2006-prml": {
@@ -164,7 +168,11 @@
       "checked": "2026-07-25",
       "file_url": "https://www.microsoft.com/en-us/research/uploads/prod/2006/01/Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf",
       "cited_by": [
-        "2.9"
+        "2.9",
+        "4.2",
+        "4.4",
+        "4.6",
+        "4.9"
       ],
       "archived": {
         "path": "references/library/book/bishop2006-prml.pdf",
@@ -199,7 +207,8 @@
         "1.4",
         "1.5",
         "1.6",
-        "3.9"
+        "3.9",
+        "4.5"
       ],
       "archived": {
         "path": "references/library/book/hastie2009-esl.html",
@@ -232,7 +241,12 @@
       ],
       "checked": "2026-07-25",
       "cited_by": [
-        "1.5"
+        "1.5",
+        "4.10",
+        "4.3",
+        "4.4",
+        "4.5",
+        "4.6"
       ],
       "archived": {
         "path": "references/library/book/murphy2022-pml.html",
@@ -329,7 +343,8 @@
       "checked": "2026-07-25",
       "file_url": "https://web.stanford.edu/~jurafsky/slp3/ed3book.pdf",
       "cited_by": [
-        "1.3"
+        "1.3",
+        "4.10"
       ],
       "archived": {
         "path": "references/library/book/jurafsky2025-slp3.pdf",
@@ -398,7 +413,11 @@
         "pages": 640,
         "fetched": "2026-07-29",
         "source_url": "https://www.inference.org.uk/itprnn/book.pdf"
-      }
+      },
+      "cited_by": [
+        "4.6",
+        "4.7"
+      ]
     },
     "szeliski2022-cv": {
       "type": "book",
@@ -591,6 +610,7 @@
         "1.5",
         "2.10",
         "3.1",
+        "3.10",
         "3.2",
         "3.3",
         "3.6",
@@ -700,7 +720,8 @@
         "1.1",
         "1.2",
         "1.3",
-        "1.6"
+        "1.6",
+        "4.9"
       ],
       "archived": {
         "path": "references/library/course/mit-6s191.html",
@@ -765,7 +786,8 @@
       ],
       "checked": "2026-07-25",
       "cited_by": [
-        "3.4"
+        "3.4",
+        "4.10"
       ]
     },
     "hf-courses": {
@@ -2665,6 +2687,885 @@
         "2.4",
         "2.5",
         "2.6"
+      ]
+    },
+    "kendall2017-what-uncertainties-do": {
+      "type": "paper",
+      "title": "What Uncertainties Do We Need in Bayesian Deep Learning for Computer Vision?",
+      "authors": [
+        "Alex Kendall",
+        "Yarin Gal"
+      ],
+      "year": 2017,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1703.04977",
+      "file_url": "https://arxiv.org/pdf/1703.04977",
+      "arxiv": "1703.04977",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/kendall2017-what-uncertainties-do.pdf",
+        "sha256": "c9d7f101781eaffb3c6a29a5a29ab82bb274770b10855b358d7c7f07b7397411",
+        "bytes": 6719323,
+        "content_type": "application/pdf",
+        "pages": 12,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1703.04977"
+      },
+      "cited_by": [
+        "4.9"
+      ]
+    },
+    "gal2015-dropout-as-a": {
+      "type": "paper",
+      "title": "Dropout as a Bayesian Approximation: Representing Model Uncertainty in Deep Learning",
+      "authors": [
+        "Yarin Gal",
+        "Zoubin Ghahramani"
+      ],
+      "year": 2015,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1506.02142",
+      "file_url": "https://arxiv.org/pdf/1506.02142",
+      "arxiv": "1506.02142",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/gal2015-dropout-as-a.pdf",
+        "sha256": "dcebe17f1cef7d510900659c23d68038e5c6f9aaca2949f40bf91edd10566bca",
+        "bytes": 1107246,
+        "content_type": "application/pdf",
+        "pages": 12,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1506.02142"
+      },
+      "cited_by": [
+        "4.9"
+      ]
+    },
+    "lakshminarayanan2016-simple-and-scalable": {
+      "type": "paper",
+      "title": "Simple and Scalable Predictive Uncertainty Estimation using Deep Ensembles",
+      "authors": [
+        "Balaji Lakshminarayanan",
+        "Alexander Pritzel",
+        "Charles Blundell"
+      ],
+      "year": 2016,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1612.01474",
+      "file_url": "https://arxiv.org/pdf/1612.01474",
+      "arxiv": "1612.01474",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/lakshminarayanan2016-simple-and-scalable.pdf",
+        "sha256": "185b16b3530d9c886b3c3811581a815b4dccee3b31b8705177ce8a3a31c259e5",
+        "bytes": 1487133,
+        "content_type": "application/pdf",
+        "pages": 15,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1612.01474"
+      },
+      "cited_by": [
+        "4.9"
+      ]
+    },
+    "guo2017-on-calibration-of": {
+      "type": "paper",
+      "title": "On Calibration of Modern Neural Networks",
+      "authors": [
+        "Chuan Guo",
+        "Geoff Pleiss",
+        "Yu Sun",
+        "Kilian Q. Weinberger"
+      ],
+      "year": 2017,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1706.04599",
+      "file_url": "https://arxiv.org/pdf/1706.04599",
+      "arxiv": "1706.04599",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/guo2017-on-calibration-of.pdf",
+        "sha256": "cb654a65acb785ed4387d6c2db1301d065075dddc2d363676836a2f2a14bc50d",
+        "bytes": 1349691,
+        "content_type": "application/pdf",
+        "pages": 14,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1706.04599"
+      },
+      "cited_by": [
+        "4.9"
+      ]
+    },
+    "blundell2015-weight-uncertainty-in": {
+      "type": "paper",
+      "title": "Weight Uncertainty in Neural Networks",
+      "authors": [
+        "Charles Blundell",
+        "Julien Cornebise",
+        "Koray Kavukcuoglu",
+        "Daan Wierstra"
+      ],
+      "year": 2015,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1505.05424",
+      "file_url": "https://arxiv.org/pdf/1505.05424",
+      "arxiv": "1505.05424",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/blundell2015-weight-uncertainty-in.pdf",
+        "sha256": "ee3ea1c43f98f670d7fd989de6bd5cd5bc3fd2b6ad61c2fa5ab2d6f12d96e330",
+        "bytes": 628773,
+        "content_type": "application/pdf",
+        "pages": 10,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1505.05424"
+      },
+      "cited_by": [
+        "4.9"
+      ]
+    },
+    "ovadia2019-can-you-trust": {
+      "type": "paper",
+      "title": "Can You Trust Your Model's Uncertainty? Evaluating Predictive Uncertainty Under Dataset Shift",
+      "authors": [
+        "Yaniv Ovadia",
+        "Emily Fertig",
+        "Jie Ren",
+        "Zachary Nado",
+        "D Sculley",
+        "Sebastian Nowozin",
+        "Joshua V. Dillon",
+        "Balaji Lakshminarayanan",
+        "Jasper Snoek"
+      ],
+      "year": 2019,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1906.02530",
+      "file_url": "https://arxiv.org/pdf/1906.02530",
+      "arxiv": "1906.02530",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/ovadia2019-can-you-trust.pdf",
+        "sha256": "1610d04d7f69d10751f0e9ff1db9fbd8b3fdf5306798879016192eb2dbf17a6f",
+        "bytes": 5887184,
+        "content_type": "application/pdf",
+        "pages": 25,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1906.02530"
+      },
+      "cited_by": [
+        "4.9"
+      ]
+    },
+    "kingma2013-auto-encoding-variational": {
+      "type": "paper",
+      "title": "Auto-Encoding Variational Bayes",
+      "authors": [
+        "Diederik P Kingma",
+        "Max Welling"
+      ],
+      "year": 2013,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1312.6114",
+      "file_url": "https://arxiv.org/pdf/1312.6114",
+      "arxiv": "1312.6114",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/kingma2013-auto-encoding-variational.pdf",
+        "sha256": "bdcb63b79ed88f64f8ee2d43a721930d01dde5441a4dba20ecaa2342b34e017c",
+        "bytes": 3926758,
+        "content_type": "application/pdf",
+        "pages": 14,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1312.6114"
+      },
+      "cited_by": [
+        "4.10"
+      ]
+    },
+    "ho2020-denoising-diffusion-probabilistic": {
+      "type": "paper",
+      "title": "Denoising Diffusion Probabilistic Models",
+      "authors": [
+        "Jonathan Ho",
+        "Ajay Jain",
+        "Pieter Abbeel"
+      ],
+      "year": 2020,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/2006.11239",
+      "file_url": "https://arxiv.org/pdf/2006.11239",
+      "arxiv": "2006.11239",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/ho2020-denoising-diffusion-probabilistic.pdf",
+        "sha256": "aee5e07a802e8dfd2a386374c94fd61d1d056cb7e1e0fec4f28e8120ff5d8505",
+        "bytes": 10267274,
+        "content_type": "application/pdf",
+        "pages": 25,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/2006.11239"
+      },
+      "cited_by": [
+        "4.10"
+      ]
+    },
+    "holtzman2019-the-curious-case": {
+      "type": "paper",
+      "title": "The Curious Case of Neural Text Degeneration",
+      "authors": [
+        "Ari Holtzman",
+        "Jan Buys",
+        "Li Du",
+        "Maxwell Forbes",
+        "Yejin Choi"
+      ],
+      "year": 2019,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1904.09751",
+      "file_url": "https://arxiv.org/pdf/1904.09751",
+      "arxiv": "1904.09751",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/holtzman2019-the-curious-case.pdf",
+        "sha256": "f0749cc4db8afeb82006a20785b2cd3615fcbced8a29886872b6174485ced21b",
+        "bytes": 4691115,
+        "content_type": "application/pdf",
+        "pages": 16,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1904.09751"
+      },
+      "cited_by": [
+        "4.10"
+      ]
+    },
+    "alemi2016-deep-variational-information": {
+      "type": "paper",
+      "title": "Deep Variational Information Bottleneck",
+      "authors": [
+        "Alexander A. Alemi",
+        "Ian Fischer",
+        "Joshua V. Dillon",
+        "Kevin Murphy"
+      ],
+      "year": 2016,
+      "venue": "Proceedings of the International Conference on Learning Representations (ICLR) 2017",
+      "url": "https://arxiv.org/abs/1612.00410",
+      "file_url": "https://arxiv.org/pdf/1612.00410",
+      "arxiv": "1612.00410",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/alemi2016-deep-variational-information.pdf",
+        "sha256": "fa263720581a88a56961ec654ef54f757b4b13dce2e64f6d2158fc0d19e17496",
+        "bytes": 8864469,
+        "content_type": "application/pdf",
+        "pages": 19,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1612.00410"
+      },
+      "cited_by": [
+        "4.7"
+      ]
+    },
+    "tishby2015-deep-learning-and": {
+      "type": "paper",
+      "title": "Deep Learning and the Information Bottleneck Principle",
+      "authors": [
+        "Naftali Tishby",
+        "Noga Zaslavsky"
+      ],
+      "year": 2015,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1503.02406",
+      "file_url": "https://arxiv.org/pdf/1503.02406",
+      "arxiv": "1503.02406",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/tishby2015-deep-learning-and.pdf",
+        "sha256": "26a612c807aab4685fa738d1e688fe3e34bee79a2086cd51da964e467f84bcee",
+        "bytes": 370205,
+        "content_type": "application/pdf",
+        "pages": 5,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1503.02406"
+      },
+      "cited_by": [
+        "4.7"
+      ]
+    },
+    "tishby2000-the-information-bottleneck": {
+      "type": "paper",
+      "title": "The information bottleneck method",
+      "authors": [
+        "Naftali Tishby",
+        "Fernando C. Pereira",
+        "William Bialek"
+      ],
+      "year": 2000,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/physics/0004057",
+      "file_url": "https://arxiv.org/pdf/physics/0004057",
+      "arxiv": "physics/0004057",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/tishby2000-the-information-bottleneck.pdf",
+        "sha256": "afdbc45366b590086e34faef76ad0570885884489ed32233c8571912ef92ef47",
+        "bytes": 136267,
+        "content_type": "application/pdf",
+        "pages": 16,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/physics/0004057"
+      },
+      "cited_by": [
+        "4.7"
+      ]
+    },
+    "shannon1948-mathematical-theory": {
+      "type": "paper",
+      "title": "A Mathematical Theory of Communication",
+      "authors": [
+        "Claude E. Shannon"
+      ],
+      "year": 1948,
+      "venue": "Bell System Technical Journal 27(3), 379–423; 27(4), 623–656",
+      "url": "https://people.math.harvard.edu/~ctm/home/text/others/shannon/entropy/entropy.pdf",
+      "file_url": "https://people.math.harvard.edu/~ctm/home/text/others/shannon/entropy/entropy.pdf",
+      "access": "free-online",
+      "archivable": true,
+      "license": "Bell Labs 원문. 학술 목적 열람용으로 널리 공개되어 있다.",
+      "topics": [
+        "4"
+      ],
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/shannon1948-mathematical-theory.pdf",
+        "sha256": "6e4e3411984f3edf99dbfe8b941cb5e8a321379ff0cae6ae5c1f592ad8882ca8",
+        "bytes": 366296,
+        "content_type": "application/pdf",
+        "pages": 55,
+        "fetched": "2026-07-29",
+        "source_url": "https://people.math.harvard.edu/~ctm/home/text/others/shannon/entropy/entropy.pdf"
+      },
+      "cited_by": [
+        "4.7"
+      ]
+    },
+    "kullback1951-information-sufficiency": {
+      "type": "paper",
+      "title": "On Information and Sufficiency",
+      "authors": [
+        "Solomon Kullback",
+        "Richard A. Leibler"
+      ],
+      "year": 1951,
+      "venue": "The Annals of Mathematical Statistics 22(1), 79–86",
+      "url": "https://projecteuclid.org/journals/annals-of-mathematical-statistics/volume-22/issue-1/On-Information-and-Sufficiency/10.1214/aoms/1177729694.full",
+      "access": "free-online",
+      "archivable": false,
+      "license": "Project Euclid 공개본. 링크로만 인용한다.",
+      "topics": [
+        "4"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "4.7"
+      ]
+    },
+    "bayes1763-essay": {
+      "type": "paper",
+      "title": "An Essay towards solving a Problem in the Doctrine of Chances",
+      "authors": [
+        "Thomas Bayes",
+        "Richard Price"
+      ],
+      "year": 1763,
+      "venue": "Philosophical Transactions of the Royal Society of London 53, 370–418",
+      "url": "https://royalsocietypublishing.org/doi/10.1098/rstl.1763.0053",
+      "access": "free-online",
+      "archivable": false,
+      "license": "퍼블릭 도메인(1763). Royal Society 가 스캔본을 공개한다.",
+      "topics": [
+        "4"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "4.1"
+      ]
+    },
+    "kolmogorov1933-foundations": {
+      "type": "book",
+      "title": "Foundations of the Theory of Probability (Grundbegriffe der Wahrscheinlichkeitsrechnung)",
+      "authors": [
+        "Andrey N. Kolmogorov"
+      ],
+      "year": 1933,
+      "publisher": "Springer / Chelsea (영역본 1956)",
+      "url": "https://archive.org/details/foundationsofthe00kolm",
+      "access": "free-online",
+      "archivable": false,
+      "license": "Internet Archive 열람본. 재배포하지 않는다.",
+      "topics": [
+        "4"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "4.1"
+      ]
+    },
+    "fisher1922-mathematical-foundations": {
+      "type": "paper",
+      "title": "On the Mathematical Foundations of Theoretical Statistics",
+      "authors": [
+        "Ronald A. Fisher"
+      ],
+      "year": 1922,
+      "venue": "Philosophical Transactions of the Royal Society A 222, 309–368",
+      "url": "https://royalsocietypublishing.org/doi/10.1098/rsta.1922.0009",
+      "access": "free-online",
+      "archivable": false,
+      "license": "퍼블릭 도메인(1922). Royal Society 공개 스캔본.",
+      "topics": [
+        "4"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "4.5",
+        "4.6"
+      ]
+    },
+    "neyman1933-efficient-tests": {
+      "type": "paper",
+      "title": "On the Problem of the Most Efficient Tests of Statistical Hypotheses",
+      "authors": [
+        "Jerzy Neyman",
+        "Egon S. Pearson"
+      ],
+      "year": 1933,
+      "venue": "Philosophical Transactions of the Royal Society A 231, 289–337",
+      "url": "https://royalsocietypublishing.org/doi/10.1098/rsta.1933.0009",
+      "access": "free-online",
+      "archivable": false,
+      "license": "퍼블릭 도메인(1933). Royal Society 공개 스캔본.",
+      "topics": [
+        "4"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "4.8"
+      ]
+    },
+    "benjamini1995-fdr": {
+      "type": "paper",
+      "title": "Controlling the False Discovery Rate: A Practical and Powerful Approach to Multiple Testing",
+      "authors": [
+        "Yoav Benjamini",
+        "Yosef Hochberg"
+      ],
+      "year": 1995,
+      "venue": "Journal of the Royal Statistical Society B 57(1), 289–300",
+      "url": "https://www.jstor.org/stable/2346101",
+      "access": "paywall",
+      "archivable": false,
+      "license": "페이월. 초록·서지정보만 등록하고 링크로 인용한다.",
+      "topics": [
+        "4"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "4.8"
+      ]
+    },
+    "cohen1992-power-primer": {
+      "type": "paper",
+      "title": "A Power Primer",
+      "authors": [
+        "Jacob Cohen"
+      ],
+      "year": 1992,
+      "venue": "Psychological Bulletin 112(1), 155–159",
+      "url": "https://doi.org/10.1037/0033-2909.112.1.155",
+      "access": "paywall",
+      "archivable": false,
+      "license": "페이월. 링크로만 인용한다.",
+      "topics": [
+        "4"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "4.8"
+      ]
+    },
+    "wasserstein2016-asa-pvalue": {
+      "type": "paper",
+      "title": "The ASA Statement on p-Values: Context, Process, and Purpose",
+      "authors": [
+        "Ronald L. Wasserstein",
+        "Nicole A. Lazar"
+      ],
+      "year": 2016,
+      "venue": "The American Statistician 70(2), 129–133",
+      "url": "https://www.tandfonline.com/doi/full/10.1080/00031305.2016.1154108",
+      "access": "free-online",
+      "archivable": false,
+      "license": "Taylor & Francis 오픈 액세스. 링크로 인용한다.",
+      "topics": [
+        "4"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "4.8"
+      ]
+    },
+    "ioannidis2005-why-most-published": {
+      "type": "paper",
+      "title": "Why Most Published Research Findings Are False",
+      "authors": [
+        "John P. A. Ioannidis"
+      ],
+      "year": 2005,
+      "venue": "PLoS Medicine 2(8), e124",
+      "url": "https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.0020124",
+      "access": "free-online",
+      "archivable": false,
+      "license": "CC BY. PLoS 오픈 액세스.",
+      "topics": [
+        "4"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "4.8"
+      ]
+    },
+    "dror2018-hitchhikers-guide": {
+      "type": "paper",
+      "title": "The Hitchhiker's Guide to Testing Statistical Significance in Natural Language Processing",
+      "authors": [
+        "Rotem Dror",
+        "Gili Baumer",
+        "Segev Shlomov",
+        "Roi Reichart"
+      ],
+      "year": 2018,
+      "venue": "ACL 2018, 1383–1392",
+      "url": "https://aclanthology.org/P18-1128/",
+      "access": "free-online",
+      "archivable": false,
+      "license": "ACL Anthology 공개본 (CC BY 4.0).",
+      "topics": [
+        "4"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "4.8"
+      ]
+    },
+    "rabiner1989-hmm-tutorial": {
+      "type": "paper",
+      "title": "A Tutorial on Hidden Markov Models and Selected Applications in Speech Recognition",
+      "authors": [
+        "Lawrence R. Rabiner"
+      ],
+      "year": 1989,
+      "venue": "Proceedings of the IEEE 77(2), 257–286",
+      "url": "https://ieeexplore.ieee.org/document/18626",
+      "access": "free-online",
+      "archivable": false,
+      "license": "IEEE. 여러 대학이 강의자료로 공개한다. 링크로 인용한다.",
+      "topics": [
+        "4",
+        "10"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "4.10"
+      ]
+    },
+    "bengio2003-neural-probabilistic-lm": {
+      "type": "paper",
+      "title": "A Neural Probabilistic Language Model",
+      "authors": [
+        "Yoshua Bengio",
+        "Réjean Ducharme",
+        "Pascal Vincent",
+        "Christian Jauvin"
+      ],
+      "year": 2003,
+      "venue": "Journal of Machine Learning Research 3, 1137–1155",
+      "url": "https://www.jmlr.org/papers/v3/bengio03a.html",
+      "file_url": "https://www.jmlr.org/papers/volume3/bengio03a/bengio03a.pdf",
+      "access": "free-online",
+      "archivable": true,
+      "license": "JMLR 오픈 액세스.",
+      "topics": [
+        "4",
+        "12",
+        "13"
+      ],
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/bengio2003-neural-probabilistic-lm.pdf",
+        "sha256": "0bddf9a608d62da449a6413d86cbf6e8b206212595efe0e0a14da0d79d5f4976",
+        "bytes": 140095,
+        "content_type": "application/pdf",
+        "pages": 19,
+        "fetched": "2026-07-29",
+        "source_url": "https://www.jmlr.org/papers/volume3/bengio03a/bengio03a.pdf"
+      },
+      "cited_by": [
+        "4.10"
+      ]
+    },
+    "blitzstein2019-intro-prob": {
+      "type": "book",
+      "title": "Introduction to Probability (2nd ed.)",
+      "authors": [
+        "Joseph K. Blitzstein",
+        "Jessica Hwang"
+      ],
+      "year": 2019,
+      "publisher": "CRC Press",
+      "url": "http://probabilitybook.net/",
+      "access": "free-online",
+      "archivable": false,
+      "license": "저자가 Stat 110 강의 사이트에서 열람 링크를 제공. 재배포하지 않는다.",
+      "topics": [
+        "4"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "4.1",
+        "4.2",
+        "4.3",
+        "4.4"
+      ]
+    },
+    "gelman2013-bda3": {
+      "type": "book",
+      "title": "Bayesian Data Analysis (3rd ed.)",
+      "authors": [
+        "Andrew Gelman",
+        "John B. Carlin",
+        "Hal S. Stern",
+        "David B. Dunson",
+        "Aki Vehtari",
+        "Donald B. Rubin"
+      ],
+      "year": 2013,
+      "publisher": "CRC Press",
+      "url": "http://www.stat.columbia.edu/~gelman/book/",
+      "file_url": "http://www.stat.columbia.edu/~gelman/book/BDA3.pdf",
+      "access": "free-online",
+      "archivable": true,
+      "license": "저자가 비상업적 개인 학습용 PDF 를 공개. 재배포하지 않는다.",
+      "topics": [
+        "4"
+      ],
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/book/gelman2013-bda3.pdf",
+        "sha256": "246f7d34daad4971d40fa247f1045bf3fce4f912dcea9b4267b161ee7a70b306",
+        "bytes": 55911785,
+        "content_type": "application/pdf",
+        "pages": 677,
+        "fetched": "2026-07-29",
+        "source_url": "https://sites.stat.columbia.edu/gelman/book/BDA3.pdf"
+      },
+      "cited_by": [
+        "4.6"
+      ]
+    },
+    "harvard-stat110": {
+      "type": "course",
+      "title": "Statistics 110: Probability",
+      "authors": [
+        "Joseph K. Blitzstein (Harvard University)"
+      ],
+      "url": "https://projects.iq.harvard.edu/stat110/home",
+      "access": "free-online",
+      "archivable": false,
+      "license": "강의 영상·유인물 무료 공개. 영상은 링크와 편 번호로만 인용한다.",
+      "topics": [
+        "4"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "4.1",
+        "4.2",
+        "4.3"
+      ]
+    },
+    "mit-18650": {
+      "type": "course",
+      "title": "MIT 18.650: Statistics for Applications",
+      "authors": [
+        "Philippe Rigollet (MIT OpenCourseWare)"
+      ],
+      "url": "https://ocw.mit.edu/courses/18-650-statistics-for-applications-fall-2016/",
+      "access": "free-online",
+      "archivable": true,
+      "license": "MIT OCW — CC BY-NC-SA 4.0. 출처 표기 시 재사용 가능.",
+      "topics": [
+        "4"
+      ],
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/course/mit-18650.html",
+        "sha256": "c5adfc0a909eef776d4ceaaf681c6296b978b9adb24b9f4b28ee42eb749c6fe1",
+        "bytes": 37680,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-29",
+        "source_url": "https://ocw.mit.edu/courses/18-650-statistics-for-applications-fall-2016/"
+      },
+      "cited_by": [
+        "4.5",
+        "4.8"
+      ]
+    },
+    "khan-statistics": {
+      "type": "video",
+      "title": "Statistics and Probability (전 과정)",
+      "authors": [
+        "Khan Academy"
+      ],
+      "url": "https://www.khanacademy.org/math/statistics-probability",
+      "access": "free-online",
+      "archivable": false,
+      "license": "영상 재배포 불가. 링크와 단원명으로만 인용한다. (본문은 CC BY-NC-SA)",
+      "topics": [
+        "4"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "4.2",
+        "4.4"
+      ]
+    },
+    "statquest": {
+      "type": "video",
+      "title": "StatQuest with Josh Starmer",
+      "authors": [
+        "Josh Starmer"
+      ],
+      "url": "https://statquest.org/video-index/",
+      "access": "free-online",
+      "archivable": false,
+      "license": "영상 재배포 불가. 링크와 타임스탬프로만 인용한다.",
+      "topics": [
+        "4",
+        "5"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "4.3",
+        "4.5",
+        "4.6",
+        "4.8"
+      ]
+    },
+    "3blue1brown-prob": {
+      "type": "video",
+      "title": "Probability (베이즈 정리 · 이항분포 · 중심극한정리)",
+      "authors": [
+        "Grant Sanderson (3Blue1Brown)"
+      ],
+      "url": "https://www.3blue1brown.com/topics/probability",
+      "access": "free-online",
+      "archivable": false,
+      "license": "영상 재배포 불가. 링크와 타임스탬프로만 인용한다.",
+      "topics": [
+        "4"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "4.1",
+        "4.3",
+        "4.7"
+      ]
+    },
+    "pytorch-distributions-docs": {
+      "type": "doc",
+      "title": "torch.distributions — PyTorch documentation",
+      "authors": [
+        "PyTorch"
+      ],
+      "url": "https://pytorch.org/docs/stable/distributions.html",
+      "access": "free-online",
+      "archivable": false,
+      "license": "PyTorch 문서 — BSD 계열 라이선스. 링크로 인용한다.",
+      "topics": [
+        "4"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "4.4"
+      ]
+    },
+    "scipy-stats-docs": {
+      "type": "doc",
+      "title": "scipy.stats — Statistical functions (SciPy documentation)",
+      "authors": [
+        "SciPy developers"
+      ],
+      "url": "https://docs.scipy.org/doc/scipy/reference/stats.html",
+      "access": "free-online",
+      "archivable": false,
+      "license": "SciPy 문서 — BSD 3-Clause. 링크로 인용한다.",
+      "topics": [
+        "4"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "4.2",
+        "4.5"
       ]
     }
   }

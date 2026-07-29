@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.6 가능도 기반 추정 — AI 이론 학습</title>
+<meta name="description" content="likelihood는 data를 고정하고 parameter를 움직인 함수다. MLE는 그 최댓값을 찾는 것이고, MAP는 prior의 로그를 더한 것이며, 그 더해진 항이 곧 L2·L1 정규화다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="4.6">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">4.6</span>
+        <span>4장 · 확률과 통계</span>
+      </div>
+      <h1>가능도 기반 추정</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 70분</span>
+        <span><b>난이도</b>★★★★☆</span>
+        <span><b>선수지식</b>
+          <a href="4.5-statistical-estimation.html">4.5 통계적 추정</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-lik">Likelihood</a>
+      <a class="chip" href="#c-loglik">Log-likelihood</a>
+      <a class="chip" href="#c-mle">Maximum Likelihood Estimation</a>
+      <a class="chip" href="#c-map">Maximum A Posteriori</a>
+      <a class="chip" href="#c-prior">Prior</a>
+      <a class="chip" href="#c-post">Posterior</a>
+      <a class="chip" href="#c-conj">Conjugate Prior</a>
+      <a class="chip" href="#c-bayes">Bayesian Inference</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        likelihood 는 <strong>data 를 고정하고 parameter 를 움직인 함수</strong>다.
+        MLE 는 그 최댓값을 찾는 것이고, MAP 는 거기에 <strong>prior 의 로그를 더한</strong> 것이며,
+        <strong>그 더해진 항이 정확히 L2·L1 정규화 항</strong>이다.
+        Bayesian inference 는 최댓값 하나 대신 분포 전체를 들고 간다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>$p(x\mid\theta)$ 를 확률로 읽을 때와 likelihood 로 읽을 때 무엇이 고정되고 무엇이 변하는지 구분할 수 있다.</li>
+        <li>Bernoulli·Gaussian 의 MLE 를 미분으로 직접 유도하고, Gaussian의 $\hat\sigma^2$ 이 편향됨을 설명할 수 있다.</li>
+        <li>MAP 가 정규화된 loss 와 같은 식임을 보이고, Gaussian prior ↔ L2, Laplace prior ↔ L1 대응을 유도할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        $p(x\mid\theta)$ 라는 같은 식을 <strong>두 방향으로 읽을 수 있다</strong>.
+        $\theta$ 를 고정하고 $x$ 를 움직이면 "이 설정에서 어떤 data 가 나올까"를 묻는 <strong>확률</strong>이다.
+        반대로 <strong>$x$ 를 고정하고 $\theta$ 를 움직이면</strong>
+        "이미 본 이 data 를 만들어 냈을 법한 설정은 무엇인가"를 묻는 <strong>likelihood</strong> 가 된다.
+      </p>
+      <p>
+        이 뒤집기가 추론의 전부다. 우리는 data 를 이미 봤고 $\theta$ 를 모른다.
+        그러니 <strong>본 것을 가장 잘 설명하는 $\theta$</strong> 를 고른다 — 그것이 MLE 다.
+      </p>
+      <p>
+        그런데 data 가 몇 개 안 되면 이 방식이 위험하다.
+        동전을 세 번 던져 다 앞면이면 MLE 는 "앞면 확률 100%"라고 답한다.
+        그래서 <strong>data 를 보기 전부터 갖고 있던 믿음</strong>을 함께 곱해 준다 — prior 이고, 그 결과가 MAP 다.
+        믿음의 무게를 어떻게 정하느냐가 곧 정규화 강도를 정하는 일이다.
+      </p>
+
+      <figure class="widget" data-widget="two-readings">
+        <figcaption class="widget__bar">Probability vs Likelihood — 같은 식을 두 방향으로 읽기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">"확률로 읽기"에서는 <strong>넓이가 1</strong> 입니다. "likelihood 로 읽기"로 바꾸면 <strong>넓이가 1 이 아닙니다</strong> — 확률이 아니라는 증거입니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          <strong>likelihood 는 $\theta$ 에 대한 확률분포가 아니다.</strong>
+          $\int L(\theta)\,d\theta$ 는 1 이 아니고 1 일 이유도 없다.
+          $\theta$ 에 대한 <em>분포</em>를 갖고 싶다면 prior 를 도입해 posterior 를 만들어야 하고,
+          그것이 빈도주의와 Bayesian 을 가르는 지점이다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-lik"></span>
+      <h3>Likelihood 가능도</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ L(\theta)=p(\mathcal{D}\mid\theta)=\prod_{i=1}^{n}p(x_i\mid\theta) \qquad (\mathcal{D} \text{ 고정},\ \theta \text{ 변수}) $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">likelihood(가능도)는 관측한 data 를 고정한 채 parameter 를 변수로 본 함수이며,
+        <strong>$\theta$ 에 대한 확률분포가 아니다</strong> — $\theta$ 로 적분해도 1 이 되지 않는다.</span>
+        곱으로 쓸 수 있는 것은 표본이 <strong>독립</strong>이라 가정했기 때문이고, 그 가정이 이 절 전체를 떠받친다.
+      </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>범인을 찾는 일과 같습니다. 현장에 남은 흔적(data)은 이미 정해져 있습니다. 우리가 바꿔 보는 것은 <strong>용의자</strong>(parameter)입니다.</p>
+        <p>"이 사람이 범인이었다면 이런 흔적이 남았을 법한가?"를 용의자마다 물어 점수를 매기는 것이 likelihood 입니다. 점수의 합이 1 이 될 이유는 없습니다 — 그저 <strong>서로 비교하기 위한 점수</strong>일 뿐입니다.</p>
+      </div>
+
+      <span class="anchor" id="c-loglik"></span>
+      <h3>Log-likelihood 로그가능도</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \ell(\theta)=\log L(\theta)=\sum_{i=1}^{n}\log p(x_i\mid\theta) $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        <span class="hl">로그를 씌우면 <strong>곱이 합</strong>이 되고, 이는 계산·미분·수치안정성 세 가지를 한꺼번에 해결한다.</span>
+        $\log$ 가 <strong>단조증가</strong>이므로 최댓값의 <em>위치</em>는 바뀌지 않는다 — 이것이 로그를 써도 되는 이유다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>문제</th><th>$L$ 로 다루면</th><th>$\ell$ 로 다루면</th></tr></thead>
+          <tbody>
+            <tr><td>수치</td><td>$0.1^{1000}$ → <strong>underflow 로 0</strong></td><td>$1000\times\log 0.1=-2302.6$ — 멀쩡하다</td></tr>
+            <tr><td>미분</td><td>곱의 미분 — 항이 $n$개 곱해져 폭발</td><td>합의 미분 — 항별로 독립</td></tr>
+            <tr><td>최적화</td><td>곱은 gradient 가 서로 얽힌다</td><td><strong>SGD 로 mini-batch 평균</strong>이 그대로 쓰인다</td></tr>
+            <tr><td>해석</td><td>—</td><td>$-\ell$ 이 곧 <strong>cross-entropy</strong> (<a href="4.7-information-theory.html">4.7</a>)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <span class="anchor" id="c-mle"></span>
+      <h3>Maximum Likelihood Estimation 최대가능도추정</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \hat\theta_{\text{MLE}}=\arg\max_{\theta}\ \ell(\theta)=\arg\min_{\theta}\ \Bigl(-\sum_{i=1}^n\log p(x_i\mid\theta)\Bigr) $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl">MLE 는 관측한 data 를 가장 그럴듯하게 만드는 parameter 를 고르는 것이고,
+        오른쪽 식이 보여 주듯 <strong>negative log-likelihood(NLL)를 최소화하는 것과 완전히 같다</strong>.</span>
+        딥러닝의 loss function 은 대부분 이 NLL 이다 — 어떤 분포를 가정했느냐가 어떤 loss 인지를 정한다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>출력에 가정한 분포</th><th>NLL 을 정리하면</th><th>흔히 부르는 이름</th></tr></thead>
+          <tbody>
+            <tr><td>$\mathcal{N}(f_\theta(x),\ \sigma^2)$</td><td>$\frac{1}{2\sigma^2}\sum(y_i-f_\theta(x_i))^2+\text{const}$</td><td><strong>MSE</strong> · 최소제곱</td></tr>
+            <tr><td>$\mathrm{Bernoulli}(f_\theta(x))$</td><td>$-\sum[y\log f+(1-y)\log(1-f)]$</td><td><strong>binary cross-entropy</strong></td></tr>
+            <tr><td>$\mathrm{Categorical}(\mathrm{softmax}(f_\theta(x)))$</td><td>$-\sum\log f_{\theta,y_i}(x_i)$</td><td><strong>cross-entropy</strong></td></tr>
+            <tr><td>Laplace$(f_\theta(x),b)$</td><td>$\frac1b\sum|y_i-f_\theta(x_i)|$</td><td><strong>MAE</strong> · L1 loss</td></tr>
+            <tr><td>$\mathrm{Poisson}(e^{f_\theta(x)})$</td><td>$\sum(e^{f}-y f)$</td><td>Poisson loss</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <span class="hl">"loss 를 무엇으로 쓸까"는 사실 <strong>"출력의 잡음이 어떤 분포일까"</strong>라는 질문이다.</span>
+        MSE 를 쓰는 것은 잡음이 Gaussian이라고 가정한 것이고, 이상치가 많은 문제에서 MSE 가 무너지는 것은
+        그 가정이 틀렸기 때문이다 — MAE 로 바꾸면 Laplace 가정이 된다.
+      </p>
+      <p>
+        MLE 의 이론적 성질도 좋다. 정칙 조건 아래에서 <strong>일치성</strong>을 갖고,
+        점근적으로 <strong>정규분포를 따르며 Cramér–Rao 하한을 달성</strong>한다
+        (<a href="4.5-statistical-estimation.html">4.5</a>). 다만 <strong>유한 표본에서는 편향될 수 있다</strong>(예제 ②).
+      </p>
+
+      <figure class="widget" data-widget="likelihood-curve">
+        <figcaption class="widget__bar">Likelihood Curve — data 를 고정하고 θ 를 움직이면</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$n$ 을 키우면 봉우리가 <strong>급격히 뾰족해집니다</strong>. 뾰족함이 곧 Fisher information 이고, 추정의 확신입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-prior"></span>
+      <span class="anchor" id="c-post"></span>
+      <h3>Prior &amp; Posterior 사전분포와 사후분포</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \underbrace{p(\theta\mid\mathcal{D})}_{\text{posterior}} = \frac{\overbrace{p(\mathcal{D}\mid\theta)}^{\text{likelihood}}\ \overbrace{p(\theta)}^{\text{prior}}}{\underbrace{p(\mathcal{D})}_{\text{evidence}}} \ \propto\ L(\theta)\,p(\theta) $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        <span class="hl">prior(사전분포)는 data 를 보기 전 $\theta$ 에 대한 믿음이고,
+        posterior(사후분포)는 data 를 본 뒤의 믿음이며, 둘을 잇는 것은
+        <a href="4.1-probability-basics.html">4.1</a>의 Bayes' theorem 그대로다.</span>
+      </p>
+      <p>
+        결정적인 전환이 여기서 일어난다 — <strong>$\theta$ 를 확률변수로 취급한다</strong>.
+        빈도주의는 $\theta$ 를 고정된 미지의 상수로 보지만(<a href="4.5-statistical-estimation.html">4.5</a>),
+        Bayesian 은 $\theta$ 에 대한 <em>불확실성</em>을 분포로 적는다.
+        분모 $p(\mathcal{D})=\int L(\theta)p(\theta)\,d\theta$ 는 $\theta$ 와 무관한 상수이므로 최댓값을 찾을 때는 무시된다.
+      </p>
+
+      <span class="anchor" id="c-map"></span>
+      <h3>Maximum A Posteriori 최대사후확률추정</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \hat\theta_{\text{MAP}}=\arg\max_\theta\ p(\theta\mid\mathcal{D})=\arg\max_\theta\ \bigl[\ \ell(\theta)+\log p(\theta)\ \bigr] $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        <span class="hl">MAP 는 posterior 를 최대로 만드는 점(mode)이며,
+        MLE 의 목적함수에 <strong>$\log p(\theta)$ 항이 하나 더해진 것</strong>일 뿐이다.</span>
+        그 더해진 항이 정규화 항의 정체다.
+      </p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \underbrace{-\ell(\theta)}_{\text{data 항 (loss)}} \ \underbrace{-\log p(\theta)}_{\text{prior 항 (정규화)}} \ \longrightarrow\ \text{최소화} $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>prior</th><th>$-\log p(\theta)$</th><th>정규화 이름</th><th>정규화 계수</th></tr></thead>
+          <tbody>
+            <tr><td>$\mathcal{N}(0,\tau^2 I)$</td><td>$\frac{1}{2\tau^2}\|\theta\|_2^2+\text{const}$</td><td><strong>L2 · ridge · weight decay</strong></td><td>$\lambda=\sigma^2/\tau^2$</td></tr>
+            <tr><td>Laplace$(0,b)$</td><td>$\frac1b\|\theta\|_1+\text{const}$</td><td><strong>L1 · lasso</strong></td><td>$\lambda=2\sigma^2/b$</td></tr>
+            <tr><td>Uniform (평평)</td><td>상수</td><td>정규화 없음</td><td><strong>MAP = MLE</strong></td></tr>
+            <tr><td>$\mathrm{Beta}(\alpha,\beta)$</td><td>$-(\alpha-1)\log p-(\beta-1)\log(1-p)$</td><td>Laplace smoothing</td><td>$\alpha,\beta$ 가 가상 관측</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <span class="hl"><strong>정규화는 임의로 붙인 벌점이 아니라 prior 의 로그다.</strong>
+        $\tau$ 를 작게(믿음을 좁게) 잡을수록 $\lambda$ 가 커지고 parameter 가 0 쪽으로 세게 당겨진다.</span>
+        <a href="../ch03/3.9-constraints-regularization.html">3.9</a>에서 기하로 본 L1/L2 의 차이가,
+        여기서는 <strong>"뾰족한 prior 냐 둥근 prior 냐"</strong>로 다시 설명된다.
+      </p>
+
+      <figure class="widget" data-widget="mle-vs-map">
+        <figcaption class="widget__bar">MLE vs MAP — prior 의 무게가 답을 얼마나 움직이나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$n$ 을 키우면 MAP 가 <strong>MLE 로 빨려 들어갑니다</strong>. data 가 많아지면 prior 의 발언권이 사라집니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-conj"></span>
+      <h3>Conjugate Prior 켤레사전분포</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ p(\theta)\in\mathcal{F} \ \text{ 이고 } \ p(\theta\mid\mathcal{D})\in\mathcal{F} \ \text{ 이면 } \ \mathcal{F} \text{ 는 그 likelihood 의 conjugate family} $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        <span class="hl">prior 와 posterior 가 <strong>같은 분포족</strong>에 머물면 conjugate prior 이고,
+        그때 Bayes 갱신이 <strong>parameter 의 산술 연산 몇 번</strong>으로 끝난다 — 적분이 필요 없다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>likelihood</th><th>conjugate prior</th><th>posterior</th><th>갱신 규칙</th></tr></thead>
+          <tbody>
+            <tr><td>Bernoulli / Binomial</td><td>Beta$(\alpha,\beta)$</td><td>Beta$(\alpha+k,\ \beta+n-k)$</td><td>성공·실패 수를 <strong>더한다</strong></td></tr>
+            <tr><td>Categorical / Multinomial</td><td>Dirichlet$(\boldsymbol\alpha)$</td><td>Dirichlet$(\boldsymbol\alpha+\mathbf{c})$</td><td>범주별 개수를 더한다</td></tr>
+            <tr><td>Poisson</td><td>Gamma$(\alpha,\beta)$</td><td>Gamma$(\alpha+\sum x_i,\ \beta+n)$</td><td>총합과 표본 수를 더한다</td></tr>
+            <tr><td>Gaussian ($\sigma^2$ 알 때)</td><td>$\mathcal{N}(\mu_0,\tau^2)$</td><td>$\mathcal{N}(\mu_n,\tau_n^2)$</td><td><strong>precision 을 더하고</strong> 평균은 가중평균</td></tr>
+            <tr><td>Gaussian ($\mu$ 알 때)</td><td>Inverse-Gamma</td><td>Inverse-Gamma</td><td>제곱합을 더한다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        conjugate prior 의 parameter 를 <strong>pseudo-count(가상 관측 수)</strong> 로 읽으면 직관이 명확해진다 —
+        $\mathrm{Beta}(3,3)$ 은 "앞면 3번, 뒷면 3번을 이미 봤다고 치자"는 뜻이다.
+        NLP 의 add-$k$ smoothing 과 label smoothing 이 이 형태의 사례다.
+        다만 conjugacy 가 성립하는 model 은 한정적이라, 신경망처럼 복잡한 model 에서는
+        변분추론·MCMC 같은 근사가 필요하다(<a href="4.9-uncertainty.html">4.9</a>).
+      </p>
+
+      <span class="anchor" id="c-bayes"></span>
+      <h3>Bayesian Inference 베이지안 추론</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ p(x_{\text{new}}\mid\mathcal{D})=\int p(x_{\text{new}}\mid\theta)\,p(\theta\mid\mathcal{D})\,d\theta $$</div>
+        <span class="eq__tag num">(8)</span>
+      </div>
+      <p>
+        <span class="hl">Bayesian inference 는 점추정 하나를 고르는 대신 <strong>posterior 전체를 들고 가서 평균</strong>하며,
+        그 결과인 posterior predictive distribution 은 parameter 의 불확실성까지 예측에 반영한다.</span>
+        MLE·MAP 는 이 적분을 <strong>한 점의 값으로 근사</strong>한 것이다 —
+        $p(\theta\mid\mathcal{D})\approx\delta(\theta-\hat\theta)$ 로 두면 (8)이 $p(x_{\text{new}}\mid\hat\theta)$ 가 된다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>MLE</th><th>MAP</th><th>완전 Bayesian</th></tr></thead>
+          <tbody>
+            <tr><td>$\theta$ 를 보는 관점</td><td>고정된 미지수</td><td>고정된 미지수 + 벌점</td><td><strong>확률변수</strong></td></tr>
+            <tr><td>답의 형태</td><td>점 하나</td><td>점 하나</td><td><strong>분포</strong></td></tr>
+            <tr><td>prior</td><td>없음</td><td>있음 (mode 만 사용)</td><td>있음 (전체 사용)</td></tr>
+            <tr><td>불확실성</td><td>따로 계산 (신뢰구간)</td><td>따로 계산</td><td><strong>자동으로 나온다</strong></td></tr>
+            <tr><td>계산량</td><td>싸다</td><td>싸다</td><td><strong>비싸다</strong> (적분 · MCMC · 변분)</td></tr>
+            <tr><td>ML 에서</td><td>표준 학습</td><td>정규화 학습</td><td>BNN · 앙상블 · MC dropout</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        구간 해석도 달라진다. Bayesian 의 <strong>credible interval</strong> 은
+        "$\theta$ 가 이 구간에 있을 확률이 95%" 라고 <strong>말할 수 있다</strong> —
+        빈도주의 신뢰구간이 못 하는 말이다(<a href="4.5-statistical-estimation.html">4.5</a> 오해 1).
+        대가는 prior 를 골라야 한다는 것과 계산 비용이다.
+      </p>
+
+      <figure class="widget" data-widget="sequential-bayes">
+        <figcaption class="widget__bar">Sequential Update — 관측을 하나씩 넣으며 posterior 가 자라는 과정</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">한 번에 10개를 넣든 하나씩 10번 넣든 <strong>최종 posterior 가 같습니다</strong>. 순서도 상관없습니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>대표적인 model 의 MLE 를 한 표에 모은다. <strong>대부분 "표본에서 그냥 세거나 평균 낸 값"</strong>이 된다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>model</th><th>MLE</th><th>편향 여부</th></tr></thead>
+          <tbody>
+            <tr><td>Bernoulli$(p)$</td><td>$\hat p=\frac{1}{n}\sum x_i = \frac{k}{n}$</td><td>불편</td></tr>
+            <tr><td>Categorical$(\boldsymbol\pi)$</td><td>$\hat\pi_k=\frac{c_k}{n}$ (범주별 빈도)</td><td>불편</td></tr>
+            <tr><td>Poisson$(\lambda)$</td><td>$\hat\lambda=\bar{x}$</td><td>불편</td></tr>
+            <tr><td>Gaussian$(\mu,\sigma^2)$</td><td>$\hat\mu=\bar{x}$, &nbsp; $\hat\sigma^2=\frac1n\sum(x_i-\bar{x})^2$</td><td>$\hat\mu$ 불편 · <strong>$\hat\sigma^2$ 은 편향</strong></td></tr>
+            <tr><td>Exponential$(\lambda)$</td><td>$\hat\lambda=1/\bar{x}$</td><td>편향 (역수라서 — Jensen)</td></tr>
+            <tr><td>$\mathrm{Uniform}(0,\theta)$</td><td>$\hat\theta=\max x_i$</td><td>편향 (<a href="4.5-statistical-estimation.html">4.5</a> 예제 ③)</td></tr>
+            <tr><td>선형회귀 + Gaussian 잡음</td><td>$\hat{\mathbf{w}}=(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y}$</td><td>불편 (<a href="../ch02/2.6-linear-systems.html">2.6</a>의 최소제곱과 동일)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        마지막 줄이 중요하다 — <strong>최소제곱은 "Gaussian 잡음을 가정한 MLE"</strong> 였다.
+        <a href="../ch02/2.6-linear-systems.html">2.6</a>에서 기하(정사영)로 유도한 것과 같은 답이 확률에서도 나온다.
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$\mathcal{D}$</td><td>script D · data</td><td>관측한 data 전체 $\{x_1,\dots,x_n\}$</td><td>집합</td><td>—</td></tr>
+            <tr><td>$L(\theta)$</td><td>likelihood 라이클리후드</td><td>$p(\mathcal{D}\mid\theta)$ 를 $\theta$ 의 함수로 본 것</td><td>함수</td><td>$\ge0$, <strong>적분은 1 이 아님</strong></td></tr>
+            <tr><td>$\ell(\theta)$</td><td>script l · log-likelihood</td><td>$\log L(\theta)$</td><td>함수</td><td>$\mathbb{R}$ (이산이면 $\le0$)</td></tr>
+            <tr><td>$\arg\max$</td><td>argmax 아그맥스</td><td>최댓값을 주는 <strong>위치</strong></td><td>연산자</td><td>—</td></tr>
+            <tr><td>$p(\theta)$</td><td>prior 프라이어</td><td>사전분포</td><td>분포</td><td>적분 1</td></tr>
+            <tr><td>$p(\theta\mid\mathcal{D})$</td><td>posterior 포스티어리어</td><td>사후분포</td><td>분포</td><td>적분 1</td></tr>
+            <tr><td>$p(\mathcal{D})$</td><td>evidence · marginal likelihood</td><td>$\int L(\theta)p(\theta)d\theta$</td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>$\propto$</td><td>proportional to 비례</td><td>상수배만큼 다르다</td><td>관계</td><td>—</td></tr>
+            <tr><td>$\lambda$</td><td>lambda 람다</td><td>정규화 계수</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$\tau^2$</td><td>tau squared 타우 제곱</td><td>prior 의 분산 — 믿음의 폭</td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>$\|\theta\|_2^2$</td><td>L2 norm squared</td><td>$\sum_j\theta_j^2$</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$\|\theta\|_1$</td><td>L1 norm</td><td>$\sum_j|\theta_j|$</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$\delta(\cdot)$</td><td>Dirac delta 디랙 델타</td><td>한 점에 몰린 분포</td><td>분포</td><td>—</td></tr>
+            <tr><td>$k$</td><td>k</td><td>성공(사건) 횟수</td><td>정수</td><td>$0\le k\le n$</td></tr>
+            <tr><td>$c_k$</td><td>c sub k · count</td><td>범주 $k$ 의 관측 횟수</td><td>정수</td><td>$\ge0$</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">같은 것을 다르게 부른다</span>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>이 사이트</th><th>같은 뜻으로 쓰이는 말</th><th>주의할 점</th></tr></thead>
+            <tbody>
+              <tr><td>$-\ell(\theta)$</td><td>NLL, negative log-likelihood, loss</td><td>딥러닝의 <code>NLLLoss</code> 는 <strong>log-softmax 를 이미 씌운 입력</strong>을 받는다</td></tr>
+              <tr><td>evidence $p(\mathcal{D})$</td><td>marginal likelihood, model evidence, $Z$</td><td>model 비교에 쓰면 <strong>Bayes factor</strong> 가 된다</td></tr>
+              <tr><td>MAP</td><td>penalized MLE, regularized MLE</td><td>완전히 같은 계산이다</td></tr>
+              <tr><td>credible interval</td><td>신용구간, Bayesian 신뢰구간</td><td>빈도주의 confidence interval 과 <strong>해석이 다르다</strong></td></tr>
+              <tr><td>pseudo-count</td><td>가상 관측, smoothing 상수, add-$k$</td><td>Beta·Dirichlet 의 $\alpha$ 가 이것이다</td></tr>
+              <tr><td>posterior predictive</td><td>예측분포</td><td>plug-in 예측 $p(x\mid\hat\theta)$ 과 <strong>다르다</strong> — 후자는 불확실성을 뺀 근사</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — Bernoulli 의 MLE 는 그냥 비율</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ L(p)=\prod_i p^{x_i}(1-p)^{1-x_i}=p^{k}(1-p)^{n-k},\quad k=\sum x_i $$</div>
+          <div class="derive__why">지수를 세어 합쳤다. <strong>$k$ 만 있으면 된다</strong> — 충분통계량</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \ell(p)=k\log p+(n-k)\log(1-p) $$</div>
+          <div class="derive__why">로그를 씌워 <strong>곱을 합으로</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \ell'(p)=\frac{k}{p}-\frac{n-k}{1-p}=0 $$</div>
+          <div class="derive__why">$\frac{d}{dp}\log(1-p)=-\frac{1}{1-p}$ 이므로 <strong>부호가 뒤집힌다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ k(1-p)=(n-k)p \;\Longrightarrow\; k-kp=np-kp \;\Longrightarrow\; k=np $$</div>
+          <div class="derive__why">양변에 $p(1-p)$ 를 곱해 통분. <strong>$kp$ 가 양쪽에서 상쇄된다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore\ \hat p_{\text{MLE}}=\frac{k}{n} $$</div>
+          <div class="derive__why">$\ell''&lt;0$ 이므로 최댓값 ✓. <strong>세어서 나눈 값</strong>이 그대로 답</div>
+        </div>
+      </div>
+
+      <h3>유도 2 — Gaussian의 MLE 와 $\hat\sigma^2$ 의 편향</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \ell(\mu,\sigma^2)=-\frac{n}{2}\log(2\pi\sigma^2)-\frac{1}{2\sigma^2}\sum_i(x_i-\mu)^2 $$</div>
+          <div class="derive__why">(<a href="4.4-common-distributions.html">4.4</a> 식 7)에 로그를 씌우고 더했다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\partial\ell}{\partial\mu}=\frac{1}{\sigma^2}\sum_i(x_i-\mu)=0 \;\Longrightarrow\; \hat\mu=\bar{x} $$</div>
+          <div class="derive__why">$\sigma^2$ 이 무엇이든 <strong>$\hat\mu$ 는 표본평균</strong>이다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\partial\ell}{\partial\sigma^2}=-\frac{n}{2\sigma^2}+\frac{1}{2\sigma^4}\sum_i(x_i-\hat\mu)^2=0 $$</div>
+          <div class="derive__why">$\sigma^2$ 를 하나의 변수로 보고 미분했다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat\sigma^2_{\text{MLE}}=\frac{1}{n}\sum_i(x_i-\bar{x})^2 $$</div>
+          <div class="derive__why">양변에 $2\sigma^4/n$ 을 곱해 정리. <strong>분모가 $n$</strong> 이다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}[\hat\sigma^2_{\text{MLE}}]=\frac{n-1}{n}\sigma^2 \ \ne\ \sigma^2 $$</div>
+          <div class="derive__why"><a href="4.5-statistical-estimation.html">4.5</a> 유도 2 — <strong>MLE 는 분산을 항상 과소추정한다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ n\to\infty:\ \frac{n-1}{n}\to1 $$</div>
+          <div class="derive__why">편향이 사라진다 — <strong>MLE 는 일치추정량</strong>이지만 유한 표본에서는 치우친다</div>
+        </div>
+      </div>
+      <p>
+        <span class="hl">MLE 가 $\sigma^2$ 를 과소추정하는 이유는 <strong>$\mu$ 를 같은 data 로 맞췄기 때문</strong>이다 —
+        $\bar{x}$ 는 그 data 에 가장 가까운 점이라 편차가 실제보다 작게 나온다.</span>
+        model 이 자기 학습 data 에서 loss 를 낙관적으로 보고하는 것과 완전히 같은 구조다.
+      </p>
+
+      <h3>유도 3 — MAP 가 L2 정규화인 이유</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ y_i=f_\theta(x_i)+\varepsilon_i,\qquad \varepsilon_i\sim\mathcal{N}(0,\sigma^2) $$</div>
+          <div class="derive__why">잡음이 Gaussian이라는 가정</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \ell(\theta)=-\frac{1}{2\sigma^2}\sum_i\bigl(y_i-f_\theta(x_i)\bigr)^2+\text{const} $$</div>
+          <div class="derive__why">Gaussian log-likelihood — <strong>$\theta$ 와 무관한 항은 상수</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ p(\theta)=\mathcal{N}(0,\tau^2 I) \;\Longrightarrow\; \log p(\theta)=-\frac{1}{2\tau^2}\|\theta\|_2^2+\text{const} $$</div>
+          <div class="derive__why">각 성분이 독립인 Gaussian prior — 지수 안이 <strong>제곱합</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat\theta_{\text{MAP}}=\arg\min_\theta\ \frac{1}{2\sigma^2}\sum_i(y_i-f_\theta(x_i))^2+\frac{1}{2\tau^2}\|\theta\|_2^2 $$</div>
+          <div class="derive__why">부호를 뒤집어 최소화 문제로 (식 6)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ =\arg\min_\theta\ \sum_i(y_i-f_\theta(x_i))^2+\lambda\|\theta\|_2^2, \qquad \lambda=\frac{\sigma^2}{\tau^2} $$</div>
+          <div class="derive__why">양변에 $2\sigma^2$ 을 곱했다 — <strong>ridge regression 그 자체</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \tau^2\to\infty \Rightarrow \lambda\to0 \Rightarrow \text{MAP}\to\text{MLE} $$</div>
+          <div class="derive__why">prior 를 평평하게 하면 <strong>정규화가 사라진다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ p(\theta)\propto e^{-\|\theta\|_1/b} \;\Longrightarrow\; \lambda\|\theta\|_1,\quad \lambda=\frac{2\sigma^2}{b} $$</div>
+          <div class="derive__why">Laplace prior 로 바꾸면 <strong>lasso</strong> (<a href="../ch03/3.9-constraints-regularization.html">3.9</a>)</div>
+        </div>
+      </div>
+      <p>
+        <span class="hl">$\lambda=\sigma^2/\tau^2$ 은 <strong>"잡음의 크기 대 믿음의 폭"</strong>이다 —
+        data 가 시끄러울수록($\sigma$ 큼) 또는 prior 가 확고할수록($\tau$ 작음) 정규화가 세진다.</span>
+        weight decay 계수를 고르는 일이 사실은 <strong>가중치에 대한 믿음의 폭을 고르는 일</strong>이었다.
+      </p>
+
+      <details>
+        <summary>왜 Laplace prior 는 정확히 0 을 만들고 Gaussian prior 는 못 만드는가</summary>
+        <p>
+          $-\log p(\theta)$ 의 <strong>원점에서의 기울기</strong>가 갈린다.
+          Gaussian prior 의 벌점 $\theta^2$ 는 미분이 $2\theta$ 라 $\theta\to0$ 에서 기울기도 0 으로 사라진다 —
+          0 근처에서는 당기는 힘이 없어져 <strong>아주 작은 값에 머물 뿐 0 이 되지 않는다</strong>.
+        </p>
+        <p>
+          Laplace prior 의 벌점 $|\theta|$ 는 0 을 제외한 모든 곳에서 기울기가 $\pm1$ 로 <strong>일정하다</strong>.
+          data 항의 기울기가 이 상수보다 작으면 최적해가 정확히 $\theta=0$ 에 붙는다 (soft thresholding).
+          <strong>Laplace 밀도가 0 에서 뾰족한 첨점을 갖는다</strong>는 사실이 희소성의 확률론적 정체다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① 동전 10번에 앞면 7번 — MLE 를 손으로</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ L(p)=p^7(1-p)^3 $$</div>
+          <div class="derive__why">$\binom{10}{7}$ 은 $p$ 와 무관해 <strong>최댓값 위치를 바꾸지 않는다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ L(0.5)=0.5^{10}=0.000977,\quad L(0.7)=0.7^7(0.3)^3=0.0823543\times0.027=0.002223 $$</div>
+          <div class="derive__why">$0.7$ 이 $0.5$ 보다 <strong>2.28배 그럴듯하다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ L(0.9)=0.9^7(0.1)^3=0.4782969\times0.001=0.000478 $$</div>
+          <div class="derive__why">너무 크게 잡아도 나빠진다 — <strong>봉우리가 있다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \ell'(p)=\frac{7}{p}-\frac{3}{1-p}=0 \;\Longrightarrow\; 7(1-p)=3p \;\Longrightarrow\; 7=10p $$</div>
+          <div class="derive__why">유도 1 을 대입</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat p_{\text{MLE}}=0.7,\qquad L(0.7)=0.002223 \ \text{가 최댓값} $$</div>
+          <div class="derive__why">위에서 계산한 세 값 중 가장 크다 ✓</div>
+        </div>
+      </div>
+      <p>
+        $\int_0^1 L(p)\,dp = B(8,4)=\frac{7!\,3!}{11!}=\frac{5040\times6}{39916800}=0.000758$ 로
+        <strong>1 이 아니다</strong> — likelihood 가 확률분포가 아니라는 것을 수치로 확인한 것이다.
+      </p>
+
+      <h3>② Gaussian MLE — data 세 개로</h3>
+      <p>data: <span class="num">2, 4, 6</span></p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat\mu=\frac{2+4+6}{3}=\frac{12}{3}=4 $$</div>
+          <div class="derive__why">유도 2 — 표본평균</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sum(x_i-4)^2=(-2)^2+0^2+2^2=4+0+4=8 $$</div>
+          <div class="derive__why">편차 제곱합</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat\sigma^2_{\text{MLE}}=\frac{8}{3}=2.6\overline{6},\qquad \hat\sigma_{\text{MLE}}=1.633 $$</div>
+          <div class="derive__why">분모가 $n=3$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ S^2=\frac{8}{2}=4.0,\qquad s=2.0 $$</div>
+          <div class="derive__why">불편추정량은 분모가 $n-1=2$. <strong>1.5배 차이</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\hat\sigma^2}{S^2}=\frac{2.667}{4.0}=\frac{2}{3}=\frac{n-1}{n} $$</div>
+          <div class="derive__why">유도 2 의 편향 비율과 정확히 일치 ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \ell(\hat\mu,\hat\sigma^2)=-\frac32\log(2\pi\cdot2.667)-\frac{8}{2\times2.667}=-\frac32(2.8155)-1.5=-5.723 $$</div>
+          <div class="derive__why">최대 log-likelihood 값. 검산: $2\pi\times2.667=16.755$, $\log=2.8187$</div>
+        </div>
+      </div>
+
+      <h3>③ MLE · MAP · 사후평균 — 세 값이 모두 다르다</h3>
+      <p>$\mathrm{Beta}(3,3)$ prior 에 앞면 7 · 뒷면 3 을 관측했다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{posterior}\ \propto\ p^{3-1}(1-p)^{3-1}\cdot p^7(1-p)^3=p^{9}(1-p)^{5} $$</div>
+          <div class="derive__why">지수를 더했다 → $\mathrm{Beta}(10,6)$ (<a href="4.4-common-distributions.html">4.4</a> 유도 3)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat p_{\text{MLE}}=\frac{7}{10}=0.700 $$</div>
+          <div class="derive__why">data 만 본 값</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat p_{\text{MAP}}=\frac{\alpha'-1}{\alpha'+\beta'-2}=\frac{10-1}{16-2}=\frac{9}{14}=0.643 $$</div>
+          <div class="derive__why">Beta 의 <strong>최빈값</strong>. 0.5 쪽으로 당겨졌다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}[p\mid\mathcal{D}]=\frac{\alpha'}{\alpha'+\beta'}=\frac{10}{16}=0.625 $$</div>
+          <div class="derive__why">사후 <strong>평균</strong>. MAP 보다 더 당겨졌다 — <strong>셋이 다 다르다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P(\text{다음도 앞면}\mid\mathcal{D})=\int_0^1 p\cdot f(p\mid\mathcal{D})\,dp=\mathbb{E}[p\mid\mathcal{D}]=0.625 $$</div>
+          <div class="derive__why">posterior predictive (식 8) — <strong>사후 평균과 같아진다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ n=100\ (70\cdot30):\ \text{MLE}=0.700,\ \text{MAP}=\frac{72}{104}=0.692,\ \mathbb{E}=\frac{73}{106}=0.689 $$</div>
+          <div class="derive__why"><strong>data 가 늘면 셋이 붙는다</strong> — prior 의 영향이 $O(1/n)$ 로 준다</div>
+        </div>
+      </div>
+      <p>
+        <span class="hl">MAP 는 <strong>mode</strong>, 사후평균은 <strong>mean</strong> 이라 비대칭 분포에서는 서로 다르며,
+        예측에 쓰이는 것은 대개 <strong>평균 쪽</strong>이다.</span>
+        MAP 를 "Bayesian 방법"이라 부르기 애매한 이유가 여기 있다 — 분포를 만들어 놓고 점 하나만 쓰기 때문이다.
+      </p>
+
+      <h3>④ 0 확률 문제 — MLE 가 무너지는 자리</h3>
+      <p>주사위를 12번 던졌는데 <strong>6 이 한 번도 안 나왔다</strong>. 관측: 1이 3번, 2가 2번, 3이 3번, 4가 2번, 5가 2번, 6이 0번.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat\pi_6^{\text{MLE}}=\frac{0}{12}=0 $$</div>
+          <div class="derive__why">Categorical MLE 는 빈도 그대로 — <strong>6 이 절대 안 나온다고 단정</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P(\text{다음 관측에 6})=0 \;\Longrightarrow\; \log P=-\infty $$</div>
+          <div class="derive__why">test 에서 6 이 하나만 나와도 <strong>perplexity 가 무한대</strong>가 된다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Dirichlet}(1,\dots,1)\ \text{prior}:\ \hat\pi_k^{\text{MAP-mean}}=\frac{c_k+1}{n+K}=\frac{0+1}{12+6}=\frac{1}{18}=0.0556 $$</div>
+          <div class="derive__why">add-one(Laplace) smoothing — <strong>가상 관측 1회씩을 더한 것</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat\pi_1=\frac{3+1}{18}=\frac{4}{18}=0.2\overline{2} \quad(\text{MLE 는 } 3/12=0.25) $$</div>
+          <div class="derive__why">많이 나온 쪽은 <strong>조금 깎여</strong> 총합이 1 로 유지된다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 0.2\overline{2}+0.1\overline{6}+0.2\overline{2}+0.1\overline{6}+0.1\overline{6}+0.0\overline{5}=1.000 $$</div>
+          <div class="derive__why">$\frac{4+3+4+3+3+1}{18}=\frac{18}{18}=1$ ✓</div>
+        </div>
+      </div>
+      <p>
+        n-gram 언어 모델이 반드시 smoothing 을 쓰는 이유가 이것이다.
+        <strong>본 적 없는 것에 확률 0 을 주면 그 하나 때문에 전체 likelihood 가 0 이 된다</strong>
+        (<a href="4.10-ai-and-probability.html">4.10</a>).
+      </p>
+
+      <h3>⑤ prior 의 폭이 정하는 정규화 강도</h3>
+      <p>잡음 $\sigma=0.5$ 인 회귀에서 prior 폭 $\tau$ 를 바꿔 본다. $\lambda=\sigma^2/\tau^2=0.25/\tau^2$.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$\tau$ (믿음의 폭)</th><th>$\lambda=\sigma^2/\tau^2$</th><th>뜻</th><th>결과</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0.1</td><td class="num">25.0</td><td>"가중치는 아주 작을 것"</td><td>강한 정규화 — underfit 위험</td></tr>
+            <tr><td class="num">0.5</td><td class="num">1.0</td><td>"잡음만큼의 폭"</td><td>균형</td></tr>
+            <tr><td class="num">1.0</td><td class="num">0.25</td><td>느슨한 믿음</td><td>약한 정규화</td></tr>
+            <tr><td class="num">5.0</td><td class="num">0.01</td><td>거의 모른다</td><td>사실상 MLE</td></tr>
+            <tr><td class="num">$\infty$</td><td class="num">0</td><td>평평한 prior</td><td><strong>정확히 MLE</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        같은 $\tau$ 라도 <strong>잡음 $\sigma$ 가 커지면 $\lambda$ 도 커진다</strong> —
+        data 를 덜 믿게 되니 prior 쪽으로 더 기운다. 직관과 정확히 맞는다.
+      </p>
+
+      <figure class="widget" data-widget="prior-to-reg">
+        <figcaption class="widget__bar">Prior ↔ Regularization — 믿음의 모양이 벌점의 모양</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">Laplace 로 바꾸면 벌점이 <strong>0 에서 꺾입니다</strong>. 그 꺾임이 계수를 정확히 0 으로 만드는 힘입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>두 방향으로 읽기</strong> · <strong>likelihood 곡선</strong> ·
+        <strong>MLE vs MAP</strong> · <strong>순차 갱신</strong> · <strong>prior ↔ 정규화</strong> — 에 이어,
+        아래에서 <strong>Gaussian을 직접 맞춰</strong> 본다. loss 를 최소화한다는 것이 무슨 뜻인지 눈으로 보인다.
+      </p>
+
+      <figure class="widget" data-widget="gaussian-fit">
+        <figcaption class="widget__bar">Fitting a Gaussian — μ 와 σ 를 손으로 맞춰 보기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$\sigma$ 를 너무 작게 하면 <strong>바깥 점의 벌점이 폭발</strong>합니다. 너무 크게 해도 전체가 납작해져 손해입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"likelihood 가 0.002 이면 그 parameter 가 맞을 확률이 0.2% 다."</p>
+        <p>
+          <strong>실제로는</strong> likelihood 는 $\theta$ 에 대한 확률이 아니다.
+          예제 ①에서 $\int_0^1 L(p)dp=0.000758$ 로 <strong>1 이 아니었다</strong>.
+          $L(0.7)/L(0.5)=2.28$ 처럼 <strong>비교</strong>는 의미가 있지만 절댓값 자체는 뜻이 없다
+          (연속 data 면 밀도라서 1 을 넘기도 한다 — <a href="4.2-random-variables.html">4.2</a> 오해 1).
+          "$\theta$ 가 맞을 확률"을 말하려면 prior 를 도입해 posterior 로 정규화해야 한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"MLE 는 불편추정량이다."</p>
+        <p>
+          <strong>실제로는</strong> MLE 는 <strong>일치추정량</strong>이지만 유한 표본에서는 편향될 수 있다.
+          Gaussian의 $\hat\sigma^2$ 은 항상 $\frac{n-1}{n}\sigma^2$ 로 <strong>과소추정</strong>하고(유도 2),
+          $\mathrm{Uniform}(0,\theta)$ 의 MLE 도 편향된다.
+          게다가 <strong>MLE 는 변환에 불변</strong>($\widehat{g(\theta)}=g(\hat\theta)$)인데
+          <strong>불편성은 그렇지 않아서</strong>, 둘이 동시에 성립하기 어렵다 —
+          $\hat\sigma^2$ 이 불편이어도 $\sqrt{\hat\sigma^2}$ 는 $\sigma$ 의 불편추정량이 아니다(Jensen).
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"data 가 적을 때도 MLE 를 쓰면 된다. 편향이 조금 있을 뿐이다."</p>
+        <p>
+          <strong>실제로는</strong> 표본이 적으면 MLE 가 <strong>극단값으로 붕괴</strong>한다.
+          동전을 3번 던져 다 앞면이면 $\hat p=1$ 이고, 본 적 없는 단어의 확률은 0 이 되어
+          <strong>log-likelihood 가 $-\infty$</strong> 로 발산한다(예제 ④).
+          Gaussian 혼합에서는 한 성분이 한 점에 붙으며 $\sigma\to0$ 이 되어
+          <strong>likelihood 가 무한대로 발산</strong>하기도 한다.
+          처방은 전부 같다 — prior 를 넣는 것(= smoothing = 정규화).
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"MAP 를 쓰면 Bayesian 추론을 한 것이다."</p>
+        <p>
+          <strong>실제로는</strong> MAP 는 posterior 의 <strong>봉우리 한 점</strong>만 쓰고 분포의 나머지를 버린다.
+          예제 ③에서 MAP(0.643)와 사후평균(0.625)이 달랐고, 예측에 쓰이는 것은 평균 쪽이다.
+          더 큰 문제는 <strong>MAP 가 재매개변수화에 불변이 아니라는</strong> 점이다 —
+          $\theta$ 에서 구한 MAP 를 $\log\theta$ 로 옮기면 $\log(\hat\theta_{\text{MAP}})$ 가 아니다
+          (Jacobian 때문에 밀도가 휘어서 봉우리 위치가 옮겨간다).
+          <strong>MLE 는 이 변환에 불변</strong>이고, 사후<em>평균</em>은 또 다른 이유로 불변이 아니다.
+          "어떤 좌표계에서 최대화하는가"가 결과를 바꾼다는 것을 알고 써야 한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"loss function 은 성능 지표를 보고 고르는 것이다."</p>
+        <p>
+          <strong>실제로는</strong> loss 는 <strong>출력 잡음의 분포 가정</strong>이다(식 3 아래 표).
+          MSE 는 Gaussian, MAE 는 Laplace, cross-entropy 는 Bernoulli·Categorical 가정이다.
+          이상치가 많은 회귀에서 MSE 가 흔들리는 것은 <strong>Gaussian이 두꺼운 꼬리를 못 담기 때문</strong>이고,
+          Huber loss 를 쓰는 것은 잡음 분포를 "가운데는 Gaussian, 바깥은 Laplace" 로 바꾼 것이다.
+          <strong>"어떤 loss 가 잘 되더라"가 아니라 "잡음이 어떻게 생겼나"를 먼저 물어야</strong>
+          왜 되는지·언제 안 되는지를 안다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–④ 를 검산한다.</p>
+      <details>
+        <summary>NumPy — likelihood 곡선 · Gaussian MLE · MAP = ridge (20줄)</summary>
+<pre><code>import numpy as np
+
+p = np.linspace(1e-6, 1 - 1e-6, 100001)
+L = p**7 * (1 - p)**3
+print(p[L.argmax()].round(4), L.max().round(6))       # 0.7  0.002223
+print(np.trapz(L, p).round(6))                        # 0.000758 — 1 이 아니다 (오해 1)
+
+x = np.array([2.0, 4.0, 6.0])
+mu = x.mean(); s2 = ((x - mu)**2).mean()
+print(mu, s2, x.var(ddof=1), s2 / x.var(ddof=1))      # 4.0 2.667 4.0 0.667 = (n-1)/n
+
+a0, b0, k, n = 3, 3, 7, 10                            # Beta(3,3) prior
+A, B = a0 + k, b0 + n - k
+print(k / n, (A - 1) / (A + B - 2), A / (A + B))      # MLE 0.7 / MAP 0.643 / mean 0.625
+
+rng = np.random.default_rng(0)
+X = rng.normal(0, 1, (40, 8)); w = rng.normal(0, 1, 8)
+y = X @ w + rng.normal(0, 0.5, 40)
+sig2, tau2 = 0.25, 1.0
+lam = sig2 / tau2                                     # 유도 3
+ridge = np.linalg.solve(X.T @ X + lam * np.eye(8), X.T @ y)
+print(np.abs(ridge - np.linalg.lstsq(
+    np.vstack([X, np.sqrt(lam) * np.eye(8)]),
+    np.concatenate([y, np.zeros(8)]), rcond=None)[0]).max())   # ~1e-14  같은 해
+</code></pre>
+        <p>
+          <small>
+            마지막 블록은 "ridge = 0 을 목표로 하는 가짜 data 를 $\sqrt{\lambda}$ 무게로 덧붙인 최소제곱"
+            임을 보인다 — <strong>prior 가 문자 그대로 가상의 관측</strong>이라는 것의 코드 판이다.
+            두 해의 차이가 $10^{-14}$ 수준이면 수치오차 범위 안이다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            동전 20번에 앞면 12번이 나왔다. $\mathrm{Beta}(2,2)$ prior 에서 MAP 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$13/22 \approx 0.591$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$12/20 = 0.600$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$14/24 \approx 0.583$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            posterior 는 $\mathrm{Beta}(2+12,\ 2+8)=\mathrm{Beta}(14,10)$ 이고
+            MAP 는 <strong>최빈값</strong> $\frac{14-1}{24-2}=\frac{13}{22}=0.591$.
+            <strong>나</strong>는 MLE, <strong>다</strong>는 사후 <strong>평균</strong> $\frac{14}{24}$ 이다.
+            셋이 모두 다르다는 것이 요점 — <strong>mode 와 mean 은 다른 값</strong>이고 어느 쪽을 쓸지는 선택이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            data <span class="num">1, 3, 5, 7</span> 에 Gaussian을 맞출 때 $\hat\sigma^2_{\text{MLE}}$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>5</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>6.667</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>20</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\hat\mu=4$, 편차 $-3,-1,1,3$, 제곱합 $9+1+1+9=20$.
+            MLE 는 분모가 $n=4$ 이므로 $20/4=5$.
+            <strong>나</strong>는 $20/3$ 으로 불편추정량 $S^2$ 이고,
+            <strong>다</strong>는 나누는 것을 잊은 값이다.
+            MLE 는 항상 $\frac{n-1}{n}=0.75$ 배 작게 나온다 ($5 = 0.75\times6.667$ ✓).
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            잡음 $\sigma=2$, Gaussian prior 폭 $\tau=0.5$ 일 때 정규화 계수 $\lambda$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>16</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>4</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0.0625</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\lambda=\sigma^2/\tau^2=4/0.25=16$ (유도 3).
+            <strong>나</strong>는 $\sigma/\tau$ 로 제곱을 빼먹은 것, <strong>다</strong>는 역수다.
+            잡음이 크고($\sigma=2$) 믿음이 좁으면($\tau=0.5$) <strong>정규화가 세진다</strong> —
+            data 를 못 믿을수록 prior 쪽으로 기운다는 직관과 맞는다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            분류 model 을 cross-entropy 로 학습한다는 것은 확률적으로 무엇을 한 것인가?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>출력이 Categorical 을 따른다고 가정하고 MLE 를 푸는 것</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>출력이 Gaussian을 따른다고 가정하고 MLE 를 푸는 것</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>확률 가정 없이 거리만 재는 것</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            softmax 출력을 Categorical 의 $\boldsymbol\pi$ 로 두면 NLL 이 곧 cross-entropy 다(식 3 아래 표).
+            <strong>나</strong>였다면 MSE 가 나온다.
+            이 대응을 알면 <strong>왜 회귀에는 MSE, 분류에는 cross-entropy 인지</strong>가 규칙 암기가 아니라
+            "출력 분포를 무엇으로 가정했는가"의 결과로 이해된다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            prior 를 평평한 균등분포로 두면 MAP 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>MLE 와 같아진다 — $\log p(\theta)$ 가 상수라 최적화에 영향이 없다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>항상 0 이 된다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>사후 평균과 같아진다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            상수를 더해도 $\arg\max$ 는 안 바뀌므로 MAP = MLE 다 (식 6 아래 표).
+            <strong>다</strong>는 posterior 가 <strong>대칭일 때만</strong> 맞다 —
+            $\mathrm{Beta}(8,4)$ 처럼 비대칭이면 mode(0.7)와 mean(0.667)이 다르다.
+            "평평한 prior = 정보 없음" 이라는 해석에는 함정이 있다는 것도 함께 기억할 것
+            (<a href="4.4-common-distributions.html">4.4</a> 오해 5).
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            언어 모델 학습 중 validation loss 가 <code>inf</code> 로 튀었다. 가장 가능성 높은 원인은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>학습에서 본 적 없는 token 에 확률 0 이 배정되어 $\log 0=-\infty$ 가 되었다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>learning rate 가 너무 작다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>batch 크기가 너무 크다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            MLE 는 관측 빈도를 그대로 확률로 쓰므로 <strong>안 나온 것에 정확히 0 을 준다</strong>(예제 ④).
+            그 token 이 validation 에 하나만 있어도 NLL 이 발산한다.
+            처방은 smoothing(= Dirichlet prior = 가상 관측 더하기)이고,
+            신경망이라면 softmax 가 정확한 0 을 내지 않으므로 대개 <strong>수치 underflow 나 log(0) 방어 누락</strong>이 원인이다 —
+            <code>log_softmax</code> 를 쓰지 않고 <code>log(softmax(x))</code> 를 쓴 구현에서 자주 난다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="4.7-information-theory.html">4.7 정보이론</a></strong> — NLL 최소화가 곧 cross-entropy 최소화이고 KL divergence 최소화다.</li>
+        <li><strong><a href="4.9-uncertainty.html">4.9 불확실성</a></strong> — posterior 를 근사하는 방법들(BNN·MC dropout·앙상블).</li>
+        <li><strong><a href="../ch03/3.9-constraints-regularization.html">3.9 제약과 정규화</a></strong> — L1/L2 를 기하로 본 것과 prior 로 본 것이 같은 대상이다.</li>
+        <li><strong>5장 전통적 머신러닝</strong> — 로지스틱 회귀·naive Bayes·GMM 이 전부 MLE/MAP 로 유도된다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-fisher1922-mathematical-foundations" data-ref="fisher1922-mathematical-foundations">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Fisher, R. A. (1922). <em>On the Mathematical Foundations of Theoretical Statistics</em>. Philosophical Transactions of the Royal Society A, 222, 309–368.</span>
+          <span class="ref__where">§6 — "likelihood" 라는 용어를 확률과 <strong>명시적으로 구분해 도입</strong>하고 최대가능도법을 정식화한 부분(직관 절과 오해 1 의 직접 근거). §7 — 이항·정규 model 의 MLE 를 미분으로 구하는 계산(유도 1·2). §11 — 역확률(Bayes)에 대한 비판과 likelihood 만으로 추론하려는 입장</span>
+          <a class="ref__link" href="https://royalsocietypublishing.org/doi/10.1098/rsta.1922.0009">royalsocietypublishing.org</a>
+        </li>
+        <li class="ref" id="ref-bishop2006-prml" data-ref="bishop2006-prml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Bishop, C. M. (2006). <em>Pattern Recognition and Machine Learning</em>. Springer.</span>
+          <span class="ref__where">1.2.4–1.2.5절 — Gaussian MLE 와 $\hat\sigma^2$ 이 $\frac{n-1}{n}\sigma^2$ 로 편향된다는 계산(유도 2, 오해 2), 그리고 곡선 맞추기를 MLE 로 다시 읽는 부분. 1.2.5절 — MAP 가 정규화된 최소제곱과 같아지는 유도와 $\lambda=\sigma^2/\tau^2$(유도 3). 2.1–2.2절 — conjugate prior 표와 pseudo-count 해석. 3.3절 — 사후예측분포(식 8)</span>
+          <a class="ref__link" href="https://www.microsoft.com/en-us/research/publication/pattern-recognition-machine-learning/">microsoft.com/research</a>
+        </li>
+        <li class="ref" id="ref-murphy2022-pml" data-ref="murphy2022-pml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Murphy, K. P. (2022). <em>Probabilistic Machine Learning: An Introduction</em>. MIT Press.</span>
+          <span class="ref__where">4.2절 — MLE 의 정의와 여러 model 의 닫힌 해('수식과 기호'의 MLE 표). 4.5절 — MAP 를 정규화로 보는 관점과 Gaussian/Laplace prior ↔ L2/L1 대응(식 6 아래 표). 4.6.1–4.6.3절 — Beta-Bernoulli 사후, MAP 와 사후평균의 차이(예제 ③), add-one smoothing(예제 ④). 4.6.5절 — MAP 가 재매개변수화에 불변이 아니라는 지적(오해 4)</span>
+          <a class="ref__link" href="https://probml.github.io/pml-book/book1.html">probml.github.io</a>
+        </li>
+        <li class="ref" id="ref-gelman2013-bda3" data-ref="gelman2013-bda3">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B., Vehtari, A. &amp; Rubin, D. B. (2013). <em>Bayesian Data Analysis</em> (3rd ed.). CRC Press.</span>
+          <span class="ref__where">1.3절 — prior·likelihood·posterior 의 정식화와 posterior predictive distribution 의 정의(식 8). 2.1–2.4절 — Beta-Binomial 을 축차적으로 갱신해도 결과가 같다는 성질(위젯 4)과 pseudo-count 로서의 $\alpha,\beta$. 2.9절 — 무정보 prior 의 어려움. 4.1절 — 표본이 커지면 posterior 가 정규에 가까워지고 prior 의 영향이 $O(1/n)$ 로 사라진다는 결과(예제 ③ 마지막 줄)</span>
+          <a class="ref__link" href="http://www.stat.columbia.edu/~gelman/book/">stat.columbia.edu/~gelman/book</a>
+        </li>
+        <li class="ref" id="ref-mackay2003-itila" data-ref="mackay2003-itila">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">MacKay, D. J. C. (2003). <em>Information Theory, Inference, and Learning Algorithms</em>. Cambridge University Press.</span>
+          <span class="ref__where">2.3절 — 같은 함수 $P(x\mid\theta)$ 를 확률로 읽을 때와 likelihood 로 읽을 때의 차이를 그림으로 대비시킨 부분(직관 절의 위젯 1). 3장 — 동전 던지기에서 posterior 를 축차적으로 갱신하는 예제. 28장 — evidence $p(\mathcal{D})$ 를 model 비교에 쓰는 Occam factor 논의('같은 것을 다르게 부른다' 표의 marginal likelihood)</span>
+          <a class="ref__link" href="https://www.inference.org.uk/mackay/itila/">inference.org.uk</a>
+        </li>
+        <li class="ref" id="ref-statquest" data-ref="statquest">
+          <span class="ref__type" data-type="video">영상</span>
+          <span class="ref__cite">Starmer, J. <em>Probability is not Likelihood</em> · <em>Maximum Likelihood, clearly explained</em>. StatQuest.</span>
+          <span class="ref__where">'Probability is not Likelihood' 전체(약 5분) — 같은 종 모양 그림에서 <strong>무엇을 고정하고 무엇을 움직이는가</strong>로 둘을 가르는 설명. 이 절 직관 위젯의 두 모드가 이 구성을 따랐다. 'Maximum Likelihood' 편 — Gaussian의 $\mu,\sigma$ 를 움직이며 likelihood 가 최대가 되는 지점을 찾는 시각화(위젯 6)</span>
+          <a class="ref__link" href="https://statquest.org/video-index/">statquest.org</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+function lgamma(z) {
+  var g = [676.5203681218851, -1259.1392167224028, 771.32342877765313,
+           -176.61502916214059, 12.507343278686905, -0.13857109526572012,
+           9.9843695780195716e-6, 1.5056327351493116e-7];
+  if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - lgamma(1 - z);
+  z -= 1;
+  var x = 0.99999999999980993;
+  for (var i = 0; i < 8; i++) x += g[i] / (z + i + 1);
+  var t = z + 7.5;
+  return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+}
+function betaPdf(x, A, B) {
+  if (x <= 0 || x >= 1) return 0;
+  return Math.exp((A - 1) * Math.log(x) + (B - 1) * Math.log(1 - x)
+    + lgamma(A + B) - lgamma(A) - lgamma(B));
+}
+function normPdf(x, mu, sd) {
+  return Math.exp(-0.5 * Math.pow((x - mu) / sd, 2)) / (sd * Math.sqrt(2 * Math.PI));
+}
+
+/* ============================================================
+   위젯 1 — 확률로 읽기 vs likelihood 로 읽기
+   ============================================================ */
+WIDGETS.register('two-readings', function (root, ctx) {
+  var mode = 'prob', mu = 0, xobs = 1.2;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'fixed', label: '고정한 것' },
+    { key: 'moving', label: '움직이는 것' },
+    { key: 'area', label: '곡선 아래 넓이', digits: 4 },
+    { key: 'val', label: '지금 값', digits: 5 }
+  ]);
+
+  function draw() {
+    var p = VIZ.plot({ w: 460, h: 280, xmin: -4.2, xmax: 4.2, ymin: 0, ymax: 0.48,
+      pad: { t: 22, r: 16, b: 32, l: 48 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+
+    if (mode === 'prob') {
+      p.grid(1, 0.1).axes('x  (data 값)', 'p(x | μ)').ticks(1, 0.1);
+      p.curve(function (x) { return normPdf(x, mu, 1); }, { samples: 320 });
+      p.line([[mu, 0], [mu, 0.42]], { dash: '3 3' });
+      p.text(-4.1, 0.46, 'μ 를 고정 · x 를 움직인다 → 넓이 = 1 (진짜 확률분포)', { size: 10 });
+      p.dot(xobs, normPdf(xobs, mu, 1), 5);
+      p.callout(xobs, normPdf(xobs, mu, 1), 'x = ' + xobs.toFixed(2),
+        { dx: 20, dy: -18, tone: 'var(--seal)' });
+      out.setRaw('fixed', 'parameter μ = ' + mu.toFixed(2));
+      out.setRaw('moving', 'data x');
+      out.set('area', 1.0);
+      out.set('val', normPdf(xobs, mu, 1));
+    } else {
+      p.grid(1, 0.1).axes('μ  (parameter 값)', 'L(μ) = p(x | μ)').ticks(1, 0.1);
+      p.curve(function (m) { return normPdf(xobs, m, 1); }, { samples: 320 });
+      p.line([[xobs, 0], [xobs, 0.42]], { dash: '3 3' });
+      p.text(-4.1, 0.46, 'x 를 고정 · μ 를 움직인다 → 이것은 확률분포가 아니다', { size: 10 });
+      p.dot(mu, normPdf(xobs, mu, 1), 5);
+      p.callout(xobs, normPdf(xobs, xobs, 1), 'μ̂ = x = ' + xobs.toFixed(2),
+        { dx: -20, dy: -18, tone: 'var(--seal)' });
+      /* 수치 적분 */
+      var A = 0, h = 8.4 / 600;
+      for (var i = 0; i <= 600; i++) A += normPdf(xobs, -4.2 + i * h, 1) * h;
+      out.setRaw('fixed', '관측 data x = ' + xobs.toFixed(2));
+      out.setRaw('moving', 'parameter μ');
+      out.set('area', A);
+      out.set('val', normPdf(xobs, mu, 1));
+    }
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '같은 식을 어느 방향으로 읽을까',
+    options: [
+      { value: 'prob', label: '확률로 읽기  p(x | μ)' },
+      { value: 'lik', label: 'likelihood 로 읽기  L(μ)' }
+    ],
+    value: 'prob', onChange: function (v) { mode = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'parameter μ', min: -3, max: 3, step: 0.05, value: 0, digits: 2,
+    onInput: function (v) { mu = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '관측한 data x', min: -3, max: 3, step: 0.05, value: 1.2, digits: 2,
+    onInput: function (v) { xobs = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — likelihood 곡선
+   ============================================================ */
+WIDGETS.register('likelihood-curve', function (root, ctx) {
+  var n = 10, ratio = 0.7, useLog = false;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'data', label: '관측' },
+    { key: 'mle', label: 'MLE = k / n', digits: 4 },
+    { key: 'peak', label: '최대 log-likelihood', digits: 4 },
+    { key: 'width', label: '봉우리의 폭 (곡률에서)', digits: 4 }
+  ]);
+
+  function draw() {
+    var k = Math.round(n * ratio);
+    var mle = k / n;
+    var ll = function (q) {
+      if (q <= 0 || q >= 1) return -1e9;
+      return k * Math.log(q) + (n - k) * Math.log(1 - q);
+    };
+    var top = ll(Math.min(0.999, Math.max(0.001, mle)));
+
+    var lo = useLog ? Math.max(-30, top - 25) : 0;
+    var p = VIZ.plot({ w: 460, h: 290, xmin: -0.02, xmax: 1.02,
+      ymin: useLog ? lo : 0, ymax: useLog ? top + (top - lo) * 0.12 : 1.12,
+      pad: { t: 20, r: 16, b: 32, l: 54 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+
+    var gy = useLog ? (top - lo) / 4 : 0.25;
+    p.grid(0.25, gy).axes('p', useLog ? 'log-likelihood' : 'likelihood (최댓값 = 1)').ticks(0.25, gy);
+    p.curve(function (q) {
+      var v = ll(q);
+      return useLog ? Math.max(lo, v) : Math.exp(v - top);
+    }, { samples: 400 });
+
+    p.line([[mle, useLog ? lo : 0], [mle, useLog ? top : 1]], { dash: '3 3' });
+    p.dot(mle, useLog ? top : 1, 5.5);
+    p.callout(mle, useLog ? top : 1, 'p̂ = ' + mle.toFixed(3),
+      { dx: 20, dy: -14, tone: 'var(--seal)' });
+
+    /* 곡률 → Fisher 정보 → 봉우리 폭 */
+    var I = mle > 0 && mle < 1 ? n / (mle * (1 - mle)) : Infinity;
+    out.setRaw('data', k + ' / ' + n + ' 성공');
+    out.set('mle', mle);
+    out.set('peak', top);
+    out.set('width', isFinite(I) ? 1 / Math.sqrt(I) : 0);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '표본 수 n', min: 2, max: 400, step: 1, value: 10, digits: 0,
+    onInput: function (v) { n = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '성공 비율 k/n', min: 0.05, max: 0.95, step: 0.05, value: 0.7, digits: 2,
+    onInput: function (v) { ratio = v; draw(); }
+  });
+  WIDGETS.toggle({
+    host: ctx.controls, label: '세로축',
+    options: [{ value: 'lin', label: 'likelihood' }, { value: 'log', label: 'log-likelihood' }],
+    value: 'lin', onChange: function (v) { useLog = (v === 'log'); draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — MLE vs MAP
+   ============================================================ */
+WIDGETS.register('mle-vs-map', function (root, ctx) {
+  var a0 = 5, b0 = 5, n = 10, ratio = 0.8;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'mle', label: 'MLE (data 만)', digits: 4 },
+    { key: 'map', label: 'MAP (posterior 의 mode)', digits: 4 },
+    { key: 'mean', label: '사후 평균', digits: 4 },
+    { key: 'pull', label: 'prior 가 당긴 거리', digits: 4 }
+  ]);
+
+  function draw() {
+    var k = Math.round(n * ratio);
+    var A = a0 + k, B = b0 + n - k;
+    var mle = n ? k / n : 0.5;
+    var map = (A > 1 && B > 1) ? (A - 1) / (A + B - 2) : mle;
+    var mean = A / (A + B);
+
+    var top = 0;
+    for (var i = 1; i < 200; i++) top = Math.max(top, betaPdf(i / 200, A, B), betaPdf(i / 200, a0, b0));
+    top = Math.max(1.5, top * 1.18);
+
+    var p = VIZ.plot({ w: 460, h: 285, xmin: -0.02, xmax: 1.02, ymin: 0, ymax: top,
+      pad: { t: 20, r: 16, b: 32, l: 50 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    p.grid(0.25, top / 4).axes('p', '밀도').ticks(0.25, top / 4);
+
+    p.curve(function (x) { return betaPdf(x, a0, b0); }, { samples: 320, alt: true, dash: '5 4' });
+    p.curve(function (x) { return betaPdf(x, A, B); }, { samples: 320 });
+    /* likelihood 를 같은 축에 얹기 (최댓값을 top*0.55 로 맞춤) */
+    var lmax = Math.pow(mle, k) * Math.pow(1 - mle, n - k) || 1;
+    p.curve(function (x) {
+      return Math.pow(x, k) * Math.pow(1 - x, n - k) / lmax * top * 0.5;
+    }, { samples: 320, dash: '2 3' });
+
+    p.line([[mle, 0], [mle, top * 0.55]], { width: 1.6 });
+    p.line([[map, 0], [map, top * 0.85]], { width: 2 });
+    p.dot(map, betaPdf(map, A, B), 5);
+    p.text(0.02, top * 0.97, '점선 = prior · 실선 = posterior · 잔점선 = likelihood', { size: 10 });
+    p.callout(map, betaPdf(map, A, B), 'MAP ' + map.toFixed(3), { dx: 18, dy: -14, tone: 'var(--seal)' });
+
+    out.set('mle', mle);
+    out.set('map', map);
+    out.set('mean', mean);
+    out.set('pull', mle - map);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'prior α (미리 본 성공)', min: 1, max: 40, step: 1, value: 5, digits: 0,
+    onInput: function (v) { a0 = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'prior β (미리 본 실패)', min: 1, max: 40, step: 1, value: 5, digits: 0,
+    onInput: function (v) { b0 = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '관측 수 n', min: 1, max: 400, step: 1, value: 10, digits: 0,
+    onInput: function (v) { n = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '관측 성공 비율', min: 0.05, max: 0.95, step: 0.05, value: 0.8, digits: 2,
+    onInput: function (v) { ratio = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — 순차 갱신
+   ============================================================ */
+WIDGETS.register('sequential-bayes', function (root, ctx) {
+  var a0 = 2, b0 = 2, trueP = 0.65;
+  var seq = [];
+
+  function mkRand(seed) {
+    var s = seed || 12345;
+    return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+  }
+  function build() {
+    var rnd = mkRand(777);
+    seq = [];
+    for (var i = 0; i < 40; i++) seq.push(rnd() < trueP ? 1 : 0);
+  }
+  build();
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'obs', label: '지금까지의 관측' },
+    { key: 'post', label: 'posterior' },
+    { key: 'mean', label: '사후 평균', digits: 4 },
+    { key: 'sd', label: '사후 표준편차', digits: 4 }
+  ]);
+
+  function draw(step) {
+    var k = 0;
+    for (var i = 0; i < step; i++) k += seq[i];
+    var A = a0 + k, B = b0 + step - k;
+
+    var top = 0;
+    for (var j = 1; j < 200; j++) top = Math.max(top, betaPdf(j / 200, A, B));
+    top = Math.max(2, top * 1.18);
+
+    var p = VIZ.plot({ w: 460, h: 280, xmin: -0.02, xmax: 1.02, ymin: 0, ymax: top,
+      pad: { t: 20, r: 16, b: 32, l: 50 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    p.grid(0.25, top / 4).axes('p', '밀도').ticks(0.25, top / 4);
+
+    p.curve(function (x) { return betaPdf(x, a0, b0); }, { samples: 300, alt: true, dash: '5 4' });
+    p.curve(function (x) { return betaPdf(x, A, B); }, { samples: 320 });
+    p.line([[trueP, 0], [trueP, top * 0.92]], { width: 1.5, dash: '2 3' });
+    p.text(0.02, top * 0.96, '점선 = prior · 세로선 = 참값 ' + trueP.toFixed(2), { size: 10 });
+
+    var mean = A / (A + B);
+    p.dot(mean, betaPdf(mean, A, B), 5);
+
+    out.setRaw('obs', step === 0 ? '아직 없음 (prior 만)'
+      : seq.slice(0, step).join('') + '   (성공 ' + k + ' / ' + step + ')');
+    out.setRaw('post', 'Beta(' + A + ', ' + B + ')');
+    out.set('mean', mean);
+    out.set('sd', Math.sqrt(A * B / (Math.pow(A + B, 2) * (A + B + 1))));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'prior α', min: 1, max: 20, step: 1, value: 2, digits: 0,
+    onInput: function (v) { a0 = v; draw(pl ? pl.at() : 0); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'prior β', min: 1, max: 20, step: 1, value: 2, digits: 0,
+    onInput: function (v) { b0 = v; draw(pl ? pl.at() : 0); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '동전의 참 확률', min: 0.05, max: 0.95, step: 0.05, value: 0.65, digits: 2,
+    onInput: function (v) { trueP = v; build(); draw(pl ? pl.at() : 0); }
+  });
+  var pl = WIDGETS.player({ host: ctx.controls, steps: 41, fps: 5, label: '관측을 하나씩', onStep: draw });
+});
+
+/* ============================================================
+   위젯 5 — prior ↔ 정규화
+   ============================================================ */
+WIDGETS.register('prior-to-reg', function (root, ctx) {
+  var kind = 'gauss', tau = 1.0, view = 'prior';
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'k', label: 'prior 종류' },
+    { key: 'pen', label: '벌점 −log p(θ)' },
+    { key: 'lam', label: '정규화 계수 λ (σ² = 0.25 일 때)', digits: 4 },
+    { key: 'note', label: '결과' }
+  ]);
+
+  function priorPdf(t) {
+    if (kind === 'gauss') return normPdf(t, 0, tau);
+    return Math.exp(-Math.abs(t) / tau) / (2 * tau);      /* Laplace, b = tau */
+  }
+  function penalty(t) {
+    if (kind === 'gauss') return t * t / (2 * tau * tau);
+    return Math.abs(t) / tau;
+  }
+
+  function draw() {
+    var isPen = (view === 'pen');
+    var top = isPen ? Math.max(2, penalty(3)) : Math.max(0.7, priorPdf(0) * 1.15);
+    var p = VIZ.plot({ w: 460, h: 280, xmin: -3.2, xmax: 3.2, ymin: 0, ymax: top,
+      pad: { t: 30, r: 16, b: 32, l: 50 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    p.grid(1, top / 4).axes('θ', '').ticks(1, top / 4);
+    p.curve(isPen ? penalty : priorPdf, { samples: 340 });
+
+    /* 반대쪽 종류를 흐리게 겹쳐 그린다 */
+    var save = kind;
+    kind = (save === 'gauss') ? 'lap' : 'gauss';
+    p.curve(isPen ? penalty : priorPdf, { samples: 340, alt: true, dash: '4 3' });
+    kind = save;
+
+    p.dot(0, isPen ? 0 : priorPdf(0), 4.5);
+    if (isPen && kind === 'lap') {
+      p.callout(0, 0, '0 에서 꺾인다 → 정확히 0', { dx: 20, dy: -26, tone: 'var(--seal)' });
+    } else if (isPen) {
+      p.callout(0, 0, '0 에서 기울기도 0 → 0 이 안 된다', { dx: 20, dy: -26, tone: 'var(--ink-2)' });
+    }
+    /* 캡션은 위쪽 여백에 — 플롯 안에 두면 맨 위 눈금과 겹친다 */
+    p.text(-3.2, top, (isPen ? '−log p(θ) 벌점' : 'p(θ) prior')
+      + ' · 실선 = 지금 고른 것 · 점선 = 다른 쪽', { size: 10, dy: -10 });
+
+    out.setRaw('k', kind === 'gauss' ? 'Gaussian(0, τ²)' : 'Laplace(0, b)');
+    out.setRaw('pen', kind === 'gauss' ? '‖θ‖² / (2τ²)  → L2' : '‖θ‖₁ / b  → L1');
+    out.set('lam', kind === 'gauss' ? 0.25 / (tau * tau) : 2 * 0.25 / tau);
+    out.setRaw('note', kind === 'gauss' ? 'ridge · weight decay' : 'lasso · 희소해');
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: 'prior 의 모양',
+    options: [{ value: 'gauss', label: 'Gaussian → L2' }, { value: 'lap', label: 'Laplace → L1' }],
+    value: 'gauss', onChange: function (v) { kind = v; draw(); }
+  });
+  WIDGETS.toggle({
+    host: ctx.controls, label: '무엇을 볼까',
+    options: [{ value: 'prior', label: 'prior 밀도' }, { value: 'pen', label: '벌점 −log p(θ)' }],
+    value: 'prior', onChange: function (v) { view = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '믿음의 폭 τ (작을수록 강한 정규화)', min: 0.15, max: 3, step: 0.05, value: 1, digits: 2,
+    onInput: function (v) { tau = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 6 — Gaussian 맞추기
+   ============================================================ */
+WIDGETS.register('gaussian-fit', function (root, ctx) {
+  var mu = 0, sd = 1;
+  var data = [-1.8, -0.9, -0.4, 0.1, 0.3, 0.7, 1.1, 1.4, 2.2, 3.1];
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'll', label: 'log-likelihood (클수록 좋다)', digits: 4 },
+    { key: 'best', label: '최적 μ̂ (표본평균)', digits: 4 },
+    { key: 'bestsd', label: '최적 σ̂ (MLE, 분모 n)', digits: 4 },
+    { key: 'gap', label: '최댓값과의 차이', digits: 4 }
+  ]);
+
+  function ll(m, s) {
+    var v = 0;
+    for (var i = 0; i < data.length; i++) {
+      v += -0.5 * Math.log(2 * Math.PI * s * s) - Math.pow(data[i] - m, 2) / (2 * s * s);
+    }
+    return v;
+  }
+
+  function draw() {
+    var p = VIZ.plot({ w: 460, h: 290, xmin: -4, xmax: 5, ymin: -0.16, ymax: 0.62,
+      pad: { t: 30, r: 16, b: 32, l: 48 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    p.grid(1, 0.1).axes('x', '').ticks(1, 0.1);
+    p.curve(function (x) { return normPdf(x, mu, sd); }, { samples: 340 });
+
+    var i, m = 0, s2 = 0;
+    for (i = 0; i < data.length; i++) m += data[i] / data.length;
+    for (i = 0; i < data.length; i++) s2 += Math.pow(data[i] - m, 2) / data.length;
+    var bestSd = Math.sqrt(s2);
+    p.curve(function (x) { return normPdf(x, m, bestSd); }, { samples: 340, alt: true, dash: '4 3' });
+
+    for (i = 0; i < data.length; i++) {
+      p.dot(data[i], -0.08, 3.6);
+      p.line([[data[i], -0.08], [data[i], normPdf(data[i], mu, sd)]], { dash: '2 3' });
+    }
+    p.text(-4, 0.62, '밀도 · 실선 = 지금 맞춘 Gaussian · 점선 = MLE 해', { size: 10, dy: -10 });
+
+    var cur = ll(mu, sd), top = ll(m, bestSd);
+    out.set('ll', cur);
+    out.set('best', m);
+    out.set('bestsd', bestSd);
+    out.set('gap', top - cur);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '평균 μ', min: -3, max: 4, step: 0.05, value: 0, digits: 2,
+    onInput: function (v) { mu = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '표준편차 σ', min: 0.2, max: 4, step: 0.05, value: 1, digits: 2,
+    onInput: function (v) { sd = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

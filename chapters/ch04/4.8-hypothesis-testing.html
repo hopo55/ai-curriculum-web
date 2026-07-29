@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.8 가설검정과 통계적 비교 — AI 이론 학습</title>
+<meta name="description" content="p-value는 귀무가설이 참일 확률이 아니다. 두 오류를 저울질하는 절차가 가설검정이고, 검정력과 효과크기 없이 p-value만 보면 model 비교가 잡음을 좇는다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="4.8">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">4.8</span>
+        <span>4장 · 확률과 통계</span>
+      </div>
+      <h1>가설검정과 통계적 비교</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 70분</span>
+        <span><b>난이도</b>★★★☆☆</span>
+        <span><b>선수지식</b>
+          <a href="4.5-statistical-estimation.html">4.5 통계적 추정</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-h0">Null Hypothesis</a>
+      <a class="chip" href="#c-h1">Alternative Hypothesis</a>
+      <a class="chip" href="#c-pval">p-value</a>
+      <a class="chip" href="#c-alpha">Significance Level</a>
+      <a class="chip" href="#c-t1">Type I Error</a>
+      <a class="chip" href="#c-t2">Type II Error</a>
+      <a class="chip" href="#c-power">Statistical Power</a>
+      <a class="chip" href="#c-mult">Multiple Testing</a>
+      <a class="chip" href="#c-effect">Effect Size</a>
+      <a class="chip" href="#c-ci">Confidence Interval</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        가설검정은 <strong>두 종류의 오류를 저울질하는 절차</strong>다.
+        $p$-value 는 "귀무가설이 참일 확률"이 <strong>아니라</strong>
+        "귀무가설이 참이라면 이만큼 극단적인 결과가 나올 확률"이며,
+        <strong>검정력과 효과크기 없이 $p$ 만 보면 model 비교가 잡음을 좇는다</strong>.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>$H_0$·$H_1$·$\alpha$·$p$-value 를 정확히 정의하고, $p$-value 의 흔한 오독 세 가지를 지적할 수 있다.</li>
+        <li>두 model 정확도 비교를 $z$ 검정으로 직접 계산하고, 필요한 표본 수를 검정력에서 역산할 수 있다.</li>
+        <li>다중검정에서 FWER 이 어떻게 부풀어 오르는지 계산하고 Bonferroni·BH 보정을 적용할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        새 model 이 기존보다 정확도가 0.7%p 높게 나왔다.
+        이것이 <strong>진짜 개선인가, 아니면 그냥 운인가</strong>?
+        test set 을 다시 뽑으면 순서가 뒤집힐 수도 있다.
+        이 물음에 답하는 표준 절차가 가설검정이다.
+      </p>
+      <p>
+        방법은 <strong>반증</strong>이다. 먼저 "아무 차이도 없다"고 가정해 놓고,
+        그 가정 아래에서 <strong>지금 본 것만큼 큰 차이가 우연히 나올 확률</strong>을 계산한다.
+        그 확률이 아주 작으면 "우연이라고 보기 어렵다"고 판단하고 가정을 버린다.
+        그 확률이 $p$-value 다.
+      </p>
+      <p>
+        재판과 같은 구조다. 피고는 <strong>일단 무죄로 가정</strong>되고,
+        증거가 충분히 강해야만 유죄가 된다.
+        여기서 두 가지 잘못이 가능하다 —
+        <strong>무죄인 사람을 유죄로 만드는 것</strong>(1종 오류)과
+        <strong>유죄인 사람을 놓아주는 것</strong>(2종 오류).
+        한쪽을 줄이면 다른 쪽이 늘어난다.
+      </p>
+
+      <figure class="widget" data-widget="two-dists">
+        <figcaption class="widget__bar">Two Errors — 문턱 하나가 두 오류를 동시에 정한다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">문턱을 오른쪽으로 밀면 $\alpha$ 는 줄지만 $\beta$ 가 늘어납니다. <strong>둘을 함께 줄이는 유일한 방법은 표본을 늘리는 것</strong>입니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          $p$-value 는 <strong>"$H_0$ 가 참일 확률"이 아니다.</strong>
+          $H_0$ 를 <em>가정한 뒤</em> data 의 극단성을 잰 값이므로 조건의 방향이 반대다 —
+          $P(\text{data}\mid H_0)$ 이지 $P(H_0\mid\text{data})$ 가 아니다.
+          <a href="4.1-probability-basics.html">4.1</a> 오해 2 의 base rate fallacy 가 여기서 그대로 재현된다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-h0"></span>
+      <span class="anchor" id="c-h1"></span>
+      <h3>Null &amp; Alternative Hypothesis 귀무가설과 대립가설</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ H_0:\ \theta=\theta_0 \quad(\text{차이가 없다}) \qquad\text{vs}\qquad H_1:\ \theta\ne\theta_0 \quad(\text{차이가 있다}) $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">null hypothesis(귀무가설) $H_0$ 는 <strong>기각하고 싶은 "차이 없음" 가정</strong>이고,
+        alternative hypothesis(대립가설) $H_1$ 은 그 반대다.
+        검정은 <strong>$H_0$ 를 기각하거나 기각하지 못하거나</strong> 둘 중 하나로 끝나며,
+        <strong>"$H_0$ 를 채택한다"는 결론은 존재하지 않는다</strong>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>상황</th><th>$H_0$</th><th>$H_1$</th></tr></thead>
+          <tbody>
+            <tr><td>두 model 정확도 비교</td><td>$p_A=p_B$</td><td>$p_A\ne p_B$ (양측)</td></tr>
+            <tr><td>새 방법이 더 낫다고 주장</td><td>$p_{\text{new}}\le p_{\text{old}}$</td><td>$p_{\text{new}}>p_{\text{old}}$ (단측)</td></tr>
+            <tr><td>A/B 테스트</td><td>전환율 차이 = 0</td><td>차이 $\ne$ 0</td></tr>
+            <tr><td>seed 간 분산 확인</td><td>두 설정의 평균이 같다</td><td>다르다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        비대칭이 중요하다. $H_0$ 는 <strong>계산할 수 있는 구체적인 분포</strong>를 주는 쪽이어야 한다 —
+        "차이가 0" 이면 검정통계량의 분포를 계산할 수 있지만 "차이가 있다" 만으로는 아무것도 계산할 수 없다.
+        <strong>단측 검정으로 갈지 양측으로 갈지는 data 를 보기 전에 정해야 한다.</strong>
+      </p>
+
+      <span class="anchor" id="c-pval"></span>
+      <span class="anchor" id="c-alpha"></span>
+      <h3>p-value &amp; Significance Level</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ p\text{-value} = P\bigl(|T|\ge|t_{\text{obs}}| \ \big|\ H_0 \text{ 가 참}\bigr) $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        <span class="hl">$p$-value 는 <strong>$H_0$ 가 참이라는 가정 아래</strong>,
+        지금 관측한 것만큼 또는 그보다 더 극단적인 결과가 나올 확률이다.
+        significance level(유의수준) $\alpha$ 는 <strong>data 를 보기 전에 정해 두는 기각 문턱</strong>이며,
+        $p&lt;\alpha$ 이면 $H_0$ 를 기각한다.</span>
+      </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>동전이 공정하다고 <strong>믿고 시작합니다</strong>. 100번 던졌더니 앞면이 68번 나왔습니다. 공정한 동전이라면 이런 일이 얼마나 자주 일어날까요? 계산해 보니 0.03% 입니다.</p>
+        <p>이때 "공정할 확률이 0.03%" 라고 말하면 <strong>틀립니다</strong>. 맞는 말은 "공정하다면 이런 결과는 0.03% 밖에 안 나온다" 입니다. 앞의 문장은 애초에 그 동전이 조작됐을 법한 정도(prior)를 알아야 계산할 수 있습니다.</p>
+      </div>
+      <p>
+        $\alpha=0.05$ 라는 관례에 특별한 근거는 없다 — Fisher 가 편의상 제안한 값이 굳어진 것이다.
+        중요한 것은 <strong>$\alpha$ 를 data 를 보기 전에 정한다</strong>는 것이고, 이것을 어기는 것이 $p$-hacking 이다.
+      </p>
+
+      <span class="anchor" id="c-t1"></span>
+      <span class="anchor" id="c-t2"></span>
+      <span class="anchor" id="c-power"></span>
+      <h3>Type I · Type II Error &amp; Power</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>$H_0$ 가 실제로 참</th><th>$H_0$ 가 실제로 거짓</th></tr></thead>
+          <tbody>
+            <tr><td><strong>$H_0$ 기각</strong></td><td><strong>1종 오류</strong> (Type I) — 확률 $\alpha$<br><small>없는 차이를 있다고 함 · false positive</small></td><td>옳은 판단 — 확률 $1-\beta$ (<strong>검정력</strong>)</td></tr>
+            <tr><td><strong>기각 못 함</strong></td><td>옳은 판단 — 확률 $1-\alpha$</td><td><strong>2종 오류</strong> (Type II) — 확률 $\beta$<br><small>있는 차이를 놓침 · false negative</small></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \alpha=P(\text{기각}\mid H_0),\qquad \beta=P(\text{기각 못 함}\mid H_1),\qquad \text{Power}=1-\beta $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl">$\alpha$ 를 줄이면 $\beta$ 가 늘어나는 <strong>맞바꿈 관계</strong>이며,
+        둘을 <strong>동시에</strong> 줄이는 방법은 표본을 늘리거나 효과가 커지는 것뿐이다.</span>
+        Neyman 과 Pearson 이 1933년에 세운 틀이 이것이다<a class="cite" href="#ref-neyman1933-efficient-tests" data-ref="neyman1933-efficient-tests">1</a> —
+        <strong>$\alpha$ 를 고정한 채 검정력을 최대로 하는 검정을 고른다</strong>.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \text{Power} \approx \Phi\!\left(\frac{|\delta|}{\mathrm{SE}}-z_{1-\alpha/2}\right), \qquad n \approx \frac{(z_{1-\alpha/2}+z_{1-\beta})^2\,\sigma_{\text{eff}}^2}{\delta^2} $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        검정력은 네 가지가 정한다 — <strong>$\alpha$ · 효과 크기 $\delta$ · 표본 수 $n$ · 잡음 $\sigma$</strong>.
+        셋을 정하면 나머지 하나가 결정되므로, 실험 <em>설계</em> 단계에서 필요한 $n$ 을 역산할 수 있다.
+        <strong>관례적 목표는 80% 검정력</strong>이다.
+      </p>
+
+      <figure class="widget" data-widget="power-curve">
+        <figcaption class="widget__bar">Statistical Power — 표본이 몇이면 그 차이를 잡아내나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">차이가 절반이 되면 필요한 $n$ 이 <strong>4배</strong>가 됩니다. 식 (4)의 $\delta^2$ 이 분모에 있기 때문입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-effect"></span>
+      <h3>Effect Size 효과크기</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ d=\frac{\bar{x}_1-\bar{x}_2}{s_{\text{pooled}}} \qquad\text{(Cohen's } d\text{)} $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        <span class="hl">effect size 는 <strong>차이의 크기를 잡음 단위로 잰 값</strong>이며,
+        $p$-value 와 달리 표본 수에 의존하지 않는다 — <strong>"유의한가"와 "중요한가"는 다른 질문</strong>이다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$|d|$</th><th>Cohen 의 관례적 해석</th><th>두 분포의 겹침</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0.2</td><td>작다 (small)</td><td>85% 겹침</td></tr>
+            <tr><td class="num">0.5</td><td>중간 (medium)</td><td>67% 겹침</td></tr>
+            <tr><td class="num">0.8</td><td>크다 (large)</td><td>53% 겹침</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        이 구분선 자체는 Cohen 이 편의상 제안한 것이고 분야마다 다르게 봐야 한다<a class="cite" href="#ref-cohen1992-power-primer" data-ref="cohen1992-power-primer">2</a>.
+        핵심은 <strong>$p$ 와 함께 반드시 보고해야 한다</strong>는 것이다 —
+        $n$ 을 충분히 키우면 $d=0.01$ 인 차이도 $p&lt;0.001$ 로 나온다(예제 ④).
+        machine learning 에서는 <strong>정확도 차이(%p)와 그 신뢰구간</strong>을 그대로 보고하는 것이 가장 정직하다.
+      </p>
+
+      <span class="anchor" id="c-ci"></span>
+      <h3>Confidence Interval 신뢰구간</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \hat\delta \pm z_{1-\alpha/2}\,\mathrm{SE}(\hat\delta) \qquad\Longleftrightarrow\qquad \text{이 구간이 } 0 \text{ 을 포함하지 않으면 } p&lt;\alpha $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        <span class="hl">신뢰구간과 양측검정은 <strong>같은 계산의 두 표현</strong>이며,
+        구간 쪽이 "얼마나 다른가"까지 알려 주므로 <strong>$p$-value 보다 정보가 많다</strong>.</span>
+        구간의 해석은 <a href="4.5-statistical-estimation.html">4.5</a>에서 본 그대로다 —
+        절차의 성질이지 이번 구간의 성질이 아니다.
+      </p>
+      <p>
+        실무적으로 중요한 점 하나. <strong>$p>0.05$ 이면서 구간이 아주 넓다면</strong>
+        "차이가 없다"가 아니라 <strong>"아무것도 모른다"</strong>는 뜻이다.
+        예제 ①에서 구간이 $(-1.2\%p,\ +2.6\%p)$ 였다면
+        2%p 개선일 가능성도 배제되지 않은 것이다 — <strong>실험이 그 질문에 답할 힘이 없었다</strong>.
+      </p>
+
+      <span class="anchor" id="c-mult"></span>
+      <h3>Multiple Testing 다중검정</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathrm{FWER}=P(\text{적어도 하나 잘못 기각})=1-(1-\alpha)^{m} \ \xrightarrow[m=20,\ \alpha=0.05]{}\ 0.64 $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        <span class="hl">검정을 $m$번 반복하면 <strong>전부 $H_0$ 가 참이어도 하나쯤은 유의하게 나온다</strong> —
+        20번이면 64% 확률이다.</span>
+        하이퍼파라미터 20개를 훑고 가장 좋은 것 하나를 골라 $p$ 를 보고하는 것이 정확히 이 상황이다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>보정</th><th>방법</th><th>통제하는 것</th><th>성격</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Bonferroni</strong></td><td>$\alpha'=\alpha/m$ 로 기준을 낮춘다</td><td>FWER (하나라도 틀릴 확률)</td><td>가장 보수적 — 검정력을 크게 잃는다</td></tr>
+            <tr><td><strong>Holm</strong></td><td>$p$ 를 정렬해 단계별로 $\alpha/(m-i+1)$</td><td>FWER</td><td>Bonferroni 보다 항상 낫다</td></tr>
+            <tr><td><strong>Benjamini–Hochberg</strong></td><td>$p_{(i)}\le \frac{i}{m}q$ 를 만족하는 최대 $i$ 까지 기각</td><td><strong>FDR</strong> (기각한 것 중 오류의 <em>비율</em>)</td><td>검정력이 훨씬 좋다 — 탐색 연구의 표준</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        FWER 과 FDR 의 차이가 핵심이다.
+        "하나라도 틀리면 안 된다"(FWER)와 "발견한 것 중 5% 정도는 틀려도 된다"(FDR)는 다른 요구다.
+        Benjamini 와 Hochberg 가 1995년에 후자를 제안하면서 대규모 검정이 실용적이 되었다<a class="cite" href="#ref-benjamini1995-fdr" data-ref="benjamini1995-fdr">3</a>.
+      </p>
+      <p>
+        더 교묘한 문제는 <strong>세지 않은 검정</strong>이다.
+        분석 도중 "이 부분집합만 볼까", "이 지표로 바꿔 볼까" 하며 갈라진 선택지들은
+        명시적으로 검정한 적이 없어도 실질적으로는 다중검정이다 (garden of forking paths).
+        <strong>사전등록(pre-registration)</strong> 이 유일한 근본 처방이다.
+      </p>
+
+      <figure class="widget" data-widget="multiple-testing">
+        <figcaption class="widget__bar">Multiple Testing — 20번 돌리면 하나는 유의하게 나온다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">전부 $H_0$ 가 참인데도 <strong>빨간 점이 생깁니다</strong>. 보정을 켜면 문턱선이 내려가 대부분 사라집니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>machine learning 실험에서 실제로 쓰는 검정 몇 가지를 정리한다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>비교하는 것</th><th>검정</th><th>통계량</th><th>주의</th></tr></thead>
+          <tbody>
+            <tr><td>두 model 의 정확도 (독립 test set)</td><td>two-proportion $z$</td><td>$z=\dfrac{\hat p_A-\hat p_B}{\sqrt{\hat p(1-\hat p)(\frac1{n_A}+\frac1{n_B})}}$</td><td>$n$ 이 작으면 Fisher 정확검정</td></tr>
+            <tr><td>두 model 의 정확도 (<strong>같은</strong> test set)</td><td><strong>McNemar</strong></td><td>$\chi^2=\dfrac{(|b-c|-1)^2}{b+c}$</td><td><strong>같은 샘플이면 이쪽이 맞다</strong> — 훨씬 검정력이 높다</td></tr>
+            <tr><td>두 설정의 평균 (seed 여러 개)</td><td>two-sample $t$</td><td>$t=\dfrac{\bar{x}_1-\bar{x}_2}{\sqrt{s_1^2/n_1+s_2^2/n_2}}$</td><td>Welch 판을 기본으로 (등분산 가정 없이)</td></tr>
+            <tr><td>분포 가정이 어려울 때</td><td>순열검정 · bootstrap</td><td>재표본에서 직접 분포를 만든다</td><td>계산은 비싸지만 가정이 거의 없다</td></tr>
+            <tr><td>여러 dataset 에 걸친 순위</td><td>Wilcoxon · Friedman</td><td>순위 기반</td><td>NLP·ML 벤치마크 비교의 표준<a class="cite" href="#ref-dror2018-hitchhikers-guide" data-ref="dror2018-hitchhikers-guide">4</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        두 번째 줄이 ML 에서 가장 자주 틀리는 곳이다.
+        <strong>같은 test set 으로 두 model 을 평가했다면 두 결과가 독립이 아니다</strong> —
+        어려운 샘플은 둘 다 틀리고 쉬운 샘플은 둘 다 맞힌다.
+        McNemar 검정은 <strong>둘이 갈린 샘플만</strong>($b$: A만 맞힘, $c$: B만 맞힘) 세므로
+        공통 부분의 잡음이 상쇄되어 훨씬 예민하다.
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$H_0$</td><td>H naught · H zero</td><td>귀무가설</td><td>가설</td><td>—</td></tr>
+            <tr><td>$H_1$ ($H_a$)</td><td>H one · H alternative</td><td>대립가설</td><td>가설</td><td>—</td></tr>
+            <tr><td>$\alpha$</td><td>alpha 알파</td><td>유의수준 = 1종 오류 확률</td><td>scalar</td><td>보통 0.05 · 0.01</td></tr>
+            <tr><td>$\beta$</td><td>beta 베타</td><td>2종 오류 확률</td><td>scalar</td><td>$[0,1]$</td></tr>
+            <tr><td>$1-\beta$</td><td>power 파워 · 검정력</td><td>있는 차이를 잡아낼 확률</td><td>scalar</td><td>목표 0.8 이상</td></tr>
+            <tr><td>$p$</td><td>p-value 피값</td><td>$H_0$ 아래에서의 극단성 확률</td><td>scalar</td><td>$[0,1]$</td></tr>
+            <tr><td>$T$, $t_{\text{obs}}$</td><td>test statistic · 관측값</td><td>검정통계량과 그 실현값</td><td>확률변수 / 실수</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$z_{1-\alpha/2}$</td><td>z critical 임계값</td><td>표준정규 분위수</td><td>scalar</td><td>$\alpha$=0.05 면 1.96</td></tr>
+            <tr><td>$\Phi(\cdot)$</td><td>capital Phi 파이 · 표준정규 CDF</td><td>$P(Z\le z)$</td><td>함수</td><td>$[0,1]$</td></tr>
+            <tr><td>$\delta$</td><td>delta 델타</td><td>참 효과 크기 (차이)</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$d$</td><td>Cohen's d</td><td>표준화한 효과크기</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\mathrm{SE}$</td><td>standard error 표준오차</td><td>추정량의 표준편차</td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>$m$</td><td>m</td><td>동시에 수행한 검정 개수</td><td>정수</td><td>$\ge1$</td></tr>
+            <tr><td>FWER</td><td>family-wise error rate</td><td>하나라도 잘못 기각할 확률</td><td>scalar</td><td>$[0,1]$</td></tr>
+            <tr><td>FDR</td><td>false discovery rate</td><td>기각한 것 중 오류의 기대 비율</td><td>scalar</td><td>$[0,1]$</td></tr>
+            <tr><td>$p_{(i)}$</td><td>p sub paren i · 정렬된 p값</td><td>$i$ 번째로 작은 $p$-value</td><td>scalar</td><td>$[0,1]$</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">같은 것을 다르게 부른다</span>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>이 사이트</th><th>같은 뜻으로 쓰이는 말</th><th>주의할 점</th></tr></thead>
+            <tbody>
+              <tr><td>1종 오류</td><td>false positive, 위양성, $\alpha$ 오류</td><td>분류의 FP 와 <strong>같은 개념</strong>이다</td></tr>
+              <tr><td>2종 오류</td><td>false negative, 위음성, $\beta$ 오류</td><td>검정력 = 1 − 2종 오류 = <strong>recall</strong> 과 같은 자리</td></tr>
+              <tr><td>유의하다</td><td>statistically significant</td><td>"중요하다"는 뜻이 <strong>전혀 아니다</strong> — 효과크기가 그 역할</td></tr>
+              <tr><td>$\alpha$</td><td>유의수준, size of the test</td><td>ML 에서 $\alpha$ 는 <strong>학습률</strong>도 뜻한다 — 문맥 확인</td></tr>
+              <tr><td>보정</td><td>correction, adjustment</td><td>$p$ 를 키우는 방식과 $\alpha$ 를 줄이는 방식이 있다 (결과는 같다)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — $H_0$ 가 참이면 $p$-value 는 균등분포를 따른다</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ p = 1-F(T), \qquad F \text{ 는 } H_0 \text{ 아래 } T \text{ 의 CDF} $$</div>
+          <div class="derive__why">단측 $p$-value 의 정의 (2)를 CDF 로 쓴 것</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ U=F(T)\ \sim\ \mathrm{Uniform}(0,1) $$</div>
+          <div class="derive__why">확률적분변환 — <strong>CDF 를 자기 자신에 넣으면 균등</strong> (<a href="4.2-random-variables.html">4.2</a>의 역변환 샘플링의 역방향)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ p=1-U\ \sim\ \mathrm{Uniform}(0,1) $$</div>
+          <div class="derive__why">$U$ 가 균등이면 $1-U$ 도 균등</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore\ P(p&lt;\alpha \mid H_0)=\alpha $$</div>
+          <div class="derive__why"><strong>$\alpha$ 가 곧 1종 오류율</strong> — 정의가 자기 자신을 보증한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P(\text{20번 중 하나도 } p&lt;0.05 \text{ 아님})=(0.95)^{20}=0.3585 $$</div>
+          <div class="derive__why">균등이므로 각 검정이 <strong>독립적으로 5% 확률</strong>로 걸린다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{FWER}=1-0.3585=0.6415 $$</div>
+          <div class="derive__why">식 (7) — <strong>64%</strong>. 다중검정 문제의 정확한 크기</div>
+        </div>
+      </div>
+
+      <h3>유도 2 — 검정력에서 표본 수를 역산한다</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{기각} \iff |\hat\delta| > z_{1-\alpha/2}\,\mathrm{SE} $$</div>
+          <div class="derive__why">$\alpha$ 를 정하면 문턱이 정해진다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ H_1 \text{ 아래}: \ \hat\delta\ \sim\ \mathcal{N}(\delta,\ \mathrm{SE}^2) $$</div>
+          <div class="derive__why">CLT (<a href="4.3-expectation-variance.html">4.3</a>) — 참 차이가 $\delta$ 이면 분포가 그만큼 이동</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Power}=P\bigl(\hat\delta>z_{1-\alpha/2}\mathrm{SE}\bigr)=\Phi\!\left(\frac{\delta}{\mathrm{SE}}-z_{1-\alpha/2}\right) $$</div>
+          <div class="derive__why">이동한 분포에서 문턱을 넘는 넓이 (반대쪽 꼬리는 무시할 만큼 작다)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Power}=1-\beta \iff \frac{\delta}{\mathrm{SE}}=z_{1-\alpha/2}+z_{1-\beta} $$</div>
+          <div class="derive__why">$\Phi^{-1}$ 를 취했다. <strong>두 임계값의 합</strong>이 필요한 신호대잡음비</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{SE}=\frac{\sigma_{\text{eff}}}{\sqrt{n}} \;\Longrightarrow\; n=\frac{(z_{1-\alpha/2}+z_{1-\beta})^2\sigma_{\text{eff}}^2}{\delta^2} $$</div>
+          <div class="derive__why">$\mathrm{SE}$ 를 풀어 넣었다 — 식 (4)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \alpha=0.05,\ \beta=0.2:\ (1.96+0.8416)^2=7.849 $$</div>
+          <div class="derive__why">가장 흔한 설정의 상수. <strong>$n\approx 7.85\,\sigma^2/\delta^2$</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \delta \to \delta/2 \;\Longrightarrow\; n \to 4n $$</div>
+          <div class="derive__why"><strong>차이가 절반이면 표본은 4배</strong> — $\delta^2$ 이 분모에 있다</div>
+        </div>
+      </div>
+
+      <h3>유도 3 — Bonferroni 보정이 FWER 을 지키는 이유</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{FWER}=P\Bigl(\bigcup_{i=1}^m \{p_i&lt;\alpha'\}\Bigr) $$</div>
+          <div class="derive__why">"적어도 하나 기각"은 <strong>합집합</strong>이다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \le \sum_{i=1}^m P(p_i&lt;\alpha') = m\,\alpha' $$</div>
+          <div class="derive__why"><strong>union bound</strong> (<a href="4.1-probability-basics.html">4.1</a>) — 독립 가정조차 필요 없다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \alpha'=\frac{\alpha}{m} \;\Longrightarrow\; \mathrm{FWER}\le\alpha $$</div>
+          <div class="derive__why">기준을 $m$ 으로 나누면 <strong>보장된다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ m=20,\ \alpha=0.05:\ \alpha'=0.0025,\quad \mathrm{FWER}=1-0.9975^{20}=0.0488 $$</div>
+          <div class="derive__why">실제 값이 0.05 바로 아래 — <strong>상계가 꽤 촘촘하다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{대가}: \ \delta/\mathrm{SE} \text{ 가 } z_{0.99875}=3.02 \text{ 를 넘어야 한다 (원래는 1.96)} $$</div>
+          <div class="derive__why">문턱이 1.54배 높아져 <strong>검정력이 크게 떨어진다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ n \propto (3.02+0.84)^2/(1.96+0.84)^2=1.90 \ \text{배} $$</div>
+          <div class="derive__why">같은 검정력을 유지하려면 <strong>표본이 약 2배</strong> 필요하다</div>
+        </div>
+      </div>
+
+      <details>
+        <summary>Benjamini–Hochberg 절차를 손으로</summary>
+        <p>
+          $p$-value 를 오름차순으로 정렬해 $p_{(1)}\le\cdots\le p_{(m)}$ 로 두고,
+          <strong>$p_{(i)}\le \frac{i}{m}q$ 를 만족하는 가장 큰 $i$</strong> 를 찾아 $1$ 부터 그 $i$ 까지 전부 기각한다.
+        </p>
+        <p>
+          $m=10$, $q=0.05$ 에서 정렬된 $p$ 가
+          $0.001,\ 0.008,\ 0.019,\ 0.041,\ 0.06,\ 0.12,\ \dots$ 라 하자.
+          문턱은 차례로 $0.005,\ 0.010,\ 0.015,\ 0.020,\ 0.025,\dots$ 이므로
+          $i=1$ ($0.001\le0.005$ ✓), $i=2$ ($0.008\le0.010$ ✓), $i=3$ ($0.019>0.015$ ✗), $i=4$ ($0.041>0.020$ ✗) →
+          조건을 만족하는 최대 $i$ 는 <strong>2</strong> 이고 앞의 두 개를 기각한다.
+        </p>
+        <p>
+          Bonferroni 였다면 문턱이 전부 $0.005$ 라 <strong>첫 번째만</strong> 살아남았다.
+          BH 가 뒤로 갈수록 문턱을 <strong>완만하게 올려 주는 것</strong>이 검정력 차이의 원천이며,
+          대신 통제하는 대상이 FWER 에서 FDR 로 <strong>약해진다</strong>.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① 두 model 정확도 비교 — 0.7%p 는 유의한가</h3>
+      <p>독립된 test set 각 2,000개에서 A 는 90.2%(1,804개), B 는 89.5%(1,790개)를 맞혔다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat p = \frac{1804+1790}{4000}=\frac{3594}{4000}=0.8985 $$</div>
+          <div class="derive__why">$H_0$ 아래에서는 둘이 같으므로 <strong>합쳐서 추정</strong>한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{SE}=\sqrt{0.8985\times0.1015\times\left(\tfrac{1}{2000}+\tfrac{1}{2000}\right)}=\sqrt{0.091198\times0.001} $$</div>
+          <div class="derive__why">두 비율 차이의 표준오차 (<a href="4.3-expectation-variance.html">4.3</a> — 분산이 더해진다)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ =\sqrt{0.000091198}=0.0095498 $$</div>
+          <div class="derive__why">약 0.95%p — <strong>관측된 차이 0.7%p 보다 크다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ z=\frac{0.902-0.895}{0.0095498}=\frac{0.007}{0.0095498}=0.733 $$</div>
+          <div class="derive__why">차이를 잡음 단위로 쟀다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ p=2\bigl(1-\Phi(0.733)\bigr)=2(1-0.7682)=2(0.2318)=0.464 $$</div>
+          <div class="derive__why">양측. <strong>$p=0.46$ — 전혀 유의하지 않다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{95\% CI}=0.007\pm1.96(0.009550)=0.007\pm0.01872=(-0.0117,\ +0.0257) $$</div>
+          <div class="derive__why"><strong>0 을 포함</strong>하므로 같은 결론 (식 6) ✓</div>
+        </div>
+      </div>
+      <p>
+        <span class="hl">구간이 $-1.2\%p$ 에서 $+2.6\%p$ 까지 걸쳐 있다 —
+        "차이가 없다"가 아니라 <strong>"2.6%p 개선일 수도 있고 1.2%p 악화일 수도 있어 판단할 수 없다"</strong>가 맞는 결론이다.</span>
+        구간을 함께 보고해야 하는 이유가 이것이다.
+      </p>
+
+      <h3>② 그 실험의 검정력은 얼마였나</h3>
+      <p>참 차이가 1%p (90% vs 89%) 라고 가정하고 $n=2{,}000$ 씩일 때의 검정력을 계산한다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{SE}=\sqrt{\frac{0.90\times0.10}{2000}+\frac{0.89\times0.11}{2000}}=\sqrt{0.000045+0.00004895} $$</div>
+          <div class="derive__why">$H_1$ 아래라 각자의 비율로 계산한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ =\sqrt{0.00009395}=0.009693 $$</div>
+          <div class="derive__why">약 0.97%p</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\delta}{\mathrm{SE}}=\frac{0.01}{0.009693}=1.0317 $$</div>
+          <div class="derive__why"><strong>신호가 잡음과 비슷한 크기</strong>다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Power}=\Phi(1.0317-1.96)=\Phi(-0.928)=0.177 $$</div>
+          <div class="derive__why">유도 2. <strong>17.7%</strong> — 진짜 1%p 차이가 있어도 다섯 번 중 네 번은 놓친다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ n=\frac{(1.96+0.8416)^2(0.09+0.0979)}{0.01^2}=\frac{7.849\times0.1879}{0.0001}=14{,}748 $$</div>
+          <div class="derive__why">80% 검정력에 필요한 표본 — <strong>2,000 이 아니라 약 14,700개</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \delta=0.005 \text{ 라면}: \ n=\frac{7.849\times0.188}{0.000025}=59{,}000 $$</div>
+          <div class="derive__why">차이가 절반이면 <strong>4배</strong> ✓ (유도 2 의 마지막 줄)</div>
+        </div>
+      </div>
+      <p>
+        <span class="hl">흔히 쓰는 크기의 test set 은 <strong>1%p 미만의 차이를 판별할 힘이 없다</strong>.</span>
+        논문의 표에서 0.3%p 차이로 순위를 매기는 것이 왜 위험한지가 여기서 나온다.
+      </p>
+
+      <h3>③ 다중검정 — 20개를 훑으면</h3>
+      <p>하이퍼파라미터 20가지를 시도했고 <strong>실제로는 전부 효과가 없다</strong>고 하자.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ P(\text{한 검정이 유의하지 않음})=1-0.05=0.95 $$</div>
+          <div class="derive__why">$H_0$ 아래에서 $p$ 는 균등 (유도 1)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P(\text{20개 모두 유의하지 않음})=0.95^{20}=0.3585 $$</div>
+          <div class="derive__why">독립이라면 곱한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{FWER}=1-0.3585=0.6415 $$</div>
+          <div class="derive__why"><strong>64% 확률로 "발견"이 생긴다</strong> — 전부 가짜인데</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{기대 위양성 수}=20\times0.05=1.0 $$</div>
+          <div class="derive__why">평균 <strong>정확히 하나</strong>가 유의하게 나온다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Bonferroni}:\ \alpha'=\frac{0.05}{20}=0.0025,\quad \mathrm{FWER}=1-0.9975^{20}=0.0488 $$</div>
+          <div class="derive__why">5% 로 되돌아왔다 ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ m=100:\ 1-0.95^{100}=0.994 $$</div>
+          <div class="derive__why">100번이면 <strong>99.4%</strong> — 거의 확실하게 가짜 발견이 나온다</div>
+        </div>
+      </div>
+
+      <h3>④ 유의하지만 중요하지 않은 경우</h3>
+      <p>두 그룹의 평균이 72 와 70, 표준편차가 각각 10 이다. 효과크기는 $d=(72-70)/10=0.2$ 로 <strong>작다</strong>.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$n$ (그룹당)</th><th>$\mathrm{SE}=10\sqrt{2/n}$</th><th>$t=2/\mathrm{SE}$</th><th>$p$ (양측)</th><th>Cohen's $d$</th></tr></thead>
+          <tbody>
+            <tr><td class="num">25</td><td class="num">2.828</td><td class="num">0.707</td><td class="num">0.48</td><td class="num">0.2</td></tr>
+            <tr><td class="num">100</td><td class="num">1.414</td><td class="num">1.414</td><td class="num">0.157</td><td class="num">0.2</td></tr>
+            <tr><td class="num">400</td><td class="num">0.707</td><td class="num">2.828</td><td class="num">0.005</td><td class="num">0.2</td></tr>
+            <tr><td class="num">10,000</td><td class="num">0.1414</td><td class="num">14.14</td><td class="num">&lt; 10⁻⁴⁰</td><td class="num"><strong>0.2</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <span class="hl">$n$ 을 키우면 $p$ 는 얼마든지 작아지지만 <strong>효과크기는 0.2 로 고정</strong>이다 —
+        $p$-value 는 "차이가 크다"가 아니라 "차이가 0 이라고 보기 어렵다"만 말한다.</span>
+        표본이 충분히 크면 <strong>어떤 미미한 차이도 유의해진다</strong>.
+        그래서 $p$ 와 효과크기(또는 신뢰구간)를 반드시 함께 봐야 한다<a class="cite" href="#ref-wasserstein2016-asa-pvalue" data-ref="wasserstein2016-asa-pvalue">5</a>.
+      </p>
+
+      <h3>⑤ 같은 test set 이라면 — McNemar 검정</h3>
+      <p>같은 1,000개 test set 에서 A 와 B 를 평가했다. 갈린 샘플만 세니 <strong>A 만 맞힌 것 45개, B 만 맞힌 것 25개</strong>였다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ b=45,\quad c=25,\quad b+c=70 $$</div>
+          <div class="derive__why">둘 다 맞히거나 둘 다 틀린 930개는 <strong>정보가 없어 버린다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ H_0: \ b \sim \mathrm{Binomial}(70,\ 0.5) $$</div>
+          <div class="derive__why">차이가 없다면 갈린 것 중 <strong>절반은 A, 절반은 B</strong> 쪽이어야 한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \chi^2=\frac{(|45-25|-1)^2}{45+25}=\frac{19^2}{70}=\frac{361}{70}=5.157 $$</div>
+          <div class="derive__why">연속성 보정을 넣은 McNemar 통계량</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ p = P(\chi^2_1 > 5.157) = 0.023 $$</div>
+          <div class="derive__why"><strong>$p=0.023 &lt; 0.05$ — 유의하다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{정확도 차이} = \frac{45-25}{1000}=0.02 = 2\%p $$</div>
+          <div class="derive__why">차이 자체는 2%p</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{독립 표본으로 봤다면}:\ \mathrm{SE}\approx\sqrt{\tfrac{2\times0.9\times0.1}{1000}}=0.0134,\ z=1.49,\ p=0.136 $$</div>
+          <div class="derive__why"><strong>같은 data 인데 결론이 갈린다</strong> — 검정을 잘못 고르면 놓친다</div>
+        </div>
+      </div>
+      <p>
+        <span class="hl">같은 test set 을 썼는데 독립 표본 검정을 적용하면 <strong>공통 부분의 잡음까지 오차로 세어</strong>
+        실제보다 훨씬 둔감해진다.</span>
+        ML 실험에서 test set 을 공유하는 것이 보통이므로, McNemar(또는 짝지은 검정·순열검정)가 기본이어야 한다.
+      </p>
+
+      <figure class="widget" data-widget="paired-vs-unpaired">
+        <figcaption class="widget__bar">Paired vs Unpaired — 같은 test set 이면 검정을 바꿔야 한다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">두 model 의 성능이 <strong>함께 오르내릴수록</strong> 짝지은 검정의 이점이 커집니다. 공통 잡음이 상쇄되기 때문입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>두 오류</strong> · <strong>검정력 곡선</strong> ·
+        <strong>다중검정</strong> · <strong>짝지은 검정</strong> — 에 이어,
+        아래에서 <strong>$H_0$ 가 참일 때 $p$-value 의 분포</strong>를 직접 만들어 본다.
+        유도 1 을 눈으로 확인하는 자리다.
+      </p>
+
+      <figure class="widget" data-widget="pvalue-dist">
+        <figcaption class="widget__bar">p-value 의 분포 — $H_0$ 가 참이면 균등, 거짓이면 0 쪽으로</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">참 효과를 0 으로 두면 히스토그램이 <strong>평평해집니다</strong>. 그래도 왼쪽 5% 칸에는 항상 5% 가 들어갑니다 — 그것이 1종 오류입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"$p=0.03$ 이면 귀무가설이 참일 확률이 3% 다."</p>
+        <p>
+          <strong>실제로는</strong> $p$-value 는 $P(\text{data}\mid H_0)$ 이고 우리가 알고 싶은 것은 $P(H_0\mid\text{data})$ 다 —
+          <strong>조건의 방향이 반대</strong>다(<a href="4.1-probability-basics.html">4.1</a> 오해 2).
+          뒤집으려면 $H_0$ 의 사전확률이 필요하다.
+          실제로 $H_0$ 가 참일 사전확률이 높은 분야에서는 $p=0.05$ 로 기각된 결과가
+          <strong>사후적으로는 30% 이상 틀린다</strong>는 추정이 있다<a class="cite" href="#ref-ioannidis2005-why-most-published" data-ref="ioannidis2005-why-most-published">6</a>.
+          같은 이유로 "$1-p$ 는 $H_1$ 이 참일 확률" 도 틀린다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"$p=0.46$ 이 나왔으니 두 model 은 성능이 같다."</p>
+        <p>
+          <strong>실제로는</strong> "기각하지 못했다"는 <strong>"$H_0$ 가 참이다"가 아니다</strong>.
+          예제 ①에서 신뢰구간이 $(-1.2\%p,\ +2.6\%p)$ 였으므로 2%p 개선일 가능성도 열려 있다.
+          검정력이 17.7% 였다는 것은(예제 ②) <strong>진짜 차이가 있어도 놓칠 확률이 82%</strong> 였다는 뜻이다.
+          "차이가 없다"를 <em>주장</em>하려면 등가성 검정(equivalence test)을 따로 해야 한다 —
+          "차이가 $\pm0.5\%p$ 안에 있다"를 $H_1$ 로 놓는 검정이다.
+          <strong>증거의 부재는 부재의 증거가 아니다.</strong>
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"$p&lt;0.001$ 이니 아주 큰 개선이다."</p>
+        <p>
+          <strong>실제로는</strong> $p$ 는 <strong>차이의 크기가 아니라 확신의 정도</strong>다.
+          예제 ④에서 같은 $d=0.2$ 인데 $n$ 만 키우니 $p$ 가 $0.48 \to 10^{-40}$ 로 움직였다.
+          $n$ 이 아주 크면 <strong>의미 없는 차이도 반드시 유의해진다</strong>.
+          그래서 보고할 때는 $p$ 대신 <strong>효과크기와 신뢰구간</strong>을 앞세우는 것이 낫고,
+          ML 이라면 정확도 차이(%p)와 그 구간을 그대로 쓰는 것이 가장 정직하다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"실험을 여러 번 돌려 가장 좋은 결과를 보고했다. 각각은 정직한 검정이었다."</p>
+        <p>
+          <strong>실제로는</strong> 이것이 <strong>$p$-hacking</strong> 이다.
+          20개를 훑으면 전부 가짜여도 64% 확률로 하나는 유의하게 나온다(예제 ③).
+          더 교묘한 형태도 많다 — 유의해질 때까지 data 를 더 모으기(optional stopping),
+          이상치 제거 기준을 결과를 보고 정하기, 지표를 여러 개 재고 잘 나온 것만 보고하기.
+          <strong>검정한 횟수를 세지 않았어도 다중검정이다</strong>.
+          처방은 사전등록·보정·<strong>hold-out set 을 마지막에 한 번만</strong> 쓰는 것이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"검정력이 낮아도 유의하게 나왔으니 오히려 강한 증거다."</p>
+        <p>
+          <strong>실제로는</strong> 검정력이 낮을수록 <strong>유의하게 나온 결과가 효과를 과대추정</strong>한다.
+          문턱을 넘으려면 우연히 크게 나와야만 하므로, 살아남은 추정치는 참값보다 부풀려져 있다
+          (winner's curse · Type M error).
+          검정력 17.7% 인 예제 ②에서 유의하게 나오려면 관측 차이가 1.9%p 이상이어야 하는데,
+          참 차이는 1%p 다 — <strong>보고되는 값이 실제의 2배</strong>가 된다.
+          "재현이 안 되는 개선"의 상당수가 이 구조에서 나온다.
+          <strong>낮은 검정력은 놓치는 문제만이 아니라 발견한 것까지 오염시킨다.</strong>
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–⑤ 를 검산한다.</p>
+      <details>
+        <summary>SciPy — z 검정 · 검정력 · 다중검정 · McNemar (20줄)</summary>
+<pre><code>import numpy as np
+from scipy import stats
+
+nA = nB = 2000; kA, kB = 1804, 1790
+pp = (kA + kB) / (nA + nB)
+se = np.sqrt(pp * (1 - pp) * (1 / nA + 1 / nB))
+z = (kA / nA - kB / nB) / se
+print(z.round(3), (2 * stats.norm.sf(abs(z))).round(3))       # 0.733  0.464
+
+se1 = np.sqrt(.9 * .1 / 2000 + .89 * .11 / 2000)
+print(stats.norm.cdf(0.01 / se1 - 1.96).round(3))             # 0.177  검정력
+n = (1.96 + 0.8416)**2 * (.09 + .0979) / 0.01**2
+print(int(n))                                                 # 14748  필요한 표본
+
+rng = np.random.default_rng(0)
+hits = 0
+for _ in range(20000):                                        # 전부 H0 가 참
+    ps = 2 * stats.norm.sf(abs(rng.normal(0, 1, 20)))
+    hits += (ps &lt; 0.05).any()
+print(hits / 20000, 1 - 0.95**20)                             # 0.64  0.6415
+
+b, c = 45, 25
+chi2 = (abs(b - c) - 1)**2 / (b + c)
+print(chi2.__round__(3), stats.chi2.sf(chi2, 1).round(4))     # 5.157  0.0232
+print((2 * stats.norm.sf(0.02 / np.sqrt(2 * .9 * .1 / 1000))).round(3))  # 0.136 (짝 무시)
+</code></pre>
+        <p>
+          <small>
+            네 번째 블록이 다중검정 시뮬레이션이다 — <strong>전부 $H_0$ 가 참인데도 64%</strong> 가
+            "발견"을 만들어 낸다. 마지막 두 줄이 예제 ⑤로,
+            같은 data 를 짝지어 보면 $p=0.023$, 독립으로 보면 $p=0.136$ 이라
+            <strong>검정 선택 하나로 결론이 갈린다</strong>.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $H_0$ 가 참인 검정을 10번 독립적으로 수행했다. 적어도 하나가 $p&lt;0.05$ 일 확률은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 40%</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>약 5%</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>약 50%</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $1-0.95^{10}=1-0.5987=0.401$.
+            <strong>나</strong>는 검정 <strong>하나</strong>의 오류율이고,
+            <strong>다</strong>는 $10\times0.05$ 로 union bound 의 <strong>상계</strong>를 답으로 쓴 것이다
+            (실제보다 큰 값 — 겹침을 빼지 않았다).
+            검정 수가 늘면 이 값이 1 로 빠르게 접근한다 (100번이면 99.4%).
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            같은 검정력을 유지한 채 잡아내고 싶은 차이를 1/3 로 줄이려면 표본은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>9배</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>3배</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>1.73배</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $n\propto 1/\delta^2$ 이므로 $\delta$ 가 $1/3$ 이면 $n$ 은 <strong>$3^2=9$배</strong>다(식 4).
+            0.5%p 차이를 잡으려면 1.5%p 차이를 잡을 때보다 test set 이 9배 커야 한다는 뜻이다.
+            <strong>ML 벤치마크에서 소수점 이하 개선을 주장하기가 왜 어려운지</strong>가 이 관계에 있다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $m=8$ 개 검정, $\alpha=0.05$ 로 Bonferroni 보정할 때 개별 문턱은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>0.00625</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.4</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0.05</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\alpha'=0.05/8=0.00625$ (유도 3).
+            <strong>나</strong>는 곱한 것으로, 그렇게 하면 오류율이 오히려 치솟는다.
+            검산: $1-(1-0.00625)^8=0.0489\le0.05$ ✓.
+            대가는 검정력이다 — 임계값이 1.96 에서 2.73 으로 올라가
+            같은 검정력을 유지하려면 표본이 약 1.5배 필요하다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            $p$-value 의 정확한 정의는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$H_0$ 가 참이라는 가정 아래, 관측한 것만큼 극단적인 결과가 나올 확률</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$H_0$ 가 참일 확률</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>결과가 우연히 나왔을 확률</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            조건의 방향이 핵심이다 — $P(\text{data}\mid H_0)$ 이지 $P(H_0\mid\text{data})$ 가 아니다(오해 1).
+            <strong>다</strong>는 <strong>나</strong>를 말만 바꾼 것으로 역시 틀린다.
+            뒤집으려면 $H_0$ 의 사전확률이 필요하고, 그것이 Bayesian 접근이 하는 일이다
+            (<a href="4.6-likelihood-estimation.html">4.6</a>).
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            같은 test set 1,000개로 두 model 을 평가해 비교하려 한다. 옳은 검정은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>McNemar 등 짝지은 검정 — 두 결과가 독립이 아니다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>two-proportion $z$ 검정 — 정확도는 비율이므로</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>어느 쪽을 써도 결과가 같다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            같은 샘플을 쓰면 <strong>어려운 샘플은 둘 다 틀리고 쉬운 샘플은 둘 다 맞혀</strong> 결과가 강하게 상관된다.
+            독립 검정을 쓰면 그 공통 잡음까지 오차로 세어 둔감해진다.
+            예제 ⑤에서 같은 data 가 $p=0.023$ 과 $p=0.136$ 으로 갈렸다 —
+            <strong>다</strong>가 틀리다는 것을 숫자로 보여 주는 사례다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            검정력 20% 인 실험에서 유의한 결과가 나왔다. 보고된 효과 크기에 대해 옳은 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>참값보다 과대추정되어 있을 가능성이 높다 (winner's curse)</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>검정력과 무관하게 불편추정값이다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>검정력이 낮았으므로 오히려 과소추정이다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            문턱을 넘은 것만 보고되므로 <strong>선택 편향</strong>이 생긴다 —
+            우연히 크게 나온 표본만 살아남는다(오해 5).
+            검정력이 낮을수록 문턱이 참값보다 훨씬 위에 있어 과대추정이 심해진다.
+            예제 ②에서는 참 차이 1%p 인데 유의하려면 1.9%p 이상이 관측되어야 했다.
+            <strong>재현 실험에서 효과가 줄어드는 현상의 주된 원인</strong>이 이것이다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="../ch01/1.6-research-structure.html">1.6 연구의 구조</a></strong> — 논문에서 개선을 주장할 때 필요한 통계적 근거.</li>
+        <li><strong><a href="../ch01/1.5-data-split-evaluation.html">1.5 데이터 분할과 평가</a></strong> — hold-out set 을 한 번만 쓰는 이유가 다중검정이다.</li>
+        <li><strong><a href="4.9-uncertainty.html">4.9 불확실성</a></strong> — 예측 구간과 신뢰구간의 구분.</li>
+        <li><strong>5장 전통적 머신러닝</strong> — 교차검증 결과를 여러 dataset 에 걸쳐 비교하는 절차.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-neyman1933-efficient-tests" data-ref="neyman1933-efficient-tests">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Neyman, J. &amp; Pearson, E. S. (1933). <em>On the Problem of the Most Efficient Tests of Statistical Hypotheses</em>. Philosophical Transactions of the Royal Society A, 231, 289–337.</span>
+          <span class="ref__where">§I — 검정을 '두 종류의 오류를 저울질하는 결정 절차'로 정식화하고 <strong>1종·2종 오류를 처음 구분</strong>한 부분(식 3 과 오류 표의 원전). §II — $\alpha$ 를 고정한 채 검정력을 최대로 하는 검정이 존재한다는 Neyman–Pearson 보조정리. 이 논문 이전의 Fisher 식 유의성 검정에는 $H_1$ 도 검정력 개념도 없었다</span>
+          <a class="ref__link" href="https://royalsocietypublishing.org/doi/10.1098/rsta.1933.0009">royalsocietypublishing.org</a>
+        </li>
+        <li class="ref" id="ref-benjamini1995-fdr" data-ref="benjamini1995-fdr">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Benjamini, Y. &amp; Hochberg, Y. (1995). <em>Controlling the False Discovery Rate: A Practical and Powerful Approach to Multiple Testing</em>. Journal of the Royal Statistical Society B, 57(1), 289–300.</span>
+          <span class="ref__where">§1–2 — FWER 대신 <strong>FDR(기각한 것 중 오류의 기대 비율)</strong> 을 통제하자는 제안과 두 기준의 차이. §3 — $p_{(i)}\le\frac{i}{m}q$ 절차와 그것이 FDR 을 $q$ 이하로 유지한다는 정리(유도 3 아래 접힌 상자의 계산). §4 — Bonferroni 대비 검정력 이득의 시뮬레이션</span>
+          <a class="ref__link" href="https://www.jstor.org/stable/2346101">jstor.org</a>
+        </li>
+        <li class="ref" id="ref-wasserstein2016-asa-pvalue" data-ref="wasserstein2016-asa-pvalue">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Wasserstein, R. L. &amp; Lazar, N. A. (2016). <em>The ASA Statement on p-Values: Context, Process, and Purpose</em>. The American Statistician, 70(2), 129–133.</span>
+          <span class="ref__where">여섯 원칙 전체가 이 절 '함정'의 뼈대다. 원칙 2 — $p$ 는 가설이 참일 확률이 아니다(오해 1). 원칙 3 — $\alpha$ 문턱 하나로 결론을 내리면 안 된다. 원칙 4 — 선택적 보고와 $p$-hacking(오해 4). 원칙 5 — <strong>$p$ 는 효과의 크기나 중요성을 재지 않는다</strong>(오해 3, 예제 ④)</span>
+          <a class="ref__link" href="https://www.tandfonline.com/doi/full/10.1080/00031305.2016.1154108">tandfonline.com</a>
+        </li>
+        <li class="ref" id="ref-ioannidis2005-why-most-published" data-ref="ioannidis2005-why-most-published">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Ioannidis, J. P. A. (2005). <em>Why Most Published Research Findings Are False</em>. PLoS Medicine, 2(8), e124.</span>
+          <span class="ref__where">'Modeling the Framework' 절 — $H_0$ 의 사전확률·검정력·편향을 넣어 <strong>PPV(유의한 결과가 실제로 참일 확률)</strong> 를 계산한 표. 검정력이 낮고 가설 수가 많으면 유의한 발견의 절반 이상이 거짓일 수 있음을 보인다(오해 1·5 의 정량적 근거). Corollary 1–4 가 표본 크기·효과크기·검정 수의 영향을 정리한다</span>
+          <a class="ref__link" href="https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.0020124">journals.plos.org</a>
+        </li>
+        <li class="ref" id="ref-dror2018-hitchhikers-guide" data-ref="dror2018-hitchhikers-guide">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Dror, R., Baumer, G., Shlomov, S. &amp; Reichart, R. (2018). <em>The Hitchhiker's Guide to Testing Statistical Significance in Natural Language Processing</em>. ACL 2018, 1383–1392.</span>
+          <span class="ref__where">§3 — ML 실험에서 <strong>짝지은 표본(같은 test set)을 무시하면 안 된다</strong>는 지적과 McNemar·부트스트랩·순열검정의 선택 기준('수식과 기호'의 검정 표, 예제 ⑤). §4 — 여러 dataset 에 걸친 비교가 곧 다중검정이라는 점과 그 보정 절차. §5 — ACL 논문 표본조사에서 검정을 보고한 비율이 낮다는 실태</span>
+          <a class="ref__link" href="https://aclanthology.org/P18-1128/">aclanthology.org</a>
+        </li>
+        <li class="ref" id="ref-mit-18650" data-ref="mit-18650">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Rigollet, P. <em>MIT 18.650: Statistics for Applications</em> (Fall 2016). MIT OpenCourseWare.</span>
+          <span class="ref__where">Lecture 7–8 — 가설검정의 정식화, $p$-value 가 $H_0$ 아래에서 균등분포임을 보이는 확률적분변환(유도 1). Lecture 9 — 검정력 계산과 표본 크기 역산(유도 2, 예제 ②). Lecture 6 — 신뢰구간과 검정의 동치(식 6)</span>
+          <a class="ref__link" href="https://ocw.mit.edu/courses/18-650-statistics-for-applications-fall-2016/">ocw.mit.edu</a>
+        </li>
+        <li class="ref" id="ref-statquest" data-ref="statquest">
+          <span class="ref__type" data-type="video">영상</span>
+          <span class="ref__cite">Starmer, J. <em>p-values: What they are and how to interpret them</em> · <em>Statistical Power</em> · <em>FDR and the Benjamini-Hochberg Method</em>. StatQuest.</span>
+          <span class="ref__where">'p-values' 편 03:00–11:00 — $H_0$ 아래 히스토그램을 그려 $p$ 를 넓이로 보여 주는 설명(위젯 5 의 구성). 'Statistical Power' 편 — 두 분포가 겹치는 정도와 $n$ 이 검정력을 정하는 그림(위젯 1·2). 'FDR' 편 — 다중검정에서 $p$ 가 균등하게 깔리는 시각화와 BH 절차의 단계별 계산</span>
+          <a class="ref__link" href="https://statquest.org/video-index/">statquest.org</a>
+        </li>
+        <li class="ref" id="ref-cohen1992-power-primer" data-ref="cohen1992-power-primer">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Cohen, J. (1992). <em>A Power Primer</em>. Psychological Bulletin, 112(1), 155–159.</span>
+          <span class="ref__where">Table 1 — 효과크기 $d$ 의 small(0.2)·medium(0.5)·large(0.8) 관례적 구분(식 5 아래 표)과 그것이 <strong>임의로 정한 편의적 기준</strong>임을 저자 스스로 밝힌 부분. Table 2 — 검정력 0.80 을 위한 표본 크기 표로, 유도 2 의 $n$ 역산과 같은 계산이다</span>
+          <a class="ref__link" href="https://doi.org/10.1037/0033-2909.112.1.155">doi.org</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+function mkRand(seed) {
+  var s = seed || 12345;
+  return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+}
+function gauss(rnd) {
+  var u = Math.max(1e-9, rnd()), v = rnd();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+function erf(z) {
+  var t = 1 / (1 + 0.3275911 * Math.abs(z));
+  var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-z * z);
+  return z >= 0 ? y : -y;
+}
+function Phi(z) { return 0.5 * (1 + erf(z / Math.SQRT2)); }
+function npdf(x, m, s) { return Math.exp(-0.5 * Math.pow((x - m) / s, 2)) / (s * Math.sqrt(2 * Math.PI)); }
+
+/* 플롯 영역 배경 — 축 라벨이 놓이는 '칸'을 눈에 보이게 만든다.
+   (tools/check-visual.mjs 의 '칸초과' 는 같은 그룹의 첫 rect 를 칸으로 본다) */
+function panel(p) {
+  p.add(VIZ.el('rect', {
+    x: p.pad.l, y: p.pad.t, width: p.iw, height: p.ih,
+    fill: 'var(--ink-3)', 'fill-opacity': 0.03, stroke: 'none'
+  }));
+  return p;
+}
+
+/* ============================================================
+   위젯 1 — 두 분포와 두 오류
+   ============================================================ */
+WIDGETS.register('two-dists', function (root, ctx) {
+  var shift = 2.2, thr = 1.96;
+
+  var p = VIZ.plot({ w: 460, h: 285, xmin: -3.6, xmax: 6.4, ymin: 0, ymax: 0.46,
+    pad: { t: 22, r: 16, b: 32, l: 48 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'a', label: 'α — 1종 오류 (없는 차이를 있다고)', digits: 4 },
+    { key: 'b', label: 'β — 2종 오류 (있는 차이를 놓침)', digits: 4 },
+    { key: 'pw', label: '검정력 1 − β', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function fill(fn, lo, hi, color, op) {
+    var d = 'M' + p.X(lo) + ' ' + p.Y(0);
+    for (var i = 0; i <= 80; i++) {
+      var x = lo + (hi - lo) * i / 80;
+      d += ' L' + p.X(x) + ' ' + p.Y(fn(x));
+    }
+    d += ' L' + p.X(hi) + ' ' + p.Y(0) + ' Z';
+    p.add(VIZ.el('path', { d: d, fill: color, 'fill-opacity': op, stroke: 'none' }));
+  }
+
+  function draw() {
+    p.clear().grid(1, 0.1).axes('검정통계량', '밀도').ticks(1, 0.1);
+    var f0 = function (x) { return npdf(x, 0, 1); };
+    var f1 = function (x) { return npdf(x, shift, 1); };
+
+    fill(f0, thr, 6.4, 'var(--seal)', 0.45);          /* α */
+    fill(f1, -3.6, thr, 'var(--jade)', 0.35);         /* β */
+    p.curve(f0, { samples: 320 });
+    p.curve(f1, { samples: 320, alt: true, dash: '5 4' });
+    p.line([[thr, 0], [thr, 0.44]], { width: 2 });
+
+    p.text(-3.5, 0.44, '실선 = H₀ 분포 · 점선 = H₁ 분포', { size: 10 });
+    p.callout(thr, 0.30, '기각 문턱', { dx: 18, dy: -10, tone: 'var(--ink-2)' });
+
+    var a = 1 - Phi(thr), b = Phi(thr - shift);
+    out.set('a', a);
+    out.set('b', b);
+    out.set('pw', 1 - b);
+    out.setRaw('note', thr > 2.6 ? '문턱이 높다 → α 는 작지만 많이 놓친다'
+      : (thr < 1.2 ? '문턱이 낮다 → 잘 잡지만 헛발도 많다' : '표준 설정 부근'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '참 효과의 크기 (δ / SE)', min: 0, max: 5, step: 0.1, value: 2.2, digits: 1,
+    onInput: function (v) { shift = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '기각 문턱 (α 를 정한다)', min: 0.5, max: 4, step: 0.02, value: 1.96, digits: 2,
+    onInput: function (v) { thr = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — 검정력 곡선
+   ============================================================ */
+WIDGETS.register('power-curve', function (root, ctx) {
+  var delta = 0.01, base = 0.90, alpha = 0.05;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'n80', label: '검정력 80% 에 필요한 n (그룹당)' },
+    { key: 'p2000', label: 'n = 2,000 일 때의 검정력', digits: 4 },
+    { key: 'se', label: 'n = 2,000 에서의 SE', digits: 5 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function seOf(n) {
+    var p1 = base, p2 = base - delta;
+    return Math.sqrt(p1 * (1 - p1) / n + Math.max(1e-9, p2 * (1 - p2)) / n);
+  }
+  function powerOf(n) {
+    var z = (alpha === 0.05) ? 1.95996 : (alpha === 0.01 ? 2.5758 : 1.6449);
+    return Phi(delta / seOf(n) - z);
+  }
+
+  function draw() {
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 0, xmax: 30000, ymin: 0, ymax: 1.05,
+      pad: { t: 20, r: 16, b: 34, l: 50 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    p.grid(5000, 0.25).axes('n (그룹당 test set 크기)', '검정력').ticks(10000, 0.25);
+    p.curve(function (n) { return n < 20 ? 0 : powerOf(n); }, { samples: 320 });
+    p.line([[0, 0.8], [30000, 0.8]], { dash: '4 3' });
+    p.text(300, 1.02, '가로 점선 = 관례적 목표 80%', { size: 10 });
+
+    /* 80% 지점 찾기 */
+    var lo = 20, hi = 4000000;
+    for (var it = 0; it < 60; it++) {
+      var mid = (lo + hi) / 2;
+      if (powerOf(mid) < 0.8) lo = mid; else hi = mid;
+    }
+    var n80 = Math.round(hi);
+    if (n80 < 30000) {
+      p.dot(n80, 0.8, 5.5);
+      p.callout(n80, 0.8, 'n = ' + n80.toLocaleString(), { dx: 20, dy: -16, tone: 'var(--seal)' });
+    }
+    p.dot(2000, powerOf(2000), 5);
+
+    out.setRaw('n80', n80 >= 4000000 ? '400만 이상 (사실상 불가능)' : n80.toLocaleString() + ' 개');
+    out.set('p2000', powerOf(2000));
+    out.set('se', seOf(2000));
+    out.setRaw('note', powerOf(2000) < 0.5 ? 'n=2,000 으로는 이 차이를 못 잡는다'
+      : (powerOf(2000) > 0.8 ? 'n=2,000 으로 충분하다' : '아슬아슬하다'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '잡아내고 싶은 차이 (%p)', min: 0.1, max: 5, step: 0.1, value: 1, digits: 1, unit: '%p',
+    onInput: function (v) { delta = v / 100; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '기준 정확도 (%)', min: 50, max: 99, step: 1, value: 90, digits: 0, unit: '%',
+    onInput: function (v) { base = v / 100; draw(); }
+  });
+  WIDGETS.toggle({
+    host: ctx.controls, label: '유의수준 α',
+    options: [{ value: 0.05, label: '0.05' }, { value: 0.01, label: '0.01' }, { value: 0.1, label: '0.10' }],
+    value: 0.05, onChange: function (v) { alpha = Number(v); draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — 다중검정
+   ============================================================ */
+WIDGETS.register('multiple-testing', function (root, ctx) {
+  var m = 20, corr = 'none', seed = 5, realFrac = 0;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'thr', label: '적용된 문턱' },
+    { key: 'rej', label: '기각한 개수' },
+    { key: 'fp', label: '그중 가짜 (H₀ 가 참인데 기각)' },
+    { key: 'fwer', label: '이론 FWER (보정 없을 때)', digits: 4 }
+  ]);
+
+  function draw() {
+    var rnd = mkRand(seed * 7817 + 3);
+    var ps = [], real = [];
+    var nReal = Math.round(m * realFrac);
+    for (var i = 0; i < m; i++) {
+      var isReal = i < nReal;
+      var z = Math.abs(gauss(rnd) + (isReal ? 3.0 : 0));
+      ps.push(2 * (1 - Phi(z)));
+      real.push(isReal);
+    }
+    var idx = ps.map(function (v, i) { return i; }).sort(function (a, b) { return ps[a] - ps[b]; });
+
+    var thrLine, rejected = new Array(m).fill(false), label;
+    if (corr === 'none') {
+      thrLine = function () { return 0.05; };
+      for (var k = 0; k < m; k++) rejected[k] = ps[k] < 0.05;
+      label = 'α = 0.05 (보정 없음)';
+    } else if (corr === 'bonf') {
+      thrLine = function () { return 0.05 / m; };
+      for (var k2 = 0; k2 < m; k2++) rejected[k2] = ps[k2] < 0.05 / m;
+      label = 'Bonferroni  α/m = ' + (0.05 / m).toFixed(5);
+    } else {
+      thrLine = function (rank) { return 0.05 * rank / m; };
+      var maxI = 0;
+      for (var r = 1; r <= m; r++) if (ps[idx[r - 1]] <= 0.05 * r / m) maxI = r;
+      for (var r2 = 0; r2 < maxI; r2++) rejected[idx[r2]] = true;
+      label = 'Benjamini–Hochberg  q = 0.05';
+    }
+
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 0, xmax: m + 1, ymin: -0.02, ymax: 0.62,
+      pad: { t: 20, r: 16, b: 34, l: 52 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    p.grid(Math.max(1, Math.round(m / 8)), 0.1).axes('검정 (p 값 오름차순)', 'p-value').ticks(Math.max(1, Math.round(m / 5)), 0.1);
+
+    /* 문턱선 */
+    var line = [];
+    for (var t = 1; t <= m; t++) line.push([t, Math.min(0.6, thrLine(t))]);
+    p.line(line, { dash: '4 3', width: 1.8 });
+
+    var rej = 0, fp = 0;
+    for (var j = 0; j < m; j++) {
+      var gi = idx[j], v = Math.min(0.6, ps[gi]);
+      var on = rejected[gi];
+      if (on) { rej++; if (!real[gi]) fp++; }
+      p.add(VIZ.el('circle', {
+        cx: p.X(j + 1), cy: p.Y(v), r: on ? 5 : 3.2,
+        fill: on ? (real[gi] ? 'var(--jade)' : 'var(--seal)') : 'var(--ink-3)',
+        'fill-opacity': on ? 0.85 : 0.35
+      }));
+    }
+    p.text(0.3, 0.60, label + '  ·  빨강 = 가짜 발견 · 초록 = 진짜', { size: 10 });
+
+    out.setRaw('thr', label);
+    out.setRaw('rej', String(rej));
+    out.setRaw('fp', String(fp));
+    out.set('fwer', 1 - Math.pow(0.95, m - Math.round(m * realFrac)));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '검정 개수 m', min: 5, max: 100, step: 1, value: 20, digits: 0,
+    onInput: function (v) { m = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '실제로 효과가 있는 비율', min: 0, max: 0.5, step: 0.05, value: 0, digits: 2,
+    onInput: function (v) { realFrac = v; draw(); }
+  });
+  WIDGETS.toggle({
+    host: ctx.controls, label: '보정',
+    options: [
+      { value: 'none', label: '없음' },
+      { value: 'bonf', label: 'Bonferroni' },
+      { value: 'bh', label: 'Benjamini–Hochberg' }
+    ],
+    value: 'none', onChange: function (v) { corr = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed (다시 돌리기)', min: 1, max: 40, step: 1, value: 5, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — 짝지은 검정 vs 아닌 검정
+   ============================================================ */
+WIDGETS.register('paired-vs-unpaired', function (root, ctx) {
+  var rho = 0.8, diff = 0.02, n = 30;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'up', label: '짝을 무시한 검정의 p', digits: 4 },
+    { key: 'pa', label: '짝지은 검정의 p', digits: 4 },
+    { key: 'sd', label: '차이의 표준편차', digits: 4 },
+    { key: 'note', label: '결론' }
+  ]);
+
+  function draw() {
+    var rnd = mkRand(31415);
+    var xs = [], ys = [];
+    for (var i = 0; i < n; i++) {
+      var common = gauss(rnd) * 0.05;                 /* 샘플 난이도 (공통 요인) */
+      var e1 = gauss(rnd) * 0.05, e2 = gauss(rnd) * 0.05;
+      var a = 0.85 + rho * common + Math.sqrt(1 - rho * rho) * e1;
+      var b = 0.85 - diff + rho * common + Math.sqrt(1 - rho * rho) * e2;
+      xs.push(a); ys.push(b);
+    }
+    /* 축 시작을 눈금(0.6)보다 살짝 아래로 — 두 축의 0.6 눈금이 원점에서 겹치지 않게 */
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 0.58, xmax: 1.1, ymin: 0.58, ymax: 1.1,
+      pad: { t: 20, r: 16, b: 34, l: 50 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    p.grid(0.1, 0.1).axes('model A 의 점수', 'model B 의 점수').ticks(0.1, 0.1);
+    p.line([[0.58, 0.58], [1.1, 1.1]], { dash: '4 3' });
+    for (var j = 0; j < n; j++) p.dot(xs[j], ys[j], 3.2);
+    p.text(0.62, 1.08, '점선 = 두 model 이 같은 선 · 아래쪽이면 A 가 낫다', { size: 10 });
+
+    /* 통계 */
+    var mA = 0, mB = 0, k;
+    for (k = 0; k < n; k++) { mA += xs[k] / n; mB += ys[k] / n; }
+    var vA = 0, vB = 0, vD = 0;
+    for (k = 0; k < n; k++) {
+      vA += Math.pow(xs[k] - mA, 2) / (n - 1);
+      vB += Math.pow(ys[k] - mB, 2) / (n - 1);
+      vD += Math.pow((xs[k] - ys[k]) - (mA - mB), 2) / (n - 1);
+    }
+    var tUn = (mA - mB) / Math.sqrt(vA / n + vB / n);
+    var tPa = (mA - mB) / Math.sqrt(vD / n);
+    var pUn = 2 * (1 - Phi(Math.abs(tUn)));
+    var pPa = 2 * (1 - Phi(Math.abs(tPa)));
+
+    out.set('up', pUn);
+    out.set('pa', pPa);
+    out.set('sd', Math.sqrt(vD));
+    out.setRaw('note', (pPa < 0.05 && pUn >= 0.05)
+      ? '짝지으면 유의, 무시하면 놓친다 ← 바로 이 경우'
+      : (pPa < 0.05 ? '둘 다 유의' : '둘 다 유의하지 않음'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '두 model 이 함께 흔들리는 정도 (상관)', min: 0, max: 0.98, step: 0.02, value: 0.8, digits: 2,
+    onInput: function (v) { rho = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '참 성능 차이', min: 0, max: 0.08, step: 0.005, value: 0.02, digits: 3,
+    onInput: function (v) { diff = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'dataset 개수 n', min: 5, max: 80, step: 1, value: 30, digits: 0,
+    onInput: function (v) { n = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — p-value 의 분포
+   ============================================================ */
+WIDGETS.register('pvalue-dist', function (root, ctx) {
+  var effect = 0, n = 200;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'lt', label: 'p < 0.05 인 비율', digits: 4 },
+    { key: 'exp', label: '이론값' },
+    { key: 'shape', label: '분포의 모양' },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function draw() {
+    var rnd = mkRand(2718), T = 8000, bins = new Array(20).fill(0), lt = 0;
+    var se = 1 / Math.sqrt(n);
+    for (var t = 0; t < T; t++) {
+      var z = (effect + se * gauss(rnd)) / se;
+      var pv = 2 * (1 - Phi(Math.abs(z)));
+      if (pv < 0.05) lt++;
+      bins[Math.max(0, Math.min(19, Math.floor(pv * 20)))]++;
+    }
+    var top = Math.max.apply(null, bins);
+
+    var p = VIZ.plot({ w: 460, h: 280, xmin: 0, xmax: 1, ymin: 0, ymax: 1.15,
+      pad: { t: 20, r: 16, b: 34, l: 48 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(0.25, 0.25).axes('p-value', '빈도').ticks(0.25, 0);
+
+    for (var k = 0; k < 20; k++) {
+      var h = bins[k] / top;
+      p.add(VIZ.el('rect', {
+        x: p.X(k / 20), y: p.Y(h), width: Math.max(1, p.X((k + 1) / 20) - p.X(k / 20) - 1),
+        height: p.Y(0) - p.Y(h), rx: 2,
+        fill: k === 0 ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': k === 0 ? 0.55 : 0.32,
+        stroke: k === 0 ? 'var(--seal)' : 'var(--jade)', 'stroke-width': 0.8
+      }));
+    }
+    p.line([[0, T / 20 / top], [1, T / 20 / top]], { dash: '4 3', width: 1.6 });
+    p.text(0.02, 1.12, '가로 점선 = 균등분포일 때의 높이 · 첫 칸(빨강) = p < 0.05', { size: 10 });
+
+    out.set('lt', lt / T);
+    out.setRaw('exp', effect === 0 ? '0.05 (= α, 1종 오류율)'
+      : Phi(Math.abs(effect) / se - 1.96).toFixed(4) + ' (= 검정력)');
+    out.setRaw('shape', effect === 0 ? '평평 (균등분포)' : '왼쪽으로 쏠림');
+    out.setRaw('note', effect === 0
+      ? 'H₀ 가 참 — 그래도 5% 는 유의하게 나온다'
+      : 'H₀ 가 거짓 — 작은 p 가 더 자주 나온다');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '참 효과의 크기 (0 이면 H₀ 가 참)', min: 0, max: 0.3, step: 0.01, value: 0, digits: 2,
+    onInput: function (v) { effect = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '표본 크기 n', min: 20, max: 2000, step: 20, value: 200, digits: 0,
+    onInput: function (v) { n = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

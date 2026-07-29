@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.10 AI와 확률 — AI 이론 학습</title>
+<meta name="description" content="오늘날의 AI는 대부분 확률분포를 다루는 기계다. 분류는 p(y|x), 언어 모델은 chain rule, 생성 모델은 p(x), 잠재변수 모델은 적분, 디코딩은 그 분포에서 표본을 뽑는 규칙이다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="4.10">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">4.10</span>
+        <span>4장 · 확률과 통계</span>
+      </div>
+      <h1>AI와 확률</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 75분</span>
+        <span><b>난이도</b>★★★★☆</span>
+        <span><b>선수지식</b>
+          <a href="4.9-uncertainty.html">4.9 불확실성</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-cls">Probabilistic Classification</a>
+      <a class="chip" href="#c-lm">Language Model Probability</a>
+      <a class="chip" href="#c-gen">Generative Model</a>
+      <a class="chip" href="#c-latent">Latent Variable Model</a>
+      <a class="chip" href="#c-mc">Stochastic State Transition</a>
+      <a class="chip" href="#c-unc">Uncertainty Estimation</a>
+      <a class="chip" href="#c-samp">Sampling</a>
+      <a class="chip" href="#c-dec">Stochastic Decoding</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        오늘날의 AI 는 대부분 <strong>확률분포를 다루는 기계</strong>다.
+        분류는 $p(y\mid x)$, 언어 모델은 <strong>chain rule 로 쪼갠 $p(x)$</strong>,
+        생성 모델은 $p(x)$ 를 만드는 여러 방식, 잠재변수 모델은 <strong>적분</strong>,
+        디코딩은 <strong>그 분포에서 표본을 뽑는 규칙</strong>이다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>언어 모델의 목적함수를 chain rule 로 유도하고 perplexity 를 손으로 계산할 수 있다.</li>
+        <li>잠재변수 모델의 ELBO 를 유도하고 그것이 4.7 의 KL 과 4.6 의 MAP 와 어떻게 이어지는지 설명할 수 있다.</li>
+        <li>greedy·temperature·top-$k$·top-$p$ 가 확률분포를 각각 어떻게 바꾸는지 계산하고 언제 무엇을 쓸지 고를 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        AI model 이 하는 일을 하나의 문장으로 줄이면 <strong>"어떤 분포를 표현하고, 그 분포와 무언가를 한다"</strong>이다.
+        무엇을 표현하고 무엇을 하는가로 분야가 갈린다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>표현하는 분포</th><th>하는 일</th><th>분야</th></tr></thead>
+          <tbody>
+            <tr><td>$p(y\mid x)$</td><td>가장 큰 것을 고른다</td><td>분류 · 회귀 (판별 모델)</td></tr>
+            <tr><td>$p(x)$</td><td>표본을 뽑는다</td><td>생성 모델</td></tr>
+            <tr><td>$p(x_t\mid x_{&lt;t})$</td><td>이어서 뽑기를 반복한다</td><td>언어 모델 · 자기회귀</td></tr>
+            <tr><td>$p(x\mid z)$, $p(z)$</td><td>숨은 변수를 통해 만든다</td><td>VAE · diffusion</td></tr>
+            <tr><td>$p(s'\mid s,a)$</td><td>미래를 굴려 본다</td><td>강화학습 · world model</td></tr>
+            <tr><td>$p(\theta\mid\mathcal{D})$</td><td>모른다는 것을 안다</td><td>불확실성 추정</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        여섯 줄 모두 4장에서 배운 도구로 적혀 있다.
+        <a href="4.1-probability-basics.html">4.1</a>의 chain rule 이 언어 모델의 정의식이고,
+        <a href="4.2-random-variables.html">4.2</a>의 marginalization 이 잠재변수 모델의 적분이며,
+        <a href="4.6-likelihood-estimation.html">4.6</a>의 MLE 가 학습, <a href="4.7-information-theory.html">4.7</a>의 KL 이 loss 다.
+      </p>
+      <p>
+        마지막 한 조각이 <strong>샘플링</strong>이다.
+        분포를 안다고 해서 거기서 표본을 뽑는 것이 자동으로 되지는 않는다 —
+        <strong>"확률을 계산하는 것"과 "그 확률대로 뽑는 것"은 다른 문제</strong>이고,
+        생성 AI 의 실제 품질은 뽑는 규칙(디코딩)이 좌우하는 경우가 많다.
+      </p>
+
+      <figure class="widget" data-widget="prob-map">
+        <figcaption class="widget__bar">AI 를 확률로 다시 그리기 — 어떤 분포를 다루는가</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">노드를 고르면 <strong>그 분야가 4장의 어느 도구를 쓰는지</strong> 나옵니다. 같은 식이 이름만 바꿔 반복됩니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          <strong>"model 을 학습한다"는 것은 대개 "분포 $q_\theta$ 를 data 분포 $p$ 에 가깝게 만든다"</strong>는 뜻이고,
+          그 거리를 재는 것이 KL 이며, KL 을 줄이는 것이 cross-entropy 최소화이고, 그것이 MLE 다
+          (<a href="4.7-information-theory.html">4.7</a> 유도 1).
+          아키텍처가 무엇이든 이 뼈대는 같다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-cls"></span>
+      <h3>Probabilistic Classification 확률적 분류</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ p(y=k\mid x)=\mathrm{softmax}\bigl(f_\theta(x)\bigr)_k=\frac{e^{z_k}}{\sum_j e^{z_j}}, \qquad \mathcal{L}=-\frac1n\sum_i \log p(y_i\mid x_i) $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">분류 model 은 <strong>Categorical 분포의 parameter 를 출력하는 함수</strong>이고,
+        loss 는 그 분포의 negative log-likelihood 다 — 즉 cross-entropy 다.</span>
+        <a href="4.4-common-distributions.html">4.4</a>의 Categorical, <a href="4.6-likelihood-estimation.html">4.6</a>의 MLE,
+        <a href="4.7-information-theory.html">4.7</a>의 cross-entropy 가 여기서 한 점에 모인다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>discriminative 판별</th><th>generative 생성</th></tr></thead>
+          <tbody>
+            <tr><td>학습하는 것</td><td>$p(y\mid x)$ 직접</td><td>$p(x\mid y)$ 와 $p(y)$</td></tr>
+            <tr><td>예측</td><td>바로 읽는다</td><td>Bayes 로 뒤집는다 (<a href="4.1-probability-basics.html">4.1</a>)</td></tr>
+            <tr><td>예</td><td>로지스틱 회귀 · 대부분의 신경망</td><td>naive Bayes · GMM · LDA</td></tr>
+            <tr><td>강점</td><td>같은 data 로 <strong>정확도가 대개 높다</strong></td><td>결측치·새 class·data 생성에 유리</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <span class="anchor" id="c-lm"></span>
+      <h3>Language Model Probability 언어 모델 확률</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ p(x_1,\dots,x_T)=\prod_{t=1}^{T}p\bigl(x_t\mid x_{&lt;t}\bigr), \qquad \mathcal{L}=-\frac1T\sum_{t=1}^{T}\log p\bigl(x_t\mid x_{&lt;t}\bigr) $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        <span class="hl">언어 모델은 <a href="4.1-probability-basics.html">4.1</a>의 <strong>chain rule 을 그대로 model 구조로 삼은 것</strong>이다 —
+        문장 전체의 결합확률을 "앞을 보고 다음을 맞히는" 조건부확률의 곱으로 쪼갠다.</span>
+        근사가 아니라 <strong>항등식</strong>이라는 점이 중요하다. 근사가 들어가는 곳은
+        각 조건부를 신경망으로 표현하는 부분뿐이다.
+      </p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathrm{PPL}=\exp\!\left(-\frac{1}{T}\sum_{t}\log p(x_t\mid x_{&lt;t})\right)=\exp\bigl(\text{평균 NLL}\bigr) $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        perplexity 는 <strong>"매 시점 평균 몇 개 중에서 고르는 셈인가"</strong> 다.
+        어휘가 $V$ 개인데 아무것도 모르면 $\mathrm{PPL}=V$ 이고, 완벽하면 1 이다.
+        <a href="4.7-information-theory.html">4.7</a>의 entropy 를 지수로 되돌린 값이라
+        <strong>"평균 부호 길이"의 다른 표현</strong>이기도 하다.
+      </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>언어 모델은 <strong>끝말잇기 선수</strong>입니다. 지금까지 나온 말을 보고 다음에 올 말의 후보마다 점수를 매깁니다.</p>
+        <p>perplexity 는 그 선수가 <strong>매번 몇 개 사이에서 헤매는지</strong>를 재는 숫자입니다. 20 이면 매번 스무 개 중 하나를 찍는 셈이고, 5 로 줄었다면 후보를 다섯 개로 좁혔다는 뜻입니다.</p>
+      </div>
+
+      <span class="anchor" id="c-gen"></span>
+      <h3>Generative Model 생성 모델</h3>
+      <p>
+        <span class="hl">생성 모델은 <strong>$p(x)$ 자체를 다루는 model</strong> 이며,
+        밀도를 계산할 수 있는지와 표본을 뽑을 수 있는지가 <strong>서로 다른 능력</strong>이라는 점에서 갈래가 나뉜다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>계열</th><th>$p(x)$ 를</th><th>학습 목표</th><th>샘플링</th></tr></thead>
+          <tbody>
+            <tr><td><strong>자기회귀</strong> (GPT · PixelCNN)</td><td>정확히 계산</td><td>NLL 직접 최소화 (식 2)</td><td>한 칸씩 순차 — <strong>느리다</strong></td></tr>
+            <tr><td><strong>normalizing flow</strong></td><td>정확히 계산 (Jacobian 필요)</td><td>NLL 직접</td><td>가역 변환 한 번 — 빠르다</td></tr>
+            <tr><td><strong>VAE</strong></td><td><strong>하한</strong>만 (ELBO)</td><td>ELBO 최대화 (식 5)</td><td>$z$ 뽑고 디코딩 — 빠르다</td></tr>
+            <tr><td><strong>diffusion</strong></td><td>하한 (또는 score)</td><td>잡음 예측 회귀 (식 6)</td><td>수십~수천 스텝 — 느리지만 품질 좋다</td></tr>
+            <tr><td><strong>GAN</strong></td><td><strong>계산 불가</strong> (암묵적)</td><td>판별자와의 게임</td><td>한 번에 — 가장 빠르다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        오른쪽 두 열의 맞바꿈이 이 분야의 역사다.
+        <strong>밀도를 정확히 계산하려면 구조에 제약</strong>(자기회귀의 순차성, flow 의 가역성)이 붙고,
+        제약을 풀면 밀도를 포기해야 한다.
+        diffusion 이 표준이 된 것은 <strong>학습은 단순한 회귀로 하면서 표본 품질을 얻는</strong> 절충을 찾았기 때문이다.
+      </p>
+
+      <span class="anchor" id="c-latent"></span>
+      <h3>Latent Variable Model 잠재변수 모델</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ p_\theta(x)=\int p_\theta(x\mid z)\,p(z)\,dz $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        <span class="hl">관측되지 않는 변수 $z$ 를 두고 그것을 <strong>주변화</strong>해 $p(x)$ 를 만드는 구조이며,
+        이 적분이 계산 불가능하다는 것이 모든 어려움의 출발점이다
+        (<a href="4.2-random-variables.html">4.2</a>의 marginalization 그대로다).</span>
+      </p>
+      <p>
+        해결책은 적분 대신 <strong>하한</strong>을 최적화하는 것이다.
+        보조 분포 $q_\phi(z\mid x)$ 를 도입하면 evidence lower bound(ELBO)를 얻는다<a class="cite" href="#ref-kingma2013-auto-encoding-variational" data-ref="kingma2013-auto-encoding-variational">1</a>.
+      </p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \log p_\theta(x)\ \ge\ \underbrace{\mathbb{E}_{q_\phi(z\mid x)}\bigl[\log p_\theta(x\mid z)\bigr]}_{\text{재구성}}\ -\ \underbrace{D_{\mathrm{KL}}\bigl(q_\phi(z\mid x)\,\|\,p(z)\bigr)}_{\text{정규화}} $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        두 항의 역할이 정확히 갈린다 — 앞은 <strong>"$z$ 에서 $x$ 를 잘 복원하라"</strong>,
+        뒤는 <strong>"$z$ 의 분포가 prior 에서 너무 멀어지지 마라"</strong> 다.
+        뒤 항이 없으면 $q$ 가 각 $x$ 마다 한 점에 몰려 잠재공간이 구멍투성이가 되고, 새 표본을 못 뽑는다.
+        <a href="4.9-uncertainty.html">4.9</a>의 BNN 목적함수(식 10)와 <strong>정확히 같은 형태</strong>인 것이 우연이 아니다 —
+        둘 다 변분추론이다.
+      </p>
+      <p>
+        diffusion 도 잠재변수 모델이다. 잠재변수가 <strong>잡음이 섞인 중간 단계들 $x_1,\dots,x_T$</strong> 이고,
+        ELBO 를 정리하면 놀랄 만큼 단순한 목적함수가 남는다<a class="cite" href="#ref-ho2020-denoising-diffusion-probabilistic" data-ref="ho2020-denoising-diffusion-probabilistic">2</a>.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \mathcal{L}_{\text{simple}}=\mathbb{E}_{t,\,x_0,\,\boldsymbol\epsilon}\Bigl[\bigl\|\boldsymbol\epsilon-\boldsymbol\epsilon_\theta(x_t,t)\bigr\|^2\Bigr], \qquad x_t=\sqrt{\bar\alpha_t}\,x_0+\sqrt{1-\bar\alpha_t}\,\boldsymbol\epsilon $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        <strong>"어떤 잡음이 섞였는지 맞히는 MSE 회귀"</strong> 로 끝난다 —
+        <a href="4.6-likelihood-estimation.html">4.6</a>에서 본 대로 MSE 는 Gaussian NLL 이므로 이것도 여전히 likelihood 학습이다.
+      </p>
+
+      <figure class="widget" data-widget="elbo-lab">
+        <figcaption class="widget__bar">ELBO — 재구성과 KL 의 저울</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">KL 항의 무게를 0 으로 두면 잠재분포가 <strong>제멋대로 흩어져</strong> prior 에서 뽑은 $z$ 로는 아무것도 못 만듭니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-mc"></span>
+      <h3>Stochastic State Transition 확률적 상태전이</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ p(s_{t+1}\mid s_t,\ a_t) \qquad\text{(Markov 성질: 과거는 } s_t \text{ 에 전부 요약되어 있다)} $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        <span class="hl">현재 상태만 알면 미래가 과거와 독립이라는 <strong>Markov 성질</strong>을 가정하면
+        긴 궤적의 확률이 전이확률의 곱으로 쪼개진다 — 언어 모델의 chain rule 과 같은 구조에
+        <strong>"조건을 유한하게 자른다"</strong>는 가정을 더한 것이다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>model</th><th>상태</th><th>구성 요소</th><th>어디에</th></tr></thead>
+          <tbody>
+            <tr><td>Markov chain</td><td>관측 가능</td><td>전이행렬 $P$</td><td>PageRank · 텍스트 생성의 원형</td></tr>
+            <tr><td>HMM</td><td><strong>숨어 있다</strong></td><td>전이 + 방출 $p(o\mid s)$</td><td>음성 인식 · 품사 태깅<a class="cite" href="#ref-rabiner1989-hmm-tutorial" data-ref="rabiner1989-hmm-tutorial">3</a></td></tr>
+            <tr><td>MDP</td><td>관측 가능 + 행동</td><td>전이 + 보상 $r(s,a)$</td><td>강화학습 (24·25장)</td></tr>
+            <tr><td>world model</td><td>학습된 잠재상태</td><td>신경망 전이 model</td><td>model-based RL · 로보틱스</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        오래 굴리면 초기 상태를 잊고 <strong>정상분포(stationary distribution)</strong> 로 수렴한다 —
+        $\boldsymbol\pi P=\boldsymbol\pi$ 를 만족하는 $\boldsymbol\pi$ 다.
+        이 성질이 MCMC 샘플링의 원리이기도 하다: <strong>원하는 분포가 정상분포가 되도록 전이를 설계</strong>하고 오래 굴린다.
+      </p>
+
+      <span class="anchor" id="c-unc"></span>
+      <h3>Uncertainty Estimation 불확실성 추정</h3>
+      <p>
+        <span class="hl"><a href="4.9-uncertainty.html">4.9</a>에서 본 두 성분이 실제 시스템에서는
+        <strong>"언제 기권할 것인가"</strong>라는 하나의 결정으로 수렴한다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>응용</th><th>쓰는 신호</th><th>기권했을 때의 대안</th></tr></thead>
+          <tbody>
+            <tr><td>의료 영상 판독</td><td>predictive entropy · ensemble 어긋남</td><td>사람 판독으로 넘긴다</td></tr>
+            <tr><td>자율주행</td><td>epistemic (OOD 신호)</td><td>속도를 줄이거나 정지</td></tr>
+            <tr><td>LLM 답변</td><td>token 확률 · 여러 샘플의 일치도</td><td>"모르겠다"고 답하거나 검색을 붙인다</td></tr>
+            <tr><td>능동학습</td><td>MI (BALD)</td><td>그 샘플에 라벨을 요청</td></tr>
+            <tr><td>A/B 배포</td><td>신뢰구간 (<a href="4.8-hypothesis-testing.html">4.8</a>)</td><td>더 관측하거나 롤백</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        LLM 에서 특히 유용한 방법이 <strong>self-consistency</strong> 다 —
+        같은 질문에 여러 번 표본을 뽑아 답이 갈리면 epistemic 이 크다는 신호로 읽는다.
+        식 (5)의 MI 계산을 <strong>ensemble 대신 표본으로</strong> 근사한 셈이다.
+      </p>
+
+      <span class="anchor" id="c-samp"></span>
+      <h3>Sampling 샘플링</h3>
+      <p>
+        <span class="hl">분포를 안다고 표본을 쉽게 뽑을 수 있는 것은 아니다 —
+        <strong>정규화 상수를 모르거나 차원이 높으면</strong> 직접 뽑기가 불가능해진다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>방법</th><th>필요한 것</th><th>비용</th><th>어디에</th></tr></thead>
+          <tbody>
+            <tr><td><strong>역변환</strong></td><td>$F^{-1}$ 를 계산할 수 있어야</td><td>싸다</td><td>1차원 표준 분포 (<a href="4.2-random-variables.html">4.2</a>)</td></tr>
+            <tr><td><strong>ancestral</strong></td><td>인과 순서로 조건부를 알아야</td><td>싸다</td><td><strong>자기회귀 생성 · VAE</strong></td></tr>
+            <tr><td><strong>reparameterization</strong></td><td>$z=\mu+\sigma\varepsilon$ 처럼 분리 가능</td><td>싸다</td><td><strong>VAE 학습</strong> — gradient 가 흐른다</td></tr>
+            <tr><td><strong>rejection</strong></td><td>$f\le Mg$ 인 제안분포</td><td>수용률 $1/M$</td><td>저차원. 고차원에선 무용</td></tr>
+            <tr><td><strong>importance</strong></td><td>제안분포와 가중치</td><td>분산이 문제</td><td>기댓값 추정 · off-policy RL</td></tr>
+            <tr><td><strong>MCMC</strong></td><td>비정규화 밀도만 있으면 된다</td><td>비싸다 (수렴 판단 어려움)</td><td>Bayesian 추론 · 에너지 기반</td></tr>
+            <tr><td><strong>Gumbel-max</strong></td><td>logit 과 Gumbel 잡음</td><td>싸다</td><td>이산 표본을 미분 가능하게 (Gumbel-softmax)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>reparameterization trick</strong> 이 특히 중요하다.
+        $z\sim\mathcal{N}(\mu_\phi,\sigma_\phi^2)$ 에서 직접 뽑으면 $\phi$ 로 미분할 수 없지만,
+        $z=\mu_\phi+\sigma_\phi\varepsilon$ ($\varepsilon\sim\mathcal{N}(0,1)$)로 쓰면
+        <strong>무작위성이 $\varepsilon$ 에 격리되어</strong> $\mu_\phi,\sigma_\phi$ 로 gradient 가 흐른다.
+        VAE 가 실제로 학습될 수 있게 만든 장치다.
+      </p>
+
+      <span class="anchor" id="c-dec"></span>
+      <h3>Stochastic Decoding 확률적 디코딩</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \hat p_k \ \propto\ \exp\!\left(\frac{z_k}{T}\right) \ \text{에서 뽑되},\quad V^{(p)}=\text{누적확률이 } p \text{ 를 넘는 가장 작은 집합} $$</div>
+        <span class="eq__tag num">(8)</span>
+      </div>
+      <p>
+        <span class="hl">학습된 분포가 같아도 <strong>어떻게 뽑느냐</strong>에 따라 결과가 완전히 달라진다 —
+        확률을 최대로 하는 것이 <strong>좋은 텍스트를 뜻하지 않는다</strong>는 것이 이 분야의 핵심 발견이다<a class="cite" href="#ref-holtzman2019-the-curious-case" data-ref="holtzman2019-the-curious-case">4</a>.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>방법</th><th>규칙</th><th>결과</th><th>쓰는 곳</th></tr></thead>
+          <tbody>
+            <tr><td><strong>greedy</strong></td><td>$\arg\max$ 하나</td><td>결정적 · <strong>반복에 빠진다</strong></td><td>번역·요약 등 정답이 좁은 과제</td></tr>
+            <tr><td><strong>beam search</strong></td><td>상위 $b$개 가설을 유지</td><td>확률은 높지만 <strong>지루하고 반복적</strong></td><td>번역 · 음성 인식</td></tr>
+            <tr><td><strong>순수 샘플링</strong></td><td>분포 그대로</td><td>다양하지만 <strong>꼬리에서 헛소리</strong></td><td>거의 안 쓴다</td></tr>
+            <tr><td><strong>temperature</strong></td><td>$z/T$ 로 평평·뾰족하게</td><td>$T&lt;1$ 보수적, $T>1$ 모험적</td><td>다른 방법과 함께</td></tr>
+            <tr><td><strong>top-$k$</strong></td><td>상위 $k$개만 남기고 재정규화</td><td>고정 개수 — 분포 모양을 무시</td><td>$k=40$ 정도</td></tr>
+            <tr><td><strong>top-$p$ (nucleus)</strong></td><td>누적확률 $p$ 까지만</td><td><strong>후보 수가 상황에 따라 변한다</strong></td><td>$p=0.9\!\sim\!0.95$ — 오늘날의 표준</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        top-$p$ 가 top-$k$ 보다 나은 이유가 명확하다.
+        <strong>다음 단어가 거의 정해진 자리</strong>(관용구 중간)에서는 후보가 1~2개로 줄고,
+        <strong>열려 있는 자리</strong>(문단 시작)에서는 수백 개로 늘어난다 —
+        고정된 $k$ 로는 두 상황을 동시에 다룰 수 없다.
+      </p>
+      <p>
+        beam search 가 오히려 나쁜 텍스트를 만든다는 것이 반직관적이다.
+        원인은 <strong>사람의 글이 애초에 확률 최대가 아니기 때문</strong>이다 —
+        사람은 매 단어에서 놀라움(정보량)을 어느 정도 유지하며 쓴다.
+        확률만 최대화하면 <a href="4.7-information-theory.html">4.7</a>의 언어로 <strong>entropy 가 지나치게 낮은</strong> 문장이 나온다.
+      </p>
+
+      <figure class="widget" data-widget="decoding-lab">
+        <figcaption class="widget__bar">Decoding — 같은 분포, 다른 뽑기 규칙</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">분포를 뾰족하게 바꾸면 top-$p$ 의 후보 수가 <strong>알아서 줄어듭니다</strong>. top-$k$ 는 그대로입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>4장의 도구가 이 절의 어디로 갔는지 한 표로 정리한다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>4장의 도구</th><th>절</th><th>AI 에서의 이름</th></tr></thead>
+          <tbody>
+            <tr><td>chain rule $P(A\cap B)=P(A\mid B)P(B)$</td><td><a href="4.1-probability-basics.html">4.1</a></td><td><strong>자기회귀 언어 모델</strong>의 정의식 (식 2)</td></tr>
+            <tr><td>Bayes' theorem</td><td><a href="4.1-probability-basics.html">4.1</a></td><td>naive Bayes · posterior 추론 · classifier guidance</td></tr>
+            <tr><td>marginalization $\sum_y p(x,y)$</td><td><a href="4.2-random-variables.html">4.2</a></td><td><strong>잠재변수 적분</strong> (식 4)</td></tr>
+            <tr><td>역변환 샘플링</td><td><a href="4.2-random-variables.html">4.2</a></td><td>난수 생성 · 디코딩의 바닥</td></tr>
+            <tr><td>Categorical · Gaussian</td><td><a href="4.4-common-distributions.html">4.4</a></td><td>softmax 출력 · VAE 잠재변수 · diffusion 잡음</td></tr>
+            <tr><td>MLE</td><td><a href="4.6-likelihood-estimation.html">4.6</a></td><td><strong>사전학습 목적함수</strong> 그 자체</td></tr>
+            <tr><td>MAP = MLE + prior</td><td><a href="4.6-likelihood-estimation.html">4.6</a></td><td>weight decay · label smoothing</td></tr>
+            <tr><td>cross-entropy · KL</td><td><a href="4.7-information-theory.html">4.7</a></td><td>loss · 지식증류 · ELBO 의 두 번째 항</td></tr>
+            <tr><td>entropy</td><td><a href="4.7-information-theory.html">4.7</a></td><td><strong>perplexity</strong> (식 3) · 탐색 정규화</td></tr>
+            <tr><td>신뢰구간 · 검정</td><td><a href="4.8-hypothesis-testing.html">4.8</a></td><td>벤치마크 비교 · A/B 배포</td></tr>
+            <tr><td>predictive distribution</td><td><a href="4.9-uncertainty.html">4.9</a></td><td>기권 정책 · OOD 탐지</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$x_{&lt;t}$</td><td>x less than t · 앞선 토큰들</td><td>$x_1,\dots,x_{t-1}$</td><td>수열</td><td>—</td></tr>
+            <tr><td>$T$</td><td>T</td><td>수열 길이 (또는 diffusion 스텝 수)</td><td>정수</td><td>$\ge1$</td></tr>
+            <tr><td>$V$</td><td>V · vocabulary</td><td>어휘 크기</td><td>정수</td><td>보통 $10^4\!\sim\!10^5$</td></tr>
+            <tr><td>PPL</td><td>perplexity 퍼플렉서티</td><td>$e^{\text{평균 NLL}}$</td><td>scalar</td><td>$[1,V]$</td></tr>
+            <tr><td>$z$</td><td>z · latent</td><td>잠재변수</td><td>$(d_z,)$</td><td>—</td></tr>
+            <tr><td>$q_\phi(z\mid x)$</td><td>q phi · encoder · 변분 사후</td><td>근사 사후분포</td><td>분포</td><td>—</td></tr>
+            <tr><td>$p_\theta(x\mid z)$</td><td>p theta · decoder</td><td>생성 분포</td><td>분포</td><td>—</td></tr>
+            <tr><td>ELBO</td><td>elbo · evidence lower bound</td><td>$\log p(x)$ 의 하한 (식 5)</td><td>scalar</td><td>$\le\log p(x)$</td></tr>
+            <tr><td>$\boldsymbol\epsilon$</td><td>epsilon 엡실론</td><td>주입한 Gaussian 잡음</td><td>$x$ 와 같은 shape</td><td>$\mathcal{N}(0,I)$</td></tr>
+            <tr><td>$\bar\alpha_t$</td><td>alpha bar sub t</td><td>$t$ 스텝까지 남은 신호의 비율</td><td>scalar</td><td>$[0,1]$, $t$ 에 따라 감소</td></tr>
+            <tr><td>$s_t,\ a_t$</td><td>state · action</td><td>상태와 행동</td><td>—</td><td>—</td></tr>
+            <tr><td>$P$</td><td>transition matrix 전이행렬</td><td>$P_{ij}=p(s_{t+1}{=}j\mid s_t{=}i)$</td><td>$(S,S)$</td><td>각 행의 합이 1</td></tr>
+            <tr><td>$\boldsymbol\pi$</td><td>pi · stationary distribution</td><td>$\boldsymbol\pi P=\boldsymbol\pi$ 인 분포</td><td>$(S,)$</td><td>합이 1</td></tr>
+            <tr><td>$T$ (디코딩)</td><td>temperature 온도</td><td>logit 을 나누는 값</td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>$V^{(p)}$</td><td>top-p vocabulary · nucleus</td><td>누적확률 $p$ 를 넘는 최소 집합</td><td>집합</td><td>$\subseteq V$</td></tr>
+            <tr><td>$b$</td><td>beam width</td><td>유지하는 가설 개수</td><td>정수</td><td>$\ge1$</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">같은 것을 다르게 부른다</span>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>이 사이트</th><th>같은 뜻으로 쓰이는 말</th><th>주의할 점</th></tr></thead>
+            <tbody>
+              <tr><td>$T$ (수열 길이)</td><td>sequence length, context length</td><td>디코딩의 <strong>temperature $T$ 와 기호가 겹친다</strong> — 문맥으로 구분</td></tr>
+              <tr><td>top-$p$</td><td>nucleus sampling</td><td>완전히 같은 것이다</td></tr>
+              <tr><td>ELBO</td><td>변분 하한, $-$자유에너지, ELBO loss</td><td>부호가 뒤집힌 채 "loss" 로 쓰이는 경우가 많다</td></tr>
+              <tr><td>ancestral sampling</td><td>forward sampling, 조상 샘플링</td><td>자기회귀 생성이 정확히 이것이다</td></tr>
+              <tr><td>perplexity</td><td>PPL, $e^{\text{loss}}$</td><td><strong>tokenizer 가 다르면 비교 불가</strong> (<a href="4.7-information-theory.html">4.7</a> 오해 5)</td></tr>
+              <tr><td>확률적 상태전이</td><td>transition dynamics, 전이 모델</td><td>RL 에서는 "environment model" 이라고도 한다</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — 언어 모델의 목적함수는 chain rule 그 자체다</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ p(x_1,\dots,x_T)=p(x_1)\,p(x_2\mid x_1)\,p(x_3\mid x_1,x_2)\cdots $$</div>
+          <div class="derive__why"><a href="4.1-probability-basics.html">4.1</a> 식 (4) — <strong>근사가 아니라 항등식</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \log p(x_{1:T})=\sum_{t=1}^{T}\log p(x_t\mid x_{&lt;t}) $$</div>
+          <div class="derive__why">로그를 씌워 곱을 합으로 (<a href="4.6-likelihood-estimation.html">4.6</a>)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \max_\theta \sum_{\text{문서}}\log p_\theta(x_{1:T}) \;\Longleftrightarrow\; \min_\theta\ \frac{1}{N}\sum_{t}\bigl[-\log p_\theta(x_t\mid x_{&lt;t})\bigr] $$</div>
+          <div class="derive__why">MLE 를 NLL 최소화로 뒤집었다 — <strong>이것이 사전학습의 전부</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ -\log p_\theta(x_t\mid x_{&lt;t}) = H\bigl(\text{one-hot},\ p_\theta\bigr) $$</div>
+          <div class="derive__why">정답이 one-hot 이므로 <strong>cross-entropy 와 같은 식</strong> (<a href="4.7-information-theory.html">4.7</a> 예제 ⑤)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{PPL}=\exp\bigl(\text{평균 NLL}\bigr)=2^{\,\text{평균 NLL (bit)}} $$</div>
+          <div class="derive__why">식 (3) — <strong>entropy 를 지수로 되돌린 값</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{균등 예측}:\ p=1/V \Rightarrow \mathrm{PPL}=V $$</div>
+          <div class="derive__why">아무것도 모르면 <strong>어휘 크기 그대로</strong> — 성능의 출발선</div>
+        </div>
+      </div>
+
+      <h3>유도 2 — ELBO 는 왜 하한인가</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \log p_\theta(x)=\log\int p_\theta(x\mid z)p(z)\,dz $$</div>
+          <div class="derive__why">식 (4). <strong>적분이 로그 안에 있어</strong> 계산이 안 된다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ =\log\int q_\phi(z\mid x)\,\frac{p_\theta(x\mid z)p(z)}{q_\phi(z\mid x)}\,dz = \log\ \mathbb{E}_{q_\phi}\!\left[\frac{p_\theta(x\mid z)p(z)}{q_\phi(z\mid x)}\right] $$</div>
+          <div class="derive__why">$q_\phi$ 를 <strong>곱하고 나눴다</strong> — importance sampling 의 형태</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \ge\ \mathbb{E}_{q_\phi}\!\left[\log\frac{p_\theta(x\mid z)p(z)}{q_\phi(z\mid x)}\right] $$</div>
+          <div class="derive__why"><strong>Jensen 부등식</strong> — $\log$ 가 오목이라 기댓값을 안으로 넣으면 작아진다 (<a href="4.3-expectation-variance.html">4.3</a> 오해 1)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ =\mathbb{E}_{q_\phi}\bigl[\log p_\theta(x\mid z)\bigr]-D_{\mathrm{KL}}\bigl(q_\phi(z\mid x)\|p(z)\bigr) $$</div>
+          <div class="derive__why">로그를 쪼개면 뒤가 <strong>KL 의 정의</strong> — 식 (5) 완성</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \log p_\theta(x)-\mathrm{ELBO}=D_{\mathrm{KL}}\bigl(q_\phi(z\mid x)\,\|\,p_\theta(z\mid x)\bigr)\ \ge 0 $$</div>
+          <div class="derive__why"><strong>간격이 정확히 KL</strong> — $q$ 가 참 사후분포와 같아지면 하한이 딱 맞는다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{ELBO 를 올리는 것} = \log p(x) \text{ 를 올리거나 } q \text{ 를 참 사후에 가깝게 하거나} $$</div>
+          <div class="derive__why"><strong>하나의 목적함수가 두 일을 동시에</strong> 한다 — $\theta$ 와 $\phi$ 를 함께 학습하는 이유</div>
+        </div>
+      </div>
+
+      <h3>유도 3 — Markov chain 의 정상분포</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \boldsymbol\pi_{t+1}=\boldsymbol\pi_t P $$</div>
+          <div class="derive__why">한 스텝 = 행벡터에 전이행렬을 곱하는 것 (<a href="../ch02/2.4-matrix-operations.html">2.4</a>)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \boldsymbol\pi_t=\boldsymbol\pi_0 P^{\,t} $$</div>
+          <div class="derive__why">반복하면 거듭제곱 — <a href="../ch02/2.7-eigenvalues.html">2.7</a>의 반복 선형변환</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \boldsymbol\pi P=\boldsymbol\pi \quad\Longleftrightarrow\quad \boldsymbol\pi \text{ 는 } P^\top \text{ 의 eigenvalue 1 에 대한 eigenvector} $$</div>
+          <div class="derive__why">정상분포의 정의를 고유벡터 문제로 바꿨다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P \text{ 의 각 행 합이 1} \Rightarrow \lambda=1 \text{ 이 항상 eigenvalue} $$</div>
+          <div class="derive__why">$P\mathbf{1}=\mathbf{1}$ 이므로. <strong>정상분포는 반드시 존재</strong>한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ |\lambda_2|&lt;1 \Rightarrow \boldsymbol\pi_t\to\boldsymbol\pi \ \text{ (속도는 } |\lambda_2|^t) $$</div>
+          <div class="derive__why">두 번째로 큰 eigenvalue 가 <strong>수렴 속도(mixing time)</strong> 를 정한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{MCMC}:\ \text{원하는 } p \text{ 가 } \boldsymbol\pi \text{ 가 되도록 } P \text{ 를 설계한다} $$</div>
+          <div class="derive__why">문제를 <strong>거꾸로</strong> 푼 것 — 이것이 Metropolis–Hastings 의 아이디어</div>
+        </div>
+      </div>
+
+      <details>
+        <summary>reparameterization trick 이 필요한 이유</summary>
+        <p>
+          $\nabla_\phi\,\mathbb{E}_{q_\phi(z)}[f(z)]$ 를 구해야 하는데,
+          기댓값을 취하는 <strong>분포 자체가 $\phi$ 에 의존</strong>하므로
+          gradient 를 안으로 넣을 수 없다. 표본을 뽑는 연산은 미분 가능하지 않다.
+        </p>
+        <p>
+          $z=\mu_\phi+\sigma_\phi\varepsilon$, $\varepsilon\sim\mathcal{N}(0,1)$ 로 쓰면
+          기댓값이 $\mathbb{E}_{\varepsilon}[f(\mu_\phi+\sigma_\phi\varepsilon)]$ 가 되어
+          <strong>$\varepsilon$ 의 분포는 $\phi$ 와 무관</strong>해진다.
+          이제 $\nabla_\phi$ 를 안으로 넣어 $f$ 를 통해 <strong>보통의 backprop</strong> 으로 흘릴 수 있다.
+        </p>
+        <p>
+          이 기법이 통하는 조건은 <strong>"위치·척도 변환으로 분리 가능한 연속 분포"</strong> 다.
+          이산 변수에는 직접 못 쓰기 때문에 Gumbel-softmax 같은 연속 완화가 따로 필요하다.
+          <a href="4.9-uncertainty.html">4.9</a>의 Bayes by Backprop 도 정확히 같은 장치를 쓴다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① 언어 모델 확률과 perplexity</h3>
+      <p>"the cat sat" 세 token 에 대해 model 이 다음 확률을 냈다: $p(\text{the})=0.05$, $p(\text{cat}\mid\text{the})=0.02$, $p(\text{sat}\mid\text{the cat})=0.10$.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ p(\text{문장})=0.05\times0.02\times0.10=0.0001 $$</div>
+          <div class="derive__why">chain rule (식 2) — <strong>세 token 만에 $10^{-4}$</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \log p=\ln0.05+\ln0.02+\ln0.10=-2.99573-3.91202-2.30259=-9.21034 $$</div>
+          <div class="derive__why">로그로 바꾸면 <strong>더하기</strong> — 길이가 1000 이어도 underflow 가 없다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{평균 NLL}=\frac{9.21034}{3}=3.07011\ \text{nat} $$</div>
+          <div class="derive__why">token 당 loss — <strong>프레임워크가 출력하는 값</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{PPL}=e^{3.07011}=21.54 $$</div>
+          <div class="derive__why">검산: $(0.0001)^{-1/3}=1/0.046416=21.54$ ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{어휘 } V=50{,}000 \text{ 에서 균등 예측}:\ \mathrm{PPL}=50{,}000 $$</div>
+          <div class="derive__why">21.5 는 <strong>2,300배 좁힌 것</strong> — 출발선을 알아야 값이 읽힌다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 3.07011\ \text{nat}\times\frac{1}{\ln2}=4.4290\ \text{bit} $$</div>
+          <div class="derive__why">token 당 4.43비트 — <a href="4.7-information-theory.html">4.7</a>의 부호 길이로 읽으면 이렇다</div>
+        </div>
+      </div>
+
+      <h3>② 디코딩 — 같은 분포에서 세 가지 방법</h3>
+      <p>다음 token 의 확률이 $(0.40,\ 0.25,\ 0.15,\ 0.10,\ 0.06,\ 0.04)$ 라 하자.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>token</th><th>원래 $p$</th><th>누적</th><th>top-$k$=2 후</th><th>top-$p$=0.9 후</th><th>$T$=0.7 후</th></tr></thead>
+          <tbody>
+            <tr><td>A</td><td class="num">0.40</td><td class="num">0.40</td><td class="num">0.6154</td><td class="num">0.4444</td><td class="num">0.5003</td></tr>
+            <tr><td>B</td><td class="num">0.25</td><td class="num">0.65</td><td class="num">0.3846</td><td class="num">0.2778</td><td class="num">0.2556</td></tr>
+            <tr><td>C</td><td class="num">0.15</td><td class="num">0.80</td><td class="num">—</td><td class="num">0.1667</td><td class="num">0.1232</td></tr>
+            <tr><td>D</td><td class="num">0.10</td><td class="num"><strong>0.90</strong></td><td class="num">—</td><td class="num">0.1111</td><td class="num">0.0689</td></tr>
+            <tr><td>E</td><td class="num">0.06</td><td class="num">0.96</td><td class="num">—</td><td class="num">—</td><td class="num">0.0333</td></tr>
+            <tr><td>F</td><td class="num">0.04</td><td class="num">1.00</td><td class="num">—</td><td class="num">—</td><td class="num">0.0187</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{top-}k{=}2:\ \frac{0.40}{0.65}=0.6154,\quad \frac{0.25}{0.65}=0.3846 $$</div>
+          <div class="derive__why">상위 2개만 남기고 <strong>합 0.65 로 재정규화</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{top-}p{=}0.9:\ \text{누적이 0.90 에 닿는 D 까지 4개},\quad \frac{(0.40,0.25,0.15,0.10)}{0.90} $$</div>
+          <div class="derive__why">$=(0.4444,\ 0.2778,\ 0.1667,\ 0.1111)$. 검산: 합 = 1.0000 ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ T{=}0.7:\ p_k^{1/T}=p_k^{1.4286},\quad 0.40^{1.4286}=e^{1.4286\ln0.4}=e^{-1.3090}=0.2701 $$</div>
+          <div class="derive__why">temperature 는 <strong>logit 을 나누는 것</strong> = 확률을 $1/T$ 제곱하는 것</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \textstyle\sum p_k^{1.4286}=0.2701+0.1380+0.0665+0.0372+0.0180+0.0101=0.5399 $$</div>
+          <div class="derive__why">정규화 상수</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 0.2701/0.5399=0.5003 \quad(\text{원래 }0.40 \text{ 에서 상승}) $$</div>
+          <div class="derive__why">$T&lt;1$ 이면 <strong>큰 것이 더 커진다</strong> — 보수적</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{분포가 } (0.9,0.04,\dots) \text{ 로 뾰족하면 top-}p{=}0.9 \text{ 의 후보는 } 1\text{개} $$</div>
+          <div class="derive__why"><strong>top-$p$ 는 후보 수가 상황에 맞춰 변한다</strong> — top-$k$ 와의 결정적 차이</div>
+        </div>
+      </div>
+
+      <h3>③ Markov chain — 정상분포로 수렴</h3>
+      <p>날씨 model: 맑음 → 맑음 0.9, 맑음 → 비 0.1, 비 → 맑음 0.5, 비 → 비 0.5. 오늘은 맑음이다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ P=\begin{pmatrix}0.9 & 0.1\\ 0.5 & 0.5\end{pmatrix},\qquad \boldsymbol\pi_0=(1,\ 0) $$</div>
+          <div class="derive__why">행이 "현재", 열이 "다음"</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \boldsymbol\pi_1=(1,0)P=(0.9,\ 0.1) $$</div>
+          <div class="derive__why">첫 행을 그대로 읽으면 된다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \boldsymbol\pi_2=(0.9\!\cdot\!0.9+0.1\!\cdot\!0.5,\ \ 0.9\!\cdot\!0.1+0.1\!\cdot\!0.5)=(0.86,\ 0.14) $$</div>
+          <div class="derive__why">$0.81+0.05=0.86$, $0.09+0.05=0.14$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \boldsymbol\pi_3=(0.774+0.07,\ 0.086+0.07)=(0.844,\ 0.156) $$</div>
+          <div class="derive__why">이미 <strong>거의 수렴</strong>했다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \boldsymbol\pi P=\boldsymbol\pi:\ 0.9\pi_1+0.5\pi_2=\pi_1 \Rightarrow 0.1\pi_1=0.5\pi_2 \Rightarrow \pi_1=5\pi_2 $$</div>
+          <div class="derive__why">정상분포 방정식</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \pi_1+\pi_2=1 \Rightarrow \boldsymbol\pi=\left(\tfrac56,\ \tfrac16\right)=(0.8333,\ 0.1667) $$</div>
+          <div class="derive__why">$\pi_3=0.844$ 가 이미 근접 ✓ — <strong>3스텝 만에</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lambda_2=0.9+0.5-1=0.4 \ \Rightarrow\ \text{오차가 스텝마다 } 0.4 \text{ 배} $$</div>
+          <div class="derive__why">$2\times2$ 에서 $\lambda_2=\mathrm{tr}(P)-1$. 검산: $(0.9-0.8333)/(1-0.8333)=0.4$ ✓</div>
+        </div>
+      </div>
+
+      <h3>④ VAE 의 KL 항을 손으로</h3>
+      <p>인코더가 $q(z\mid x)=\mathcal{N}(0.5,\ 0.8^2)$ 를 내놓고 prior 는 $\mathcal{N}(0,1)$ 이다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ D_{\mathrm{KL}}\bigl(\mathcal{N}(\mu,\sigma^2)\|\mathcal{N}(0,1)\bigr)=\tfrac12\bigl(\mu^2+\sigma^2-1-\log\sigma^2\bigr) $$</div>
+          <div class="derive__why">두 Gaussian 사이 KL 의 닫힌 형태 — <strong>적분이 필요 없다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mu^2=0.25,\quad \sigma^2=0.64,\quad \log0.64=-0.44629 $$</div>
+          <div class="derive__why">각 항을 먼저 계산</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ D_{\mathrm{KL}}=\tfrac12(0.25+0.64-1+0.44629)=\tfrac12(0.33629)=0.16814\ \text{nat} $$</div>
+          <div class="derive__why">$z$ 차원 하나당 0.168 nat 의 벌점</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mu=0,\ \sigma=1:\ \tfrac12(0+1-1-0)=0 $$</div>
+          <div class="derive__why">prior 와 같으면 <strong>벌점 0</strong> ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mu=3,\ \sigma=0.1:\ \tfrac12(9+0.01-1+4.60517)=6.3076\ \text{nat} $$</div>
+          <div class="derive__why">멀리 가고 뾰족해지면 <strong>벌점이 커진다</strong> — 구멍 난 잠재공간을 막는 힘</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ d_z=64 \text{ 차원}: \ 64\times0.168=10.76\ \text{nat} $$</div>
+          <div class="derive__why">차원마다 더해지므로 <strong>KL 항이 금방 커진다</strong> — posterior collapse 의 배경</div>
+        </div>
+      </div>
+
+      <h3>⑤ 샘플링 — 수용률과 Gumbel-max</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{rejection}:\ f=\mathcal{N}(0,1),\ g=\mathrm{Uniform}(-3,3),\ M=\max\frac{f}{g} $$</div>
+          <div class="derive__why">제안분포를 $M$배 부풀려 $f$ 를 덮는다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ M=\frac{f(0)}{1/6}=\frac{0.39894}{0.16667}=2.3937 \ \Rightarrow\ \text{수용률}=\frac{1}{M}=0.4178 $$</div>
+          <div class="derive__why"><strong>절반 이상을 버린다</strong> — 1차원인데도 이 정도다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ d \text{ 차원으로 늘리면}:\ M \propto (2.3937)^{d},\quad d{=}10 \Rightarrow \text{수용률}\approx 1.6\times10^{-4} $$</div>
+          <div class="derive__why"><strong>고차원에서 rejection 이 못 쓰이는 이유</strong> — 지수적으로 나빠진다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Gumbel-max}:\ \arg\max_k\ \bigl(\log p_k+g_k\bigr),\quad g_k\sim\mathrm{Gumbel}(0,1) $$</div>
+          <div class="derive__why">이 argmax 가 <strong>정확히 Categorical($p$)</strong> 을 따른다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ g=-\log(-\log u),\quad u\sim\mathrm{Uniform}(0,1) $$</div>
+          <div class="derive__why">Gumbel 표본은 <strong>역변환</strong>으로 만든다 (<a href="4.2-random-variables.html">4.2</a>)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{softmax}\!\left(\frac{\log p+g}{\tau}\right) \ \xrightarrow{\tau\to0}\ \text{one-hot} $$</div>
+          <div class="derive__why">Gumbel-softmax — <strong>argmax 를 미분 가능하게</strong> 완화한 것</div>
+        </div>
+      </div>
+
+      <figure class="widget" data-widget="markov-lab">
+        <figcaption class="widget__bar">Markov Chain — 전이행렬을 고치면 정상분포가 어디로</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">시작 상태를 무엇으로 두든 <strong>같은 곳으로 수렴합니다</strong>. 수렴 속도는 두 번째 eigenvalue 가 정합니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>확률로 본 AI 지도</strong> · <strong>ELBO</strong> ·
+        <strong>디코딩</strong> · <strong>Markov chain</strong> — 에 이어,
+        아래에서 <strong>자기회귀 생성이 실제로 어떻게 굴러가는지</strong>와
+        <strong>샘플링 방법들의 효율</strong>을 확인한다.
+      </p>
+
+      <figure class="widget" data-widget="autoregressive">
+        <figcaption class="widget__bar">Autoregressive Generation — 한 칸씩 뽑아 이어 붙이기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$T$ 를 낮추면 같은 문장만 반복되고, 높이면 갈수록 무너집니다. <strong>확률이 높은 것이 좋은 것은 아닙니다</strong>.</p>
+        </div>
+      </figure>
+
+      <figure class="widget" data-widget="sampling-methods">
+        <figcaption class="widget__bar">Rejection Sampling — 고차원에서 왜 못 쓰나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">차원을 올리면 수용률이 <strong>지수적으로</strong> 떨어집니다. MCMC 나 ancestral 이 필요한 이유입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"확률이 가장 높은 문장이 가장 좋은 문장이다."</p>
+        <p>
+          <strong>실제로는</strong> beam search 로 확률을 최대화하면 <strong>지루하고 반복적인 텍스트</strong>가 나온다<a class="cite" href="#ref-holtzman2019-the-curious-case" data-ref="holtzman2019-the-curious-case">4</a>.
+          사람이 쓴 글은 매 시점의 확률이 <strong>들쭉날쭉하며 결코 최대가 아니다</strong> —
+          늘 가장 뻔한 단어만 고르면 정보량이 0 에 가까워져 읽을 가치가 없어진다.
+          <a href="4.7-information-theory.html">4.7</a>의 언어로 하면 <strong>목표는 확률 최대가 아니라 사람 글과 비슷한 entropy</strong> 다.
+          그래서 열린 생성에서는 표본을 뽑되 꼬리만 자르는 top-$p$ 가 표준이 되었다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"perplexity 가 낮은 model 이 항상 더 좋다."</p>
+        <p>
+          <strong>실제로는</strong> 비교 조건이 맞아야 한다.
+          <strong>tokenizer 가 다르면 token 당 PPL 을 비교할 수 없고</strong>(잘게 쪼갤수록 낮아진다),
+          평가 dataset·문맥 길이·전처리가 조금만 달라도 값이 흔들린다.
+          더 근본적으로 <strong>PPL 은 지시 따르기·추론·안전성 같은 것을 재지 않는다</strong> —
+          RLHF 를 거친 model 은 대개 PPL 이 <em>나빠지지만</em> 사람 선호도는 크게 좋아진다.
+          공정하게 비교하려면 문자당 비트(bits-per-character)로 환산하거나 downstream 성능을 봐야 한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"VAE 의 KL 항은 정규화일 뿐이니 가중치를 0 으로 둬도 된다."</p>
+        <p>
+          <strong>실제로는</strong> KL 항을 없애면 <strong>단순한 autoencoder</strong> 가 되어
+          잠재공간이 구멍투성이가 된다 — $p(z)$ 에서 뽑은 $z$ 를 디코딩하면 아무 의미 없는 출력이 나온다.
+          <strong>KL 항이야말로 "생성 model 로 쓸 수 있게" 만드는 부분</strong>이다.
+          반대 방향의 문제도 있다 — 가중치를 키우면(β-VAE)
+          디코더가 $z$ 를 무시하고 KL 을 0 으로 만들어 버리는 <strong>posterior collapse</strong> 가 일어난다.
+          예제 ④에서 봤듯 <strong>차원마다 KL 이 더해져</strong> 이 압력이 생각보다 세다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"temperature 를 0 으로 두면 model 이 가장 정확해진다."</p>
+        <p>
+          <strong>실제로는</strong> $T\to0$ 은 greedy 와 같아지고, 그것이 <strong>과제에 따라 나쁘다</strong>.
+          정답이 하나인 과제(번역·코드 실행 결과)에서는 낮은 $T$ 가 맞지만,
+          <strong>추론 과제에서는 여러 표본을 뽑아 다수결하는 self-consistency 가 greedy 를 크게 앞선다</strong> —
+          한 번의 실수가 전체를 망치는 긴 사슬에서는 <strong>다양성이 보험</strong>이 된다.
+          창작에서는 말할 것도 없다. <strong>$T$ 는 성능 손잡이가 아니라 과제에 맞추는 설정</strong>이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"model 이 확률을 출력하니 그것이 곧 신뢰도다."</p>
+        <p>
+          <strong>실제로는</strong> 두 가지가 겹쳐 있다.
+          첫째, <a href="4.9-uncertainty.html">4.9</a>에서 본 calibration 문제 — 확률이 실제 빈도와 맞지 않는다.
+          둘째, <strong>언어 모델의 token 확률은 "이 단어가 다음에 올 법한 정도"이지 "이 내용이 사실일 확률"이 아니다</strong>.
+          자신 있게 틀린 사실을 말할 때도 token 확률은 높다 — 문법적으로·문체적으로 자연스럽기 때문이다.
+          사실성 신뢰도를 얻으려면 <strong>여러 표본의 일치도</strong>나 <strong>외부 검증(검색·실행)</strong> 이 필요하다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–⑤ 를 검산한다.</p>
+      <details>
+        <summary>NumPy — perplexity · 디코딩 · 정상분포 · Gumbel (20줄)</summary>
+<pre><code>import numpy as np
+
+p = np.array([0.05, 0.02, 0.10])
+nll = -np.log(p).mean()
+print(nll.round(5), np.exp(nll).round(3), (p.prod() ** (-1 / 3)).round(3))  # 3.07011 21.543 21.543
+
+q = np.array([.40, .25, .15, .10, .06, .04])
+k2 = q[:2] / q[:2].sum()
+cum = q.cumsum(); keep = q[:np.searchsorted(cum, 0.9) + 1]
+print(k2.round(4), (keep / keep.sum()).round(4))          # top-k=2 / top-p=0.9 (4개)
+t = q ** (1 / 0.7); print((t / t.sum()).round(4))         # T=0.7 → 0.5003 ...
+
+P = np.array([[0.9, 0.1], [0.5, 0.5]])
+v = np.array([1.0, 0.0])
+for _ in range(3): v = v @ P
+w, V = np.linalg.eig(P.T)
+pi = np.real(V[:, np.argmin(abs(w - 1))]); pi = pi / pi.sum()
+print(v.round(4), pi.round(4), sorted(abs(w))[0].round(3))   # [.844 .156] [.8333 .1667] 0.4
+
+mu, s = 0.5, 0.8
+print((0.5 * (mu**2 + s**2 - 1 - np.log(s**2))).round(5))    # 0.16814  VAE 의 KL
+
+rng = np.random.default_rng(0)
+g = -np.log(-np.log(rng.random((200000, 6))))
+idx = (np.log(q) + g).argmax(1)
+print(np.bincount(idx, minlength=6) / 200000)                # q 와 거의 같다 (Gumbel-max)
+</code></pre>
+        <p>
+          <small>
+            마지막 블록이 <strong>Gumbel-max trick</strong> 이다 —
+            logit 에 Gumbel 잡음을 더해 argmax 를 취하면 원래 확률대로 뽑힌다.
+            <code>np.linalg.eig</code> 로 구한 정상분포와 3스텝 반복 결과가
+            소수 둘째 자리에서 이미 맞는 것도 확인된다(예제 ③).
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            token 당 평균 NLL 이 2.0 nat 인 model 의 perplexity 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 7.39</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>4.0</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>약 2.72</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\mathrm{PPL}=e^{2.0}=7.389$ (식 3).
+            <strong>나</strong>는 밑을 2 로 잘못 쓴 것($2^2=4$)으로,
+            <strong>loss 가 nat 인지 bit 인지 확인하지 않으면</strong> 생기는 오류다
+            (bit 이라면 $2^{2}=4$ 가 맞다).
+            "평균 7.4개 중에서 고르는 셈"으로 읽으면 값이 직관적으로 잡힌다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            확률 $(0.5,\ 0.3,\ 0.12,\ 0.08)$ 에서 top-$p$=0.8 을 적용하면 남는 후보 수와 첫 확률은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>2개, 0.625</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>3개, 0.543</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>2개, 0.5</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            누적이 $0.5,\ 0.8$ 이므로 두 번째에서 <strong>정확히 0.8 에 닿아</strong> 2개가 남고,
+            재정규화하면 $0.5/0.8=0.625$ 다.
+            <strong>다</strong>는 재정규화를 잊은 것 — 잘라낸 뒤에는 <strong>반드시 합을 1 로 되돌려야</strong> 한다.
+            분포가 더 평평했다면 같은 $p=0.8$ 로도 후보가 훨씬 많아진다는 것이 top-$p$ 의 요점이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $q(z\mid x)=\mathcal{N}(0,\ 1)$ 이고 prior 도 $\mathcal{N}(0,1)$ 이면 ELBO 의 KL 항은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>0 — 두 분포가 같다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>1</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0.5</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\tfrac12(0+1-1-\log1)=0$ (예제 ④).
+            KL 은 두 분포가 같을 때만 0 이다(<a href="4.7-information-theory.html">4.7</a> 유도 2).
+            다만 이 상태는 <strong>인코더가 $x$ 를 전혀 담지 않은</strong> 것이기도 하다 —
+            KL 이 0 인 것이 언제나 좋은 신호는 아니며, 그것이 posterior collapse 다(오해 3).
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            자기회귀 언어 모델이 chain rule 을 쓰는 것은 어떤 종류의 가정인가?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>가정이 아니다 — chain rule 은 항등식이고, 근사는 각 조건부를 신경망으로 표현하는 데서만 생긴다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>Markov 가정 — 앞 몇 개만 본다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>독립 가정 — token 들이 서로 독립이다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $p(x_{1:T})=\prod p(x_t\mid x_{&lt;t})$ 는 <strong>어떤 분포에서도 성립하는 항등식</strong>이다(유도 1).
+            <strong>나</strong>는 n-gram model 이 <em>추가로</em> 얹는 가정이고,
+            Transformer 는 문맥 전체를 보므로 그 가정이 없다(문맥 길이 제한은 있다).
+            <strong>다</strong>였다면 단어 순서가 아무 의미가 없어진다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            reparameterization trick 이 필요한 이유는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>표본을 뽑는 연산에는 gradient 가 흐르지 않아서 — 무작위성을 $\varepsilon$ 으로 분리한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>계산 속도를 높이려고</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>잠재변수의 차원을 줄이려고</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\mathbb{E}_{q_\phi}[f(z)]$ 의 기댓값을 취하는 <strong>분포 자체가 $\phi$ 에 의존</strong>해
+            $\nabla_\phi$ 를 안으로 넣을 수 없다.
+            $z=\mu_\phi+\sigma_\phi\varepsilon$ 으로 쓰면 무작위성이 $\varepsilon$ 에 격리되어
+            <strong>보통의 backprop</strong> 이 통한다(접힌 상자).
+            이산 변수에는 직접 못 쓰기 때문에 Gumbel-softmax 같은 완화가 따로 필요하다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            LLM 이 어떤 사실을 매우 높은 token 확률로 서술했다. 옳은 해석은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>"이 단어가 이어지기에 자연스럽다"는 뜻일 뿐 사실일 확률이 높다는 뜻이 아니다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>그 내용이 사실일 확률이 높다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>calibration 만 하면 사실 확률로 읽을 수 있다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            학습 목적함수가 <strong>다음 token 예측</strong>이므로 확률이 재는 것은 언어적 자연스러움이다(오해 5).
+            그럴듯한 거짓말은 문법·문체가 자연스러워 <strong>token 확률이 오히려 높다</strong>.
+            <strong>다</strong>도 부족하다 — calibration 은 "다음 token 이 맞을 확률"을 정직하게 만들 뿐
+            <strong>사실성이라는 다른 대상</strong>으로 옮겨 주지는 못한다.
+            여러 표본의 일치도나 외부 검증(검색·코드 실행)이 필요하다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong>11장 생성 모델</strong> — VAE·GAN·diffusion·flow 를 각각 깊이 다룬다. 이 절의 표가 그 지도다.</li>
+        <li><strong>12·13장 Transformer · LLM</strong> — 식 (2)의 조건부를 어떻게 표현하느냐가 아키텍처의 주제다.</li>
+        <li><strong>24·25장 강화학습 · World Model</strong> — 식 (7)의 전이 model 을 학습하고 굴린다.</li>
+        <li><strong>5장 전통적 머신러닝</strong> — 판별 model 과 생성 model 의 구분이 여기서 본격화된다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-bengio2003-neural-probabilistic-lm" data-ref="bengio2003-neural-probabilistic-lm">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Bengio, Y., Ducharme, R., Vincent, P. &amp; Jauvin, C. (2003). <em>A Neural Probabilistic Language Model</em>. JMLR, 3, 1137–1155.</span>
+          <span class="ref__where">§1–2 — 언어 모델을 <strong>chain rule 로 쪼갠 조건부확률의 곱</strong>으로 정식화하고 각 조건부를 신경망으로 표현하자는 제안(식 2, 유도 1). §3 — perplexity 를 평가 지표로 쓰는 방식과 n-gram 대비 이득. 오늘날의 모든 자기회귀 언어 모델이 이 구조를 그대로 쓴다</span>
+          <a class="ref__link" href="https://www.jmlr.org/papers/v3/bengio03a.html">jmlr.org</a>
+        </li>
+        <li class="ref" id="ref-kingma2013-auto-encoding-variational" data-ref="kingma2013-auto-encoding-variational">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Kingma, D. P. &amp; Welling, M. (2014). <em>Auto-Encoding Variational Bayes</em>. ICLR 2014.</span>
+          <span class="ref__where">§2.1–2.2 — 잠재변수 적분(식 4)이 다루기 어렵다는 문제 제기와 ELBO 유도(식 5, 유도 2). $\log p(x)$ 와 ELBO 의 간격이 $D_{\mathrm{KL}}(q\|p(z\mid x))$ 라는 결과가 §2.2 에 있다. §2.3 — <strong>reparameterization trick</strong>(접힌 상자). 부록 B — 두 Gaussian 사이 KL 의 닫힌 형태(예제 ④)</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1312.6114">arXiv:1312.6114</a>
+        </li>
+        <li class="ref" id="ref-ho2020-denoising-diffusion-probabilistic" data-ref="ho2020-denoising-diffusion-probabilistic">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Ho, J., Jain, A. &amp; Abbeel, P. (2020). <em>Denoising Diffusion Probabilistic Models</em>. NeurIPS 2020.</span>
+          <span class="ref__where">§2 — 정방향 잡음 과정과 역방향 생성을 잠재변수 model 로 놓고 ELBO 를 쓴 정식화. §3.2 — 그 ELBO 를 정리하면 <strong>잡음을 맞히는 단순한 MSE 회귀</strong>가 된다는 유도(식 6). 식 (4)의 $x_t=\sqrt{\bar\alpha_t}x_0+\sqrt{1-\bar\alpha_t}\epsilon$ 이 임의 시점으로 한 번에 건너뛰게 해 주는 핵심 성질이다</span>
+          <a class="ref__link" href="https://arxiv.org/abs/2006.11239">arXiv:2006.11239</a>
+        </li>
+        <li class="ref" id="ref-holtzman2019-the-curious-case" data-ref="holtzman2019-the-curious-case">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Holtzman, A., Buys, J., Du, L., Forbes, M. &amp; Choi, Y. (2020). <em>The Curious Case of Neural Text Degeneration</em>. ICLR 2020.</span>
+          <span class="ref__where">§2–3 — beam search 로 확률을 최대화하면 반복적이고 지루한 텍스트가 나오며, <strong>사람이 쓴 글의 시점별 확률은 결코 최대가 아니라는</strong> 그림(오해 1). §4 — top-$p$(nucleus) 의 정의: 누적확률이 $p$ 를 넘는 <strong>가장 작은</strong> 집합에서 뽑고 재정규화(식 8, 예제 ②). §5.3 — $p\in[0.9,1)$ 이 사람 분포에 가장 가깝다는 실측</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1904.09751">arXiv:1904.09751</a>
+        </li>
+        <li class="ref" id="ref-rabiner1989-hmm-tutorial" data-ref="rabiner1989-hmm-tutorial">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Rabiner, L. R. (1989). <em>A Tutorial on Hidden Markov Models and Selected Applications in Speech Recognition</em>. Proceedings of the IEEE, 77(2), 257–286.</span>
+          <span class="ref__where">§II — Markov 성질과 전이행렬, 정상분포의 정의(식 7, 유도 3). §III — HMM 의 세 가지 기본 문제(평가·복호·학습)와 forward-backward·Viterbi·Baum-Welch. 상태가 숨어 있을 때 관측 확률을 <strong>모든 상태 경로에 대해 주변화</strong>하는 구조가 이 절 식 (4)의 잠재변수 적분과 같은 형태다</span>
+          <a class="ref__link" href="https://ieeexplore.ieee.org/document/18626">ieeexplore.ieee.org</a>
+        </li>
+        <li class="ref" id="ref-murphy2022-pml" data-ref="murphy2022-pml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Murphy, K. P. (2022). <em>Probabilistic Machine Learning: An Introduction</em>. MIT Press.</span>
+          <span class="ref__where">9.3절 — 판별 model 과 생성 model 의 대비('확률적 분류' 표). 11.7절 — 몬테카를로 근사와 <strong>rejection·importance sampling 의 수용률이 차원에 따라 지수적으로 나빠진다</strong>는 계산(예제 ⑤, 위젯 6). 20장 — 잠재변수 model 과 VAE. 4.6.8절 — Gumbel-max trick 과 이산 표본의 재매개변수화</span>
+          <a class="ref__link" href="https://probml.github.io/pml-book/book1.html">probml.github.io</a>
+        </li>
+        <li class="ref" id="ref-jurafsky2025-slp3" data-ref="jurafsky2025-slp3">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Jurafsky, D. &amp; Martin, J. H. <em>Speech and Language Processing</em> (3rd ed. draft).</span>
+          <span class="ref__where">3장 N-gram Language Models — chain rule 로 문장 확률을 쓰는 방식, perplexity 의 정의와 <strong>어휘·tokenizer 가 다르면 비교할 수 없다</strong>는 경고(오해 2), 그리고 smoothing 이 필요한 이유(<a href="4.6-likelihood-estimation.html">4.6</a> 예제 ④와 이어진다). 10장 — greedy·beam·temperature·top-$k$·top-$p$ 디코딩의 비교표</span>
+          <a class="ref__link" href="https://web.stanford.edu/~jurafsky/slp3/">web.stanford.edu/~jurafsky/slp3</a>
+        </li>
+        <li class="ref" id="ref-karpathy-zero2hero" data-ref="karpathy-zero2hero">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Karpathy, A. <em>Neural Networks: Zero to Hero</em> — building makemore · Let's build GPT.</span>
+          <span class="ref__where">'makemore' 1편 — 이름 생성 model 을 <strong>bigram 확률표에서 시작해</strong> 자기회귀 샘플링과 NLL·perplexity 를 손으로 구현하는 과정(예제 ①, 위젯 5). 'Let's build GPT' — 학습 loop 가 곧 식 (2)의 NLL 최소화임을 코드로 보여 주고, 생성부에서 temperature 와 <code>multinomial</code> 샘플링을 직접 구현한다</span>
+          <a class="ref__link" href="https://karpathy.ai/zero-to-hero.html">karpathy.ai/zero-to-hero</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+function mkRand(seed) {
+  var s = seed || 12345;
+  return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+}
+function gauss(rnd) {
+  var u = Math.max(1e-9, rnd()), v = rnd();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+/* 플롯 영역 배경 — 축 라벨이 놓이는 '칸'을 눈에 보이게 만든다.
+   (tools/check-visual.mjs 의 '칸초과' 는 같은 그룹의 첫 rect 를 칸으로 본다) */
+function panel(p) {
+  p.add(VIZ.el('rect', {
+    x: p.pad.l, y: p.pad.t, width: p.iw, height: p.ih,
+    fill: 'var(--ink-3)', 'fill-opacity': 0.03, stroke: 'none'
+  }));
+  return p;
+}
+
+/* ============================================================
+   위젯 1 — 확률로 본 AI 지도
+   ============================================================ */
+WIDGETS.register('prob-map', function (root, ctx) {
+  var pick = 'cls';
+
+  var W = 460, H0 = 280;
+  var svg = VIZ.el('svg', { viewBox: '0 0 ' + W + ' ' + H0, role: 'img' });
+  ctx.stage.appendChild(svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'dist', label: '표현하는 분포' },
+    { key: 'do', label: '그 분포로 하는 일' },
+    { key: 'tool', label: '4장의 어느 도구' },
+    { key: 'loss', label: '학습 목적함수' }
+  ]);
+
+  var nodes = {
+    cls:  { x: 40,  y: 40,  w: 120, t: '확률적 분류',
+            dist: 'p(y | x) — Categorical', do: '가장 큰 것을 고른다',
+            tool: '4.4 Categorical · 4.6 MLE', loss: 'cross-entropy = NLL' },
+    lm:   { x: 176, y: 40,  w: 120, t: '언어 모델',
+            dist: 'p(x_t | x_<t) 의 곱', do: '이어서 뽑기를 반복',
+            tool: '4.1 chain rule · 4.7 entropy', loss: '평균 NLL (perplexity)' },
+    gen:  { x: 312, y: 40,  w: 116, t: '생성 모델',
+            dist: 'p(x)', do: '표본을 뽑는다',
+            tool: '4.6 MLE · 4.7 KL', loss: 'NLL 또는 그 하한' },
+    lat:  { x: 40,  y: 116, w: 120, t: '잠재변수 모델',
+            dist: 'p(x|z), p(z) 를 적분', do: '숨은 변수를 통해 만든다',
+            tool: '4.2 주변화 · 4.7 KL', loss: 'ELBO (하한)' },
+    mc:   { x: 176, y: 116, w: 120, t: '확률적 상태전이',
+            dist: "p(s' | s, a)", do: '미래를 굴려 본다',
+            tool: '4.1 chain rule + Markov 가정', loss: '전이 예측 NLL · 보상 최대화' },
+    unc:  { x: 312, y: 116, w: 116, t: '불확실성 추정',
+            dist: 'p(θ | D) 와 예측분포', do: '모른다는 것을 안다',
+            tool: '4.5 추정 · 4.9 분해', loss: 'ELBO · ensemble · calibration' },
+    samp: { x: 108, y: 192, w: 120, t: '샘플링',
+            dist: '이미 있는 분포', do: '그 분포대로 표본을 만든다',
+            tool: '4.2 역변환 · 4.4 분포들', loss: '(학습이 아니라 추론 절차)' },
+    dec:  { x: 244, y: 192, w: 120, t: '확률적 디코딩',
+            dist: '언어 모델의 출력 분포', do: '꼬리를 자르고 뽑는다',
+            tool: '4.7 entropy · 4.4 Categorical', loss: '(추론 시 설정)' }
+  };
+  var edges = [['cls', 'lm'], ['lm', 'gen'], ['gen', 'lat'], ['lat', 'unc'],
+               ['gen', 'samp'], ['lm', 'dec'], ['samp', 'dec'], ['mc', 'samp'], ['unc', 'samp']];
+
+  function draw() {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    edges.forEach(function (e) {
+      var a = nodes[e[0]], b = nodes[e[1]];
+      var on = (e[0] === pick || e[1] === pick);
+      svg.appendChild(VIZ.el('line', {
+        x1: a.x + a.w / 2, y1: a.y + 14, x2: b.x + b.w / 2, y2: b.y + 14,
+        stroke: on ? 'var(--seal)' : 'var(--ink-3)', 'stroke-width': on ? 1.5 : 0.8,
+        'stroke-opacity': on ? 0.7 : 0.22
+      }));
+    });
+    Object.keys(nodes).forEach(function (k) {
+      var n = nodes[k], on = (k === pick);
+      svg.appendChild(VIZ.el('rect', {
+        x: n.x, y: n.y, width: n.w, height: 28, rx: 5,
+        fill: on ? 'var(--amber)' : 'var(--jade)', 'fill-opacity': on ? 0.55 : 0.15,
+        stroke: on ? 'var(--amber)' : 'var(--jade)', 'stroke-width': on ? 1.6 : 0.9
+      }));
+      svg.appendChild(VIZ.el('text', {
+        x: n.x + n.w / 2, y: n.y + 18, 'text-anchor': 'middle',
+        class: 'viz-label', 'font-size': 11, text: n.t
+      }));
+    });
+    svg.appendChild(VIZ.el('text', { x: 12, y: 252, class: 'viz-label', 'font-size': 10,
+      text: '선 = 서로 기대는 관계 · 아래 판독값에서 4장의 어느 절이 쓰이는지 확인' }));
+
+    var s = nodes[pick];
+    out.setRaw('dist', s.dist);
+    out.setRaw('do', s.do);
+    out.setRaw('tool', s.tool);
+    out.setRaw('loss', s.loss);
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '분포를 표현하는 쪽',
+    options: [
+      { value: 'cls', label: '분류' }, { value: 'lm', label: '언어 모델' },
+      { value: 'gen', label: '생성' }, { value: 'lat', label: '잠재변수' }
+    ],
+    value: 'cls', onChange: function (v) { pick = v; draw(); }
+  });
+  WIDGETS.toggle({
+    host: ctx.controls, label: '분포를 쓰는 쪽',
+    options: [
+      { value: 'mc', label: '상태전이' }, { value: 'unc', label: '불확실성' },
+      { value: 'samp', label: '샘플링' }, { value: 'dec', label: '디코딩' }
+    ],
+    value: 'samp', onChange: function (v) { pick = v; draw(); }
+  });
+  pick = 'cls';
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — ELBO 의 두 항
+   ============================================================ */
+WIDGETS.register('elbo-lab', function (root, ctx) {
+  var mu = 1.2, sd = 0.6, beta = 1.0;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'kl', label: 'KL(q ‖ p(z))  — 정규화 항', digits: 5 },
+    { key: 'rec', label: '재구성 항 (모형값)', digits: 5 },
+    { key: 'elbo', label: 'ELBO = 재구성 − β·KL', digits: 5 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function npdf(x, m, s) { return Math.exp(-0.5 * Math.pow((x - m) / s, 2)) / (s * Math.sqrt(2 * Math.PI)); }
+
+  function draw() {
+    /* σ 를 아주 작게 두면 봉우리가 치솟으므로 세로 범위를 함께 키운다 */
+    var top = Math.max(0.85, Math.min(2.4, 1.15 / (sd * Math.sqrt(2 * Math.PI))));
+    var p = VIZ.plot({ w: 460, h: 280, xmin: -4, xmax: 4, ymin: 0, ymax: top,
+      pad: { t: 30, r: 16, b: 32, l: 48 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    p.grid(1, top / 4).axes('z', '').ticks(1, top / 4);
+
+    p.curve(function (x) { return npdf(x, 0, 1); }, { samples: 320, alt: true, dash: '5 4' });
+    p.curve(function (x) { return npdf(x, mu, sd); }, { samples: 320 });
+    /* 캡션은 위쪽 여백에 — 플롯 안에 두면 맨 위 눈금과 겹친다 */
+    p.text(-4, top, '밀도 · 점선 = prior p(z) = N(0,1) · 실선 = q(z|x)', { size: 10, dy: -10 });
+
+    var kl = 0.5 * (mu * mu + sd * sd - 1 - Math.log(sd * sd));
+    /* 재구성은 q 가 뾰족하고 특정 위치에 있을수록 좋아진다고 모형화 */
+    var rec = -1.2 - 0.9 * sd * sd + 0.5 * Math.min(2.2, Math.abs(mu));
+    var elbo = rec - beta * kl;
+
+    p.callout(mu, Math.min(npdf(mu, mu, sd), top * 0.72), 'KL = ' + kl.toFixed(3),
+      { dx: 20, dy: 22, tone: 'var(--seal)' });
+
+    out.set('kl', kl);
+    out.set('rec', rec);
+    out.set('elbo', elbo);
+    out.setRaw('note', beta < 0.05 ? 'β≈0 → 그냥 autoencoder. prior 에서 뽑은 z 로는 못 만든다'
+      : (kl < 0.02 ? 'KL≈0 → q 가 x 를 안 담는다 (posterior collapse)'
+      : (beta > 4 ? 'β 가 크다 → 압축 우선, 재구성이 흐려진다' : '균형')));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'q 의 평균 μ', min: -3, max: 3, step: 0.05, value: 1.2, digits: 2,
+    onInput: function (v) { mu = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'q 의 표준편차 σ', min: 0.1, max: 2.5, step: 0.05, value: 0.6, digits: 2,
+    onInput: function (v) { sd = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'KL 항의 무게 β', min: 0, max: 8, step: 0.1, value: 1, digits: 1,
+    onInput: function (v) { beta = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — 디코딩 방법 비교
+   ============================================================ */
+WIDGETS.register('decoding-lab', function (root, ctx) {
+  var T = 1.0, topP = 0.9, topK = 40, mode = 'topp', sharp = 1.0;
+
+  var base = [];
+  (function () {
+    /* 지프 법칙 비슷한 꼬리를 가진 분포 */
+    for (var i = 1; i <= 24; i++) base.push(1 / Math.pow(i, 1.1));
+    var s = base.reduce(function (a, b) { return a + b; }, 0);
+    base = base.map(function (v) { return v / s; });
+  })();
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'kept', label: '남은 후보 수' },
+    { key: 'top1', label: '1등의 확률 (자른 뒤)', digits: 4 },
+    { key: 'H', label: 'entropy (bit)', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function shaped() {
+    var q = base.map(function (v) { return Math.pow(v, sharp); });
+    var s = q.reduce(function (a, b) { return a + b; }, 0);
+    q = q.map(function (v) { return v / s; });
+    var t = q.map(function (v) { return Math.pow(v, 1 / T); });
+    var st = t.reduce(function (a, b) { return a + b; }, 0);
+    return t.map(function (v) { return v / st; });
+  }
+
+  function draw() {
+    var q = shaped();
+    var idx = q.map(function (v, i) { return i; }).sort(function (a, b) { return q[b] - q[a]; });
+    var keep = new Array(q.length).fill(false);
+    var kept = 0;
+    if (mode === 'greedy') { keep[idx[0]] = true; kept = 1; }
+    else if (mode === 'topk') {
+      for (var i = 0; i < Math.min(topK, q.length); i++) { keep[idx[i]] = true; kept++; }
+    } else if (mode === 'topp') {
+      var c = 0;
+      for (var j = 0; j < q.length; j++) { keep[idx[j]] = true; kept++; c += q[idx[j]]; if (c >= topP) break; }
+    } else { for (var k = 0; k < q.length; k++) { keep[k] = true; } kept = q.length; }
+
+    var z = 0;
+    for (var m = 0; m < q.length; m++) if (keep[m]) z += q[m];
+    var fin = q.map(function (v, i) { return keep[i] ? v / z : 0; });
+
+    var p = VIZ.plot({ w: 460, h: 280, xmin: 0, xmax: 25, ymin: 0, ymax: Math.max(0.35, fin[idx[0]] * 1.2),
+      pad: { t: 20, r: 16, b: 34, l: 50 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(5, 0.1).axes('token (확률 내림차순)', '확률').ticks(5, 0.1);
+
+    for (var t2 = 0; t2 < q.length; t2++) {
+      var gi = idx[t2];
+      var h = keep[gi] ? fin[gi] : q[gi];
+      p.add(VIZ.el('rect', {
+        x: p.X(t2 + 0.6), y: p.Y(h), width: Math.max(2, p.X(t2 + 1.4) - p.X(t2 + 0.6)),
+        height: p.Y(0) - p.Y(h), rx: 2,
+        fill: keep[gi] ? 'var(--jade)' : 'var(--ink-3)',
+        'fill-opacity': keep[gi] ? 0.45 : 0.12,
+        stroke: keep[gi] ? 'var(--jade)' : 'none', 'stroke-width': 0.8
+      }));
+    }
+    p.text(0.5, Math.max(0.35, fin[idx[0]] * 1.2) * 0.96,
+      '진한 = 뽑힐 수 있는 후보 · 연한 = 잘려 나간 꼬리', { size: 10 });
+
+    var H = 0;
+    for (var n = 0; n < fin.length; n++) if (fin[n] > 0) H -= fin[n] * Math.log(fin[n]) / Math.LN2;
+
+    out.setRaw('kept', kept + ' / ' + q.length);
+    out.set('top1', fin[idx[0]]);
+    out.set('H', H);
+    out.setRaw('note', mode === 'greedy' ? '결정적 — 반복에 빠지기 쉽다'
+      : (mode === 'topp' ? 'top-p: 분포가 뾰족해지면 후보가 알아서 줄어든다'
+      : (mode === 'topk' ? 'top-k: 분포 모양과 무관하게 개수가 고정' : '순수 샘플링 — 꼬리에서 헛소리가 나온다')));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '디코딩 방법',
+    options: [
+      { value: 'greedy', label: 'greedy' }, { value: 'pure', label: '순수 샘플링' },
+      { value: 'topk', label: 'top-k' }, { value: 'topp', label: 'top-p' }
+    ],
+    value: 'topp', onChange: function (v) { mode = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'temperature T', min: 0.2, max: 2.5, step: 0.05, value: 1, digits: 2,
+    onInput: function (v) { T = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'top-p 의 p', min: 0.3, max: 1, step: 0.01, value: 0.9, digits: 2,
+    onInput: function (v) { topP = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'top-k 의 k', min: 1, max: 24, step: 1, value: 8, digits: 0,
+    onInput: function (v) { topK = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '원래 분포를 뾰족하게 (문맥이 좁을 때)', min: 0.5, max: 4, step: 0.1, value: 1, digits: 1,
+    onInput: function (v) { sharp = v; draw(); }
+  });
+  topK = 8;
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — Markov chain
+   ============================================================ */
+WIDGETS.register('markov-lab', function (root, ctx) {
+  var P = [[0.9, 0.1], [0.5, 0.5]], start = 0;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'now', label: '지금 분포' },
+    { key: 'pi', label: '정상분포 π' },
+    { key: 'l2', label: '두 번째 eigenvalue |λ₂|', digits: 4 },
+    { key: 'note', label: '수렴' }
+  ]);
+
+  function draw(step) {
+    var a = P[0][0], b = P[0][1], c = P[1][0], d = P[1][1];
+    /* 행 합을 1 로 강제 */
+    var s0 = a + b, s1 = c + d;
+    a /= s0; b /= s0; c /= s1; d /= s1;
+
+    var v = start === 0 ? [1, 0] : [0, 1];
+    var traj = [[0, v[0]]];
+    for (var t = 1; t <= step; t++) {
+      var n0 = v[0] * a + v[1] * c, n1 = v[0] * b + v[1] * d;
+      v = [n0, n1];
+      traj.push([t, v[0]]);
+    }
+    var pi0 = c / (b + c), pi1 = b / (b + c);
+    var l2 = Math.abs(a + d - 1);
+
+    var p = VIZ.plot({ w: 460, h: 280, xmin: 0, xmax: 20, ymin: 0, ymax: 1.05,
+      pad: { t: 20, r: 16, b: 34, l: 48 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    p.grid(5, 0.25).axes('스텝', 'P(상태 1)').ticks(5, 0.25);
+    p.line([[0, pi0], [20, pi0]], { dash: '4 3', width: 1.8 });
+    p.line(traj, { width: 2 });
+    traj.forEach(function (q) { p.dot(q[0], q[1], 3); });
+    p.callout(20, pi0, 'π₁ = ' + pi0.toFixed(4), { dx: -18, dy: -14, tone: 'var(--seal)' });
+
+    out.setRaw('now', '(' + v[0].toFixed(4) + ', ' + v[1].toFixed(4) + ')  @ 스텝 ' + step);
+    out.setRaw('pi', '(' + pi0.toFixed(4) + ', ' + pi1.toFixed(4) + ')');
+    out.set('l2', l2);
+    out.setRaw('note', l2 < 0.3 ? '아주 빠르게 수렴' : (l2 > 0.9 ? '매우 느리게 수렴 (mixing 이 느리다)' : '보통'));
+  }
+
+  WIDGETS.matrix({
+    host: ctx.controls, rows: 2, cols: 2, values: P, step: 0.05,
+    label: '전이행렬 P (각 행이 자동으로 합 1 로 정규화된다)',
+    onChange: function (nv) { P = nv; draw(pl ? pl.at() : 0); }
+  });
+  WIDGETS.toggle({
+    host: ctx.controls, label: '시작 상태',
+    options: [{ value: 0, label: '상태 1' }, { value: 1, label: '상태 2' }],
+    value: 0, onChange: function (v) { start = Number(v); draw(pl ? pl.at() : 0); }
+  });
+  var pl = WIDGETS.player({ host: ctx.controls, steps: 21, fps: 5, label: '스텝', onStep: draw });
+});
+
+/* ============================================================
+   위젯 5 — 자기회귀 생성
+   ============================================================ */
+WIDGETS.register('autoregressive', function (root, ctx) {
+  var T = 1.0, topP = 0.9, seed = 3;
+
+  /* 아주 작은 bigram model — 다섯 '단어' */
+  var words = ['비', '가', '온다', '그리고', '바람'];
+  var M = [
+    [0.05, 0.70, 0.05, 0.15, 0.05],
+    [0.05, 0.05, 0.70, 0.15, 0.05],
+    [0.10, 0.05, 0.10, 0.65, 0.10],
+    [0.45, 0.05, 0.05, 0.05, 0.40],
+    [0.10, 0.55, 0.10, 0.20, 0.05]
+  ];
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'seq', label: '생성된 수열' },
+    { key: 'logp', label: '로그확률 합', digits: 4 },
+    { key: 'ppl', label: 'perplexity', digits: 4 },
+    { key: 'uniq', label: '서로 다른 단어 수' }
+  ]);
+
+  function draw() {
+    var rnd = mkRand(seed * 977 + 5);
+    var cur = 0, seq = [words[0]], lp = 0, n = 0, seen = {};
+    seen[words[0]] = 1;
+    for (var t = 0; t < 15; t++) {
+      var row = M[cur];
+      /* temperature */
+      var q = row.map(function (v) { return Math.pow(v, 1 / T); });
+      var s = q.reduce(function (x, y) { return x + y; }, 0);
+      q = q.map(function (v) { return v / s; });
+      /* top-p */
+      var order = q.map(function (v, i) { return i; }).sort(function (x, y) { return q[y] - q[x]; });
+      var cum = 0, allow = {};
+      for (var j = 0; j < order.length; j++) { allow[order[j]] = 1; cum += q[order[j]]; if (cum >= topP) break; }
+      var z = 0;
+      for (var k = 0; k < q.length; k++) if (allow[k]) z += q[k];
+      var u = rnd() * z, acc = 0, pickIdx = order[0];
+      for (var m = 0; m < q.length; m++) {
+        if (!allow[m]) continue;
+        acc += q[m];
+        if (u <= acc) { pickIdx = m; break; }
+      }
+      lp += Math.log(row[pickIdx]);
+      n++;
+      seq.push(words[pickIdx]);
+      seen[words[pickIdx]] = 1;
+      cur = pickIdx;
+    }
+
+    var W = 460, H0 = 292;
+    var svg = VIZ.el('svg', { viewBox: '0 0 ' + W + ' ' + H0, role: 'img' });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(svg);
+
+    /* 전이행렬 히트맵 */
+    var cell = 40, padL = 56, padT = 40;
+    for (var r = 0; r < 5; r++) {
+      for (var c2 = 0; c2 < 5; c2++) {
+        svg.appendChild(VIZ.el('rect', {
+          x: padL + c2 * cell, y: padT + r * cell, width: cell - 3, height: cell - 3, rx: 2,
+          fill: 'var(--jade)', 'fill-opacity': 0.08 + 0.75 * M[r][c2],
+          stroke: 'var(--ink-3)', 'stroke-width': 0.4, 'stroke-opacity': 0.3
+        }));
+      }
+      svg.appendChild(VIZ.el('text', { x: padL - 6, y: padT + r * cell + 22, 'text-anchor': 'end',
+        class: 'viz-label', 'font-size': 10, text: words[r] }));
+      svg.appendChild(VIZ.el('text', { x: padL + r * cell + 18, y: padT - 8, 'text-anchor': 'middle',
+        class: 'viz-label', 'font-size': 10, text: words[r] }));
+    }
+    svg.appendChild(VIZ.el('text', { x: 12, y: 20, class: 'viz-label', 'font-size': 11,
+      text: '전이확률 p(다음 | 지금) — 진할수록 확률이 크다' }));
+    /* 생성 결과 */
+    /* 한글은 글자당 폭이 글꼴 크기와 거의 같으므로 글자수가 아니라 폭으로 자른다 */
+    var line = '', wsum = 0;
+    for (var q2 = 0; q2 < seq.length; q2++) {
+      var piece = (q2 ? ' ' : '') + seq[q2];
+      var pw = 0;
+      for (var c3 = 0; c3 < piece.length; c3++) pw += /[가-힣]/.test(piece[c3]) ? 12 : 6.6;
+      if (wsum + pw > 420) { line += '…'; break; }
+      line += piece; wsum += pw;
+    }
+    svg.appendChild(VIZ.el('text', { x: 12, y: padT + 5 * cell + 20, class: 'viz-label',
+      'font-size': 12, text: line }));
+    svg.appendChild(VIZ.el('text', { x: 12, y: padT + 5 * cell + 38, class: 'viz-label',
+      'font-size': 10, 'fill-opacity': 0.7,
+      text: 'T = ' + T.toFixed(2) + ' · top-p = ' + topP.toFixed(2) }));
+
+    out.setRaw('seq', line);
+    out.set('logp', lp);
+    out.set('ppl', Math.exp(-lp / n));
+    out.setRaw('uniq', Object.keys(seen).length + ' / 5');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'temperature T', min: 0.1, max: 2.5, step: 0.05, value: 1, digits: 2,
+    onInput: function (v) { T = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'top-p 의 p', min: 0.2, max: 1, step: 0.05, value: 0.9, digits: 2,
+    onInput: function (v) { topP = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed (다시 생성)', min: 1, max: 40, step: 1, value: 3, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 6 — rejection sampling 의 수용률
+   ============================================================ */
+WIDGETS.register('sampling-methods', function (root, ctx) {
+  var dim = 1, half = 3;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'M', label: '필요한 배율 M', digits: 4 },
+    { key: 'acc', label: '수용률 1 / M', digits: 6 },
+    { key: 'need', label: '표본 1,000개를 얻으려면 시도 횟수' },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function draw() {
+    /* 1차원 M = f(0)/g = (1/sqrt(2pi)) * (2*half). d 차원이면 M^d */
+    var m1 = (1 / Math.sqrt(2 * Math.PI)) * (2 * half);
+    var M = Math.pow(m1, dim);
+    var acc = 1 / M;
+
+    var p = VIZ.plot({ w: 460, h: 285, xmin: 1, xmax: 20, ymin: -7, ymax: 0.3,
+      pad: { t: 30, r: 16, b: 34, l: 54 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    p.grid(5, 1).axes('차원 d', '').ticks(5, 1);
+    p.curve(function (d) {
+      return Math.max(-7, -d * Math.log10(m1));
+    }, { samples: 200 });
+    p.dot(dim, Math.max(-7, Math.log10(acc)), 6);
+    p.callout(dim, Math.max(-7, Math.log10(acc)), '수용률 ' + (acc * 100).toFixed(3) + '%',
+      { dx: 22, dy: 26, tone: 'var(--seal)' });
+    p.line([[1, -2], [20, -2]], { dash: '4 3' });
+    /* 캡션은 위쪽 여백에 — 플롯 안에 두면 y축 이름과 겹친다 */
+    p.text(1, 0.3, 'log₁₀ 수용률 · 가로 점선 = 1% 선 (아래는 사실상 못 쓴다)',
+      { size: 10, dy: -10 });
+
+    out.set('M', M);
+    out.set('acc', acc);
+    out.setRaw('need', isFinite(M) && M < 1e12 ? Math.round(1000 * M).toLocaleString() + ' 회'
+      : '천문학적');
+    out.setRaw('note', acc > 0.3 ? '1차원에서도 절반 이상을 버린다'
+      : (acc < 0.01 ? '고차원 — rejection 은 포기하고 MCMC 나 ancestral 로' : '점점 나빠진다'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '차원 d', min: 1, max: 20, step: 1, value: 1, digits: 0,
+    onInput: function (v) { dim = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '제안분포 폭 (±)', min: 1.5, max: 6, step: 0.1, value: 3, digits: 1,
+    onInput: function (v) { half = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

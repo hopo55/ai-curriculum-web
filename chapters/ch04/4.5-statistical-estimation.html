@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.5 통계적 추정 — AI 이론 학습</title>
+<meta name="description" content="추정량은 숫자가 아니라 확률변수다. 좋은 추정량의 기준은 편향·분산·일치성·효율성 네 가지이고, MSE = 편향² + 분산이라는 한 줄이 그 넷을 잇는다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="4.5">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">4.5</span>
+        <span>4장 · 확률과 통계</span>
+      </div>
+      <h1>통계적 추정</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 70분</span>
+        <span><b>난이도</b>★★★☆☆</span>
+        <span><b>선수지식</b>
+          <a href="4.3-expectation-variance.html">4.3 기댓값과 분산</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-sample">Sample</a>
+      <a class="chip" href="#c-pop">Population</a>
+      <a class="chip" href="#c-estimator">Estimator</a>
+      <a class="chip" href="#c-point">Point Estimation</a>
+      <a class="chip" href="#c-interval">Interval Estimation</a>
+      <a class="chip" href="#c-bias">Bias</a>
+      <a class="chip" href="#c-variance">Variance</a>
+      <a class="chip" href="#c-consist">Consistency</a>
+      <a class="chip" href="#c-eff">Efficiency</a>
+      <a class="chip" href="#c-suff">Sufficient Statistic</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        추정량은 숫자가 아니라 <strong>data 의 함수, 즉 확률변수</strong>다.
+        그래서 추정량에도 분포가 있고, 좋은지 나쁜지는
+        <strong>$\mathrm{MSE}=\text{편향}^2+\text{분산}$</strong> 한 줄로 잰다.
+        편향이 0 인 것이 언제나 좋은 것은 아니다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>모수·통계량·추정량·추정값을 구분하고, 표본분산의 분모가 $n-1$ 인 이유를 유도할 수 있다.</li>
+        <li>$\mathrm{MSE}=\mathrm{Bias}^2+\mathrm{Var}$ 를 유도하고, 편향 있는 추정량이 더 나을 수 있음을 예로 보일 수 있다.</li>
+        <li>95% 신뢰구간의 뜻을 빈도주의 해석으로 정확히 말하고, 충분통계량을 인수분해로 확인할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        알고 싶은 값은 저 바깥에 있고 볼 수 있는 것은 손에 쥔 표본뿐이다.
+        추정이란 <strong>표본에서 그 값을 짐작하는 규칙을 만드는 일</strong>이다.
+        중요한 것은 <strong>규칙</strong>이지 이번에 나온 숫자가 아니다 —
+        표본을 다시 뽑으면 숫자는 달라지지만 규칙은 그대로이기 때문이다.
+      </p>
+      <p>
+        그래서 추정량을 평가할 때는 <strong>같은 규칙을 수천 번 반복하면 어떤 그림이 되는가</strong>를 본다.
+        과녁에 화살을 여러 번 쏘는 그림이 정확하다.
+        <strong>편향</strong>은 화살들의 중심이 과녁 한가운데에서 얼마나 벗어났는가,
+        <strong>분산</strong>은 화살들이 서로 얼마나 흩어졌는가다.
+      </p>
+      <p>
+        둘 다 작아야 좋지만 대개는 <strong>맞바꿔야</strong> 한다.
+        조준을 정확히 하려다 흔들리는 것보다, 살짝 치우쳐도 촘촘히 모으는 편이 나을 때가 있다 —
+        그 판단 기준이 두 항을 합친 MSE 다.
+      </p>
+
+      <figure class="widget" data-widget="target-board">
+        <figcaption class="widget__bar">Bias &amp; Variance — 과녁 위의 네 가지 경우</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">편향을 키우고 분산을 크게 줄이면 <strong>MSE 가 오히려 작아지는</strong> 구간이 있습니다. 판독값의 세 숫자를 함께 보세요.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          <strong>추정량은 확률변수, 추정값은 그 실현값이다.</strong>
+          $\hat\theta=\bar{X}$ 라고 쓰면 규칙(확률변수)이고, $\hat\theta=3.7$ 이라고 쓰면 이번 표본의 결과(숫자)다.
+          이 구분을 놓치면 "신뢰구간이 참값을 포함할 확률"이라는 말이 왜 틀리는지 알 수 없다(오해 1).
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-pop"></span>
+      <span class="anchor" id="c-sample"></span>
+      <h3>Population &amp; Sample 모집단과 표본</h3>
+      <p>
+        <span class="hl">population(모집단)은 알고 싶은 대상 전체 또는 그것을 만들어 내는 분포이고,
+        sample(표본)은 거기서 실제로 뽑아 관측한 $X_1,\dots,X_n$ 이다.</span>
+        머신러닝에서는 population 을 "data 생성 분포 $p_{\text{data}}$", sample 을 "training set" 이라 부른다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>population</th><th>sample</th></tr></thead>
+          <tbody>
+            <tr><td>크기</td><td>대개 무한 (또는 셀 수 없음)</td><td>$n$ 개 — 우리가 가진 전부</td></tr>
+            <tr><td>요약하는 수</td><td><strong>parameter(모수)</strong> $\theta,\mu,\sigma^2,p$</td><td><strong>statistic(통계량)</strong> $\bar{X},S^2,\hat{p}$</td></tr>
+            <tr><td>표기 관습</td><td>그리스 문자</td><td>로마자 또는 모자 $\hat{\ }$</td></tr>
+            <tr><td>값의 성격</td><td><strong>고정된 미지의 상수</strong></td><td><strong>확률변수</strong> — 표본마다 달라진다</td></tr>
+            <tr><td>ML 에서</td><td>data 생성 분포</td><td>training set · test set</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        네 번째 줄이 빈도주의 통계의 출발점이다. <strong>$\theta$ 는 흔들리지 않고 $\hat\theta$ 가 흔들린다</strong>.
+        (Bayesian 은 반대로 $\theta$ 에 분포를 준다 — <a href="4.6-likelihood-estimation.html">4.6</a>.)
+      </p>
+      <p>
+        표본이 population 을 대표하려면 <strong>무작위 추출</strong>이 필요하다.
+        이것이 깨지면 아무리 $n$ 을 키워도 편향이 사라지지 않는다 —
+        web crawling data 로 학습한 model 이 특정 집단에 대해 계속 틀리는 이유가 이것이고,
+        $n$ 을 늘려서는 고칠 수 없다.
+      </p>
+
+      <span class="anchor" id="c-estimator"></span>
+      <span class="anchor" id="c-point"></span>
+      <h3>Estimator &amp; Point Estimation 추정량과 점추정</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \hat\theta = g(X_1,\dots,X_n) \qquad\text{— data 만의 함수이고, } \theta \text{ 를 포함하지 않는다} $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">estimator(추정량)는 표본을 넣으면 값을 내놓는 <strong>규칙</strong>이고 그 자체가 확률변수이며,
+        구체적인 표본을 넣어 나온 숫자는 estimate(추정값)라 구별해 부른다.</span>
+        point estimation(점추정)은 값 하나를 내놓는 것이다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>모수</th><th>대표적인 추정량</th><th>식</th></tr></thead>
+          <tbody>
+            <tr><td>평균 $\mu$</td><td>표본평균</td><td>$\bar{X}=\frac1n\sum X_i$</td></tr>
+            <tr><td>분산 $\sigma^2$</td><td>표본분산 (불편)</td><td>$S^2=\frac{1}{n-1}\sum(X_i-\bar{X})^2$</td></tr>
+            <tr><td>비율 $p$</td><td>표본비율</td><td>$\hat{p}=\frac{1}{n}\sum X_i$</td></tr>
+            <tr><td>일반 $\theta$</td><td>최대가능도추정량</td><td>$\hat\theta_{\text{MLE}}=\arg\max_\theta L(\theta)$ (<a href="4.6-likelihood-estimation.html">4.6</a>)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>추정량은 <strong>저울</strong>이고 추정값은 <strong>이번에 저울이 가리킨 눈금</strong>입니다. 저울을 평가할 때는 이번 눈금 하나가 아니라 "같은 물건을 백 번 달면 어떻게 나오는가"를 봅니다.</p>
+        <p>중심이 참 무게에서 벗어나 있으면 <strong>편향된 저울</strong>이고, 잴 때마다 값이 널뛰면 <strong>분산이 큰 저울</strong>입니다. 둘은 서로 다른 고장이라 처방도 다릅니다.</p>
+      </div>
+
+      <span class="anchor" id="c-bias"></span>
+      <span class="anchor" id="c-variance"></span>
+      <h3>Bias &amp; Variance 편향과 분산</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathrm{Bias}(\hat\theta)=\mathbb{E}[\hat\theta]-\theta, \qquad \mathrm{Var}(\hat\theta)=\mathbb{E}\bigl[(\hat\theta-\mathbb{E}[\hat\theta])^2\bigr] $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathrm{MSE}(\hat\theta)=\mathbb{E}\bigl[(\hat\theta-\theta)^2\bigr]=\mathrm{Bias}(\hat\theta)^2+\mathrm{Var}(\hat\theta) $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl">편향은 <strong>중심이 얼마나 빗나갔는가</strong>, 분산은 <strong>얼마나 흩어졌는가</strong>이고,
+        오차의 크기를 재는 MSE 는 정확히 그 둘의 합으로 쪼개진다.</span>
+        $\mathrm{Bias}=0$ 인 추정량을 unbiased estimator(불편추정량)라 한다.
+      </p>
+      <p>
+        식 (3)이 알려 주는 것은 <strong>편향을 조금 얻고 분산을 많이 줄이면 이득</strong>이라는 사실이다.
+        ridge regression, weight decay, 앙상블, early stopping 이 전부 이 거래를 한다
+        (<a href="../ch03/3.9-constraints-regularization.html">3.9</a>).
+        <strong>불편성은 목표가 아니라 하나의 성질일 뿐</strong>이다.
+      </p>
+
+      <span class="anchor" id="c-consist"></span>
+      <h3>Consistency 일치성</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \hat\theta_n \ \xrightarrow{P}\ \theta \qquad\text{즉}\qquad \forall\varepsilon>0:\ P\bigl(|\hat\theta_n-\theta|>\varepsilon\bigr)\to 0 $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        <span class="hl">표본을 무한히 늘리면 추정값이 참값으로 수렴하는 성질이 consistency 이고,
+        <strong>불편성과는 별개의 성질</strong>이다.</span>
+        불편이면서 비일치인 추정량($\hat\theta=X_1$ — 첫 표본만 쓴다)도,
+        편향이 있으면서 일치인 추정량(분모가 $n$ 인 표본분산)도 존재한다.
+      </p>
+      <p>
+        실용적으로는 <strong>일치성이 불편성보다 중요하다</strong>.
+        $\mathrm{MSE}\to0$ 이면 일치이므로, 편향과 분산이 둘 다 0 으로 가기만 하면 된다.
+      </p>
+
+      <span class="anchor" id="c-eff"></span>
+      <h3>Efficiency 효율성</h3>
+      <p>
+        <span class="hl">같은 조건에서 <strong>분산이 더 작은 추정량이 더 효율적</strong>이며,
+        불편추정량의 분산에는 넘을 수 없는 아래 한계가 있다 — Cramér–Rao 하한이다.</span>
+      </p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathrm{Var}(\hat\theta)\ \ge\ \frac{1}{I_n(\theta)}, \qquad I_n(\theta)=n\,\mathbb{E}\!\left[\left(\frac{\partial}{\partial\theta}\log p(X\mid\theta)\right)^{\!2}\right] $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        $I_n(\theta)$ 는 <strong>Fisher information(피셔 정보량)</strong> 으로,
+        "data 한 개가 $\theta$ 에 대해 알려 주는 정보의 양"이다.
+        log-likelihood 가 $\theta$ 에 대해 <strong>뾰족할수록</strong> 정보가 많고, 그만큼 분산을 줄일 수 있다.
+        하한을 실제로 달성하는 추정량을 efficient estimator 라 하며, 표본평균과 표본비율이 그렇다(예제 ⑤).
+      </p>
+      <p>
+        efficiency 는 <strong>상대적으로도</strong> 쓴다 — 두 불편추정량의 분산 비 $\mathrm{Var}(\hat\theta_2)/\mathrm{Var}(\hat\theta_1)$ 를
+        $\hat\theta_1$ 의 상대효율이라 부른다. Gaussian에서 중앙값은 평균에 비해 상대효율이 $2/\pi\approx0.64$ 다 —
+        <strong>중앙값을 쓰면 표본이 1.57배 더 필요하다</strong>는 뜻이다.
+      </p>
+
+      <span class="anchor" id="c-suff"></span>
+      <h3>Sufficient Statistic 충분통계량</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ T(X)\ \text{가 충분} \iff p\bigl(x_1,\dots,x_n \mid T(X)=t,\ \theta\bigr)\ \text{가 } \theta \text{ 에 의존하지 않는다} $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        <span class="hl">충분통계량은 <strong>$\theta$ 에 대한 정보를 하나도 잃지 않고 data 를 요약한 값</strong>이다 —
+        $T$ 를 알고 나면 원래 data 를 더 들여다봐도 $\theta$ 에 대해 새로 알 것이 없다.</span>
+        확인하는 실용적인 방법은 Fisher–Neyman 인수분해 정리다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ T \text{ 가 충분} \iff p(x\mid\theta)=h(x)\,g\bigl(T(x),\theta\bigr) $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        <strong>likelihood 를 $\theta$ 가 들어 있는 부분과 안 들어 있는 부분으로 쪼갤 수 있고,
+        $\theta$ 쪽이 data 를 오직 $T$ 를 통해서만 보면</strong> 충분하다.
+        Bernoulli 에서는 $\sum X_i$ 가, Gaussian에서는 $(\sum X_i,\ \sum X_i^2)$ 가 충분통계량이다.
+        <a href="4.4-common-distributions.html">4.4</a>의 지수족은 <strong>충분통계량이 유한 차원인 분포족</strong>으로 정의된다.
+      </p>
+      <p>
+        이 개념이 왜 중요한가 — <strong>$n$ 이 백만이어도 $\theta$ 추정에는 숫자 한두 개만 있으면 된다</strong>는 뜻이다.
+        온라인 학습에서 통계량만 갱신하며 도는 알고리즘, 연합학습에서 원본 대신 집계값만 주고받는 설계가 여기에 기댄다.
+
+      </p>
+
+      <figure class="widget" data-widget="sufficient-demo">
+        <figcaption class="widget__bar">Sufficient Statistic — 순서를 버려도 아무것도 잃지 않는다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">순서를 아무리 바꿔도 <strong>likelihood 곡선이 겹칩니다</strong>. $\sum x_i$ 만 같으면 완전히 같은 정보입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-interval"></span>
+      <h3>Interval Estimation 구간추정</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \bar{X}\ \pm\ z_{1-\alpha/2}\,\frac{s}{\sqrt{n}}, \qquad P\bigl(\theta\in[L(X),U(X)]\bigr)=1-\alpha $$</div>
+        <span class="eq__tag num">(8)</span>
+      </div>
+      <p>
+        <span class="hl">구간추정은 값 하나 대신 <strong>범위</strong>를 내놓아 불확실성까지 함께 보고하는 것이고,
+        신뢰수준 $1-\alpha$ 는 <strong>구간을 만드는 절차</strong>의 성질이지 이번에 나온 특정 구간의 성질이 아니다.</span>
+      </p>
+      <p>
+        "95% 신뢰구간"의 정확한 뜻은 이렇다 —
+        <strong>같은 방식으로 표본을 뽑아 구간을 만드는 일을 100번 반복하면 그중 약 95개가 참값을 담는다.</strong>
+        이미 계산된 구간 $[65.6,\ 70.4]$ 에 대해서는 참값이 들어 있거나 없거나 둘 중 하나이지 확률이 아니다.
+        "$\theta$ 가 이 구간에 있을 확률 95%" 라고 말하려면 Bayesian 의 credible interval 이 필요하다
+        (<a href="4.6-likelihood-estimation.html">4.6</a>).
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>상황</th><th>쓰는 값</th><th>비고</th></tr></thead>
+          <tbody>
+            <tr><td>$\sigma$ 를 알고 $n$ 이 크다</td><td>$z_{0.975}=1.96$</td><td>표준정규</td></tr>
+            <tr><td>$\sigma$ 를 모르고 $n$ 이 작다</td><td>$t_{0.975,\,n-1}$</td><td>$n=10$ 이면 2.262 — <strong>더 넓다</strong></td></tr>
+            <tr><td>비율 $p$</td><td>$\hat p\pm z\sqrt{\hat p(1-\hat p)/n}$</td><td>$\hat p$ 가 0/1 에 가까우면 Wilson 구간을 쓴다</td></tr>
+            <tr><td>분포를 모른다</td><td>bootstrap 백분위수</td><td>재표본추출로 직접 만든다</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <figure class="widget" data-widget="ci-coverage">
+        <figcaption class="widget__bar">Confidence Interval — 100개를 그려 몇 개가 참값을 담나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">참값 선을 <strong>놓치는 구간이 대략 5개</strong> 나옵니다. 신뢰수준은 <strong>구간 하나가 아니라 이 그림 전체</strong>의 성질입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>좋은 추정량의 기준 네 가지를 한 표로 정리한다. 이 이름들은 Fisher 가 1922년에 붙였다<a class="cite" href="#ref-fisher1922-mathematical-foundations" data-ref="fisher1922-mathematical-foundations">1</a>.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>기준</th><th>정의</th><th>묻는 것</th><th>$n$ 과의 관계</th></tr></thead>
+          <tbody>
+            <tr><td>unbiasedness 불편성</td><td>$\mathbb{E}[\hat\theta]=\theta$</td><td>평균적으로 맞나</td><td>$n$ 과 무관 — 유한 표본의 성질</td></tr>
+            <tr><td>efficiency 효율성</td><td>$\mathrm{Var}$ 이 CRLB 에 도달</td><td>가장 촘촘한가</td><td>$n$ 과 무관 — 유한 표본의 성질</td></tr>
+            <tr><td>consistency 일치성</td><td>$\hat\theta_n\xrightarrow{P}\theta$</td><td>많이 모으면 맞나</td><td><strong>$n\to\infty$ 의 성질</strong></td></tr>
+            <tr><td>sufficiency 충분성</td><td>$p(x\mid T,\theta)$ 가 $\theta$ 무관</td><td>정보를 잃지 않았나</td><td>요약의 성질</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        네 가지가 서로 독립적이라는 것이 요점이다.
+        <strong>불편이지만 비일치</strong>($\hat\theta=X_1$), <strong>편향이지만 일치</strong>(분모 $n$ 인 표본분산),
+        <strong>불편이지만 비효율</strong>(Gaussian에서 중앙값) 인 예가 모두 있다.
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$\theta$</td><td>theta 세타</td><td>참 모수 — <strong>고정된 미지의 상수</strong></td><td>scalar 또는 벡터</td><td>모수공간 $\Theta$</td></tr>
+            <tr><td>$\hat\theta$</td><td>theta hat 세타 햇</td><td>추정량 — <strong>확률변수</strong></td><td>data 의 함수</td><td>—</td></tr>
+            <tr><td>$X_1,\dots,X_n$</td><td>X 1 부터 X n</td><td>표본</td><td>확률변수 $n$개</td><td>i.i.d. 가정</td></tr>
+            <tr><td>$\bar{X}$</td><td>X bar 엑스 바</td><td>표본평균</td><td>확률변수</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$S^2$</td><td>S squared</td><td>표본분산 (분모 $n-1$)</td><td>확률변수</td><td>$\ge0$</td></tr>
+            <tr><td>$\mathrm{Bias}$</td><td>bias 바이어스</td><td>$\mathbb{E}[\hat\theta]-\theta$</td><td>scalar</td><td>$\mathbb{R}$ (부호 있음)</td></tr>
+            <tr><td>$\mathrm{MSE}$</td><td>mean squared error</td><td>$\mathbb{E}[(\hat\theta-\theta)^2]$</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$\xrightarrow{P}$</td><td>converges in probability 확률수렴</td><td>일치성의 수렴 기호</td><td>수렴 기호</td><td>—</td></tr>
+            <tr><td>$I_n(\theta)$</td><td>Fisher information 피셔 정보량</td><td>data 가 담은 $\theta$ 정보의 양</td><td>scalar (다변수면 행렬)</td><td>$\ge0$</td></tr>
+            <tr><td>$s(\theta)$</td><td>score function 스코어 함수</td><td>$\partial_\theta\log p(x\mid\theta)$</td><td>함수</td><td>$\mathbb{E}[s]=0$</td></tr>
+            <tr><td>$T(X)$</td><td>T of X · 통계량</td><td>data 의 함수 (요약값)</td><td>확률변수</td><td>—</td></tr>
+            <tr><td>$\alpha$</td><td>alpha 알파</td><td>유의수준 — $1-\alpha$ 가 신뢰수준</td><td>scalar</td><td>$(0,1)$, 보통 0.05</td></tr>
+            <tr><td>$z_{1-\alpha/2}$</td><td>z critical value 임계값</td><td>표준정규의 분위수</td><td>scalar</td><td>$\alpha=0.05$ 면 1.96</td></tr>
+            <tr><td>$t_{\nu}$</td><td>t distribution with nu degrees of freedom</td><td>자유도 $\nu$ 인 $t$ 분포</td><td>분포</td><td>$\nu=n-1$</td></tr>
+            <tr><td>$\nu$</td><td>nu 뉴 · 자유도</td><td>degrees of freedom</td><td>정수</td><td>$\ge1$</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">같은 것을 다르게 부른다</span>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>이 사이트</th><th>같은 뜻으로 쓰이는 말</th><th>주의할 점</th></tr></thead>
+            <tbody>
+              <tr><td>편향-분산 분해</td><td>bias–variance tradeoff</td><td>ML 의 분해는 <strong>예측오차</strong>를 쪼갠 것이고 잡음 항 $\sigma^2$ 이 하나 더 붙는다</td></tr>
+              <tr><td>표준오차 SE</td><td>standard error of the mean, SEM</td><td>data 의 표준편차 $s$ 와 <strong>다르다</strong>. $\mathrm{SE}=s/\sqrt{n}$</td></tr>
+              <tr><td>$S^2$ (분모 $n-1$)</td><td>불편표본분산, <code>ddof=1</code></td><td><strong><code>numpy</code> 의 기본은 <code>ddof=0</code></strong>(분모 $n$)이다. <code>pandas</code> 는 반대로 1</td></tr>
+              <tr><td>신뢰구간</td><td>confidence interval, CI</td><td>Bayesian 의 credible interval 과 <strong>해석이 다르다</strong></td></tr>
+              <tr><td>모수 $\theta$</td><td>parameter, 모집단 모수</td><td>ML 에서 "parameter" 는 <strong>학습되는 가중치</strong>를 뜻해 의미가 겹친다</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — $\mathrm{MSE}=\mathrm{Bias}^2+\mathrm{Var}$</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{MSE}=\mathbb{E}\bigl[(\hat\theta-\theta)^2\bigr] = \mathbb{E}\Bigl[\bigl((\hat\theta-\mathbb{E}\hat\theta)+(\mathbb{E}\hat\theta-\theta)\bigr)^2\Bigr] $$</div>
+          <div class="derive__why">$\mathbb{E}\hat\theta$ 를 <strong>더했다 뺐다</strong> — 이 절 전체에서 쓰는 기법</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ = \mathbb{E}[(\hat\theta-\mathbb{E}\hat\theta)^2] + 2\,\mathbb{E}[(\hat\theta-\mathbb{E}\hat\theta)]\,(\mathbb{E}\hat\theta-\theta) + (\mathbb{E}\hat\theta-\theta)^2 $$</div>
+          <div class="derive__why">전개. 둘째 항의 $(\mathbb{E}\hat\theta-\theta)$ 는 <strong>상수라 밖으로 나온다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}[\hat\theta-\mathbb{E}\hat\theta]=\mathbb{E}\hat\theta-\mathbb{E}\hat\theta=0 $$</div>
+          <div class="derive__why"><strong>교차항이 사라진다</strong> — 분해가 깔끔한 이유</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore\ \mathrm{MSE}=\mathrm{Var}(\hat\theta)+\mathrm{Bias}(\hat\theta)^2 $$</div>
+          <div class="derive__why">남은 두 항이 각각 분산과 편향의 제곱</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{MSE}\to0 \ \Rightarrow\ \hat\theta_n\xrightarrow{P}\theta $$</div>
+          <div class="derive__why">Chebyshev — <strong>MSE 수렴이면 일치</strong>(역은 성립하지 않는다)</div>
+        </div>
+      </div>
+
+      <h3>유도 2 — 표본분산의 분모가 왜 $n-1$ 인가</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \sum_{i}(X_i-\bar{X})^2 = \sum_i\bigl((X_i-\mu)-(\bar{X}-\mu)\bigr)^2 $$</div>
+          <div class="derive__why">참 평균 $\mu$ 를 <strong>더했다 뺐다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ = \sum_i(X_i-\mu)^2 - 2(\bar{X}-\mu)\sum_i(X_i-\mu) + n(\bar{X}-\mu)^2 $$</div>
+          <div class="derive__why">전개. $(\bar{X}-\mu)$ 는 $i$ 와 무관해 밖으로</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sum_i(X_i-\mu)=n(\bar{X}-\mu) \ \Rightarrow\ \sum_i(X_i-\bar{X})^2=\sum_i(X_i-\mu)^2-n(\bar{X}-\mu)^2 $$</div>
+          <div class="derive__why">가운데 항이 $-2n(\bar X-\mu)^2$ 이 되어 <strong>마지막 항과 합쳐진다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}\Bigl[\sum_i(X_i-\bar{X})^2\Bigr]=n\sigma^2-n\cdot\frac{\sigma^2}{n}=(n-1)\sigma^2 $$</div>
+          <div class="derive__why">$\mathrm{Var}(\bar{X})=\sigma^2/n$ (<a href="4.3-expectation-variance.html">4.3</a>). <strong>정확히 $\sigma^2$ 하나만큼 모자라다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore\ \mathbb{E}\left[\frac{1}{n-1}\sum_i(X_i-\bar{X})^2\right]=\sigma^2 $$</div>
+          <div class="derive__why">$n-1$ 로 나눠야 불편. <strong>$n$ 으로 나누면 항상 $\frac{n-1}{n}$ 배 작게 나온다</strong></div>
+        </div>
+      </div>
+      <p>
+        이유는 <strong>자유도</strong>다. 편차 $X_i-\bar{X}$ 들은 합이 반드시 0 이라
+        $n$ 개처럼 보여도 자유롭게 움직이는 것은 $n-1$ 개뿐이다.
+        참 평균 $\mu$ 를 안다면 $\sum(X_i-\mu)^2/n$ 이 불편이 되어 $n$ 으로 나누는 것이 맞다 —
+        <span class="hl"><strong>$\bar{X}$ 를 data 로 추정하느라 자유도 하나를 썼기 때문에 $n-1$ 이 된다.</strong></span>
+      </p>
+
+      <h3>유도 3 — Bernoulli 는 효율적이다 (Cramér–Rao 하한 달성)</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \log p(x\mid p)=x\log p+(1-x)\log(1-p) $$</div>
+          <div class="derive__why">Bernoulli 의 log-likelihood (<a href="4.4-common-distributions.html">4.4</a> 식 1)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ s(p)=\frac{\partial}{\partial p}\log p(x\mid p)=\frac{x}{p}-\frac{1-x}{1-p}=\frac{x-p}{p(1-p)} $$</div>
+          <div class="derive__why">score function. 통분하면 <strong>분자가 오차 $x-p$</strong> 로 깔끔해진다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}[s(p)]=\frac{\mathbb{E}[X]-p}{p(1-p)}=0 $$</div>
+          <div class="derive__why">score 의 기댓값은 <strong>항상 0</strong> — 모든 분포에서 성립하는 성질</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ I_1(p)=\mathbb{E}[s^2]=\frac{\mathrm{Var}(X)}{p^2(1-p)^2}=\frac{p(1-p)}{p^2(1-p)^2}=\frac{1}{p(1-p)} $$</div>
+          <div class="derive__why">$\mathbb{E}[s]=0$ 이므로 $\mathbb{E}[s^2]=\mathrm{Var}(s)$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ I_n(p)=\frac{n}{p(1-p)} \ \Rightarrow\ \text{CRLB}=\frac{p(1-p)}{n} $$</div>
+          <div class="derive__why">독립 표본이면 정보가 <strong>더해진다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{Var}(\hat p)=\mathrm{Var}\!\left(\frac1n\sum X_i\right)=\frac{p(1-p)}{n} = \text{CRLB} $$</div>
+          <div class="derive__why"><strong>하한을 정확히 달성</strong> — 표본비율보다 나은 불편추정량은 없다</div>
+        </div>
+      </div>
+
+      <details>
+        <summary>Fisher information 이 왜 "정보"인가</summary>
+        <p>
+          $I(\theta)=-\mathbb{E}\bigl[\partial^2_\theta \log p(X\mid\theta)\bigr]$ 로도 쓸 수 있다 (정칙 조건 아래 두 정의가 같다).
+          이 형태는 <strong>log-likelihood 의 곡률</strong>이다.
+        </p>
+        <p>
+          곡률이 크면 최댓값 주변이 <strong>뾰족해서</strong> $\theta$ 를 조금만 옮겨도 likelihood 가 확 떨어진다 —
+          data 가 $\theta$ 를 강하게 지목한다는 뜻이다. 반대로 평평하면 여러 $\theta$ 가 비슷하게 그럴듯해서 정보가 적다.
+          CRLB 가 $1/I$ 인 것은 <strong>"정보가 많을수록 분산을 낮출 수 있다"</strong>는 말을 식으로 적은 것이다.
+        </p>
+        <p>
+          이 곡률은 <a href="../ch03/3.5-optimization-basics.html">3.5</a>의 Hessian 과 같은 대상이고,
+          자연 gradient(natural gradient)와 K-FAC 같은 2차 최적화가 쓰는 행렬이 바로 Fisher information matrix 다
+          (<a href="../ch03/3.7-optimization-algorithms.html">3.7</a>).
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① 표본분산 — $n$ 과 $n-1$ 을 손으로</h3>
+      <p>data: <span class="num">2, 4, 4, 4, 5, 5, 7, 9</span> ($n=8$)</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \bar{X}=\frac{2+4+4+4+5+5+7+9}{8}=\frac{40}{8}=5 $$</div>
+          <div class="derive__why">표본평균</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ (X_i-\bar{X}): \quad -3,\ -1,\ -1,\ -1,\ 0,\ 0,\ 2,\ 4 $$</div>
+          <div class="derive__why">편차. <strong>합이 정확히 0</strong> ($-3-1-1-1+0+0+2+4=0$) — 자유도가 하나 묶였다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sum(X_i-\bar{X})^2 = 9+1+1+1+0+0+4+16 = 32 $$</div>
+          <div class="derive__why">제곱해서 더한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{32}{8}=4.0000 \qquad\text{vs}\qquad \frac{32}{7}=4.5714 $$</div>
+          <div class="derive__why">분모 $n$ vs $n-1$. 비는 $7/8=0.875$ — <strong>유도 2 의 $(n-1)/n$</strong> ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ s=\sqrt{4.5714}=2.1381,\qquad \mathrm{SE}=\frac{2.1381}{\sqrt8}=0.7559 $$</div>
+          <div class="derive__why">표준편차와 <strong>평균의</strong> 표준오차 — 다른 값이다</div>
+        </div>
+      </div>
+
+      <h3>② 신뢰구간 — 두 가지 상황</h3>
+      <p>$n=100$, $\bar{X}=68$, $s=12$ 인 경우와 $n=10$, $\bar{X}=68$, $s=12$ 인 경우.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ n=100:\quad \mathrm{SE}=\frac{12}{\sqrt{100}}=\frac{12}{10}=1.2 $$</div>
+          <div class="derive__why">$n$ 이 크므로 $z=1.96$ 을 쓴다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 68\pm 1.96\times1.2 = 68\pm2.352 \ \Rightarrow\ [65.648,\ 70.352] $$</div>
+          <div class="derive__why">폭 4.704</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ n=10:\quad \mathrm{SE}=\frac{12}{\sqrt{10}}=\frac{12}{3.1623}=3.7947 $$</div>
+          <div class="derive__why">$\sqrt{n}$ 이 작아 SE 가 <strong>3.16배</strong> 커졌다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 68\pm t_{0.975,9}\times3.7947 = 68\pm 2.262\times3.7947 = 68\pm8.584 $$</div>
+          <div class="derive__why">$t$ 값 2.262 를 쓴다 — $\sigma$ 를 모르는 대가로 <strong>1.96 보다 크다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ [59.416,\ 76.584] \quad\text{— 폭 } 17.17 $$</div>
+          <div class="derive__why">$n$ 이 1/10 인데 폭은 <strong>3.65배</strong> — $\sqrt{10}=3.16$ 에 $t/z=1.154$ 를 곱한 값 ✓</div>
+        </div>
+      </div>
+
+      <h3>③ 불편이 최선이 아닌 예 — $\mathrm{Uniform}(0,\theta)$ 의 $\theta$ 추정</h3>
+      <p>$n=5$ 개를 뽑아 최댓값 $M=\max X_i$ 를 관측했다. $\mathbb{E}[M]=\frac{n}{n+1}\theta$, $\mathbb{E}[M^2]=\frac{n}{n+2}\theta^2$ 이다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat\theta_{\text{MLE}}=M,\qquad \mathrm{Bias}=\frac{5}{6}\theta-\theta=-\frac{\theta}{6} $$</div>
+          <div class="derive__why">최댓값은 <strong>항상 $\theta$ 보다 작다</strong> — 구조적으로 과소추정</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{Var}(M)=\frac{5}{7}\theta^2-\left(\frac56\theta\right)^2=\left(\frac{5}{7}-\frac{25}{36}\right)\theta^2=\frac{180-175}{252}\theta^2=\frac{5}{252}\theta^2 $$</div>
+          <div class="derive__why">$\mathbb{E}[M^2]-(\mathbb{E}M)^2$. $5/252\approx0.01984$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{MSE}(M)=\frac{5}{252}\theta^2+\frac{\theta^2}{36}=\frac{5}{252}\theta^2+\frac{7}{252}\theta^2=\frac{12}{252}\theta^2\approx0.04762\,\theta^2 $$</div>
+          <div class="derive__why">식 (3). 편향의 기여가 <strong>절반이 넘는다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat\theta_{\text{unb}}=\frac{6}{5}M:\quad \mathrm{Bias}=0,\quad \mathrm{MSE}=\left(\frac65\right)^2\frac{5}{252}\theta^2=\frac{36}{25}\cdot\frac{5}{252}\theta^2=\frac{\theta^2}{35}\approx0.02857\,\theta^2 $$</div>
+          <div class="derive__why">편향을 없애니 <strong>MSE 가 40% 줄었다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat\theta_c=cM \ \Rightarrow\ \mathrm{MSE}(c)=c^2\frac{5}{7}\theta^2-2c\frac56\theta^2+\theta^2,\quad \frac{d}{dc}=0 \Rightarrow c^\star=\frac{n+2}{n+1}=\frac76 $$</div>
+          <div class="derive__why">$c$ 를 최적화한다. <strong>$6/5$ 가 아니라 $7/6$</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{MSE}(c^\star)=\frac{\theta^2}{(n+1)^2}=\frac{\theta^2}{36}\approx0.02778\,\theta^2 \ &lt;\ 0.02857\,\theta^2 $$</div>
+          <div class="derive__why"><strong>편향이 있는 $\frac76 M$ 이 불편추정량보다 낫다</strong> — 불편성은 목표가 아니다</div>
+        </div>
+      </div>
+      <p>
+        <span class="hl">$c^\star=7/6\approx1.167$ 은 불편을 만드는 $6/5=1.2$ 보다 <strong>덜 부풀린다</strong> —
+        편향을 조금 남기는 대신 분산을 더 줄여 총오차를 낮춘 것이다.</span>
+        ridge regression 이 계수를 0 쪽으로 당기는 것도 정확히 같은 거래다.
+      </p>
+
+      <h3>④ 충분통계량 — 순서를 버려도 되는 이유</h3>
+      <p>$n=5$ 번 동전을 던져 <span class="num">1, 0, 1, 1, 0</span> 을 얻었다. $T=\sum X_i=3$ 이다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ P(1,0,1,1,0\mid p)=p\cdot(1-p)\cdot p\cdot p\cdot(1-p)=p^3(1-p)^2 $$</div>
+          <div class="derive__why">순서대로 곱했다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P(0,1,1,0,1\mid p)=p^3(1-p)^2 \quad\text{— 완전히 같다} $$</div>
+          <div class="derive__why">순서를 바꿔도 <strong>지수만 세면 되므로</strong> 값이 같다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ p(x\mid p)=\underbrace{1}_{h(x)}\cdot\underbrace{p^{T}(1-p)^{n-T}}_{g(T,p)} $$</div>
+          <div class="derive__why">인수분해 정리 (7) — $p$ 가 들어간 쪽이 <strong>$T$ 만 본다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P(\text{특정 순서}\mid T=3)=\frac{p^3(1-p)^2}{\binom{5}{3}p^3(1-p)^2}=\frac{1}{10} $$</div>
+          <div class="derive__why"><strong>$p$ 가 약분되어 사라진다</strong> — 정의 (6)을 직접 확인</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore\ T=3 \ \text{을 알고 나면 순서는 } p \ \text{에 대해 아무 정보도 없다} $$</div>
+          <div class="derive__why">100만 번을 던져도 <strong>숫자 하나만 저장하면 된다</strong></div>
+        </div>
+      </div>
+
+      <h3>⑤ 효율성 비교 — 평균 vs 중앙값</h3>
+      <p>$\mathcal{N}(\mu,\sigma^2)$ 에서 $\mu$ 를 추정하는 두 방법을 $n=100$, $\sigma=1$ 로 비교한다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>추정량</th><th>편향</th><th>분산</th><th>표준오차</th><th>상대효율</th></tr></thead>
+          <tbody>
+            <tr><td>표본평균 $\bar{X}$</td><td class="num">0</td><td class="num">$\sigma^2/n$ = 0.0100</td><td class="num">0.1000</td><td class="num"><strong>1.00 (최적)</strong></td></tr>
+            <tr><td>표본중앙값</td><td class="num">0</td><td class="num">$\frac{\pi\sigma^2}{2n}$ = 0.0157</td><td class="num">0.1253</td><td class="num">0.637</td></tr>
+            <tr><td>첫 관측값 $X_1$</td><td class="num">0</td><td class="num">$\sigma^2$ = 1.0000</td><td class="num">1.0000</td><td class="num">0.010</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        셋 다 <strong>불편</strong>인데 성능은 100배 차이가 난다.
+        $X_1$ 은 $n$ 을 아무리 키워도 분산이 그대로라 <strong>비일치</strong>이기도 하다 —
+        불편성만으로는 아무것도 보장되지 않는다는 것을 보여 주는 예다.
+        중앙값의 상대효율 $2/\pi=0.637$ 은 <strong>같은 정밀도를 얻으려면 표본이 1.57배 필요하다</strong>는 뜻이지만,
+        극단값이 섞이면 중앙값이 훨씬 안정적이라 실무에서는 여전히 쓸모가 있다.
+      </p>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>과녁</strong> · <strong>충분통계량</strong> · <strong>신뢰구간 포함률</strong> — 에 이어,
+        아래 둘에서 <strong>추정량 자체의 분포</strong>와 <strong>$n$ 과 $n-1$ 의 차이</strong>를 직접 만든다.
+      </p>
+
+      <figure class="widget" data-widget="sampling-dist">
+        <figcaption class="widget__bar">Sampling Distribution — 추정량은 그 자체가 확률변수다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">같은 규칙을 수천 번 반복하면 <strong>추정값들의 히스토그램</strong>이 그려집니다. 이 히스토그램의 중심이 편향, 폭이 분산입니다.</p>
+        </div>
+      </figure>
+
+      <figure class="widget" data-widget="ddof-compare">
+        <figcaption class="widget__bar">n vs n−1 — 어느 쪽이 실제로 $\sigma^2$ 를 맞히나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$n$ 이 작을수록 두 선이 벌어집니다. $n=2$ 에서는 분모 $n$ 쪽이 <strong>참값의 절반</strong>밖에 안 됩니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"95% 신뢰구간 [65.6, 70.4] 는 참값이 이 안에 있을 확률이 95% 라는 뜻이다."</p>
+        <p>
+          <strong>실제로는</strong> 빈도주의에서 $\theta$ 는 <strong>고정된 상수</strong>이므로
+          이미 계산된 구간에 대해 확률을 말할 수 없다 — 들어 있거나 없거나다.
+          95% 는 <strong>구간을 만드는 절차</strong>의 장기 성능이다: 이 절차를 100번 반복하면 약 95개가 참값을 담는다.
+          "참값이 이 구간에 있을 확률 95%" 라고 말하려면 $\theta$ 에 분포를 주는
+          <strong>Bayesian credible interval</strong> 이어야 한다(<a href="4.6-likelihood-estimation.html">4.6</a>).
+          두 구간은 수치가 비슷하게 나오는 경우가 많아 혼동이 굳어졌다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"불편추정량이 언제나 더 좋다."</p>
+        <p>
+          <strong>실제로는</strong> 기준이 MSE 라면 <strong>편향 있는 추정량이 더 나을 수 있다</strong>(예제 ③).
+          $\mathrm{Uniform}(0,\theta)$ 에서 $\frac76 M$ 은 편향이 있는데도 불편추정량 $\frac65 M$ 보다 MSE 가 작다.
+          ridge regression·weight decay·shrinkage·앙상블이 모두 이 거래를 한다.
+          고차원에서는 더 극적이다 — <strong>Stein 의 역설</strong>은 3차원 이상에서
+          표본평균이 MSE 기준으로 <strong>허용불가(inadmissible)</strong> 하다는 것을 보인다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"$n-1$ 로 나누는 것은 표본이 작을 때의 보정이다."</p>
+        <p>
+          <strong>실제로는</strong> $n$ 의 크기와 무관하게 <strong>항상</strong> $n-1$ 이 불편이다.
+          이유는 표본 크기가 아니라 <strong>자유도</strong>다 —
+          $\bar{X}$ 를 data 로 추정하느라 편차들의 합이 0 으로 묶여 자유롭게 움직이는 값이 $n-1$ 개뿐이다(유도 2).
+          참 평균 $\mu$ 를 알고 있다면 분모는 $n$ 이 맞다.
+          같은 이유로 회귀에서 잔차분산의 분모가 $n-k$($k$ = 추정한 계수 수)가 된다.
+          $n$ 이 클 때 차이가 작아 보이는 것은 결과일 뿐 이유가 아니다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"data 를 더 모으면 편향도 줄어든다."</p>
+        <p>
+          <strong>실제로는</strong> $n$ 을 늘리면 <strong>분산은 $1/n$ 로 줄지만 편향은 그대로일 수 있다</strong>.
+          표본추출 자체가 치우쳐 있으면(무작위가 아니면) $n$ 이 100만이어도 편향은 남는다 —
+          오히려 신뢰구간만 좁아져 <strong>틀린 값을 자신 있게 보고</strong>하게 된다.
+          model 쪽도 같다. 표현력이 부족한 model 의 근사 편향은 data 로 메워지지 않는다.
+          <strong>"data 를 더 모으자"가 통하는 것은 분산 문제일 때뿐</strong>이며,
+          학습곡선에서 train 과 validation 이 둘 다 높은 값에 나란히 수렴하면 편향 문제라는 신호다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"<code>numpy</code> 의 <code>.var()</code> 와 <code>pandas</code> 의 <code>.var()</code> 는 같은 값을 준다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>numpy 는 <code>ddof=0</code>(분모 $n$), pandas 는 <code>ddof=1</code>(분모 $n-1$)</strong> 이 기본값이다.
+          예제 ①의 data 로 <code>np.var</code> 는 4.0, <code>pd.Series.var</code> 는 4.5714 를 준다.
+          같은 파이프라인 안에서 두 라이브러리를 섞으면 <strong>표준화·정규화 결과가 조용히 달라진다</strong>.
+          $n$ 이 크면 무시할 만하지만 batch 통계처럼 $n$ 이 작을 때는 결과가 갈린다 —
+          BatchNorm 이 학습 때는 <code>ddof=0</code>, 이동평균 갱신에는 <code>ddof=1</code> 을 쓰는 구현이 있는 것도 이 때문이다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–⑤ 를 검산한다.</p>
+      <details>
+        <summary>NumPy — ddof · 신뢰구간 포함률 · MSE 비교 (20줄)</summary>
+<pre><code>import numpy as np
+rng = np.random.default_rng(0)
+
+x = np.array([2, 4, 4, 4, 5, 5, 7, 9])
+print(x.mean(), x.var(), x.var(ddof=1))          # 5.0  4.0  4.5714  (오해 5)
+
+s2n, s2u = [], []
+for _ in range(20000):                            # 분모 n 은 항상 작게 나온다
+    v = rng.normal(0, 2, 5)
+    s2n.append(v.var()); s2u.append(v.var(ddof=1))
+print(np.mean(s2n), np.mean(s2u), 4 * 4 / 5)      # 3.2 근처 / 4.0 근처 / 3.2
+
+hit = 0
+for _ in range(20000):                            # 95% 는 '절차'의 성질 (오해 1)
+    v = rng.normal(50, 10, 30)
+    se = v.std(ddof=1) / np.sqrt(30)
+    hit += abs(v.mean() - 50) &lt; 1.96 * se
+print(hit / 20000)                                # 0.94 근처
+
+th, n = 1.0, 5
+M = rng.uniform(0, th, (200000, n)).max(1)
+for c, name in [(1, "MLE"), (6 / 5, "불편"), (7 / 6, "최적 c")]:
+    print(name, np.mean((c * M - th) ** 2).round(5))   # 0.0476 / 0.0286 / 0.0278
+</code></pre>
+        <p>
+          <small>
+            마지막 루프가 예제 ③ 그대로다 — <strong>편향이 있는 $7/6$ 이 불편추정량보다 MSE 가 작다</strong>.
+            세 번째 블록의 포함률이 0.95 보다 살짝 낮게 나오는 것은 $\sigma$ 를 추정해 $z$ 를 쓴 탓이며,
+            $t$ 값(2.045)을 쓰면 0.95 에 맞는다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $n=4$ 인 표본에서 $\sum(X_i-\bar{X})^2=18$ 이다. 불편 표본분산 $S^2$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>6</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>4.5</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>18</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $S^2=18/(4-1)=6$.
+            <strong>나</strong>는 분모를 $n=4$ 로 둔 값이고, 그 추정량의 기댓값은 $\frac{n-1}{n}\sigma^2=0.75\sigma^2$ 라
+            <strong>항상 25% 과소추정</strong>한다.
+            $n$ 이 작을수록 두 값의 차이가 커지는 것이 이 문제의 요점이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\mathrm{Bias}(\hat\theta)=0.2$, $\mathrm{Var}(\hat\theta)=0.09$ 일 때 MSE 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>0.13</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>0.29</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>0.018</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\mathrm{MSE}=\mathrm{Bias}^2+\mathrm{Var}=0.04+0.09=0.13$.
+            <strong>나</strong>는 편향을 제곱하지 않은 것으로, 단위가 맞지 않는다 —
+            분산은 이미 제곱된 양이므로 편향도 제곱해야 <strong>같은 단위</strong>가 된다.
+            분산을 0.09 에서 0.04 로 줄이는 대신 편향이 0.2 에서 0.3 으로 커진다면 MSE 는 0.13 그대로다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            정확도 추정의 95% 신뢰구간 폭을 절반으로 줄이려면 test set 을 몇 배로?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>4배</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>2배</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>16배</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            폭이 $2z\,\sigma/\sqrt{n}$ 이므로 $\sqrt{n}$ 이 2배, 즉 $n$ 이 <strong>4배</strong>여야 한다.
+            1,000개 test set 의 ±1.9%p 를 ±0.95%p 로 줄이려면 4,000개가 필요하다.
+            <strong>이 제곱근 관계 때문에 벤치마크의 해상도를 높이는 것이 비싸다</strong> —
+            0.1%p 차이를 구분하려면 수십만 개가 필요해진다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            $\hat\theta=X_1$ (첫 관측값만 쓰는 추정량)에 대해 옳은 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>불편이지만 일치하지 않는다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>편향이 있지만 일치한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>불편이면서 효율적이다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\mathbb{E}[X_1]=\mu$ 이므로 <strong>불편</strong>이지만,
+            $n$ 을 아무리 키워도 $\mathrm{Var}=\sigma^2$ 로 그대로라 참값에 <strong>수렴하지 않는다</strong>.
+            불편성과 일치성이 서로 다른 성질임을 보여 주는 표준적인 예이며,
+            <strong>실용적으로 더 중요한 것은 일치성</strong>이다 — 불편이어도 안 좁아지면 쓸모가 없다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            Bernoulli data 100만 개에서 $p$ 를 추정할 때, 저장해야 할 최소한의 정보는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>성공 횟수 $\sum X_i$ 하나 (충분통계량)</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>관측 순서를 포함한 전체 수열</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>연속된 성공의 최대 길이</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            likelihood 가 $p^{T}(1-p)^{n-T}$ 라 data 를 $T=\sum X_i$ 를 통해서만 보므로
+            <strong>$T$ 가 충분통계량</strong>이다(예제 ④).
+            $T$ 를 알고 나면 순서의 조건부 분포가 $p$ 와 무관해져 추가 정보가 0 이다.
+            이 성질이 온라인 학습과 연합학습에서 <strong>원본 대신 집계값만 주고받는</strong> 설계의 근거다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            train 과 validation loss 가 둘 다 높은 값에서 나란히 수렴했다. 우선 시도할 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>편향 문제이므로 model 표현력을 키운다 — data 를 더 모아도 소용없다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>data 를 10배 더 모은다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>정규화를 더 강하게 건다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            둘이 <strong>붙어 있으면서 높다</strong>는 것은 분산이 아니라 편향(underfitting)이 지배한다는 신호다.
+            $n$ 을 늘리면 분산 항만 $1/n$ 로 줄어들 뿐 편향은 그대로다(오해 4).
+            <strong>다</strong>는 분산을 더 줄이는 처방이라 오히려 편향을 키운다.
+            두 곡선이 <strong>벌어져 있을 때</strong>가 data 를 더 모아야 하는 상황이다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="4.6-likelihood-estimation.html">4.6 가능도 기반 추정</a></strong> — MLE 가 일치·점근효율을 갖는다는 결과가 이 절의 기준으로 평가된다.</li>
+        <li><strong><a href="4.8-hypothesis-testing.html">4.8 가설검정</a></strong> — 신뢰구간과 검정은 같은 계산의 두 얼굴이다.</li>
+        <li><strong><a href="4.9-uncertainty.html">4.9 불확실성</a></strong> — 추정량의 분산이 epistemic uncertainty 의 출발점이다.</li>
+        <li><strong>5장 전통적 머신러닝</strong> — 편향-분산 분해가 model 선택과 정규화의 기본 언어다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-fisher1922-mathematical-foundations" data-ref="fisher1922-mathematical-foundations">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Fisher, R. A. (1922). <em>On the Mathematical Foundations of Theoretical Statistics</em>. Philosophical Transactions of the Royal Society A, 222, 309–368.</span>
+          <span class="ref__where">§3 — 추정 문제를 '분포의 형태는 알고 모수만 모른다'로 정식화하고 <strong>consistency·efficiency·sufficiency 세 기준을 처음 정의</strong>한 부분('수식과 기호'의 기준 표). §5–6 — 충분통계량의 정의와 Bernoulli·Gaussian 예. §9 — Fisher information 과 추정량 분산의 하한 논의</span>
+          <a class="ref__link" href="https://royalsocietypublishing.org/doi/10.1098/rsta.1922.0009">royalsocietypublishing.org</a>
+        </li>
+        <li class="ref" id="ref-murphy2022-pml" data-ref="murphy2022-pml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Murphy, K. P. (2022). <em>Probabilistic Machine Learning: An Introduction</em>. MIT Press.</span>
+          <span class="ref__where">4.7절(Frequentist statistics) — 추정량을 확률변수로 보는 sampling distribution 의 정의(위젯 4)와 bias–variance 분해(유도 1). 4.7.5절 — "unbiased 가 항상 좋은 것은 아니다"와 Stein 역설 언급(오해 2). 4.7.4절 — 신뢰구간의 빈도주의 해석과 bootstrap. 4.6.7절 — credible interval 과의 대비(오해 1)</span>
+          <a class="ref__link" href="https://probml.github.io/pml-book/book1.html">probml.github.io</a>
+        </li>
+        <li class="ref" id="ref-hastie2009-esl" data-ref="hastie2009-esl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em> (2nd ed.). Springer.</span>
+          <span class="ref__where">7.2–7.3절 — 예측오차의 편향-분산 분해와 model 복잡도에 따른 두 항의 반대 방향 움직임(직관 절의 과녁 그림, 퀴즈 6 의 학습곡선 진단). 3.4.1절 — ridge 가 편향을 얻고 분산을 줄여 MSE 를 낮추는 계산(오해 2)</span>
+          <a class="ref__link" href="https://hastie.su.domains/ElemStatLearn/">hastie.su.domains</a>
+        </li>
+        <li class="ref" id="ref-mit-18650" data-ref="mit-18650">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Rigollet, P. <em>MIT 18.650: Statistics for Applications</em> (Fall 2016). MIT OpenCourseWare.</span>
+          <span class="ref__where">Lecture 1–3 — 통계 모형과 추정량의 정의, 편향·분산·이차위험(MSE)의 관계. Lecture 4–5 — Fisher information 과 Cramér–Rao 하한, 그리고 표본비율이 하한을 달성한다는 계산(유도 3). Lecture 6 — 신뢰구간의 구성과 해석, $t$ 분포를 쓰는 조건(예제 ②)</span>
+          <a class="ref__link" href="https://ocw.mit.edu/courses/18-650-statistics-for-applications-fall-2016/">ocw.mit.edu</a>
+        </li>
+        <li class="ref" id="ref-statquest" data-ref="statquest">
+          <span class="ref__type" data-type="video">영상</span>
+          <span class="ref__cite">Starmer, J. <em>Why Dividing By N Underestimates the Variance</em> · <em>Bias and Variance</em>. StatQuest.</span>
+          <span class="ref__where">'Dividing by n−1' 편 01:30–12:00 — 참 평균이 아니라 표본평균으로 잰 편차가 <strong>구조적으로 작다</strong>는 시각적 설명(유도 2, 오해 3). 'Bias and Variance' 편 — 과녁 비유와 학습곡선으로 두 문제를 구분하는 진단법(퀴즈 6)</span>
+          <a class="ref__link" href="https://statquest.org/video-index/">statquest.org</a>
+        </li>
+        <li class="ref" id="ref-scipy-stats-docs" data-ref="scipy-stats-docs">
+          <span class="ref__type" data-type="doc">문서</span>
+          <span class="ref__cite">SciPy developers. <em>scipy.stats — Statistical functions</em> · NumPy <em>numpy.var</em>.</span>
+          <span class="ref__where"><code>ddof</code> 인자의 정의와 기본값(<code>numpy.var</code> 는 0, <code>pandas.Series.var</code> 는 1)이 오해 5 의 직접 근거. <code>scipy.stats.t.interval</code> · <code>bootstrap</code> 문서 — $t$ 기반 구간과 재표본 구간의 인터페이스('구간추정' 표)</span>
+          <a class="ref__link" href="https://docs.scipy.org/doc/scipy/reference/stats.html">docs.scipy.org</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+function mkRand(seed) {
+  var s = seed || 12345;
+  return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+}
+function gauss(rnd) {
+  var u = Math.max(1e-9, rnd()), v = rnd();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+/* 플롯 영역 배경 — 축 라벨이 놓이는 '칸'을 눈에 보이게 만든다.
+   (tools/check-visual.mjs 의 '칸초과' 는 같은 그룹의 첫 rect 를 칸으로 본다) */
+function panel(p) {
+  p.add(VIZ.el('rect', {
+    x: p.pad.l, y: p.pad.t, width: p.iw, height: p.ih,
+    fill: 'var(--ink-3)', 'fill-opacity': 0.03, stroke: 'none'
+  }));
+  return p;
+}
+
+/* ============================================================
+   위젯 1 — 과녁 (편향과 분산)
+   ============================================================ */
+WIDGETS.register('target-board', function (root, ctx) {
+  var bias = 0.4, sd = 0.9;
+
+  var p = VIZ.plot({ w: 460, h: 300, xmin: -3.2, xmax: 3.2, ymin: -3.2, ymax: 3.2,
+    pad: { t: 16, r: 16, b: 26, l: 34 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'b', label: '편향² (중심이 빗나간 정도)', digits: 4 },
+    { key: 'v', label: '분산 (흩어진 정도)', digits: 4 },
+    { key: 'mse', label: 'MSE = 편향² + 분산', digits: 4 },
+    { key: 'note', label: '진단' }
+  ]);
+
+  function draw() {
+    p.clear().axes('', '').ticks(1, 1);
+    /* 과녁 */
+    [3, 2, 1].forEach(function (r) {
+      var pts = [];
+      for (var i = 0; i <= 90; i++) {
+        var t = i / 90 * 2 * Math.PI;
+        pts.push([r * Math.cos(t), r * Math.sin(t)]);
+      }
+      p.line(pts, { dash: '3 3' });
+    });
+    p.dot(0, 0, 4);
+
+    var rnd = mkRand(20260729);
+    for (var k = 0; k < 90; k++) {
+      var x = bias + sd * gauss(rnd), y = sd * gauss(rnd);
+      p.dot(Math.max(-3.1, Math.min(3.1, x)), Math.max(-3.1, Math.min(3.1, y)), 2.8);
+    }
+    p.dot(bias, 0, 6);
+    p.callout(bias, 0, '화살들의 중심', { dx: 22, dy: -20, tone: 'var(--seal)' });
+
+    var b2 = bias * bias, v = 2 * sd * sd;   /* 2차원이므로 분산 두 축 */
+    out.set('b', b2);
+    out.set('v', v);
+    out.set('mse', b2 + v);
+    out.setRaw('note', b2 > v ? '편향이 지배 — model 표현력을 키울 자리'
+      : (v > 3 * b2 ? '분산이 지배 — data 를 늘리거나 정규화할 자리' : '둘이 비슷하다'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '편향 (중심을 옮긴다)', min: 0, max: 2.4, step: 0.05, value: 0.4, digits: 2,
+    onInput: function (v) { bias = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '분산 (흩어짐)', min: 0.05, max: 1.6, step: 0.05, value: 0.9, digits: 2,
+    onInput: function (v) { sd = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — 충분통계량
+   ============================================================ */
+WIDGETS.register('sufficient-demo', function (root, ctx) {
+  var seq = [1, 0, 1, 1, 0, 1, 0, 0, 1, 1];
+  var shuffled = null;
+
+  var p = VIZ.plot({ w: 460, h: 270, xmin: 0, xmax: 1, ymin: 0, ymax: 1.15,
+    pad: { t: 30, r: 16, b: 32, l: 44 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'seq', label: '관측 수열' },
+    { key: 'T', label: '충분통계량 T = Σxᵢ' },
+    { key: 'mle', label: 'likelihood 를 최대로 하는 p', digits: 4 },
+    { key: 'same', label: '두 수열의 likelihood 차이', digits: 12 }
+  ]);
+
+  function lik(arr, q) {
+    var k = arr.reduce(function (a, b) { return a + b; }, 0);
+    return Math.pow(q, k) * Math.pow(1 - q, arr.length - k);
+  }
+
+  function draw() {
+    p.clear().grid(0.25, 0.25).axes('p', '').ticks(0.25, 0.25);
+    var k = seq.reduce(function (a, b) { return a + b; }, 0), n = seq.length;
+    var mle = k / n, top = lik(seq, mle);
+
+    p.curve(function (q) { return lik(seq, q) / top; }, { samples: 300 });
+    if (shuffled) p.curve(function (q) { return lik(shuffled, q) / top; }, { samples: 300, alt: true, dash: '6 4' });
+    p.line([[mle, 0], [mle, 1]], { dash: '2 3' });
+    p.dot(mle, 1, 5);
+    p.callout(mle, 1, 'p̂ = ' + k + '/' + n + ' = ' + mle.toFixed(2), { dx: 20, dy: -14, tone: 'var(--seal)' });
+    /* 캡션은 위쪽 여백에 — 플롯 안에 두면 callout 과 겹친다 */
+    p.text(0, 1.15, 'likelihood (최댓값 1) · 실선 = 원래 순서 · 점선 = 뒤섞은 순서',
+      { size: 10, dy: -10 });
+
+    out.setRaw('seq', seq.join('') + (shuffled ? '   →   ' + shuffled.join('') : ''));
+    out.setRaw('T', k + ' / ' + n);
+    out.set('mle', mle);
+    var d = 0;
+    if (shuffled) for (var i = 1; i < 100; i++) d = Math.max(d, Math.abs(lik(seq, i / 100) - lik(shuffled, i / 100)));
+    out.set('same', d);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '성공 횟수 T (n = 10 고정)', min: 0, max: 10, step: 1, value: 6, digits: 0,
+    onInput: function (v) {
+      seq = [];
+      for (var i = 0; i < 10; i++) seq.push(i < v ? 1 : 0);
+      /* 앞쪽으로 몰아 놓은 수열 */
+      shuffled = null;
+      draw();
+    }
+  });
+  WIDGETS.toggle({
+    host: ctx.controls, label: '같은 T 로 순서만 바꾸기',
+    options: [{ value: 'off', label: '원래 수열만' }, { value: 'on', label: '뒤섞은 수열도 겹쳐 그리기' }],
+    value: 'off',
+    onChange: function (v) {
+      if (v === 'on') {
+        var rnd = mkRand(555), a = seq.slice();
+        for (var i = a.length - 1; i > 0; i--) {
+          var j = Math.floor(rnd() * (i + 1));
+          var t = a[i]; a[i] = a[j]; a[j] = t;
+        }
+        shuffled = a;
+      } else shuffled = null;
+      draw();
+    }
+  });
+  seq = [1, 1, 1, 1, 1, 1, 0, 0, 0, 0];
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — 신뢰구간 포함률
+   ============================================================ */
+WIDGETS.register('ci-coverage', function (root, ctx) {
+  var n = 30, level = 0.95, seed = 3;
+
+  var p = VIZ.plot({ w: 460, h: 300, xmin: 0, xmax: 60, ymin: 40, ymax: 60,
+    pad: { t: 18, r: 16, b: 30, l: 44 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'lv', label: '설정한 신뢰수준' },
+    { key: 'hit', label: '60개 중 참값을 담은 구간 수' },
+    { key: 'rate', label: '실제 포함률', digits: 4 },
+    { key: 'w', label: '평균 구간 폭', digits: 4 }
+  ]);
+
+  function zOf(L) {
+    /* 표준정규 분위수 근사 (Beasley-Springer-Moro 간이판) */
+    var q = (1 + L) / 2;
+    var t = Math.sqrt(-2 * Math.log(1 - q));
+    return t - (2.515517 + 0.802853 * t + 0.010328 * t * t) /
+               (1 + 1.432788 * t + 0.189269 * t * t + 0.001308 * t * t * t);
+  }
+
+  function draw() {
+    p.clear().grid(10, 5).axes('실험 번호', '평균 추정치').ticks(10, 5);
+    p.line([[0, 50], [60, 50]], { width: 2 });
+    p.text(0.5, 59.4, '가로선 = 참 평균 50', { size: 10 });
+
+    var rnd = mkRand(seed * 7919 + 13), z = zOf(level);
+    var hit = 0, wsum = 0;
+    for (var k = 0; k < 60; k++) {
+      var s = 0, s2 = 0, i;
+      var v = [];
+      for (i = 0; i < n; i++) { var x = 50 + 10 * gauss(rnd); v.push(x); s += x; }
+      var m = s / n;
+      for (i = 0; i < n; i++) s2 += Math.pow(v[i] - m, 2);
+      var sd = Math.sqrt(s2 / (n - 1)), se = sd / Math.sqrt(n);
+      var lo = m - z * se, hi = m + z * se;
+      var ok = (lo <= 50 && 50 <= hi);
+      if (ok) hit++;
+      wsum += hi - lo;
+      p.add(VIZ.el('line', {
+        x1: p.X(k + 0.5), y1: p.Y(Math.max(40, Math.min(60, lo))),
+        x2: p.X(k + 0.5), y2: p.Y(Math.min(60, Math.max(40, hi))),
+        stroke: ok ? 'var(--jade)' : 'var(--seal)', 'stroke-width': 2, 'stroke-opacity': ok ? 0.55 : 1
+      }));
+      p.dot(k + 0.5, Math.max(40, Math.min(60, m)), 2.2);
+    }
+    out.setRaw('lv', (level * 100).toFixed(0) + '%   (z = ' + z.toFixed(3) + ')');
+    out.setRaw('hit', hit + ' / 60');
+    out.set('rate', hit / 60);
+    out.set('w', wsum / 60);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '표본 크기 n', min: 5, max: 200, step: 5, value: 30, digits: 0,
+    onInput: function (v) { n = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '신뢰수준', min: 0.5, max: 0.995, step: 0.005, value: 0.95, digits: 3,
+    onInput: function (v) { level = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed (다시 뽑기)', min: 1, max: 40, step: 1, value: 3, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — 추정량의 표본분포
+   ============================================================ */
+WIDGETS.register('sampling-dist', function (root, ctx) {
+  var n = 10, which = 'mean';
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'center', label: '추정값들의 평균 (편향을 본다)', digits: 4 },
+    { key: 'truth', label: '참값' },
+    { key: 'bias', label: '편향', digits: 4 },
+    { key: 'sd', label: '추정값들의 표준편차', digits: 4 }
+  ]);
+
+  function draw() {
+    var rnd = mkRand(24680), T = 6000, vals = [];
+    for (var t = 0; t < T; t++) {
+      var v = [], i, s = 0;
+      for (i = 0; i < n; i++) { var x = 50 + 10 * gauss(rnd); v.push(x); s += x; }
+      var m = s / n;
+      if (which === 'mean') vals.push(m);
+      else if (which === 'first') vals.push(v[0]);
+      else if (which === 'median') {
+        v.sort(function (a, b) { return a - b; });
+        vals.push(n % 2 ? v[(n - 1) / 2] : (v[n / 2 - 1] + v[n / 2]) / 2);
+      } else {
+        var s2 = 0;
+        for (i = 0; i < n; i++) s2 += Math.pow(v[i] - m, 2);
+        vals.push(which === 'varN' ? s2 / n : s2 / (n - 1));
+      }
+    }
+    var isVar = (which === 'varN' || which === 'varN1');
+    var truth = isVar ? 100 : 50;
+    var lo = isVar ? 0 : 30, hi = isVar ? 300 : 70;
+
+    var bins = new Array(46).fill(0);
+    var mu = 0, i2;
+    for (i2 = 0; i2 < T; i2++) {
+      mu += vals[i2] / T;
+      var b = Math.max(0, Math.min(45, Math.floor((vals[i2] - lo) / (hi - lo) * 46)));
+      bins[b]++;
+    }
+    var vv = 0;
+    for (i2 = 0; i2 < T; i2++) vv += Math.pow(vals[i2] - mu, 2) / T;
+    var top = Math.max.apply(null, bins);
+
+    var p = VIZ.plot({ w: 460, h: 280, xmin: lo, xmax: hi, ymin: 0, ymax: 1.15,
+      pad: { t: 20, r: 16, b: 30, l: 44 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid((hi - lo) / 8, 0.25).axes('추정값', '빈도').ticks((hi - lo) / 4, 0);
+
+    for (var k = 0; k < 46; k++) {
+      if (!bins[k]) continue;
+      var x0 = lo + (hi - lo) * k / 46, x1 = lo + (hi - lo) * (k + 1) / 46;
+      p.add(VIZ.el('rect', {
+        x: p.X(x0), y: p.Y(bins[k] / top),
+        width: Math.max(1, p.X(x1) - p.X(x0) - 1), height: p.Y(0) - p.Y(bins[k] / top),
+        fill: 'var(--jade)', 'fill-opacity': 0.34, stroke: 'var(--jade)', 'stroke-width': 0.7
+      }));
+    }
+    p.line([[truth, 0], [truth, 1.05]], { width: 2 });
+    p.line([[mu, 0], [mu, 1.0]], { width: 1.6, dash: '4 3' });
+    p.callout(truth, 1.05, '참값 ' + truth, { dx: 16, dy: -6, tone: 'var(--seal)' });
+
+    out.set('center', mu);
+    out.setRaw('truth', String(truth));
+    out.set('bias', mu - truth);
+    out.set('sd', Math.sqrt(vv));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '어떤 추정량을 볼까 (참 평균 50 · 참 분산 100)',
+    options: [
+      { value: 'mean', label: '표본평균' },
+      { value: 'median', label: '표본중앙값' },
+      { value: 'first', label: '첫 관측값' }
+    ],
+    value: 'mean', onChange: function (v) { which = v; draw(); }
+  });
+  WIDGETS.toggle({
+    host: ctx.controls, label: '분산 추정량',
+    options: [
+      { value: 'varN', label: '분모 n' },
+      { value: 'varN1', label: '분모 n−1' }
+    ],
+    value: 'varN1', onChange: function (v) { which = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '표본 크기 n', min: 2, max: 60, step: 1, value: 10, digits: 0,
+    onInput: function (v) { n = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — ddof 비교
+   ============================================================ */
+WIDGETS.register('ddof-compare', function (root, ctx) {
+  var maxN = 30;
+
+  var p = VIZ.plot({ w: 460, h: 280, xmin: 2, xmax: 30, ymin: 0, ymax: 1.3,
+    pad: { t: 20, r: 16, b: 32, l: 50 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'n', label: '표본 크기 n' },
+    { key: 'r', label: '분모 n 일 때 기댓값 / σ²  = (n−1)/n', digits: 4 },
+    { key: 'gap', label: '과소추정 비율', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function draw() {
+    p.clear().grid(4, 0.25).axes('n', 'E[추정량] / σ²').ticks(4, 0.25);
+    p.line([[2, 1], [30, 1]], { width: 2 });
+    var a = [], b = [];
+    for (var k = 2; k <= 30; k++) { a.push([k, (k - 1) / k]); b.push([k, 1]); }
+    p.line(a, { alt: true, width: 2 });
+    p.dot(maxN, (maxN - 1) / maxN, 5.5);
+    p.callout(maxN, (maxN - 1) / maxN, '분모 n: ' + ((maxN - 1) / maxN).toFixed(3),
+      { dx: 18, dy: 18, tone: 'var(--seal)' });
+    p.text(2.3, 1.26, '가로선 = 분모 n−1 (항상 1.000, 불편) · 곡선 = 분모 n', { size: 10 });
+
+    out.setRaw('n', String(maxN));
+    out.set('r', (maxN - 1) / maxN);
+    out.set('gap', 1 / maxN);
+    out.setRaw('note', maxN <= 5 ? '작은 n 에서는 차이가 크다 (batch 통계에서 문제)'
+      : (maxN >= 25 ? 'n 이 크면 차이가 4% 이하 — 그래도 편향은 남는다' : '중간'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '표본 크기 n', min: 2, max: 30, step: 1, value: 30, digits: 0,
+    onInput: function (v) { maxN = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

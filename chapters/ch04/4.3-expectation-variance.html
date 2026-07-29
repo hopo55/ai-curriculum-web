@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.3 기댓값과 분산 — AI 이론 학습</title>
+<meta name="description" content="기댓값은 무게중심, 분산은 관성모멘트다. 기댓값은 언제나 선형이지만 분산은 무상관일 때만 더해지고, 표본평균이 참값으로 가는 속도와 모양을 정하는 것이 대수의 법칙과 중심극한정리다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="4.3">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">4.3</span>
+        <span>4장 · 확률과 통계</span>
+      </div>
+      <h1>기댓값과 분산</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 65분</span>
+        <span><b>난이도</b>★★★☆☆</span>
+        <span><b>선수지식</b>
+          <a href="4.2-random-variables.html">4.2 확률변수</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-exp">Expectation</a>
+      <a class="chip" href="#c-var">Variance</a>
+      <a class="chip" href="#c-sd">Standard Deviation</a>
+      <a class="chip" href="#c-cov">Covariance</a>
+      <a class="chip" href="#c-corr">Correlation</a>
+      <a class="chip" href="#c-moment">Moment</a>
+      <a class="chip" href="#c-clt">Central Limit Theorem</a>
+      <a class="chip" href="#c-lln">Law of Large Numbers</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        기댓값은 분포의 <strong>무게중심</strong>이고 분산은 <strong>그 중심 둘레의 관성모멘트</strong>다.
+        <strong>기댓값은 언제나 선형이지만 분산은 무상관일 때만 더해지고</strong>,
+        표본평균이 참값에 얼마나 빨리·어떤 모양으로 가는지를 정하는 것이 대수의 법칙과 중심극한정리다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>$\mathbb{E}[aX+bY]=a\mathbb{E}[X]+b\mathbb{E}[Y]$ 가 독립 없이도 성립하는 이유를 설명할 수 있다.</li>
+        <li>$\mathrm{Var}(X)=\mathbb{E}[X^2]-\mu^2$ 과 $\mathrm{Var}(X+Y)=\mathrm{Var}X+\mathrm{Var}Y+2\mathrm{Cov}(X,Y)$ 를 유도하고 손으로 계산할 수 있다.</li>
+        <li>correlation 이 0 이어도 종속일 수 있음을 반례로 보이고, CLT 가 "무엇이" 정규분포에 가까워진다는 말인지 정확히 말할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        분포 전체를 들고 다닐 수는 없으니 <strong>몇 개의 숫자로 요약</strong>한다.
+        가장 자연스러운 요약은 물리에서 물체를 다루는 방식과 같다.
+        확률을 질량이라고 보면, 기댓값은 <strong>막대가 균형을 이루는 받침점</strong>이고
+        분산은 <strong>그 받침점을 축으로 돌릴 때의 회전 관성</strong>이다.
+      </p>
+      <p>
+        이 비유가 성립하는 이유는 계산식이 실제로 같기 때문이다.
+        무게중심은 $\sum m_i x_i / \sum m_i$ 인데 확률은 합이 1 이라 분모가 사라진다.
+        관성모멘트는 $\sum m_i (x_i-\bar{x})^2$ 로 <strong>거리의 제곱</strong>에 질량을 곱해 더한 것 —
+        분산의 정의 그대로다.
+      </p>
+      <p>
+        제곱을 쓰는 이유도 여기서 보인다. 그냥 거리를 더하면 좌우가 상쇄되어 0 이 되고,
+        절댓값을 쓰면 미분이 안 된다. 제곱은 <strong>상쇄를 막으면서 매끄럽고</strong>,
+        덤으로 <strong>독립인 것끼리 그냥 더해지는</strong> 성질까지 준다.
+      </p>
+
+      <figure class="widget" data-widget="balance-beam">
+        <figcaption class="widget__bar">Expectation as Balance — 받침점과 회전 관성</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">막대를 기울여 보세요. <strong>기댓값 위에서만 균형</strong>이 잡힙니다. 무게를 바깥으로 옮기면 받침점은 그대로여도 분산이 커집니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          <strong>기댓값은 위치, 분산은 퍼짐</strong>이다. 이 둘이 분포 요약의 1차·2차 정보이고,
+          <a href="4.4-common-distributions.html">4.4</a>의 Gaussian은 <strong>이 둘만으로 분포가 완전히 결정되는</strong> 특수한 경우다.
+          그래서 실무에서 "평균과 표준편차를 보고했다"는 말이 Gaussian 가정을 암묵적으로 깔고 있는 경우가 많다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-exp"></span>
+      <h3>Expectation 기댓값</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathbb{E}[X] = \sum_x x\,p(x) \qquad\text{또는}\qquad \mathbb{E}[X] = \int_{-\infty}^{\infty} x\,f(x)\,dx $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">기댓값은 값에 그 값의 확률을 가중치로 곱해 더한 <strong>가중평균</strong>이며, 분포의 무게중심이다.</span>
+        "기대"라는 이름과 달리 <strong>실제로 나올 것으로 기대되는 값이 아니다</strong> —
+        주사위의 기댓값 3.5 는 절대 나오지 않는다.
+      </p>
+      <p>함수를 씌운 값의 기댓값은 분포를 다시 구하지 않고 바로 계산할 수 있다 (LOTUS).</p>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbb{E}[g(X)] = \sum_x g(x)\,p(x), \qquad \mathbb{E}[g(X,Y)] = \sum_{x,y} g(x,y)\,p(x,y) $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>기댓값의 성질 중 하나가 압도적으로 중요하다.</p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathbb{E}[aX+bY+c] = a\,\mathbb{E}[X] + b\,\mathbb{E}[Y] + c \qquad (\text{독립 가정 없이 항상}) $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl">기댓값의 <strong>선형성</strong>은 $X$ 와 $Y$ 가 어떻게 얽혀 있든 성립한다 —
+        이것이 확률 계산에서 가장 자주 쓰이는 도구다.</span>
+        결합분포를 몰라도 각각의 평균만 알면 합의 평균을 안다.
+        반면 곱은 다르다: $\mathbb{E}[XY]=\mathbb{E}[X]\mathbb{E}[Y]$ 는 <strong>무상관일 때만</strong> 성립한다.
+      </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>반 학생들의 키 평균과 몸무게 평균을 안다면, "키 + 몸무게"의 평균은 그냥 두 평균을 더하면 됩니다. 키 큰 사람이 무거운지 가벼운지는 <strong>알 필요가 없습니다</strong>.</p>
+        <p>하지만 "키 × 몸무게"의 평균은 그렇지 않습니다. 키 큰 사람이 대체로 무겁다면 곱은 평균보다 커집니다. <strong>더하기는 관계를 안 타고, 곱하기는 탑니다.</strong></p>
+      </div>
+
+      <span class="anchor" id="c-var"></span>
+      <span class="anchor" id="c-sd"></span>
+      <h3>Variance &amp; Standard Deviation 분산과 표준편차</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathrm{Var}(X) = \mathbb{E}\bigl[(X-\mu)^2\bigr] = \mathbb{E}[X^2]-\mu^2, \qquad \sigma = \sqrt{\mathrm{Var}(X)} $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        <span class="hl">분산은 평균에서 벗어난 거리의 <strong>제곱</strong>의 평균이고, 표준편차는 그 제곱근이라
+        <strong>원래 값과 같은 단위</strong>를 갖는다.</span>
+        키를 cm 로 재면 분산의 단위는 cm² 라 해석이 어렵지만, 표준편차는 cm 라 "평균에서 대략 이만큼 떨어져 있다"로 읽힌다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>연산</th><th>기댓값</th><th>분산</th><th>왜</th></tr></thead>
+          <tbody>
+            <tr><td>$aX+b$</td><td>$a\mu+b$</td><td>$a^2\sigma^2$</td><td>평행이동은 퍼짐을 바꾸지 않고, 배율은 <strong>제곱</strong>으로 들어간다</td></tr>
+            <tr><td>$X+Y$ (일반)</td><td>$\mu_X+\mu_Y$</td><td>$\sigma_X^2+\sigma_Y^2+2\mathrm{Cov}(X,Y)$</td><td>교차항이 남는다</td></tr>
+            <tr><td>$X+Y$ (무상관)</td><td>$\mu_X+\mu_Y$</td><td>$\sigma_X^2+\sigma_Y^2$</td><td><strong>분산이 더해진다</strong> — 피타고라스와 같은 구조</td></tr>
+            <tr><td>$X-Y$ (무상관)</td><td>$\mu_X-\mu_Y$</td><td>$\sigma_X^2+\sigma_Y^2$</td><td>빼도 <strong>분산은 더해진다</strong> (불확실성은 상쇄되지 않는다)</td></tr>
+            <tr><td>$\bar{X}_n$ (i.i.d.)</td><td>$\mu$</td><td>$\sigma^2/n$</td><td>표본평균의 분산 — 이 절 전체의 결론</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        마지막 줄이 machine learning 전체를 관통한다. mini-batch gradient 의 잡음이 $\sigma/\sqrt{B}$ 인 것
+        (<a href="../ch03/3.6-gradient-descent.html">3.6</a>), 실험 결과의 표준오차, 앙상블이 분산을 줄이는 원리가 전부 이 한 줄이다.
+      </p>
+
+      <span class="anchor" id="c-cov"></span>
+      <span class="anchor" id="c-corr"></span>
+      <h3>Covariance &amp; Correlation 공분산과 상관계수</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathrm{Cov}(X,Y)=\mathbb{E}\bigl[(X-\mu_X)(Y-\mu_Y)\bigr]=\mathbb{E}[XY]-\mu_X\mu_Y, \qquad \rho_{XY}=\frac{\mathrm{Cov}(X,Y)}{\sigma_X\sigma_Y} $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        <span class="hl">covariance 는 "둘이 같은 쪽으로 벗어나는 정도"이고, correlation 은 그것을
+        각자의 표준편차로 나눠 <strong>$[-1,1]$ 로 정규화한 값</strong>이라 단위와 스케일에 영향을 받지 않는다.</span>
+        $\mathrm{Cov}(X,X)=\mathrm{Var}(X)$ 이므로 covariance 는 분산을 두 변수로 확장한 것이다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$\rho$</th><th>뜻</th><th>산점도 모양</th></tr></thead>
+          <tbody>
+            <tr><td class="num">+1</td><td>완전한 양의 <strong>선형</strong> 관계 $Y=aX+b$ ($a>0$)</td><td>기울기 양수인 직선</td></tr>
+            <tr><td class="num">0.5</td><td>느슨한 양의 관계</td><td>오른쪽 위로 퍼진 타원</td></tr>
+            <tr><td class="num">0</td><td><strong>선형</strong> 관계 없음 (독립이라는 뜻이 아니다)</td><td>원 · 또는 U자 모양도 가능</td></tr>
+            <tr><td class="num">−1</td><td>완전한 음의 선형 관계</td><td>기울기 음수인 직선</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        벡터로 보면 명확해진다. 중심화한 확률변수를 벡터로 두면
+        covariance 는 <a href="../ch02/2.3-inner-product.html">2.3</a>의 inner product,
+        표준편차는 노름, correlation 은 <strong>cosine similarity</strong> 다.
+        $|\rho|\le1$ 은 Cauchy–Schwarz 부등식 그 자체다.
+      </p>
+
+      <figure class="widget" data-widget="cov-scatter">
+        <figcaption class="widget__bar">Correlation — 산점도의 모양과 ρ</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">축의 단위를 바꿔도 <strong>$\rho$ 는 그대로</strong>인데 covariance 는 변합니다. 'U자' 를 고르면 $\rho\approx0$ 인데도 완전히 종속입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-moment"></span>
+      <h3>Moment 모멘트</h3>
+      <p>
+        <span class="hl">$k$ 차 moment 는 $\mathbb{E}[X^k]$, $k$ 차 중심 moment 는 $\mathbb{E}[(X-\mu)^k]$ 이고,
+        낮은 차수부터 위치·퍼짐·비대칭·꼬리 두께를 차례로 담는다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>차수</th><th>이름</th><th>정의</th><th>무엇을 재나</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td>mean 평균</td><td>$\mu=\mathbb{E}[X]$</td><td>위치 (무게중심)</td></tr>
+            <tr><td class="num">2</td><td>variance 분산</td><td>$\mathbb{E}[(X-\mu)^2]$</td><td>퍼짐</td></tr>
+            <tr><td class="num">3</td><td>skewness 왜도</td><td>$\mathbb{E}[(X-\mu)^3]/\sigma^3$</td><td>비대칭 — 양수면 <strong>오른쪽 꼬리가 길다</strong></td></tr>
+            <tr><td class="num">4</td><td>kurtosis 첨도</td><td>$\mathbb{E}[(X-\mu)^4]/\sigma^4$</td><td>꼬리 두께 — Gaussian이 3, 그보다 크면 극단값이 잦다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        3 차 이상을 $\sigma^k$ 로 나누는 것은 <strong>단위를 없애기 위해서</strong>다 —
+        correlation 이 covariance 를 정규화한 것과 같은 이유다.
+        moment 를 전부 모으면 (조건이 맞을 때) 분포가 유일하게 결정되며,
+        그 생성 장치가 moment generating function $M_X(t)=\mathbb{E}[e^{tX}]$ 다.
+        $M_X$ 를 $t=0$ 에서 $k$ 번 미분하면 $k$ 차 moment 가 나오고, 독립인 것끼리는 <strong>MGF 가 곱해진다</strong>.
+      </p>
+
+      <figure class="widget" data-widget="moment-shape">
+        <figcaption class="widget__bar">Moments — 왜도와 첨도가 모양을 어떻게 바꾸나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">평균과 분산을 <strong>고정한 채로</strong> 모양이 달라지는 것을 보세요. 2차까지만 보고하면 놓치는 정보입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-lln"></span>
+      <h3>Law of Large Numbers 대수의 법칙</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \bar{X}_n=\frac1n\sum_{i=1}^n X_i \ \xrightarrow[n\to\infty]{} \ \mu \qquad (X_i \text{ i.i.d.},\ \mathbb{E}|X_i|&lt;\infty) $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        <span class="hl">독립이고 같은 분포를 따르는 표본을 많이 모으면 <strong>표본평균이 참 평균으로 수렴한다</strong> —
+        이것이 "많이 관측하면 진실을 알 수 있다"는 통계학의 존재 근거다.</span>
+        약한 형태(확률수렴)와 강한 형태(거의 확실한 수렴)가 있고, 실무에서는 구분이 거의 필요 없다.
+      </p>
+      <p>
+        증명은 놀랄 만큼 짧다. $\mathrm{Var}(\bar{X}_n)=\sigma^2/n\to0$ 이고,
+        분산이 0 으로 가면 값이 평균에 붙는다(Chebyshev 부등식). <strong>퍼짐이 사라지는 것이 수렴</strong>이다.
+      </p>
+
+      <span class="anchor" id="c-clt"></span>
+      <h3>Central Limit Theorem 중심극한정리</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \frac{\bar{X}_n-\mu}{\sigma/\sqrt{n}} \ \xrightarrow[n\to\infty]{d}\ \mathcal{N}(0,1) \qquad\text{즉}\qquad \bar{X}_n \ \approx\ \mathcal{N}\!\left(\mu,\ \frac{\sigma^2}{n}\right) $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        <span class="hl">LLN 이 "어디로 가는가"를 말한다면 CLT 는 "얼마나 빨리, 어떤 모양으로 가는가"를 말한다 —
+        $X_i$ 의 분포가 무엇이든 표본평균의 <strong>흔들림은 Gaussian 모양</strong>이고 그 폭은 $\sigma/\sqrt{n}$ 다.</span>
+        원래 분포가 균등이든 이항이든 지수든 상관없다는 것이 이 정리의 놀라운 점이다.
+      </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>동전을 100번 던져 앞면 비율을 적고, 이 실험을 수천 번 반복해 히스토그램을 그린다고 합시다. 동전 하나하나는 앞 아니면 뒤라는 <strong>거칠고 뭉툭한</strong> 결과만 냅니다.</p>
+        <p>그런데 100개를 평균 낸 값들의 히스토그램은 매끄러운 종 모양이 됩니다. <strong>많은 것을 섞으면 원래 재료가 무엇이었든 같은 모양이 되어 버립니다</strong> — 그 공통의 모양이 Gaussian 입니다.</p>
+      </div>
+      <p>
+        조건은 세 가지다 — 독립, 동일 분포, <strong>유한한 분산</strong>. 세 번째가 깨지는 대표적인 경우가
+        Cauchy 분포이고, 그때는 아무리 표본을 늘려도 표본평균이 수렴하지 않는다(오해 5).
+        수렴 속도는 대략 $1/\sqrt{n}$ 이고, 원래 분포가 비대칭일수록 큰 $n$ 이 필요하다.
+      </p>
+
+      <figure class="widget" data-widget="clt-build">
+        <figcaption class="widget__bar">Central Limit Theorem — 무엇을 평균 내든 종 모양</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">원래 분포를 아무리 이상하게 골라도 $n$ 을 키우면 <strong>같은 종 모양</strong>으로 수렴합니다. 폭은 $\sigma/\sqrt{n}$ 로 좁아집니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>여러 변수를 한꺼번에 다룰 때는 벡터·행렬로 쓴다. shape 을 함께 적어 두면 헷갈리지 않는다.</p>
+      <div class="eq">
+        <div class="eq__body">$$ \boldsymbol\mu=\mathbb{E}[\mathbf{x}]\in\mathbb{R}^d, \qquad \boldsymbol\Sigma=\mathbb{E}\bigl[(\mathbf{x}-\boldsymbol\mu)(\mathbf{x}-\boldsymbol\mu)^\top\bigr]\in\mathbb{R}^{d\times d} $$</div>
+        <span class="eq__tag num">(8)</span>
+      </div>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbb{E}[\mathbf{A}\mathbf{x}+\mathbf{b}]=\mathbf{A}\boldsymbol\mu+\mathbf{b}, \qquad \mathrm{Cov}(\mathbf{A}\mathbf{x}+\mathbf{b})=\mathbf{A}\boldsymbol\Sigma\mathbf{A}^\top $$</div>
+        <span class="eq__tag num">(9)</span>
+      </div>
+      <p>
+        식 (9)의 오른쪽이 스칼라 규칙 $\mathrm{Var}(aX)=a^2\sigma^2$ 의 행렬판이다 — $a^2$ 자리에 $\mathbf{A}(\cdot)\mathbf{A}^\top$ 가 들어간다.
+        $\boldsymbol\Sigma$ 는 대칭이고 positive semi-definite 이며, 그 eigenvector 가 분산이 가장 큰 방향이다
+        (<a href="../ch02/2.9-dimensionality-reduction.html">2.9</a>의 PCA).
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$\mathbb{E}[\cdot]$</td><td>expectation 익스펙테이션</td><td>기댓값 연산자</td><td>함수 → 실수</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\mu$</td><td>mu 뮤</td><td>평균 (1차 moment)</td><td>scalar 또는 $(d,)$</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\mathrm{Var}(\cdot)$</td><td>variance 배리언스</td><td>분산</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$\sigma$</td><td>sigma 시그마</td><td>표준편차 $\sqrt{\mathrm{Var}}$</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$\sigma^2$</td><td>sigma squared</td><td>분산의 관용 표기</td><td>scalar</td><td>$\ge0$</td></tr>
+            <tr><td>$\mathrm{Cov}(X,Y)$</td><td>covariance 코배리언스</td><td>공분산</td><td>scalar</td><td>$\mathbb{R}$ (부호 있음)</td></tr>
+            <tr><td>$\rho$</td><td>rho 로</td><td>correlation coefficient</td><td>scalar</td><td>$[-1,1]$</td></tr>
+            <tr><td>$\boldsymbol\Sigma$</td><td>capital sigma 대문자 시그마</td><td>covariance matrix</td><td>$(d,d)$</td><td>대칭 · PSD</td></tr>
+            <tr><td>$\bar{X}_n$</td><td>X bar n · 표본평균</td><td>$\frac1n\sum X_i$</td><td>확률변수</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>i.i.d.</td><td>아이아이디 · 독립 동일 분포</td><td>independent and identically distributed</td><td>가정</td><td>—</td></tr>
+            <tr><td>$\xrightarrow{d}$</td><td>converges in distribution 분포수렴</td><td>CDF 가 각 점에서 수렴</td><td>수렴 기호</td><td>—</td></tr>
+            <tr><td>$M_X(t)$</td><td>moment generating function</td><td>$\mathbb{E}[e^{tX}]$</td><td>함수</td><td>$t=0$ 근방에서 유한</td></tr>
+            <tr><td>$\mathcal{N}(\mu,\sigma^2)$</td><td>script N · normal 노멀</td><td>Gaussian 분포</td><td>분포</td><td>—</td></tr>
+            <tr><td>$\perp$</td><td>perp · 독립</td><td>두 확률변수가 독립</td><td>관계</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">같은 것을 다르게 부른다</span>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>이 사이트</th><th>같은 뜻으로 쓰이는 말</th><th>주의할 점</th></tr></thead>
+            <tbody>
+              <tr><td>$\mathbb{E}[X]$</td><td>$E[X]$, $EX$, $\langle X\rangle$, $\mu$</td><td>물리 문헌은 꺾쇠 $\langle\cdot\rangle$ 를 쓴다</td></tr>
+              <tr><td>$\mathbb{E}_{p}[X]$</td><td>$\mathbb{E}_{x\sim p}[X]$</td><td><strong>어느 분포로 평균 내는지</strong>를 아래에 적는다. 4.7·4.10 에서 필수</td></tr>
+              <tr><td>correlation $\rho$</td><td>Pearson correlation</td><td>Spearman·Kendall 은 <strong>순위</strong> 상관으로 전혀 다른 통계량</td></tr>
+              <tr><td>$\sigma^2/n$</td><td>표준오차(SE)의 제곱</td><td>SE 는 <strong>추정량의</strong> 표준편차이지 data 의 표준편차가 아니다</td></tr>
+              <tr><td>kurtosis 3</td><td>excess kurtosis 0</td><td>라이브러리마다 3 을 빼고 보고한다. <code>scipy</code> 는 기본이 excess</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — 계산용 분산 공식 $\mathrm{Var}=\mathbb{E}[X^2]-\mu^2$</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{Var}(X)=\mathbb{E}\bigl[(X-\mu)^2\bigr] = \mathbb{E}\bigl[X^2-2\mu X+\mu^2\bigr] $$</div>
+          <div class="derive__why">제곱을 전개했다. $\mu$ 는 <strong>상수</strong>임에 주의</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ = \mathbb{E}[X^2]-2\mu\,\mathbb{E}[X]+\mu^2 $$</div>
+          <div class="derive__why">선형성 (3) — 상수는 밖으로, 합은 나눠서</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ = \mathbb{E}[X^2]-2\mu^2+\mu^2 = \mathbb{E}[X^2]-\mu^2 $$</div>
+          <div class="derive__why">$\mathbb{E}[X]=\mu$ 를 대입. <strong>평균 두 번 빼고 한 번 더한 셈</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow \mathbb{E}[X^2] \ \ge\ (\mathbb{E}[X])^2 $$</div>
+          <div class="derive__why">분산이 음수일 수 없으므로. <strong>Jensen 부등식의 가장 단순한 경우</strong></div>
+        </div>
+      </div>
+
+      <h3>유도 2 — 합의 분산에 왜 교차항이 붙는가</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{Var}(X+Y)=\mathbb{E}\bigl[((X-\mu_X)+(Y-\mu_Y))^2\bigr] $$</div>
+          <div class="derive__why">$\mathbb{E}[X+Y]=\mu_X+\mu_Y$ 를 써서 중심화했다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ = \mathbb{E}[(X-\mu_X)^2] + \mathbb{E}[(Y-\mu_Y)^2] + 2\,\mathbb{E}[(X-\mu_X)(Y-\mu_Y)] $$</div>
+          <div class="derive__why">$(a+b)^2=a^2+b^2+2ab$ 전개 후 선형성</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ = \mathrm{Var}(X)+\mathrm{Var}(Y)+2\,\mathrm{Cov}(X,Y) $$</div>
+          <div class="derive__why">세 항이 각각 정의 (4)·(5) 그대로 — <strong>교차항이 곧 covariance</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{Cov}=0 \Rightarrow \mathrm{Var}(X+Y)=\mathrm{Var}(X)+\mathrm{Var}(Y) $$</div>
+          <div class="derive__why">직교하는 벡터의 <strong>피타고라스 정리</strong>와 같은 구조 (<a href="../ch02/2.3-inner-product.html">2.3</a>)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{Var}\bigl(\bar{X}_n\bigr)=\frac{1}{n^2}\sum_{i=1}^n \mathrm{Var}(X_i)=\frac{n\sigma^2}{n^2}=\frac{\sigma^2}{n} $$</div>
+          <div class="derive__why">i.i.d. 면 교차항이 전부 0. $1/n$ 이 <strong>제곱되어</strong> 밖으로 나온다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{SE}=\frac{\sigma}{\sqrt{n}} $$</div>
+          <div class="derive__why">표준오차. <strong>정밀도를 2배 올리려면 표본을 4배</strong> 모아야 한다</div>
+        </div>
+      </div>
+
+      <h3>유도 3 — 대수의 법칙 (Chebyshev 로 두 줄)</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ P\bigl(|Z-\mathbb{E}Z|\ge\varepsilon\bigr) \ \le\ \frac{\mathrm{Var}(Z)}{\varepsilon^2} $$</div>
+          <div class="derive__why">Chebyshev 부등식 — <strong>분산이 작으면 멀리 못 간다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P\bigl(|\bar{X}_n-\mu|\ge\varepsilon\bigr) \ \le\ \frac{\sigma^2/n}{\varepsilon^2} = \frac{\sigma^2}{n\varepsilon^2} $$</div>
+          <div class="derive__why">$Z=\bar{X}_n$ 을 대입하고 유도 2 의 결과를 썼다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ n\to\infty \Rightarrow \frac{\sigma^2}{n\varepsilon^2}\to 0 $$</div>
+          <div class="derive__why">어떤 $\varepsilon>0$ 을 잡아도 확률이 0 으로 간다 — <strong>약한 LLN 증명 끝</strong></div>
+        </div>
+      </div>
+
+      <details>
+        <summary>중심극한정리 증명의 뼈대 (MGF 로)</summary>
+        <p>
+          $Z_i=(X_i-\mu)/\sigma$ 로 표준화하면 $\mathbb{E}[Z_i]=0$, $\mathrm{Var}(Z_i)=1$ 이다.
+          $S_n=\frac{1}{\sqrt{n}}\sum Z_i$ 의 MGF 를 보면, 독립이므로 곱이 된다.
+        </p>
+        <p>
+          $M_{S_n}(t)=\bigl[M_Z(t/\sqrt{n})\bigr]^n$ 이고, $M_Z(u)=1+0\cdot u+\tfrac{u^2}{2}+O(u^3)$ 이므로
+          $M_{S_n}(t)=\bigl[1+\tfrac{t^2}{2n}+O(n^{-3/2})\bigr]^n \to e^{t^2/2}$ 다.
+          $e^{t^2/2}$ 는 정확히 $\mathcal{N}(0,1)$ 의 MGF 이므로 분포가 수렴한다.
+        </p>
+        <p>
+          <strong>1차 moment 는 표준화로 지웠고 2차만 남았으며 3차 이상은 $n$ 이 커지며 사라진다</strong> —
+          이것이 "원래 분포가 무엇이든 상관없다"의 정확한 이유다.
+          3차 이상이 사라지려면 <strong>2차가 유한해야 하고</strong>, 그 조건이 깨지는 것이 Cauchy 분포다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① 주사위 하나 — 기댓값·분산·표준편차</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}[X]=\frac{1+2+3+4+5+6}{6}=\frac{21}{6}=3.5 $$</div>
+          <div class="derive__why">각 값의 확률이 $1/6$ 로 같으므로 단순평균</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}[X^2]=\frac{1+4+9+16+25+36}{6}=\frac{91}{6}\approx 15.1\overline{6} $$</div>
+          <div class="derive__why">LOTUS (2) — <strong>분포를 다시 구할 필요 없다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{Var}(X)=\frac{91}{6}-3.5^2=15.1\overline{6}-12.25=2.91\overline{6}=\frac{35}{12} $$</div>
+          <div class="derive__why">유도 1 의 공식. 검산: $\tfrac{91}{6}-\tfrac{49}{4}=\tfrac{182-147}{12}=\tfrac{35}{12}$ ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sigma=\sqrt{35/12}=\sqrt{2.91\overline{6}}\approx 1.7078 $$</div>
+          <div class="derive__why">표준편차 — <strong>눈금과 같은 단위</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}[X]=3.5 \ \text{인데 3.5 는 절대 나오지 않는다} $$</div>
+          <div class="derive__why">"기대되는 값"이 아니라 <strong>무게중심</strong>이라는 것의 증거</div>
+        </div>
+      </div>
+
+      <h3>② 주사위 두 개의 합 — 선형성과 분산의 덧셈</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}[S]=\mathbb{E}[X_1]+\mathbb{E}[X_2]=3.5+3.5=7 $$</div>
+          <div class="derive__why">선형성 — <strong>11칸짜리 PMF 를 만들 필요가 없다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{Var}(S)=\frac{35}{12}+\frac{35}{12}=\frac{35}{6}\approx 5.8\overline{3} $$</div>
+          <div class="derive__why">두 주사위가 독립이라 $\mathrm{Cov}=0$ (유도 2)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sigma_S=\sqrt{35/6}\approx 2.4152 $$</div>
+          <div class="derive__why">$1.7078\times\sqrt2=2.4152$ ✓ — <strong>$\sqrt2$ 배</strong>이지 2배가 아니다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}[D]=\mathbb{E}[X_1-X_2]=0, \quad \mathrm{Var}(D)=\frac{35}{12}+\frac{35}{12}=\frac{35}{6} $$</div>
+          <div class="derive__why"><strong>빼도 분산은 더해진다</strong> — 불확실성은 상쇄되지 않는다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{Var}(2X_1)=4\times\frac{35}{12}=\frac{35}{3}\approx 11.67 \ \ne\ \mathrm{Var}(X_1+X_2)=\frac{35}{6} $$</div>
+          <div class="derive__why"><strong>"주사위 하나를 2배"와 "주사위 둘의 합"은 완전히 다르다</strong> — 분산이 2배 차이</div>
+        </div>
+      </div>
+      <p>
+        마지막 줄이 자주 놓치는 지점이다. 두 경우 모두 평균은 7 이지만
+        $2X_1$ 은 짝수만 나오고 퍼짐이 2배 크다.
+        <span class="hl">$\mathrm{Var}(aX)=a^2\mathrm{Var}(X)$ 의 <strong>제곱</strong>과
+        독립인 것들의 덧셈이 서로 다른 규칙이라는 것을 여기서 확인할 수 있다.</span>
+      </p>
+
+      <h3>③ 공분산과 상관계수 — 표에서 손으로</h3>
+      <p>$X\in\{0,1,2\}$, $Y\in\{0,1\}$ 의 결합분포:</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$p(x,y)$</th><th>$y=0$</th><th>$y=1$</th><th>$p_X(x)$</th></tr></thead>
+          <tbody>
+            <tr><td>$x=0$</td><td class="num">0.2</td><td class="num">0.1</td><td class="num">0.3</td></tr>
+            <tr><td>$x=1$</td><td class="num">0.1</td><td class="num">0.3</td><td class="num">0.4</td></tr>
+            <tr><td>$x=2$</td><td class="num">0.1</td><td class="num">0.2</td><td class="num">0.3</td></tr>
+            <tr><td>$p_Y(y)$</td><td class="num">0.4</td><td class="num">0.6</td><td class="num">1.0</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}[X]=0(0.3)+1(0.4)+2(0.3)=0+0.4+0.6=1.0 $$</div>
+          <div class="derive__why">marginal $p_X$ 로 계산</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}[Y]=0(0.4)+1(0.6)=0.6 $$</div>
+          <div class="derive__why">marginal $p_Y$ 로 계산</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}[XY]=(1)(1)(0.3)+(2)(1)(0.2)=0.3+0.4=0.7 $$</div>
+          <div class="derive__why">$xy=0$ 인 칸은 <strong>전부 건너뛴다</strong> ($x=0$ 또는 $y=0$)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{Cov}(X,Y)=0.7-(1.0)(0.6)=0.1 $$</div>
+          <div class="derive__why">식 (5). 양수 → <strong>같이 커지는 경향</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{Var}(X)=\bigl[0(0.3)+1(0.4)+4(0.3)\bigr]-1^2=1.6-1=0.6 $$</div>
+          <div class="derive__why">$\mathbb{E}[X^2]=0.4+1.2=1.6$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{Var}(Y)=0.6-0.36=0.24 $$</div>
+          <div class="derive__why">$Y$ 는 0/1 이라 $\mathbb{E}[Y^2]=\mathbb{E}[Y]=0.6$. <strong>Bernoulli 는 $p(1-p)=0.24$</strong> ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \rho=\frac{0.1}{\sqrt{0.6\times0.24}}=\frac{0.1}{\sqrt{0.144}}=\frac{0.1}{0.37947}\approx 0.2635 $$</div>
+          <div class="derive__why">약한 양의 상관. <strong>$[-1,1]$ 안에 들어온다</strong> ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{Var}(X+Y)=0.6+0.24+2(0.1)=1.04 $$</div>
+          <div class="derive__why">무상관이었다면 0.84 — <strong>교차항이 0.2 를 더한다</strong></div>
+        </div>
+      </div>
+
+      <h3>④ 무상관인데 종속 — $\rho$ 의 한계를 손으로</h3>
+      <p>$X\in\{-1,0,1\}$ 를 각각 $1/3$ 로 뽑고 $Y=X^2$ 로 정한다. $Y$ 는 $X$ 로 <strong>완전히 결정</strong>된다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}[X]=\frac{-1+0+1}{3}=0 $$</div>
+          <div class="derive__why">대칭이라 0</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}[XY]=\mathbb{E}[X^3]=\frac{(-1)^3+0^3+1^3}{3}=\frac{-1+0+1}{3}=0 $$</div>
+          <div class="derive__why">홀수 차수는 대칭에서 <strong>상쇄</strong>된다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathrm{Cov}(X,Y)=0-0\times\mathbb{E}[Y]=0 \ \Rightarrow\ \rho=0 $$</div>
+          <div class="derive__why"><strong>완전 무상관</strong>. 그런데 $Y$ 는 $X$ 를 알면 100% 결정된다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P(Y=0)=\tfrac13,\quad P(Y=0\mid X=0)=1 \ \ne\ \tfrac13 $$</div>
+          <div class="derive__why">독립의 정의를 <strong>정면으로 위반</strong> — 확실히 종속</div>
+        </div>
+      </div>
+      <p>
+        <span class="hl">$\rho$ 는 <strong>선형</strong> 관계만 재기 때문에, U자·주기·계단 같은 비선형 종속에는 눈이 멀어 있다.</span>
+        비선형 의존까지 잡으려면 mutual information 이 필요하다(<a href="4.7-information-theory.html">4.7</a>).
+      </p>
+
+      <h3>⑤ 중심극한정리 — 주사위 평균의 표준오차</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$n$</th><th>$\mathbb{E}[\bar{X}_n]$</th><th>$\mathrm{Var}=\frac{35/12}{n}$</th><th>$\mathrm{SE}=\sigma/\sqrt{n}$</th><th>$\pm1.96\,\mathrm{SE}$ 폭</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td class="num">3.5</td><td class="num">2.9167</td><td class="num">1.7078</td><td class="num">±3.348</td></tr>
+            <tr><td class="num">4</td><td class="num">3.5</td><td class="num">0.7292</td><td class="num">0.8539</td><td class="num">±1.674</td></tr>
+            <tr><td class="num">25</td><td class="num">3.5</td><td class="num">0.1167</td><td class="num">0.3416</td><td class="num">±0.670</td></tr>
+            <tr><td class="num">100</td><td class="num">3.5</td><td class="num">0.0292</td><td class="num">0.1708</td><td class="num">±0.335</td></tr>
+            <tr><td class="num">400</td><td class="num">3.5</td><td class="num">0.0073</td><td class="num">0.0854</td><td class="num">±0.167</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        $n$ 을 4배 늘릴 때마다 SE 가 정확히 <strong>절반</strong>이 된다 ($1.7078\to0.8539\to\ldots$).
+        <span class="hl">정밀도를 10배 올리려면 표본을 <strong>100배</strong> 모아야 한다는 것이
+        $1/\sqrt{n}$ 의 실제 의미다.</span>
+        model 을 seed 5개로 평가하는 것과 20개로 평가하는 것의 차이가 <strong>2배</strong>뿐인 이유도 이것이다.
+      </p>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>균형 막대</strong> · <strong>산점도와 ρ</strong> ·
+        <strong>모멘트</strong> · <strong>CLT</strong> — 에 이어,
+        아래에서 <strong>대수의 법칙이 실제로 수렴하는 궤적</strong>을 본다.
+        수렴이 매끄럽지 않다는 것이 눈으로 확인된다.
+      </p>
+
+      <figure class="widget" data-widget="lln-run">
+        <figcaption class="widget__bar">Law of Large Numbers — 표본평균이 흔들리며 수렴한다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$\pm1.96\,\sigma/\sqrt{n}$ 띠 안에 궤적이 대부분 들어옵니다. 띠는 <strong>$1/\sqrt{n}$ 로만</strong> 좁아져 초반에 급하고 나중엔 더디게 줄어듭니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"$\mathbb{E}[g(X)] = g(\mathbb{E}[X])$ 다."</p>
+        <p>
+          <strong>실제로는</strong> $g$ 가 <strong>선형일 때만</strong> 성립한다.
+          $g$ 가 볼록하면 $\mathbb{E}[g(X)]\ge g(\mathbb{E}[X])$ (Jensen 부등식),
+          오목하면 부등호가 뒤집힌다.
+          예: 주사위에서 $\mathbb{E}[X^2]=15.17$ 이지만 $(\mathbb{E}[X])^2=12.25$ 로 <strong>2.92 차이</strong>가 나고,
+          그 차이가 정확히 분산이다(유도 1).
+          이 함정은 <a href="4.7-information-theory.html">4.7</a>의 KL divergence 가 음수가 아닌 이유,
+          VAE 의 ELBO 가 하한인 이유의 출발점이기도 하다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"상관계수가 0 이면 독립이다."</p>
+        <p>
+          <strong>실제로는</strong> 독립 $\Rightarrow$ 무상관은 맞지만 <strong>역은 성립하지 않는다</strong>.
+          예제 ④에서 $Y=X^2$ 는 $\rho=0$ 인데 $X$ 를 알면 $Y$ 가 완전히 결정된다.
+          $\rho$ 는 <strong>직선 관계만</strong> 재기 때문이다.
+          예외는 <strong>결합 Gaussian</strong> 인 경우로, 그때만 무상관과 독립이 같은 뜻이 된다 —
+          많은 교재가 이 특수한 경우를 다루다 보니 오해가 굳어졌다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"$\mathrm{Var}(X-Y)=\mathrm{Var}(X)-\mathrm{Var}(Y)$ 다."</p>
+        <p>
+          <strong>실제로는</strong> 무상관이면 $\mathrm{Var}(X)+\mathrm{Var}(Y)$ 로 <strong>더해진다</strong>.
+          $\mathrm{Var}(-Y)=(-1)^2\mathrm{Var}(Y)=\mathrm{Var}(Y)$ 이므로 부호가 사라지기 때문이다.
+          직관적으로도 옳다 — 두 개의 불확실한 값을 빼면 불확실성이 <strong>줄어들 리가 없다</strong>.
+          A/B 실험에서 두 그룹 평균의 차이를 볼 때 표준오차가
+          $\sqrt{\mathrm{SE}_A^2+\mathrm{SE}_B^2}$ 인 것이 바로 이 규칙이다(<a href="4.8-hypothesis-testing.html">4.8</a>).
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"CLT 는 표본이 크면 <em>data 가</em> 정규분포를 따른다는 뜻이다."</p>
+        <p>
+          <strong>실제로는</strong> 정규분포에 가까워지는 것은 <strong>표본평균(또는 합)의 분포</strong>이지
+          원래 data 의 분포가 아니다. 주사위를 백만 번 던져도 눈금은 여전히 1~6 의 균등분포다.
+          달라지는 것은 "100번씩 던져 평균을 낸 값"들의 히스토그램이다.
+          이 혼동 때문에 <strong>정규성 검정을 raw data 에 돌리고 "CLT 가 있으니 괜찮다"</strong>고 넘어가는 실수가 잦다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"표본을 충분히 모으면 평균은 항상 수렴한다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>기댓값이 존재해야</strong> 한다.
+          Cauchy 분포($f(x)=\frac{1}{\pi(1+x^2)}$)는 꼬리가 너무 두꺼워 $\mathbb{E}[|X|]=\infty$ 이고,
+          표본평균이 $n$ 을 아무리 키워도 <strong>여전히 원래 Cauchy 분포를 그대로 따른다</strong> — 전혀 수렴하지 않는다.
+          꼬리가 두꺼운 data(대기 시간, 소득, 손실 값, 언어 모델의 attention 통계)에서
+          평균과 표준편차를 보고하는 것이 위험한 이유다. 중앙값과 quantile 이 대안이 된다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–⑤ 를 검산한다.</p>
+      <details>
+        <summary>NumPy — 분산 규칙 · 무상관인데 종속 · CLT (20줄)</summary>
+<pre><code>import numpy as np
+rng = np.random.default_rng(0)
+
+x = np.arange(1, 7)
+mu, ex2 = x.mean(), (x**2).mean()
+print(mu, ex2, ex2 - mu**2, np.sqrt(ex2 - mu**2))   # 3.5 15.167 2.9167 1.7078
+
+d1, d2 = rng.integers(1, 7, 400000), rng.integers(1, 7, 400000)
+print((d1 + d2).var(), 35 / 6)                      # 5.833 두 값이 일치
+print((d1 - d2).var(), (2 * d1).var())              # 5.833 / 11.67  빼도 더해진다
+
+X = rng.choice([-1, 0, 1], 200000)
+Y = X**2
+print(np.corrcoef(X, Y)[0, 1].round(4))             # ~0  그런데 Y = X^2 로 완전 종속
+print((Y[X == 0] == 0).mean(), (Y == 0).mean())     # 1.0 vs 0.333  독립이 아님
+
+for n in [1, 4, 25, 100, 400]:
+    m = rng.integers(1, 7, (20000, n)).mean(1)
+    print(n, m.mean().round(3), m.std().round(4), (1.7078 / np.sqrt(n)).round(4))
+</code></pre>
+        <p>
+          <small>
+            마지막 루프의 실측 표준편차와 이론값 $\sigma/\sqrt{n}$ 이 소수 셋째 자리까지 일치한다.
+            $n$ 이 4배가 될 때마다 값이 정확히 절반이 되는 것도 그대로 보인다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\mathrm{Var}(X)=4$ 일 때 $\mathrm{Var}(3X-5)$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>36</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>12</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>7</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\mathrm{Var}(aX+b)=a^2\mathrm{Var}(X)=9\times4=36$.
+            <strong>상수 $-5$ 는 아무 영향이 없고</strong>(평행이동은 퍼짐을 안 바꾼다),
+            배율은 <strong>제곱</strong>으로 들어간다.
+            <strong>나</strong>는 제곱을 빼먹은 것, <strong>다</strong>는 상수까지 더한 것이다.
+            표준편차로 보면 $3\times2=6$ 이고 $6^2=36$ 으로 앞뒤가 맞는다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\mathrm{Var}(X)=\mathrm{Var}(Y)=1$, $\rho=0.5$ 일 때 $\mathrm{Var}(X+Y)$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>3</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>2</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>2.5</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\mathrm{Cov}=\rho\sigma_X\sigma_Y=0.5\times1\times1=0.5$ 이므로
+            $\mathrm{Var}(X+Y)=1+1+2(0.5)=3$.
+            <strong>다</strong>는 $2\times$ 를 빼먹고 $\mathrm{Cov}$ 를 한 번만 더한 것이다 —
+            교차항은 $XY$ 와 $YX$ 두 번 나오므로 <strong>반드시 2배</strong>다.
+            <strong>나</strong>는 무상관일 때의 답이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\sigma=6$ 인 분포에서 표본평균의 표준오차를 $0.5$ 이하로 만들려면 최소 표본 수는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>144</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>12</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>36</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $6/\sqrt{n}\le0.5 \Rightarrow \sqrt{n}\ge12 \Rightarrow n\ge144$.
+            <strong>나</strong>는 제곱을 빼먹은 흔한 실수다.
+            <strong>정밀도를 12배 올리려면 표본은 144배</strong> — $\sqrt{n}$ 규칙이 실무에서 비싼 이유다.
+            실험 seed 를 5개에서 20개로 늘려도 오차가 2배밖에 안 줄어드는 것과 같은 계산이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            $\mathbb{E}[X+Y]=\mathbb{E}[X]+\mathbb{E}[Y]$ 가 성립하려면 필요한 가정은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>없다 — 항상 성립한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>독립이어야 한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>무상관이어야 한다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            기댓값의 <strong>선형성은 무조건</strong> 성립한다(기댓값 자체가 결합분포 위의 합이기 때문).
+            독립·무상관이 필요한 것은 <strong>곱</strong>($\mathbb{E}[XY]=\mathbb{E}X\mathbb{E}Y$)과
+            <strong>분산의 덧셈</strong>이다.
+            이 구분이 확률 계산에서 가장 자주 쓰이는 지식이며, 복잡한 문제를 지시함수의 합으로 쪼개
+            선형성만으로 푸는 것이 표준 기법이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            CLT 가 말하는 것을 정확히 옮기면?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>표본평균의 분포가 $\mathcal{N}(\mu,\sigma^2/n)$ 에 가까워진다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>표본이 커지면 data 자체가 정규분포가 된다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>모든 분포의 평균이 0 으로 수렴한다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            정규가 되는 것은 <strong>통계량(평균·합)의 분포</strong>이고 raw data 의 분포는 그대로다(오해 4).
+            주사위를 백만 번 던져도 눈금은 균등분포이지만, 100번씩 묶어 평균 낸 값들은 종 모양이 된다.
+            이 구분을 놓치면 <strong>raw data 에 정규성 검정을 돌리는</strong> 잘못된 절차로 이어진다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            어떤 두 변수의 상관계수가 $0.00$ 으로 나왔다. 결론으로 옳은 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>선형 관계가 없다는 뜻일 뿐, 비선형 종속은 얼마든지 가능하다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>두 변수는 독립이다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>한쪽이 다른 쪽에 영향을 주지 않는다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $Y=X^2$ 처럼 <strong>완전히 결정되는</strong> 관계에서도 $\rho=0$ 이 나온다(예제 ④).
+            산점도를 반드시 함께 봐야 하고, 비선형까지 잡으려면 mutual information 을 쓴다(<a href="4.7-information-theory.html">4.7</a>).
+            예외적으로 <strong>결합 Gaussian</strong> 이면 무상관 = 독립이지만, 그 가정 자체를 먼저 확인해야 한다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="4.4-common-distributions.html">4.4 주요 확률분포</a></strong> — 각 분포의 평균과 분산이 parameter 로 어떻게 적히는가.</li>
+        <li><strong><a href="4.5-statistical-estimation.html">4.5 통계적 추정</a></strong> — 편향·분산 분해와 표준오차가 여기서 나온다.</li>
+        <li><strong><a href="4.8-hypothesis-testing.html">4.8 가설검정</a></strong> — CLT 가 $t$·$z$ 검정과 신뢰구간의 근거다.</li>
+        <li><strong><a href="../ch03/3.6-gradient-descent.html">3.6 경사하강법</a></strong> — mini-batch gradient 의 잡음 $\sigma/\sqrt{B}$ 가 이 절의 결론이다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-blitzstein2019-intro-prob" data-ref="blitzstein2019-intro-prob">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Blitzstein, J. K. &amp; Hwang, J. (2019). <em>Introduction to Probability</em> (2nd ed.). CRC Press.</span>
+          <span class="ref__where">4.1–4.2절 — 기댓값을 무게중심으로 보는 그림과 선형성이 독립 없이 성립하는 이유(식 3). 4.6절 — LOTUS(식 2). 6.1–6.3절 — moment·MGF 와 왜도·첨도. 7.3절 — covariance·correlation 과 $Y=X^2$ 반례(예제 ④). 10.1–10.3절 — LLN·CLT 의 서술과 Chebyshev 를 쓴 짧은 증명(유도 3)</span>
+          <a class="ref__link" href="http://probabilitybook.net/">probabilitybook.net</a>
+        </li>
+        <li class="ref" id="ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Deisenroth, M. P., Faisal, A. A. &amp; Ong, C. S. (2020). <em>Mathematics for Machine Learning</em>. Cambridge University Press.</span>
+          <span class="ref__where">6.4.1–6.4.2절 — 평균 벡터와 covariance matrix 의 정의, 선형변환 아래의 변환 규칙 $\mathbf{A}\boldsymbol\Sigma\mathbf{A}^\top$(식 9). 6.4.3절 — correlation 을 정규화된 covariance 로 보는 관점과 무상관/독립의 구분. 6.4.5절 — 두 확률변수의 합과 아핀변환의 통계량</span>
+          <a class="ref__link" href="https://mml-book.github.io/">mml-book.github.io</a>
+        </li>
+        <li class="ref" id="ref-murphy2022-pml" data-ref="murphy2022-pml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Murphy, K. P. (2022). <em>Probabilistic Machine Learning: An Introduction</em>. MIT Press.</span>
+          <span class="ref__where">2.2.5–2.2.6절 — 기댓값·분산의 정의와 계산 공식. 3.1–3.2절 — covariance matrix, correlation, 그리고 "무상관 ≠ 독립"을 보여 주는 Anscombe·Datasaurus 예시(오해 2, 위젯 2). 2.8절 — 중심극한정리와 몬테카를로 근사의 표준오차</span>
+          <a class="ref__link" href="https://probml.github.io/pml-book/book1.html">probml.github.io</a>
+        </li>
+        <li class="ref" id="ref-harvard-stat110" data-ref="harvard-stat110">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Blitzstein, J. K. <em>Statistics 110: Probability</em>. Harvard University.</span>
+          <span class="ref__where">Lecture 9–10 — 기댓값의 선형성을 "지시함수의 합"으로 쓰는 기법과 그 위력. Lecture 21 — covariance 의 성질, $\mathrm{Var}(X+Y)$ 의 교차항(유도 2). Lecture 29 — LLN 과 CLT 를 나란히 놓고 "어디로 가는가"와 "어떤 모양으로 가는가"로 구분하는 설명</span>
+          <a class="ref__link" href="https://projects.iq.harvard.edu/stat110/home">projects.iq.harvard.edu/stat110</a>
+        </li>
+        <li class="ref" id="ref-3blue1brown-prob" data-ref="3blue1brown-prob">
+          <span class="ref__type" data-type="video">영상</span>
+          <span class="ref__cite">3Blue1Brown. <em>But what is the Central Limit Theorem?</em> (Probability 시리즈).</span>
+          <span class="ref__where">03:20–11:40 — 임의의 분포를 반복 합성하면 종 모양으로 수렴하는 시각화와, 폭이 $\sqrt{n}$ 에 비례해 커지므로 $n$ 으로 나누면 $\sigma/\sqrt{n}$ 가 되는 설명. 이 절의 CLT 위젯이 이 구성을 따랐다. 17:00 이후 — 유한 분산 조건이 깨지는 경우(오해 5)</span>
+          <a class="ref__link" href="https://www.3blue1brown.com/topics/probability">3blue1brown.com</a>
+        </li>
+        <li class="ref" id="ref-statquest" data-ref="statquest">
+          <span class="ref__type" data-type="video">영상</span>
+          <span class="ref__cite">Starmer, J. <em>Covariance and Correlation Clearly Explained</em> · <em>The Central Limit Theorem</em>. StatQuest.</span>
+          <span class="ref__where">Covariance 편 02:10–14:00 — covariance 값 자체가 단위에 따라 달라져 해석이 어렵고, 표준편차로 나눈 correlation 만 비교 가능하다는 설명(위젯 2 의 '단위를 바꿔 보기'). CLT 편 전체 — raw data 가 아니라 <em>표본평균의 분포</em>가 정규가 된다는 구분(오해 4)</span>
+          <a class="ref__link" href="https://statquest.org/video-index/">statquest.org</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+/* 재현 가능한 난수 */
+function mkRand(seed) {
+  var s = seed || 12345;
+  return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+}
+function gauss(rnd) {
+  var u = Math.max(1e-9, rnd()), v = rnd();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+/* 플롯 영역 배경 — 축 라벨이 놓이는 '칸'을 눈에 보이게 만든다.
+   (tools/check-visual.mjs 의 '칸초과' 는 같은 그룹의 첫 rect 를 칸으로 본다) */
+function panel(p) {
+  p.add(VIZ.el('rect', {
+    x: p.pad.l, y: p.pad.t, width: p.iw, height: p.ih,
+    fill: 'var(--ink-3)', 'fill-opacity': 0.03, stroke: 'none'
+  }));
+  return p;
+}
+
+/* ============================================================
+   위젯 1 — 균형 막대 (무게중심과 관성)
+   ============================================================ */
+WIDGETS.register('balance-beam', function (root, ctx) {
+  var spread = 1.0, pivot = 3.5;
+
+  var p = VIZ.plot({ w: 460, h: 260, xmin: 0.2, xmax: 6.8, ymin: -0.55, ymax: 0.42,
+    pad: { t: 18, r: 14, b: 34, l: 30 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'mu', label: '기댓값 E[X] (참 무게중심)', digits: 3 },
+    { key: 'piv', label: '받침점 위치', digits: 3 },
+    { key: 'torque', label: '순 회전력 Σ p(x)(x − 받침점)', digits: 4 },
+    { key: 'var', label: '받침점 둘레 관성 Σ p(x)(x − 받침점)²', digits: 4 }
+  ]);
+
+  function weights() {
+    /* 3.5 를 중심으로 spread 만큼 바깥으로 밀어낸 6개 추 */
+    var xs = [], ps = [];
+    for (var i = 1; i <= 6; i++) {
+      xs.push(3.5 + (i - 3.5) * spread);
+      ps.push(1 / 6);
+    }
+    return { xs: xs, ps: ps };
+  }
+
+  function draw() {
+    p.clear().axes('x', '').ticks(1, 0);
+    var w = weights();
+    var mu = 0, tq = 0, vr = 0;
+    for (var i = 0; i < 6; i++) {
+      mu += w.xs[i] * w.ps[i];
+      tq += w.ps[i] * (w.xs[i] - pivot);
+      vr += w.ps[i] * Math.pow(w.xs[i] - pivot, 2);
+    }
+    var tilt = Math.max(-0.16, Math.min(0.16, tq * 0.10));
+
+    /* 막대 */
+    p.line([[0.4, tilt * (0.4 - pivot) / 3 + 0.05], [6.6, tilt * (6.6 - pivot) / 3 + 0.05]], { width: 3 });
+    /* 추 */
+    for (var j = 0; j < 6; j++) {
+      var y = tilt * (w.xs[j] - pivot) / 3 + 0.05;
+      p.add(VIZ.el('rect', {
+        x: p.X(w.xs[j]) - 7, y: p.Y(y) - 16, width: 14, height: 14, rx: 2,
+        fill: 'var(--jade)', 'fill-opacity': 0.5, stroke: 'var(--jade)', 'stroke-width': 1
+      }));
+    }
+    /* 받침점 삼각형 */
+    p.add(VIZ.el('path', {
+      d: 'M' + p.X(pivot) + ' ' + p.Y(0.02) +
+         ' L' + (p.X(pivot) - 11) + ' ' + p.Y(-0.22) +
+         ' L' + (p.X(pivot) + 11) + ' ' + p.Y(-0.22) + ' Z',
+      fill: 'var(--seal)', 'fill-opacity': 0.55
+    }));
+    p.callout(mu, 0.26, '참 무게중심 E[X] = ' + mu.toFixed(2), { dx: 20, dy: -12, tone: 'var(--ink-2)' });
+
+    out.set('mu', mu);
+    out.set('piv', pivot);
+    out.set('torque', tq);
+    out.set('var', vr);
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '받침점 위치', min: 1, max: 6, step: 0.05, value: 3.5, digits: 2,
+    onInput: function (v) { pivot = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '추를 바깥으로 (퍼짐)', min: 0.2, max: 1.0, step: 0.05, value: 1.0, digits: 2,
+    onInput: function (v) { spread = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — 산점도와 상관계수
+   ============================================================ */
+WIDGETS.register('cov-scatter', function (root, ctx) {
+  var rho = 0.6, scale = 1, shape = 'linear';
+
+  var p = VIZ.plot({ w: 460, h: 300, xmin: -3.4, xmax: 3.4, ymin: -3.4, ymax: 3.4,
+    pad: { t: 18, r: 16, b: 30, l: 42 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'cov', label: '표본 covariance', digits: 4 },
+    { key: 'rho', label: '표본 correlation ρ', digits: 4 },
+    { key: 'sy', label: 'y 의 표준편차', digits: 4 },
+    { key: 'note', label: '읽기' }
+  ]);
+
+  function sample() {
+    var rnd = mkRand(4242), xs = [], ys = [];
+    for (var i = 0; i < 260; i++) {
+      var z1 = gauss(rnd), z2 = gauss(rnd), x, y;
+      if (shape === 'linear') {
+        x = z1; y = rho * z1 + Math.sqrt(Math.max(0, 1 - rho * rho)) * z2;
+      } else if (shape === 'u') {
+        x = z1 * 1.3; y = (x * x - 1.7) * 0.85 + 0.35 * z2;
+      } else {
+        x = z1 * 1.5; y = 1.6 * Math.sin(x * 1.6) + 0.25 * z2;
+      }
+      xs.push(x); ys.push(y * scale);
+    }
+    return { xs: xs, ys: ys };
+  }
+
+  function draw() {
+    p.clear().grid(1, 1).axes('x', 'y').ticks(1, 1);
+    var s = sample(), n = s.xs.length;
+    var mx = 0, my = 0, i;
+    for (i = 0; i < n; i++) { mx += s.xs[i] / n; my += s.ys[i] / n; }
+    var sxx = 0, syy = 0, sxy = 0;
+    for (i = 0; i < n; i++) {
+      sxx += Math.pow(s.xs[i] - mx, 2) / n;
+      syy += Math.pow(s.ys[i] - my, 2) / n;
+      sxy += (s.xs[i] - mx) * (s.ys[i] - my) / n;
+    }
+    /* 축 밖으로 나가는 점은 그리지 않는다 (가장자리에 뭉치면 오히려 오해를 부른다) */
+    var out2 = 0;
+    for (i = 0; i < n; i++) {
+      if (Math.abs(s.xs[i]) > 3.3 || Math.abs(s.ys[i]) > 3.3) { out2++; continue; }
+      p.dot(s.xs[i], s.ys[i], 2.6);
+    }
+
+    var r = sxy / Math.sqrt(sxx * syy);
+    /* 최소제곱 직선 — 보이는 범위 안에서만 */
+    var b = sxy / sxx, seg = [];
+    for (var t3 = -3.3; t3 <= 3.31; t3 += 0.1) {
+      var yy = my + b * (t3 - mx);
+      if (yy >= -3.3 && yy <= 3.3) seg.push([t3, yy]);
+    }
+    if (seg.length > 1) p.line(seg, { alt: true, width: 2 });
+
+    out.set('cov', sxy);
+    out.set('rho', r);
+    out.set('sy', Math.sqrt(syy));
+    out.setRaw('note', shape === 'linear' ? '직선 관계 — ρ 가 잘 잡아낸다'
+      : (Math.abs(r) < 0.2 ? 'ρ ≈ 0 인데 그림은 완전히 종속' : '비선형 — ρ 가 과소평가'));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '관계의 모양',
+    options: [
+      { value: 'linear', label: '직선' },
+      { value: 'u', label: 'U자 (y ≈ x²)' },
+      { value: 'sine', label: '물결 (y ≈ sin x)' }
+    ],
+    value: 'linear', onChange: function (v) { shape = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '직선일 때의 ρ', min: -0.95, max: 0.95, step: 0.05, value: 0.6, digits: 2,
+    onInput: function (v) { rho = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'y 축 단위 바꾸기 (×)', min: 0.3, max: 2.0, step: 0.1, value: 1, digits: 1,
+    onInput: function (v) { scale = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — 모멘트가 모양을 바꾼다
+   ============================================================ */
+WIDGETS.register('moment-shape', function (root, ctx) {
+  var skew = 0, tail = 0;
+
+  var p = VIZ.plot({ w: 460, h: 270, xmin: -4.2, xmax: 4.2, ymin: 0, ymax: 0.62,
+    pad: { t: 30, r: 16, b: 30, l: 46 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'mu', label: '평균 (1차)', digits: 3 },
+    { key: 'sd', label: '표준편차 (2차)', digits: 3 },
+    { key: 'sk', label: '왜도 (3차)', digits: 3 },
+    { key: 'ku', label: '첨도 (4차) — Gaussian 은 3', digits: 3 }
+  ]);
+
+  /* skew-normal 과 t 분포를 섞은 모양 */
+  function raw(x) {
+    var g = Math.exp(-0.5 * x * x);
+    var s = 0.5 * (1 + erf(skew * x / Math.SQRT2));
+    var t = Math.pow(1 + x * x / Math.max(1.2, 30 - tail * 28), -(Math.max(1.2, 30 - tail * 28) + 1) / 2);
+    return (1 - tail) * 2 * g * s + tail * t * 1.6;
+  }
+  function erf(z) {
+    var t = 1 / (1 + 0.3275911 * Math.abs(z));
+    var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-z * z);
+    return z >= 0 ? y : -y;
+  }
+
+  function draw() {
+    /* 수치적으로 정규화 + moment 계산 */
+    var lo = -6, hi = 6, N = 1200, h = (hi - lo) / N;
+    var Z = 0, m1 = 0, i, x;
+    for (i = 0; i <= N; i++) { x = lo + i * h; Z += raw(x) * h; }
+    for (i = 0; i <= N; i++) { x = lo + i * h; m1 += x * raw(x) / Z * h; }
+    var m2 = 0, m3 = 0, m4 = 0;
+    for (i = 0; i <= N; i++) {
+      x = lo + i * h;
+      var w = raw(x) / Z * h, d = x - m1;
+      m2 += d * d * w; m3 += d * d * d * w; m4 += d * d * d * d * w;
+    }
+    var sd = Math.sqrt(m2);
+
+    p.clear().grid(1, 0.1).axes('x', '').ticks(1, 0.1);
+    p.curve(function (t2) { return raw(t2) / Z; }, { samples: 320 });
+    /* 비교용 같은 평균·분산의 Gaussian */
+    p.curve(function (t2) {
+      return Math.exp(-0.5 * Math.pow((t2 - m1) / sd, 2)) / (sd * Math.sqrt(2 * Math.PI));
+    }, { samples: 320, alt: true, dash: '4 3' });
+    /* 캡션은 위쪽 여백에 — 플롯 안에 두면 맨 위 눈금과 겹친다 */
+    p.text(-4.2, 0.62, 'f(x) · 실선 = 지금 분포 · 점선 = 같은 평균·분산의 Gaussian',
+      { size: 10, dy: -10 });
+
+    out.set('mu', m1);
+    out.set('sd', sd);
+    out.set('sk', m3 / Math.pow(sd, 3));
+    out.set('ku', m4 / Math.pow(sd, 4));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '비대칭 (왜도 방향)', min: -4, max: 4, step: 0.2, value: 0, digits: 1,
+    onInput: function (v) { skew = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '꼬리 두껍게 (첨도)', min: 0, max: 0.95, step: 0.05, value: 0, digits: 2,
+    onInput: function (v) { tail = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — 중심극한정리
+   ============================================================ */
+WIDGETS.register('clt-build', function (root, ctx) {
+  var n = 1, src = 'dice';
+
+  var p = VIZ.plot({ w: 460, h: 290, xmin: -0.06, xmax: 1.06, ymin: 0, ymax: 1.12,
+    pad: { t: 20, r: 16, b: 30, l: 42 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'n', label: '평균 내는 개수 n' },
+    { key: 'mean', label: '표본평균들의 평균', digits: 4 },
+    { key: 'sd', label: '표본평균들의 표준편차', digits: 4 },
+    { key: 'pred', label: '이론값 σ/√n', digits: 4 }
+  ]);
+
+  function one(rnd) {
+    if (src === 'dice') return (Math.floor(rnd() * 6) + 1 - 1) / 5;          /* 0~1 로 정규화 */
+    if (src === 'coin') return rnd() < 0.5 ? 0 : 1;
+    if (src === 'exp') return Math.min(1, -Math.log(Math.max(1e-9, rnd())) / 5);
+    return rnd();                                                             /* uniform */
+  }
+  function sd1() {
+    if (src === 'dice') return 1.7078 / 5;
+    if (src === 'coin') return 0.5;
+    if (src === 'exp') return 0.1855;
+    return 1 / Math.sqrt(12);
+  }
+
+  function draw() {
+    var rnd = mkRand(31337), T = 8000, bins = new Array(40).fill(0), vals = [];
+    for (var t = 0; t < T; t++) {
+      var s = 0;
+      for (var i = 0; i < n; i++) s += one(rnd);
+      var m = s / n;
+      vals.push(m);
+      var b = Math.max(0, Math.min(39, Math.floor(m * 40)));
+      bins[b]++;
+    }
+    var mx = Math.max.apply(null, bins);
+    panel(p.clear()).grid(0.25, 0.25).axes('표본평균 (0~1 로 정규화)', '빈도').ticks(0.25, 0);
+
+    for (var k = 0; k < 40; k++) {
+      var h = bins[k] / mx;
+      if (h <= 0) continue;
+      p.add(VIZ.el('rect', {
+        x: p.X(k / 40), y: p.Y(h),
+        width: Math.max(1, p.X((k + 1) / 40) - p.X(k / 40) - 1), height: p.Y(0) - p.Y(h),
+        fill: 'var(--jade)', 'fill-opacity': 0.34, stroke: 'var(--jade)', 'stroke-width': 0.7
+      }));
+    }
+    var mu = 0, i2;
+    for (i2 = 0; i2 < T; i2++) mu += vals[i2] / T;
+    var v = 0;
+    for (i2 = 0; i2 < T; i2++) v += Math.pow(vals[i2] - mu, 2) / T;
+    var sd = Math.sqrt(v);
+
+    /* 이론 Gaussian 을 겹쳐 그린다 */
+    var peak = 1 / (sd * Math.sqrt(2 * Math.PI));
+    p.curve(function (x) {
+      return Math.exp(-0.5 * Math.pow((x - mu) / sd, 2)) / (sd * Math.sqrt(2 * Math.PI)) / peak;
+    }, { samples: 300, alt: true });
+    p.text(-0.04, 1.10, '점선이 아니라 실선 곡선 = 같은 평균·분산의 Gaussian', { size: 10 });
+
+    out.setRaw('n', String(n));
+    out.set('mean', mu);
+    out.set('sd', sd);
+    out.set('pred', sd1() / Math.sqrt(n));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '원래 분포 (평균 낼 재료)',
+    options: [
+      { value: 'coin', label: '동전 (0 또는 1)' },
+      { value: 'dice', label: '주사위' },
+      { value: 'unif', label: '균등' },
+      { value: 'exp', label: '지수 (한쪽으로 치우침)' }
+    ],
+    value: 'dice', onChange: function (v) { src = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '몇 개를 평균 낼까 (n)', min: 1, max: 60, step: 1, value: 1, digits: 0,
+    onInput: function (v) { n = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — 대수의 법칙 궤적
+   ============================================================ */
+WIDGETS.register('lln-run', function (root, ctx) {
+  var seed = 7, nmax = 500;
+
+  var p = VIZ.plot({ w: 460, h: 280, xmin: 0, xmax: 500, ymin: 1.4, ymax: 5.6,
+    pad: { t: 18, r: 16, b: 32, l: 44 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'now', label: '지금까지의 표본평균', digits: 4 },
+    { key: 'mu', label: '참 평균 μ', digits: 4 },
+    { key: 'err', label: '오차 |x̄ − μ|', digits: 4 },
+    { key: 'band', label: '±1.96 σ/√n 폭', digits: 4 }
+  ]);
+
+  function draw(step) {
+    var N = Math.max(5, Math.round(nmax * (step + 1) / 30));
+    p.clear().grid(100, 1).axes('n (표본 수)', '표본평균').ticks(100, 1);
+
+    /* 이론 띠 */
+    var up = [], dn = [];
+    for (var k = 1; k <= 500; k++) {
+      var b = 1.96 * 1.7078 / Math.sqrt(k);
+      up.push([k, 3.5 + b]);
+      dn.push([k, 3.5 - b]);
+    }
+    p.line(up, { dash: '3 3' });
+    p.line(dn, { dash: '3 3' });
+    p.line([[0, 3.5], [500, 3.5]], { width: 1.6 });
+
+    var rnd = mkRand(seed * 1013 + 7), sum = 0, pts = [], last = 3.5;
+    for (var i = 1; i <= N; i++) {
+      sum += Math.floor(rnd() * 6) + 1;
+      last = sum / i;
+      if (i >= 2) pts.push([i, Math.max(1.4, Math.min(5.6, last))]);
+    }
+    p.line(pts, { alt: true, width: 1.7 });
+    p.dot(N, Math.max(1.4, Math.min(5.6, last)), 5);
+
+    out.set('now', last);
+    out.set('mu', 3.5);
+    out.set('err', Math.abs(last - 3.5));
+    out.set('band', 1.96 * 1.7078 / Math.sqrt(N));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed (다시 굴리기)', min: 1, max: 40, step: 1, value: 7, digits: 0,
+    onInput: function (v) { seed = v; draw(29); }
+  });
+  WIDGETS.player({ host: ctx.controls, steps: 30, fps: 8, label: 'n 을 늘려 가며', onStep: draw });
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

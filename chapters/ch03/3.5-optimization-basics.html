@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.5 최적화 기초 — AI 이론 학습</title>
+<meta name="description" content="최적화는 argmin이다. 볼록하면 지역 최적점이 곧 전역 최적점이고, 딥러닝의 비볼록 지형에서 진짜 문제는 지역 최소가 아니라 안장점이다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="3.5">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">3.5</span>
+        <span>3장 · 미적분과 최적화</span>
+      </div>
+      <h1>최적화 기초</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 55분</span>
+        <span><b>난이도</b>★★★☆☆</span>
+        <span><b>선수지식</b>
+          <a href="3.3-multivariable-derivatives.html">3.3 다변수 미분</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-objective">Objective Function</a>
+      <a class="chip" href="#c-loss">Loss Function</a>
+      <a class="chip" href="#c-constraint">Constraint</a>
+      <a class="chip" href="#c-global">Global Optimum</a>
+      <a class="chip" href="#c-local">Local Optimum</a>
+      <a class="chip" href="#c-saddle">Saddle Point</a>
+      <a class="chip" href="#c-convex">Convexity</a>
+      <a class="chip" href="#c-nonconvex">Non-Convexity</a>
+      <a class="chip" href="#c-path">Optimization Path</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        최적화는 <strong>$\arg\min$ 을 찾는 일</strong>이고, 함수가 convex(볼록)하면
+        <strong>아무 지역 최적점이나 곧 전역 최적점</strong>이라 문제가 끝난다.
+        딥러닝은 비볼록인데도 잘 되는데, 그 이유는 나쁜 지역 최소가 드물고
+        <strong>임계점 대부분이 saddle point(안장점)</strong>이기 때문이다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>objective function(목적함수)·loss function(손실함수)·constraint(제약조건)로 최적화 문제를 형식화할 수 있다.</li>
+        <li>convexity를 정의로 판정하고, 볼록이면 임계점이 전역 최적점임을 증명할 수 있다.</li>
+        <li>임계점을 Hessian의 eigenvalue 부호로 극소·극대·saddle point로 분류할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        안개 낀 산에서 가장 낮은 곳을 찾는다. <a href="3.3-multivariable-derivatives.html">3.3</a>에서 본 대로
+        발밑 경사(gradient)는 알 수 있다. 문제는 <strong>지형이 어떻게 생겼느냐</strong>다.
+      </p>
+      <p>
+        지형이 <strong>그릇 하나</strong>라면 어디서 출발하든 내려가기만 하면 바닥에 닿는다. 이것이 convex 다.
+        지형에 <strong>웅덩이가 여럿</strong>이면 어느 웅덩이에 빠지느냐가 출발점에 달렸다. 이것이 non-convex(비볼록)다.
+        그리고 <strong>말안장</strong>처럼 어떤 방향은 내리막이고 어떤 방향은 오르막인 자리도 있다.
+        경사가 0 이라 멈춰 보이지만 최저점이 아니다.
+      </p>
+
+      <figure class="widget" data-widget="landscape-explore">
+        <figcaption class="widget__bar">지형 탐색 — 어디서 출발하면 어디에 도착하나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">볼록 지형에서는 시작점을 아무리 바꿔도 <strong>같은 곳</strong>에 도착합니다. 비볼록에서는 갈립니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          최적화 문제의 난이도를 정하는 것은 <strong>차원 수나 파라미터 개수가 아니라 지형의 모양</strong>이다.
+          convex 하면 파라미터가 백만 개여도 전역 해가 보장되고, non-convex 하면 두 개여도 보장이 없다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-objective"></span>
+      <span class="anchor" id="c-constraint"></span>
+      <h3>Objective Function &amp; Constraint 목적함수와 제약조건</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \min_{\mathbf{x}\in\mathbb{R}^n} f(\mathbf{x}) \quad \text{subject to} \quad g_i(\mathbf{x})\leq 0,\ \ h_j(\mathbf{x})=0 $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">최적화 문제는 <strong>목적함수 $f$ · 결정변수 $\mathbf{x}$ · 제약조건</strong> 세 가지로 완전히 특정된다.</span>
+        최대화는 $\max f = -\min(-f)$ 로 언제나 최소화로 바꿀 수 있으므로 최소화만 다룬다.
+      </p>
+      <p>
+        제약을 만족하는 점들의 집합 $\mathcal{F}=\{\mathbf{x}: g_i(\mathbf{x})\leq0,\ h_j(\mathbf{x})=0\}$ 을
+        <strong>feasible set(가능 영역)</strong>이라 한다. 제약이 없으면 $\mathcal{F}=\mathbb{R}^n$ 이며
+        이를 unconstrained optimization(무제약 최적화)이라 하고, 딥러닝 학습이 대부분 여기 속한다.
+        제약이 있는 경우의 풀이법은 <a href="3.9-constraints-regularization.html">3.9</a>에서 다룬다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>AI 에서의 예</th><th>결정변수</th><th>목적함수</th><th>제약</th></tr></thead>
+          <tbody>
+            <tr><td>신경망 학습</td><td>파라미터 $\boldsymbol{\theta}$</td><td>평균 loss</td><td>없음 (regularization 으로 대신)</td></tr>
+            <tr><td>SVM</td><td>$\mathbf{w}, b$</td><td>$\tfrac12\|\mathbf{w}\|^2$</td><td>$y_i(\mathbf{w}^\top\mathbf{x}_i+b)\geq1$</td></tr>
+            <tr><td>softmax 출력</td><td>확률 $\mathbf{p}$</td><td>—</td><td>$\sum p_k=1,\ p_k\geq0$</td></tr>
+            <tr><td>양자화 학습</td><td>weight</td><td>loss</td><td>weight 가 정해진 격자 위</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <span class="anchor" id="c-loss"></span>
+      <h3>Loss Function 손실함수</h3>
+      <p>
+        <span class="hl">loss function은 목적함수 중 <strong>예측이 정답에서 얼마나 벗어났는지</strong>를 재는 부분이다.</span>
+        용어가 문헌마다 조금씩 다르게 쓰이므로 이 사이트의 구분을 못박아 둔다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>용어</th><th>이 사이트의 뜻</th><th>식</th></tr></thead>
+          <tbody>
+            <tr><td>loss</td><td>샘플 <strong>하나</strong>의 오차</td><td>$\ell(f_{\boldsymbol\theta}(\mathbf{x}_i),\,y_i)$</td></tr>
+            <tr><td>cost / empirical risk</td><td>data 전체의 평균</td><td>$\frac1N\sum_{i=1}^N \ell_i$</td></tr>
+            <tr><td>objective</td><td>cost + regularization 등 실제로 최소화하는 전부</td><td>$\frac1N\sum\ell_i + \lambda\Omega(\boldsymbol\theta)$</td></tr>
+            <tr><td>metric</td><td>사람이 보는 성능 지표. <strong>최소화 대상이 아니다</strong></td><td>accuracy, F1, BLEU</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        마지막 줄이 중요하다. accuracy 는 계단함수라 불연속이고 gradient 가 거의 모든 곳에서 0 이다
+        (<a href="3.1-functions-basics.html">3.1</a>). 그래서 <strong>미분 가능한 대리(surrogate) loss</strong> 인
+        cross-entropy 를 최소화하고 accuracy 는 관찰만 한다.
+        <span class="hl">loss 가 줄어도 metric 이 나빠질 수 있다는 것이 이 구분의 실용적 이유다.</span>
+      </p>
+
+      <span class="anchor" id="c-global"></span>
+      <span class="anchor" id="c-local"></span>
+      <h3>Global &amp; Local Optimum 전역·지역 최적점</h3>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbf{x}^\star \text{ 가 global minimum} \iff f(\mathbf{x}^\star)\leq f(\mathbf{x}) \ \ \forall \mathbf{x}\in\mathcal{F} $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbf{x}^\star \text{ 가 local minimum} \iff \exists\,\varepsilon>0: f(\mathbf{x}^\star)\leq f(\mathbf{x}) \ \ \forall \mathbf{x}\in\mathcal{F},\ \|\mathbf{x}-\mathbf{x}^\star\|<\varepsilon $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl">차이는 $\forall\mathbf{x}$ 의 범위뿐이다 — 전역은 <strong>전체</strong>에서, 지역은 <strong>반지름 $\varepsilon$ 안</strong>에서.</span>
+        gradient 는 국소 정보만 주므로 <strong>gradient 기반 방법은 원리적으로 지역 최적점밖에 보장하지 못한다</strong>.
+        전역 최적성을 알려면 함수 전체의 구조(예: convexity)를 알아야 한다.
+      </p>
+
+      <span class="anchor" id="c-saddle"></span>
+      <h3>Saddle Point 안장점</h3>
+      <div class="note note--key">
+        <span class="note__label">정의</span>
+        <p>
+          $\nabla f(\mathbf{x}^\star)=\mathbf{0}$ 이지만 극소도 극대도 아닌 점.
+          Hessian의 eigenvalue에 <strong>양수와 음수가 섞여 있다</strong>(indefinite).
+        </p>
+      </div>
+      <p>
+        $f(x,y)=x^2-y^2$ 의 원점이 표준 예다. $x$ 축을 따라가면 올라가고 $y$ 축을 따라가면 내려간다.
+        <span class="hl">고차원에서는 임계점 대부분이 saddle point 다 — $n$ 개 eigenvalue의 부호가
+        <strong>전부</strong> 같아야 극값인데, 그럴 확률이 $n$ 이 커질수록 급격히 작아지기 때문이다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>차원 $n$</th><th>eigenvalue 부호가 모두 양수일 대략적 비율</th><th>해석</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td class="num">1/2</td><td>극소이거나 극대</td></tr>
+            <tr><td class="num">10</td><td class="num">1/1024 ≈ 0.1%</td><td>대부분 안장점</td></tr>
+            <tr><td class="num">100</td><td class="num">≈ 10⁻³⁰</td><td>사실상 전부 안장점</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        부호를 동전 던지기로 본 거친 어림이지만 결론은 실제 분석과 같다 —
+        <strong>딥러닝 최적화의 주된 방해물은 나쁜 지역 최소가 아니라 안장점 주변의 정체</strong>다<a class="cite" href="#ref-dauphin2014-identifying-and-attacking" data-ref="dauphin2014-identifying-and-attacking">1</a>.
+        안장점 근처에서는 gradient 가 작아 진전이 거의 없지만, 빠져나갈 방향은 반드시 존재한다.
+      </p>
+
+      <figure class="widget" data-widget="saddle-view">
+        <figcaption class="widget__bar">Saddle Point — 방향에 따라 오르막이자 내리막</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">방향을 돌리면 단면이 <strong>∪ 에서 ∩ 로 뒤집힙니다</strong>. 두 종류가 한 점에서 만나는 것이 안장점입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-convex"></span>
+      <h3>Convexity 볼록성</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ f\bigl(\lambda\mathbf{x}+(1-\lambda)\mathbf{y}\bigr) \leq \lambda f(\mathbf{x})+(1-\lambda)f(\mathbf{y}), \qquad \forall\lambda\in[0,1] $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        <span class="hl">두 점을 이은 선분이 <strong>그래프보다 위</strong>에 있으면 convex 다.</span>
+        기하적으로 "패인 곳이 하나뿐"이라는 뜻이며, 이 성질 하나에서 최적화의 좋은 성질이 전부 나온다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>판정법</th><th>조건</th><th>쓰기 좋은 상황</th></tr></thead>
+          <tbody>
+            <tr><td>정의 (0차)</td><td>식 (4)</td><td>미분 불가능해도 쓸 수 있다 ($|x|$)</td></tr>
+            <tr><td>1차 조건</td><td>$f(\mathbf{y})\geq f(\mathbf{x})+\nabla f(\mathbf{x})^\top(\mathbf{y}-\mathbf{x})$</td><td>접평면이 항상 아래 — 증명에 유용</td></tr>
+            <tr><td>2차 조건</td><td>$\mathbf{H}\succeq0$ (모든 eigenvalue $\geq0$)</td><td><strong>실무에서 가장 빠른 판정</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>볼록한 그릇 안에 구슬을 놓으면 <strong>어디에 놓든 같은 바닥</strong>으로 굴러갑니다. 그래서 "운 좋은 출발점"을 고민할 필요가 없습니다.</p>
+        <p>비볼록한 지형은 <strong>웅덩이가 여러 개 파인 들판</strong>입니다. 구슬은 가장 가까운 웅덩이에 멈추고, 그 웅덩이가 가장 깊은지는 알 수 없습니다. 딥러닝이 그렇습니다 — 다만 웅덩이들의 깊이가 서로 비슷하다는 것이 실험적으로 알려져 있어 크게 문제되지 않습니다.</p>
+      </div>
+      <p>convex 함수를 알아보는 목록을 외워 두면 실무에서 빠르다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>convex</th><th>concave</th><th>둘 다 아님</th></tr></thead>
+          <tbody>
+            <tr><td>$x^2$, $e^x$, $|x|$, $-\log x$</td><td>$\log x$, $\sqrt{x}$</td><td>$x^3$, $\sin x$</td></tr>
+            <tr><td>모든 norm $\|\mathbf{x}\|$</td><td>—</td><td>$x^4-2x^2$</td></tr>
+            <tr><td>MSE (선형 model 에 대해)</td><td>—</td><td>MSE (신경망에 대해)</td></tr>
+            <tr><td>cross-entropy + softmax (logit 에 대해)</td><td>—</td><td>cross-entropy (신경망 weight 에 대해)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        마지막 두 줄이 핵심이다. <strong>같은 loss 라도 무엇에 대한 함수로 보느냐에 따라 볼록성이 달라진다.</strong>
+        선형 회귀는 $\mathbf{w}$ 에 대해 볼록해서 닫힌 해가 있지만, 같은 MSE 를 신경망 weight 에 대해 보면 비볼록이다.
+      </p>
+
+      <figure class="widget" data-widget="convex-test">
+        <figcaption class="widget__bar">Convexity — 두 점을 이어 보면 안다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">두 점을 옮기며 <strong>선분이 곡선 아래로 내려가는 순간</strong>을 찾으세요. 한 번이라도 내려가면 비볼록입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-nonconvex"></span>
+      <h3>Non-Convexity 비볼록성</h3>
+      <p>
+        신경망 loss 가 비볼록인 이유는 activation 의 비선형성만이 아니다.
+        <span class="hl"><strong>구조적 대칭성</strong> 때문에 같은 함수를 표현하는 파라미터가 여럿 존재하고,
+        그래서 최소점이 반드시 여러 개다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>대칭</th><th>내용</th><th>같은 값의 최소점 개수</th></tr></thead>
+          <tbody>
+            <tr><td>permutation(순열)</td><td>은닉 뉴런의 순서를 바꿔도 같은 함수</td><td>층당 $k!$ 개</td></tr>
+            <tr><td>scale(스케일)</td><td>ReLU 는 $\phi(cz)=c\phi(z)$ — 한 층 $\times c$, 다음 층 $\div c$</td><td>연속적으로 무한히</td></tr>
+            <tr><td>sign(부호)</td><td>tanh 는 홀함수 — 입출력 부호를 함께 뒤집어도 같음</td><td>$2^k$ 개</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        은닉층 뉴런이 100 개면 순열 대칭만으로도 $100!\approx10^{158}$ 개의 등가 최소점이 있다.
+        <strong>"전역 최적점을 찾았다"는 말이 무의미해지는 이유</strong>이며,
+        동시에 "지역 최소에 빠져 손해 봤다"는 걱정이 과장인 이유이기도 하다 —
+        대부분의 지역 최소가 <em>서로 같은 값</em>이다.
+      </p>
+
+      <span class="anchor" id="c-path"></span>
+      <h3>Optimization Path 최적화 경로</h3>
+      <p>
+        <span class="hl">최적화는 결과 한 점이 아니라 <strong>궤적</strong>이며, 그 궤적이 어디로 가느냐가
+        초기값·learning rate·알고리즘에 함께 달렸다.</span>
+        같은 지형에서 같은 출발점이라도 알고리즘이 다르면 다른 곳에 도착할 수 있다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>경로를 결정하는 것</th><th>영향</th><th>다루는 절</th></tr></thead>
+          <tbody>
+            <tr><td>초기값 $\boldsymbol\theta_0$</td><td>어느 웅덩이로 갈지</td><td><a href="3.6-gradient-descent.html">3.6</a></td></tr>
+            <tr><td>learning rate $\eta$</td><td>보폭 — 크면 튀고 작으면 느리다</td><td><a href="3.6-gradient-descent.html">3.6</a> · <a href="3.8-learning-rate-schedules.html">3.8</a></td></tr>
+            <tr><td>알고리즘</td><td>방향 자체를 보정</td><td><a href="3.7-optimization-algorithms.html">3.7</a></td></tr>
+            <tr><td>확률적 잡음 (mini-batch)</td><td>안장점·좁은 최소를 빠져나오게 한다</td><td><a href="3.6-gradient-descent.html">3.6</a> · <a href="3.10-deep-learning-optimization.html">3.10</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        경로가 결과를 바꾼다는 사실은 정규화로도 쓰인다 — 조기 종료(early stopping)는
+        <strong>경로 위에서 일찍 멈추는 것</strong>만으로 일반화를 개선한다(<a href="3.9-constraints-regularization.html">3.9</a>).
+      </p>
+
+      <figure class="widget" data-widget="path-compare">
+        <figcaption class="widget__bar">Optimization Path — 출발점이 결과를 가른다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">비볼록 지형에서 시작점을 조금만 옮겨도 <strong>도착하는 웅덩이가 바뀝니다</strong>. 볼록 지형에서는 바뀌지 않습니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>임계점의 정체를 Hessian으로 가르는 표다. <a href="3.3-multivariable-derivatives.html">3.3</a>의 표를 최적화 관점에서 다시 쓴 것이다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$\nabla f$</th><th>$\mathbf{H}$ 의 eigenvalue</th><th>이름</th><th>최적화에서 일어나는 일</th></tr></thead>
+          <tbody>
+            <tr><td>$\neq\mathbf{0}$</td><td>—</td><td>일반 점</td><td>계속 움직인다</td></tr>
+            <tr><td>$=\mathbf{0}$</td><td>모두 $>0$</td><td>strict local minimum</td><td>멈춘다 — 원하던 결과</td></tr>
+            <tr><td>$=\mathbf{0}$</td><td>모두 $<0$</td><td>local maximum</td><td>실전에서 거의 만나지 않는다</td></tr>
+            <tr><td>$=\mathbf{0}$</td><td>부호 섞임</td><td><strong>saddle point</strong></td><td>정체 — 하지만 탈출로가 있다</td></tr>
+            <tr><td>$=\mathbf{0}$</td><td>0 포함, 나머지 $\geq0$</td><td>degenerate</td><td>평평한 골 — flat minimum 후보</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$\arg\min$</td><td>arg min 아그민</td><td>최솟값을 <strong>주는 위치</strong></td><td>연산자</td><td>—</td></tr>
+            <tr><td>$\min$</td><td>min</td><td>최솟값 <strong>그 자체</strong></td><td>연산자</td><td>—</td></tr>
+            <tr><td>$f$</td><td>f</td><td>objective function</td><td>$\mathbb{R}^n\to\mathbb{R}$</td><td>—</td></tr>
+            <tr><td>$\ell$</td><td>script l 스크립트 엘</td><td>샘플 하나의 loss</td><td>scalar</td><td>보통 $\geq0$</td></tr>
+            <tr><td>$\mathcal{L}$</td><td>script L</td><td>data 전체의 cost</td><td>scalar</td><td>보통 $\geq0$</td></tr>
+            <tr><td>$\boldsymbol{\theta}$</td><td>bold theta 세타</td><td>파라미터</td><td>$(p,)$</td><td>$\mathbb{R}^p$</td></tr>
+            <tr><td>$\mathbf{x}^\star$</td><td>x star</td><td>최적점</td><td>$(n,)$</td><td>$\in\mathcal{F}$</td></tr>
+            <tr><td>$g_i$, $h_j$</td><td>g i · h j</td><td>부등식·등식 제약</td><td>$\mathbb{R}^n\to\mathbb{R}$</td><td>—</td></tr>
+            <tr><td>$\mathcal{F}$</td><td>script F · feasible set</td><td>제약을 만족하는 점들</td><td>집합</td><td>$\subseteq\mathbb{R}^n$</td></tr>
+            <tr><td>$\lambda$</td><td>lambda 람다</td><td>(4)에서는 보간 비율 · 다른 곳에서는 정규화 계수</td><td>scalar</td><td>$[0,1]$ 또는 $>0$</td></tr>
+            <tr><td>$\succeq 0$</td><td>positive semidefinite 준정부호</td><td>모든 eigenvalue가 $\geq0$</td><td>관계</td><td>—</td></tr>
+            <tr><td>$\Omega$</td><td>omega 오메가</td><td>regularization 항</td><td>$\mathbb{R}^p\to\mathbb{R}$</td><td>$\geq0$</td></tr>
+            <tr><td>$\varepsilon$</td><td>epsilon 엡실론</td><td>지역성을 정하는 반지름</td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>$N$</td><td>N</td><td>data 개수</td><td>정수</td><td>$\geq1$</td></tr>
+            <tr><td>$k!$</td><td>k factorial 팩토리얼</td><td>$1\times2\times\cdots\times k$</td><td>정수</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">표기 주의</span>
+        <p>
+          $\min f$ 와 $\arg\min f$ 를 구분한다. $f(x)=(x-3)^2$ 에서
+          $\min f = 0$ (최솟값)이고 $\arg\min f = 3$ (그 위치)이다.
+          학습에서 우리가 원하는 것은 언제나 <strong>$\arg\min$</strong> — 파라미터 값이지 loss 값이 아니다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — 볼록하면 지역 최적점이 전역 최적점이다</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{x}^\star \text{ 는 local min}, \quad \exists\, \mathbf{y}: f(\mathbf{y}) < f(\mathbf{x}^\star) $$</div>
+          <div class="derive__why">결론을 부정한다 — 더 낮은 점이 있다고 가정</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{z}_\lambda = \lambda\mathbf{y} + (1-\lambda)\mathbf{x}^\star, \qquad \lambda\in(0,1) $$</div>
+          <div class="derive__why">두 점을 잇는 선분 위의 점</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f(\mathbf{z}_\lambda) \leq \lambda f(\mathbf{y}) + (1-\lambda)f(\mathbf{x}^\star) $$</div>
+          <div class="derive__why">convexity 정의 (식 4)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ < \lambda f(\mathbf{x}^\star) + (1-\lambda)f(\mathbf{x}^\star) = f(\mathbf{x}^\star) $$</div>
+          <div class="derive__why">$f(\mathbf{y})&lt;f(\mathbf{x}^\star)$ 를 대입. <strong>선분 위 모든 점이 더 낮다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lambda \to 0 \;\Longrightarrow\; \|\mathbf{z}_\lambda - \mathbf{x}^\star\| \to 0 $$</div>
+          <div class="derive__why">$\lambda$ 를 충분히 작게 하면 <strong>$\varepsilon$ 이웃 안에</strong> 들어온다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Rightarrow\ \text{이웃 안에 } f(\mathbf{z}_\lambda)&lt;f(\mathbf{x}^\star) \text{ 인 점 존재 — 모순} $$</div>
+          <div class="derive__why">local min 의 정의(식 3)에 어긋난다. <strong>∴ 더 낮은 점은 없다</strong></div>
+        </div>
+      </div>
+      <div class="note note--key">
+        <span class="note__label">따름정리</span>
+        <p>
+          미분 가능한 convex 함수에서는 <strong>$\nabla f(\mathbf{x}^\star)=\mathbf{0}$ 이 전역 최적성의
+          필요충분조건</strong>이다. 1차 조건 $f(\mathbf{y})\geq f(\mathbf{x}^\star)+\nabla f(\mathbf{x}^\star)^\top(\mathbf{y}-\mathbf{x}^\star)$
+          에 $\nabla f=\mathbf{0}$ 을 넣으면 $f(\mathbf{y})\geq f(\mathbf{x}^\star)$ 가 모든 $\mathbf{y}$ 에 대해 바로 나온다.
+          비볼록에서는 이 논증이 무너진다 — 그래서 "gradient 가 0 이니 끝났다"고 말할 수 없다.
+        </p>
+      </div>
+
+      <h3>유도 2 — 2차 조건 $\mathbf{H}\succeq0$ 이 볼록성과 같은 이유</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ g(t) = f(\mathbf{x}+t\mathbf{d}) $$</div>
+          <div class="derive__why">임의 방향 $\mathbf{d}$ 를 따라 자른 일변수 함수</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f \text{ convex} \iff g \text{ 가 모든 } \mathbf{x},\mathbf{d} \text{ 에 대해 convex} $$</div>
+          <div class="derive__why">식 (4)를 선분 위에서 읽으면 그대로 일변수 볼록성이다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ g''(t) = \mathbf{d}^\top \mathbf{H}(\mathbf{x}+t\mathbf{d})\,\mathbf{d} $$</div>
+          <div class="derive__why">다변수 chain rule 을 두 번 적용 (3.3 식 8)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ g''\geq0 \ \ \forall\mathbf{d} \iff \mathbf{d}^\top\mathbf{H}\mathbf{d}\geq0 \ \ \forall\mathbf{d} $$</div>
+          <div class="derive__why">일변수에서 $g''\geq0$ 이 볼록의 조건 (<a href="3.2-derivatives.html">3.2</a>)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \iff \mathbf{H}\succeq0 \iff \lambda_i(\mathbf{H})\geq0 \ \ \forall i $$</div>
+          <div class="derive__why">이차형식의 부호는 <strong>eigenvalue의 부호</strong>가 정한다 (<a href="../ch02/2.7-eigenvalues.html">2.7</a>)</div>
+        </div>
+      </div>
+
+      <h3>유도 3 — 선형 회귀의 MSE 가 볼록한 이유</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathcal{L}(\mathbf{w}) = \|\mathbf{Xw}-\mathbf{y}\|^2 $$</div>
+          <div class="derive__why">$\mathbf{X}$ 는 $(N,p)$ design matrix</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \nabla\mathcal{L} = 2\mathbf{X}^\top(\mathbf{Xw}-\mathbf{y}) $$</div>
+          <div class="derive__why">3.3 유도 3 에서 얻은 결과</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{H} = \nabla^2\mathcal{L} = 2\mathbf{X}^\top\mathbf{X} $$</div>
+          <div class="derive__why">gradient 를 한 번 더 미분. <strong>$\mathbf{w}$ 에 의존하지 않는다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{d}^\top(\mathbf{X}^\top\mathbf{X})\mathbf{d} = (\mathbf{Xd})^\top(\mathbf{Xd}) = \|\mathbf{Xd}\|^2 \geq 0 $$</div>
+          <div class="derive__why"><strong>제곱이라 항상 음이 아니다</strong> — $\mathbf{X}^\top\mathbf{X}\succeq0$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore \mathcal{L} \text{ 는 convex},\quad \nabla\mathcal{L}=\mathbf{0} \Rightarrow \text{전역 최적} $$</div>
+          <div class="derive__why">normal equation 의 해가 곧 전역해다 (<a href="../ch02/2.6-linear-systems.html">2.6</a>)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{신경망: } \hat{y}=\mathbf{w}_2^\top\phi(\mathbf{W}_1\mathbf{x}) \;\Rightarrow\; \mathbf{H} \text{ 가 } \boldsymbol\theta \text{ 에 의존} $$</div>
+          <div class="derive__why">비선형이 끼면 Hessian 이 위치마다 달라지고 <strong>음의 eigenvalue 가 생긴다</strong> — 비볼록</div>
+        </div>
+      </div>
+      <details>
+        <summary>convex 하다고 계산이 쉬운 것은 아니다</summary>
+        <p>
+          convexity 가 보장하는 것은 "지역 = 전역"이지 "빨리 풀린다"가 아니다.
+          convex 문제도 condition number 가 크면 gradient descent 가 아주 느리고,
+          제약이 많으면 계산량이 폭발한다. 예를 들어 $\ell_1$ 정규화가 붙은 문제는 볼록이지만
+          미분 불가능한 점이 있어 전용 알고리즘(proximal method)이 필요하다.
+        </p>
+        <p>
+          반대로 비볼록이라고 반드시 어렵지도 않다. 딥러닝이 그 반례다 —
+          이론적 보장은 없지만 실제로는 SGD 로 충분히 좋은 해를 얻는다.
+          이유는 완전히 규명되지 않았으나, 과매개변수화(파라미터가 data 보다 훨씬 많음) 상태에서는
+          지역 최소들의 loss 값이 서로 비슷하고 대부분이 전역 최소에 가깝다는 증거가 쌓여 있다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① 비볼록 함수의 임계점 전부 찾기</h3>
+      <p>$f(x)=x^4-2x^2$ 를 조사한다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ f'(x) = 4x^3-4x = 4x(x^2-1) = 4x(x-1)(x+1) $$</div>
+          <div class="derive__why">인수분해가 깔끔하게 된다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f'=0 \;\Rightarrow\; x = -1,\ 0,\ 1 $$</div>
+          <div class="derive__why">임계점 세 개</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f''(x) = 12x^2-4 $$</div>
+          <div class="derive__why">2차 판정에 쓸 도함수</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f''(0) = -4 < 0 \;\Rightarrow\; x=0 \text{ 은 local max}, \quad f(0)=0 $$</div>
+          <div class="derive__why">봉우리</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f''(\pm1) = 12-4 = 8 > 0 \;\Rightarrow\; \text{local min}, \quad f(\pm1) = 1-2 = -1 $$</div>
+          <div class="derive__why">골짜기 <strong>두 개</strong>, 값이 <strong>정확히 같다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \arg\min f = \{-1,\ +1\}, \qquad \min f = -1 $$</div>
+          <div class="derive__why"><strong>전역 최적점이 둘</strong> — 신경망의 대칭성과 같은 상황이다</div>
+        </div>
+      </div>
+      <p>
+        $f''(0)<0$ 인 점이 존재하므로 <strong>이 함수는 비볼록</strong>이다.
+        그리고 두 최소점의 값이 같다는 것이 중요하다 — 어느 쪽에 도착하든 손해가 없다.
+        신경망의 permutation 대칭이 만드는 상황이 정확히 이렇다.
+      </p>
+
+      <h3>② 정의로 볼록성 판정하기</h3>
+      <p>$\mathbf{x}=-1$, $\mathbf{y}=1$, $\lambda=0.5$ 로 식 (4)를 직접 확인한다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$f$</th><th>$f(0)$ = 좌변</th><th>$\frac{f(-1)+f(1)}{2}$ = 우변</th><th>$\leq$ ?</th><th>판정</th></tr></thead>
+          <tbody>
+            <tr><td>$x^2$</td><td class="num">0</td><td class="num">(1+1)/2 = 1</td><td>0 ≤ 1 ✓</td><td>convex 후보</td></tr>
+            <tr><td>$|x|$</td><td class="num">0</td><td class="num">(1+1)/2 = 1</td><td>0 ≤ 1 ✓</td><td>convex (미분 불가여도)</td></tr>
+            <tr><td>$x^4-2x^2$</td><td class="num">0</td><td class="num">(−1−1)/2 = −1</td><td>0 ≤ −1 ✗</td><td><strong>비볼록 확정</strong></td></tr>
+            <tr><td>$x^3$</td><td class="num">0</td><td class="num">(−1+1)/2 = 0</td><td>0 ≤ 0 ✓</td><td>이 점만으론 판정 불가</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>한 쌍만 어겨도 비볼록이 확정</strong>되지만, 한 쌍이 맞는다고 볼록이 확정되지는 않는다 —
+        모든 쌍에 대해 성립해야 하기 때문이다. $x^3$ 이 그 예로, $\mathbf{x}=-2,\mathbf{y}=0$ 을 잡으면
+        좌변 $f(-1)=-1$, 우변 $(-8+0)/2=-4$ 로 $-1\leq-4$ 가 거짓이라 비볼록이 드러난다.
+        그래서 실무에서는 <strong>2차 조건 $f''\geq0$</strong> 으로 판정한다: $f''=6x$ 는 $x<0$ 에서 음수다.
+      </p>
+
+      <h3>③ 안장점을 두 방향에서 확인</h3>
+      <p>$f(x,y)=x^2-y^2$ 의 원점을 조사한다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \nabla f = (2x,\ -2y)^\top \;\Rightarrow\; \nabla f(0,0) = (0,0)^\top $$</div>
+          <div class="derive__why">임계점이다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{H} = \begin{bmatrix}2&0\\0&-2\end{bmatrix} \;\Rightarrow\; \lambda = 2,\ -2 $$</div>
+          <div class="derive__why">대각행렬이라 eigenvalue가 그대로 보인다. <strong>부호가 섞였다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f(t,0) = t^2 \geq 0 = f(0,0) $$</div>
+          <div class="derive__why">$x$ 축을 따라가면 <strong>올라간다</strong> — 이 방향만 보면 최소점</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f(0,t) = -t^2 \leq 0 = f(0,0) $$</div>
+          <div class="derive__why">$y$ 축을 따라가면 <strong>내려간다</strong> — 이 방향만 보면 최대점</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f(0.1, 0) = 0.01, \qquad f(0, 0.1) = -0.01 $$</div>
+          <div class="derive__why">아무리 가까이 봐도 위아래가 둘 다 있다 — <strong>극값이 아니다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \|\nabla f(0.01,\,0.01)\| = \sqrt{0.02^2+0.02^2} \approx 0.028 $$</div>
+          <div class="derive__why">근처에서 gradient 가 작아 <strong>학습이 멈춘 것처럼 보인다</strong></div>
+        </div>
+      </div>
+
+      <h3>④ 볼록한 loss 를 손으로 최소화</h3>
+      <p>data $(x_1,y_1)=(1,2)$, $(x_2,y_2)=(2,3)$ 에 $\hat{y}=wx$ 를 맞춘다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathcal{L}(w) = (w\cdot1-2)^2 + (w\cdot2-3)^2 $$</div>
+          <div class="derive__why">제곱오차의 합</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ = (w^2-4w+4) + (4w^2-12w+9) = 5w^2-16w+13 $$</div>
+          <div class="derive__why">전개해서 정리</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathcal{L}''(w) = 10 > 0 \;\Rightarrow\; \textbf{convex} $$</div>
+          <div class="derive__why">$\mathcal{L}'=10w-16$ 을 한 번 더 미분. <strong>어디서나 양수</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathcal{L}'(w)=10w-16=0 \;\Rightarrow\; w^\star = 1.6 $$</div>
+          <div class="derive__why">볼록이므로 이 점이 <strong>전역 최적</strong>이다 (유도 1)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathcal{L}(1.6) = 5(2.56)-16(1.6)+13 = 12.8-25.6+13 = 0.2 $$</div>
+          <div class="derive__why">최솟값. 완전히 0 이 아닌 것은 두 점이 원점을 지나는 직선 위에 없기 때문</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathcal{L}(1.5)=11.25-24+13=0.25, \quad \mathcal{L}(1.7)=14.45-27.2+13=0.25 $$</div>
+          <div class="derive__why"><strong>양옆이 모두 더 크다</strong> ✓ 그릇 모양 확인</div>
+        </div>
+      </div>
+
+      <h3>⑤ 안장점이 얼마나 흔한가 — 어림 계산</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ P(\text{eigenvalue 하나가 양수}) \approx \tfrac12 $$</div>
+          <div class="derive__why">거친 가정 — 무작위 대칭행렬의 eigenvalue 부호</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P(\text{임계점이 local min}) = P(\text{모두 양수}) \approx 2^{-n} $$</div>
+          <div class="derive__why">$n$ 개가 <strong>전부</strong> 양수여야 한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ n=10: \ 2^{-10} = \tfrac{1}{1024} \approx 0.1\% $$</div>
+          <div class="derive__why">파라미터 10 개짜리 장난감 model 에서도 이미 드물다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ n=100: \ 2^{-100} \approx 7.9\times10^{-31} $$</div>
+          <div class="derive__why"><strong>사실상 0</strong> — 만나는 임계점은 거의 전부 안장점이다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ P(\text{local max}) = P(\text{모두 음수}) \approx 2^{-n} $$</div>
+          <div class="derive__why">같은 이유로 <strong>local max 도 거의 만나지 않는다</strong></div>
+        </div>
+      </div>
+      <p>
+        동전 던지기 가정은 실제와 다르다(loss 지형의 Hessian은 무작위가 아니다).
+        그래도 결론의 방향은 정밀한 분석과 일치한다 — 차원이 올라갈수록 안장점의 비율이 압도적이 되고,
+        <strong>loss 값이 낮은 임계점일수록 local minimum 일 확률이 높아진다</strong>는 것이
+        무작위 행렬 이론에서 나오는 결과다.
+      </p>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>지형 탐색</strong> · <strong>안장점</strong> · <strong>볼록성 판정</strong> ·
+        <strong>경로 비교</strong> — 을 만져 본 뒤, 아래에서 <strong>차원이 올라갈 때 안장점 비율</strong>을 확인한다.
+      </p>
+
+      <figure class="widget" data-widget="saddle-odds">
+        <figcaption class="widget__bar">차원이 올라가면 극값은 사라진다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$n$ 을 20 만 넘겨도 극값의 비율이 <strong>백만분의 1 아래</strong>로 떨어집니다. 딥러닝의 $n$ 은 $10^9$ 입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"딥러닝 학습이 안 되는 것은 지역 최소에 빠졌기 때문이다."</p>
+        <p>
+          <strong>실제로는</strong> 고차원에서 나쁜 지역 최소는 드물다.
+          gradient 가 0 인 점의 압도적 다수가 <strong>saddle point</strong> 이며,
+          거기서는 빠져나갈 방향이 반드시 존재한다<a class="cite" href="#ref-dauphin2014-identifying-and-attacking" data-ref="dauphin2014-identifying-and-attacking">1</a>.
+          학습이 멈춘 것처럼 보이면 안장점 부근의 plateau 이거나,
+          learning rate·초기화·gradient 흐름의 문제일 가능성이 훨씬 크다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"convex 하면 최적화가 쉽다."</p>
+        <p>
+          <strong>실제로는</strong> convexity 가 보장하는 것은 <strong>"지역 = 전역"</strong> 뿐이다.
+          속도는 별개다 — condition number 가 $10^6$ 인 볼록 문제는 gradient descent 로 사실상 수렴하지 않는다
+          (<a href="3.6-gradient-descent.html">3.6</a>).
+          반대로 비볼록인 딥러닝은 이론적 보장이 없는데도 실제로는 잘 학습된다.
+          <strong>"볼록 = 쉬움"은 이론의 성질이지 계산의 성질이 아니다.</strong>
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"목적함수를 최소화하면 성능이 좋아진다."</p>
+        <p>
+          <strong>실제로는</strong> 최소화하는 것은 <em>training data 위의</em> loss 다.
+          이것을 끝까지 밀면 overfitting 이 되어 test 성능이 나빠진다 —
+          <strong>진짜 목표(일반화)와 최적화하는 목표(경험적 loss)가 다르다</strong>.
+          그래서 조기 종료·regularization 이 필요하고(<a href="3.9-constraints-regularization.html">3.9</a>),
+          "전역 최적점을 찾는 것"이 오히려 손해일 수 있다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"loss 와 metric 은 같은 것을 잰다."</p>
+        <p>
+          <strong>실제로는</strong> loss 는 <em>최적화 가능하도록</em> 만든 대리 지표다.
+          accuracy 는 불연속이라 gradient 로 최소화할 수 없어 cross-entropy 를 대신 쓴다.
+          그래서 <strong>loss 가 줄었는데 accuracy 가 그대로이거나 나빠지는 일이 정상적으로 일어난다</strong> —
+          이미 맞힌 샘플의 확신도만 올라가는 경우가 대표적이다.
+          두 곡선을 함께 보고 판단해야 한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"$\nabla f=\mathbf{0}$ 이면 최적화가 끝났다."</p>
+        <p>
+          <strong>실제로는</strong> 볼록할 때만 참이다(유도 1의 따름정리).
+          비볼록에서는 안장점일 수 있으므로 <strong>Hessian의 eigenvalue 부호까지 봐야</strong> 확정된다.
+          실무에서는 Hessian을 계산할 수 없으므로 대신 다른 신호를 본다 —
+          loss 가 정말 평평한지, 학습률을 흔들면 다시 내려가는지, 여러 seed 에서 같은 값에 멈추는지.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①·③·④ 를 검증한다.</p>
+      <details>
+        <summary>NumPy — 임계점 분류 · 볼록성 판정 · 안장점 (19줄)</summary>
+<pre><code>import numpy as np
+
+f  = lambda x: x**4 - 2*x**2
+d1 = lambda x: 4*x**3 - 4*x
+d2 = lambda x: 12*x**2 - 4
+for c in [-1., 0., 1.]:
+    kind = "local min" if d2(c) &gt; 0 else "local max"
+    print(c, d1(c), d2(c), kind, f(c))     # ±1 -> local min, f=-1 (값이 같다)
+
+# 볼록성: 무작위 두 점으로 정의를 두들겨 본다
+rng = np.random.default_rng(0)
+for name, g in [("x^2", lambda x: x**2), ("|x|", abs), ("x^4-2x^2", f)]:
+    a, b, lam = rng.uniform(-2, 2, 200), rng.uniform(-2, 2, 200), rng.uniform(0, 1, 200)
+    lhs = g(lam*a + (1-lam)*b);  rhs = lam*g(a) + (1-lam)*g(b)
+    print(name, "convex 후보" if np.all(lhs &lt;= rhs + 1e-12) else "비볼록 확정")
+
+H = np.array([[2., 0.], [0., -2.]])        # f = x^2 - y^2 의 Hessian
+w = np.linalg.eigvalsh(H)
+print(w, "saddle" if w.min() &lt; 0 &lt; w.max() else "extremum")   # [-2. 2.] saddle
+
+L = lambda w_: 5*w_**2 - 16*w_ + 13        # 예제 ④
+print(L(1.5), L(1.6), L(1.7))              # 0.25 0.2 0.25   <- 1.6 이 최소
+</code></pre>
+        <p>
+          <small>
+            무작위 표본 검사는 <strong>비볼록을 증명할 수는 있어도 볼록을 증명하지는 못한다</strong> —
+            반례를 못 찾은 것과 없는 것은 다르다. 볼록을 확정하려면 2차 조건 $\mathbf{H}\succeq0$ 을 해석적으로 보여야 한다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $f(x)=x^4-2x^2$ 의 global minimum 값과 위치는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>값 $-1$, 위치 $x=\pm1$ (두 곳)</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>값 $0$, 위치 $x=0$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>값 $-1$, 위치 $x=1$ 뿐</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $f'=4x(x-1)(x+1)$ 에서 임계점은 $-1,0,1$ 이고 $f''=12x^2-4$ 로 판정하면
+            $x=0$ 은 local max($f''=-4$), $x=\pm1$ 은 local min($f''=8$)이다.
+            $f(\pm1)=-1$ 로 <strong>두 값이 정확히 같아</strong> 전역 최적점이 둘이다.
+            함수가 우함수라 대칭이며, 이것이 신경망의 대칭성과 같은 구조다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\mathcal{L}(w)=5w^2-16w+13$ 의 $\arg\min$ 은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$1.6$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$0.2$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$3.2$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\mathcal{L}'=10w-16=0 \Rightarrow w=1.6$. $\mathcal{L}''=10>0$ 이라 볼록이므로 전역 최적이다.
+            <strong>나</strong>는 최솟값 $\mathcal{L}(1.6)=0.2$ 로, <strong>$\arg\min$ 과 $\min$ 을 혼동</strong>한 답이다.
+            우리가 원하는 것은 언제나 위치(파라미터)이지 값이 아니다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            $f$ 가 convex 이고 $\nabla f(\mathbf{x}^\star)=\mathbf{0}$ 이다. 확실히 말할 수 있는 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\mathbf{x}^\star$ 는 global minimum 이다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$\mathbf{x}^\star$ 는 유일한 최적점이다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>거기까지 빠르게 도달할 수 있다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            유도 1의 따름정리다. <strong>나</strong>는 틀렸다 — $f(x)=|x|$ 를 평평하게 만든 함수처럼
+            최소점이 구간 전체일 수 있다(유일성은 <em>strict</em> convexity 가 필요).
+            <strong>다</strong>도 틀렸다 — convexity 는 <em>어디로</em> 가는지만 보장하고
+            <em>얼마나 빨리</em>는 condition number 가 정한다(오해 2).
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            $\nabla f=\mathbf{0}$ 이고 Hessian의 eigenvalue가 $\{3, 1, -0.2\}$ 다. 이 점은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>saddle point — 대부분 오르막이지만 내려갈 방향이 하나 있다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>local minimum — 양수가 더 많으니까</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>local maximum</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            local minimum 이려면 <strong>모든</strong> eigenvalue가 양수여야 한다. 하나라도 음수면 그 eigenvector 방향으로
+            내려갈 수 있으므로 saddle point 다. 실전에서 자주 만나는 형태이며,
+            음의 eigenvalue 크기가 작아($-0.2$) <strong>탈출이 느린</strong> 것이 학습 정체로 보이는 이유다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            같은 MSE 인데 선형 회귀에서는 볼록이고 신경망에서는 비볼록인 이유는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>무엇에 대한 함수로 보느냐가 다르다 — 신경망은 파라미터가 비선형으로 얽힌다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>신경망의 loss 식이 다르기 때문</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>신경망은 파라미터가 많기 때문</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            선형 회귀는 $\mathbf{H}=2\mathbf{X}^\top\mathbf{X}\succeq0$ 로 $\mathbf{w}$ 에 무관하게 볼록이다(유도 3).
+            신경망은 $\mathbf{w}_2^\top\phi(\mathbf{W}_1\mathbf{x})$ 처럼 파라미터끼리 곱해지고 비선형을 통과해
+            Hessian이 위치마다 달라지고 음의 eigenvalue 가 생긴다.
+            <strong>다</strong>는 관계없다 — 파라미터가 백만 개여도 선형이면 볼록이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            training loss 가 계속 줄어드는데 validation accuracy 가 떨어진다. 가장 정확한 진단은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>최적화는 잘 되고 있지만 최적화 목표와 진짜 목표가 어긋났다 (overfitting)</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>지역 최소에 빠졌다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>learning rate 가 너무 크다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            training loss 가 <em>줄고 있다</em>는 것은 최적화 자체는 성공 중이라는 뜻이다.
+            문제는 최소화 대상이 <strong>training data 위의 경험적 loss</strong> 라는 데 있다(오해 3).
+            지역 최소나 learning rate 문제라면 training loss 부터 정체하거나 튀었을 것이다.
+            해법은 최적화가 아니라 정규화·조기 종료 쪽이다(<a href="3.9-constraints-regularization.html">3.9</a>).
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="3.6-gradient-descent.html">3.6 경사하강법</a></strong> — 이 지형 위를 실제로 걷는 알고리즘.</li>
+        <li><strong><a href="3.9-constraints-regularization.html">3.9 제약과 정규화</a></strong> — 식 (1)의 제약을 실제로 다루는 방법.</li>
+        <li><strong><a href="3.10-deep-learning-optimization.html">3.10 딥러닝 최적화</a></strong> — 손실 지형의 모양과 일반화의 관계.</li>
+        <li><strong>5장 전통 ML</strong> — SVM·로지스틱 회귀가 볼록 문제라 전역해가 보장된다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-boyd2004-convex" data-ref="boyd2004-convex">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Boyd, S. &amp; Vandenberghe, L. (2004). <em>Convex Optimization</em>. Cambridge University Press.</span>
+          <span class="ref__where">3.1절(Basic properties and examples) — convexity 의 정의(식 4), 1차·2차 조건, convex 함수 목록. 4.1–4.2절 — 식 (1)의 표준형과 feasible set, "local = global"(유도 1)의 증명</span>
+          <a class="ref__link" href="https://web.stanford.edu/~boyd/cvxbook/">web.stanford.edu/~boyd/cvxbook</a>
+        </li>
+        <li class="ref" id="ref-dauphin2014-identifying-and-attacking" data-ref="dauphin2014-identifying-and-attacking">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Dauphin, Y. N., Pascanu, R., Gulcehre, C., Cho, K., Ganguli, S. &amp; Bengio, Y. (2014). <em>Identifying and attacking the saddle point problem in high-dimensional non-convex optimization</em>. NeurIPS 2014.</span>
+          <span class="ref__where">2절 — 무작위 행렬 이론으로 고차원 임계점 대부분이 saddle point 임을 보이는 논증(예제 ⑤와 '안장점' 표의 근거). 3절 — loss 가 낮은 임계점일수록 local minimum 일 확률이 높다는 결과. 오해 1 의 직접 근거</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1406.2572">arXiv:1406.2572</a>
+        </li>
+        <li class="ref" id="ref-goodfellow2016-dl" data-ref="goodfellow2016-dl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>. MIT Press.</span>
+          <span class="ref__where">4.3절 — 최적화 문제의 형식화와 임계점 분류표. 8.1절(How Learning Differs from Pure Optimization) — 경험적 loss 와 진짜 목표의 차이(오해 3·4). 8.2.2–8.2.3절 — 신경망의 permutation·scale 대칭이 만드는 등가 최소점('비볼록성' 표)</span>
+          <a class="ref__link" href="https://www.deeplearningbook.org/">deeplearningbook.org</a>
+        </li>
+        <li class="ref" id="ref-stanford-ee364a" data-ref="stanford-ee364a">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Boyd, S. <em>EE364A: Convex Optimization I</em>. Stanford University.</span>
+          <span class="ref__where">Lecture 3(Convex functions) 슬라이드 — 볼록성의 세 판정법을 나란히 놓은 표('Convexity' 표의 구성). Lecture 4 — 제약 최적화의 표준형과 feasible set 그림</span>
+          <a class="ref__link" href="https://web.stanford.edu/class/ee364a/">web.stanford.edu/class/ee364a</a>
+        </li>
+        <li class="ref" id="ref-li2017-visualizing-the-loss" data-ref="li2017-visualizing-the-loss">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Li, H., Xu, Z., Taylor, G., Studer, C. &amp; Goldstein, T. (2018). <em>Visualizing the Loss Landscape of Neural Nets</em>. NeurIPS 2018.</span>
+          <span class="ref__where">3–5절 — filter normalization 으로 그린 실제 신경망 loss 지형. 비볼록이지만 지역 최소들의 값이 비슷하고 residual connection 이 지형을 매끄럽게 만든다는 관찰('비볼록성'과 '최적화 경로' 절의 근거)</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1712.09913">arXiv:1712.09913</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+/* 1변수 지형 모음 */
+var LAND = {
+  convex:  { f: function (x) { return 0.5 * x * x + 0.3 * x; },
+             d: function (x) { return x + 0.3; }, name: '볼록 (½x² + 0.3x)', convex: true },
+  double:  { f: function (x) { return 0.25 * (x * x * x * x) - x * x; },
+             d: function (x) { return x * x * x - 2 * x; }, name: '웅덩이 둘 (¼x⁴ − x²)', convex: false },
+  wiggle:  { f: function (x) { return 0.15 * x * x + Math.sin(3 * x); },
+             d: function (x) { return 0.3 * x + 3 * Math.cos(3 * x); }, name: '울퉁불퉁', convex: false },
+  abs:     { f: function (x) { return Math.abs(x); },
+             d: function (x) { return x > 0 ? 1 : (x < 0 ? -1 : 0); }, name: '|x| (볼록, 미분 불가)', convex: true }
+};
+
+/* ============================================================
+   위젯 1 — 지형 탐색: 시작점에서 굴러 내려간다
+   ============================================================ */
+WIDGETS.register('landscape-explore', function (root, ctx) {
+  var cur = 'convex', x0 = 1.8, eta = 0.12;
+
+  var p = VIZ.plot({ w: 460, h: 290, xmin: -3, xmax: 3, ymin: -1.6, ymax: 4,
+    pad: { t: 18, r: 14, b: 28, l: 40 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'start', label: '시작점', digits: 2 },
+    { key: 'end', label: '도착점', digits: 4 },
+    { key: 'val', label: '도착점의 f', digits: 4 },
+    { key: 'kind', label: '지형' }
+  ]);
+
+  function run(x, F) {
+    var pts = [[x, F.f(x)]];
+    for (var i = 0; i < 200; i++) {
+      x = x - eta * F.d(x);
+      if (!isFinite(x)) break;
+      x = Math.max(-3, Math.min(3, x));
+      pts.push([x, F.f(x)]);
+    }
+    return { x: x, pts: pts };
+  }
+
+  function draw() {
+    var F = LAND[cur];
+    p.clear().grid(1, 1).axes('x', 'f(x)').ticks(1, 1);
+    p.curve(F.f, { samples: 400 });
+
+    /* 여러 시작점의 결과를 옅게 */
+    for (var s = -2.6; s <= 2.6; s += 0.65) {
+      var r0 = run(s, F);
+      p.dot(r0.x, F.f(r0.x), 3);
+    }
+
+    var r = run(x0, F);
+    p.line(r.pts, { alt: true, width: 2 });
+    p.dot(x0, F.f(x0), 5);
+    p.dot(r.x, F.f(r.x), 7);
+    p.callout(r.x, F.f(r.x), '도착', { dx: 20, dy: -22, tone: 'var(--seal)' });
+
+    out.set('start', x0);
+    out.set('end', r.x);
+    out.set('val', F.f(r.x));
+    out.setRaw('kind', F.name + (F.convex ? ' — 어디서 출발해도 같은 곳' : ' — 출발점이 결과를 가른다'));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '지형',
+    options: [
+      { value: 'convex', label: '볼록' },
+      { value: 'double', label: '웅덩이 둘' },
+      { value: 'wiggle', label: '울퉁불퉁' },
+      { value: 'abs', label: '|x|' }
+    ],
+    value: 'convex', onChange: function (v) { cur = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '시작점 x₀', min: -2.8, max: 2.8, step: 0.05, value: 1.8, digits: 2,
+    onInput: function (v) { x0 = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — 안장점: 방향에 따른 단면
+   ============================================================ */
+WIDGETS.register('saddle-view', function (root, ctx) {
+  var ang = 0;
+
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;width:100%';
+  ctx.stage.appendChild(wrap);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'ang', label: '자르는 방향', digits: 0 },
+    { key: 'coef', label: '단면의 2차 계수', digits: 4 },
+    { key: 'shape', label: '단면 모양' },
+    { key: 'eig', label: 'Hessian eigenvalue' }
+  ]);
+
+  var f = function (x, y) { return x * x - y * y; };
+
+  function draw() {
+    wrap.innerHTML = '';
+    var t = ang * Math.PI / 180;
+    var cx = Math.cos(t), cy = Math.sin(t);
+    var coef = cx * cx - cy * cy;      /* d^T H d / 2 */
+
+    /* 왼쪽: 등고선 + 자르는 선 */
+    var p1 = VIZ.plot({ w: 240, h: 230, xmin: -2, xmax: 2, ymin: -2, ymax: 2,
+      pad: { t: 18, r: 10, b: 24, l: 32 } });
+    p1.grid(0.5, 0.5).axes('x', 'y').ticks(1, 1);
+    /* x²−y² = c 인 쌍곡선들 */
+    [-2, -0.5, 0.5, 2].forEach(function (c) {
+      var pts = [];
+      for (var i = 0; i <= 200; i++) {
+        var u = -2 + 4 * i / 200;
+        var v2 = u * u - c;
+        if (v2 < 0) { if (pts.length > 1) p1.line(pts, { dash: '2 3' }); pts = []; continue; }
+        var v = Math.sqrt(v2);
+        if (v > 2) { if (pts.length > 1) p1.line(pts, { dash: '2 3' }); pts = []; continue; }
+        pts.push([u, v]);
+      }
+      if (pts.length > 1) p1.line(pts, { dash: '2 3' });
+      var pts2 = [];
+      for (var j = 0; j <= 200; j++) {
+        var u2 = -2 + 4 * j / 200;
+        var w2 = u2 * u2 - c;
+        if (w2 < 0) { if (pts2.length > 1) p1.line(pts2, { dash: '2 3' }); pts2 = []; continue; }
+        var w = -Math.sqrt(w2);
+        if (w < -2) { if (pts2.length > 1) p1.line(pts2, { dash: '2 3' }); pts2 = []; continue; }
+        pts2.push([u2, w]);
+      }
+      if (pts2.length > 1) p1.line(pts2, { dash: '2 3' });
+    });
+    p1.line([[-2 * cx, -2 * cy], [2 * cx, 2 * cy]], { alt: true, width: 2.5 });
+    p1.dot(0, 0, 6);
+    wrap.appendChild(p1.svg);
+
+    /* 오른쪽: 그 방향의 단면 */
+    var p2 = VIZ.plot({ w: 240, h: 230, xmin: -2, xmax: 2, ymin: -4.4, ymax: 4.4,
+      pad: { t: 18, r: 10, b: 24, l: 38 } });
+    p2.grid(0.5, 2).axes('t', 'f').ticks(1, 2);
+    p2.curve(function (s) { return f(s * cx, s * cy); }, { samples: 200 });
+    p2.dot(0, 0, 5);
+    wrap.appendChild(p2.svg);
+
+    out.set('ang', ang);
+    out.set('coef', coef);
+    out.setRaw('shape', coef > 0.02 ? '∪ 위로 열림 — 이 방향엔 최소점'
+      : (coef < -0.02 ? '∩ 아래로 열림 — 이 방향엔 최대점' : '거의 평평 — 45° 근처'));
+    out.setRaw('eig', '2,  −2  (부호가 섞임 → saddle)');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '자르는 방향 각도', min: 0, max: 180, step: 1, value: 0, unit: '°', digits: 0,
+    onInput: function (v) { ang = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — 볼록성: 두 점을 잇는 선분
+   ============================================================ */
+WIDGETS.register('convex-test', function (root, ctx) {
+  var cur = 'sq', ax = -1.4, bx = 1.6;
+
+  var FN = {
+    sq:  { f: function (x) { return 0.6 * x * x; }, name: '0.6x²', convex: true },
+    abs: { f: function (x) { return Math.abs(x); }, name: '|x|', convex: true },
+    quart: { f: function (x) { return 0.25 * x * x * x * x - x * x; }, name: '¼x⁴ − x²', convex: false },
+    cube: { f: function (x) { return 0.2 * x * x * x; }, name: '0.2x³', convex: false },
+    exp: { f: function (x) { return 0.35 * Math.exp(x); }, name: '0.35eˣ', convex: true }
+  };
+
+  var p = VIZ.plot({ w: 460, h: 290, xmin: -2.4, xmax: 2.4, ymin: -1.6, ymax: 3.4,
+    pad: { t: 18, r: 14, b: 28, l: 40 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'lhs', label: '좌변 f(중점)', digits: 4 },
+    { key: 'rhs', label: '우변 (f(a)+f(b))/2', digits: 4 },
+    { key: 'ok', label: '이 쌍에서는' },
+    { key: 'verdict', label: '이 함수는' }
+  ]);
+
+  function draw() {
+    var F = FN[cur];
+    p.clear().grid(1, 1).axes('x', 'f(x)').ticks(1, 1);
+    p.curve(F.f, { samples: 400 });
+
+    var fa = F.f(ax), fb = F.f(bx);
+    p.line([[ax, fa], [bx, fb]], { alt: true, width: 2.4 });
+    p.dot(ax, fa, 5);
+    p.dot(bx, fb, 5);
+
+    var mx = (ax + bx) / 2;
+    var lhs = F.f(mx), rhs = (fa + fb) / 2;
+    p.dot(mx, lhs, 6);
+    p.dot(mx, rhs, 4);
+    p.line([[mx, lhs], [mx, rhs]], { dash: '3 3' });
+    p.callout(mx, (lhs + rhs) / 2, lhs <= rhs + 1e-9 ? '선분이 위 ✓' : '선분이 아래 ✗',
+      { dx: 20, dy: -14, tone: lhs <= rhs + 1e-9 ? 'var(--jade)' : 'var(--seal)' });
+
+    out.set('lhs', lhs);
+    out.set('rhs', rhs);
+    out.setRaw('ok', lhs <= rhs + 1e-9 ? '조건 만족 (좌변 ≤ 우변)' : '조건 위반 — 비볼록 확정');
+    out.setRaw('verdict', F.convex ? 'convex' : '비볼록 (어기는 쌍이 존재)');
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '함수',
+    options: [
+      { value: 'sq', label: '0.6x²' },
+      { value: 'abs', label: '|x|' },
+      { value: 'exp', label: 'eˣ' },
+      { value: 'quart', label: '¼x⁴−x²' },
+      { value: 'cube', label: 'x³' }
+    ],
+    value: 'sq', onChange: function (v) { cur = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '점 a', min: -2.2, max: 2.2, step: 0.05, value: -1.4, digits: 2,
+    onInput: function (v) { ax = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '점 b', min: -2.2, max: 2.2, step: 0.05, value: 1.6, digits: 2,
+    onInput: function (v) { bx = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — 최적화 경로: 여러 시작점
+   ============================================================ */
+WIDGETS.register('path-compare', function (root, ctx) {
+  var cur = 'double', eta = 0.1, seedShift = 0;
+
+  var p = VIZ.plot({ w: 460, h: 290, xmin: -3, xmax: 3, ymin: -1.6, ymax: 4,
+    pad: { t: 18, r: 14, b: 28, l: 40 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'ends', label: '도착점들' },
+    { key: 'uniq', label: '서로 다른 도착점 개수' },
+    { key: 'eta', label: 'learning rate', digits: 3 },
+    { key: 'say', label: '해석' }
+  ]);
+
+  function run(x, F, n) {
+    var pts = [[x, F.f(x)]];
+    for (var i = 0; i < n; i++) {
+      x = x - eta * F.d(x);
+      if (!isFinite(x)) break;
+      x = Math.max(-3, Math.min(3, x));
+      pts.push([x, F.f(x)]);
+    }
+    return pts;
+  }
+
+  function draw(step) {
+    var F = LAND[cur];
+    p.clear().grid(1, 1).axes('x', 'f(x)').ticks(1, 1);
+    p.curve(F.f, { samples: 400 });
+
+    var ends = [];
+    for (var k = 0; k < 5; k++) {
+      var s = -2.4 + k * 1.2 + seedShift;
+      var pts = run(s, F, step * 6);
+      p.line(pts, { alt: true, width: 1.6 });
+      var last = pts[pts.length - 1];
+      p.dot(last[0], last[1], 5);
+      ends.push(last[0]);
+    }
+
+    var uniq = [];
+    ends.forEach(function (e) {
+      if (!uniq.some(function (u) { return Math.abs(u - e) < 0.05; })) uniq.push(e);
+    });
+
+    out.setRaw('ends', ends.map(function (e) { return e.toFixed(2); }).join(', '));
+    out.setRaw('uniq', String(uniq.length));
+    out.set('eta', eta);
+    out.setRaw('say', uniq.length === 1 ? '모두 같은 곳 — 볼록이거나 운이 좋다'
+      : '갈렸다 — 출발점이 결과를 정한다');
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '지형',
+    options: [
+      { value: 'double', label: '웅덩이 둘' },
+      { value: 'convex', label: '볼록' },
+      { value: 'wiggle', label: '울퉁불퉁' }
+    ],
+    value: 'double', onChange: function (v) { cur = v; draw(pl ? pl.at() : 0); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '시작점 전체를 밀기', min: -0.6, max: 0.6, step: 0.02, value: 0, digits: 2,
+    onInput: function (v) { seedShift = v; draw(pl ? pl.at() : 0); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'learning rate', min: 0.01, max: 0.4, step: 0.01, value: 0.1, digits: 2,
+    onInput: function (v) { eta = v; draw(pl ? pl.at() : 0); }
+  });
+  var pl = WIDGETS.player({ host: ctx.controls, steps: 16, fps: 5, label: '진행', onStep: draw });
+});
+
+/* ============================================================
+   위젯 5 — 차원 대비 극값 비율
+   ============================================================ */
+WIDGETS.register('saddle-odds', function (root, ctx) {
+  var n = 10;
+
+  var p = VIZ.plot({ w: 460, h: 260, xmin: 1, xmax: 60, ymin: -18, ymax: 0.5,
+    pad: { t: 18, r: 14, b: 30, l: 48 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'n', label: '차원 n' },
+    { key: 'pmin', label: 'local min 일 대략적 비율' },
+    { key: 'psad', label: 'saddle 일 비율' },
+    { key: 'say', label: '해석' }
+  ]);
+
+  function draw() {
+    p.clear().grid(10, 3).axes('차원 n', 'log₁₀ 비율').ticks(10, 3);
+    p.curve(function (k) { return -k * Math.log10(2); }, { samples: 200 });
+    p.dot(n, -n * Math.log10(2), 6);
+    p.line([[1, -6], [60, -6]], { dash: '3 4' });
+    p.callout(40, -6, '백만분의 1', { dx: -16, dy: -14, tone: 'var(--ink-3)' });
+
+    var pm = Math.pow(2, -n);
+    out.setRaw('n', String(n));
+    out.setRaw('pmin', pm > 1e-4 ? (pm * 100).toFixed(4) + ' %' : pm.toExponential(2));
+    out.setRaw('psad', (1 - 2 * pm > 0 ? ((1 - 2 * pm) * 100).toFixed(6) : '~100') + ' %');
+    out.setRaw('say', n < 5 ? '저차원 — 극값이 흔하다'
+      : (n < 25 ? '이미 대부분 안장점' : '극값은 사실상 없다고 봐도 된다'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '차원 n (파라미터 개수)', min: 1, max: 60, step: 1, value: 10, digits: 0,
+    onInput: function (v) { n = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

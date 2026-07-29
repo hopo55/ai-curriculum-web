@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.4 연쇄법칙과 계산 그래프 — AI 이론 학습</title>
+<meta name="description" content="chain rule은 Jacobian의 곱이고, 그 곱을 뒤에서부터 계산하는 것이 backpropagation이다. 계산 그래프 위에서 순전파와 역전파를 한 스텝씩 따라간다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="3.4">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">3.4</span>
+        <span>3장 · 미적분과 최적화</span>
+      </div>
+      <h1>연쇄법칙과 계산 그래프</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 60분</span>
+        <span><b>난이도</b>★★★☆☆</span>
+        <span><b>선수지식</b>
+          <a href="3.3-multivariable-derivatives.html">3.3 다변수 미분</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-compose">Function Composition</a>
+      <a class="chip" href="#c-graph">Computation Graph</a>
+      <a class="chip" href="#c-forward">Forward Pass</a>
+      <a class="chip" href="#c-backward">Reverse Differentiation</a>
+      <a class="chip" href="#c-autodiff">Automatic Differentiation</a>
+      <a class="chip" href="#c-reverse">Reverse Mode</a>
+      <a class="chip" href="#c-fwdmode">Forward Mode</a>
+      <a class="chip" href="#c-accum">Gradient Accumulation</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        chain rule(연쇄법칙)은 <strong>Jacobian을 곱하는 일</strong>이고, 그 곱을 <strong>어느 쪽부터 계산하느냐</strong>가
+        forward mode와 reverse mode를 가른다. loss가 숫자 하나라서 <strong>뒤에서부터</strong>가 압도적으로 싸며,
+        그것이 backpropagation(역전파)이다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>계산 그래프를 그리고 forward pass(순전파)와 backward pass를 손으로 한 스텝씩 계산할 수 있다.</li>
+        <li>reverse mode가 forward mode보다 싼 이유를 <strong>행렬 곱의 순서 비용</strong>으로 설명할 수 있다.</li>
+        <li>노드가 여러 곳으로 갈라질 때 gradient를 <strong>더하는</strong> 이유를 다변수 chain rule로 설명할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        환율을 생각한다. 원 → 달러가 $1/1400$ 이고 달러 → 엔이 $150$ 이면, 원 → 엔은 두 비율의 <strong>곱</strong>이다.
+        chain rule 이 하는 일이 정확히 이것이다 — "$x$ 가 1 변하면 $u$ 가 얼마나 변하고,
+        $u$ 가 1 변하면 $y$ 가 얼마나 변하는가"를 곱한다.
+      </p>
+      <p>
+        비율이 여러 단계면 곱도 여러 개다. 그런데 <strong>곱셈의 순서는 자유</strong>다.
+        앞에서부터 곱해도 되고 뒤에서부터 곱해도 결과는 같다.
+        <span class="hl">하지만 <strong>비용은 전혀 다르다</strong> — 이것이 이 절의 핵심이다.</span>
+        입력이 $10^9$ 개, 출력이 1 개인 딥러닝에서는 뒤에서부터가 $10^9$ 배 싸다.
+      </p>
+
+      <figure class="widget" data-widget="graph-flow">
+        <figcaption class="widget__bar">계산 그래프 — 앞으로 값, 뒤로 기울기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">앞쪽 절반은 <strong>값</strong>이 왼쪽에서 오른쪽으로, 뒤쪽 절반은 <strong>기울기</strong>가 오른쪽에서 왼쪽으로 흐릅니다. 같은 그래프를 두 방향으로 한 번씩 지나는 것이 전부입니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          backpropagation은 새로운 수학이 아니다. <strong>chain rule + 곱셈 순서를 잘 고른 것</strong>이다.
+          "역전파 알고리즘"이라는 이름 때문에 특별해 보이지만, 하는 일은
+          이미 계산해 둔 중간값에 미분을 하나씩 곱하며 거꾸로 걸어 나오는 것뿐이다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-compose"></span>
+      <h3>Function Composition &amp; Chain Rule 함수 합성과 연쇄법칙</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ y = g(f(x)) \;\Longrightarrow\; \frac{dy}{dx} = \frac{dy}{du}\cdot\frac{du}{dx}, \qquad u=f(x) $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">합성함수의 변화율은 각 단계 변화율의 곱이다.</span>
+        <a href="3.1-functions-basics.html">3.1</a>에서 정의한 합성 $g\circ f$ 를 미분하는 규칙이며,
+        Leibniz 표기에서는 $du$ 가 <em>약분되는 것처럼</em> 보인다 — 실제로 약분은 아니지만 결과가 맞아 이 표기가 살아남았다.
+      </p>
+      <p>다변수·벡터값으로 확장하면 <a href="3.3-multivariable-derivatives.html">3.3</a>의 식 (9)가 된다.</p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathbf{y}=\mathbf{f}_L(\mathbf{f}_{L-1}(\cdots \mathbf{f}_1(\mathbf{x}))) \;\Longrightarrow\; \mathbf{J} = \mathbf{J}_L\,\mathbf{J}_{L-1}\cdots\mathbf{J}_1 $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        <strong>바깥 함수가 왼쪽</strong>이다. 이 곱을 왼쪽부터 계산하면 reverse mode,
+        오른쪽부터 계산하면 forward mode다. 결과는 같고 비용만 다르다.
+      </p>
+
+      <span class="anchor" id="c-graph"></span>
+      <h3>Computation Graph 계산 그래프</h3>
+      <div class="note note--key">
+        <span class="note__label">정의</span>
+        <p>
+          <strong>node(노드)는 변수 또는 연산, edge(엣지)는 의존 관계</strong>인 방향 비순환 그래프(DAG)로
+          계산을 표현한 것. 어떤 값이 어떤 값으로부터 만들어졌는지가 그래프의 모양에 담긴다.
+        </p>
+      </div>
+      <p>
+        복잡한 식을 <strong>원시 연산(primitive)</strong>의 조합으로 쪼갠 것이 계산 그래프다.
+        예를 들어 $L=(\sigma(wx+b)-y)^2$ 은 다음 다섯 노드로 쪼개진다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>노드</th><th>연산</th><th>국소 미분</th></tr></thead>
+          <tbody>
+            <tr><td>$u = wx$</td><td>곱</td><td>$\partial u/\partial w = x$, $\partial u/\partial x = w$</td></tr>
+            <tr><td>$z = u+b$</td><td>합</td><td>$\partial z/\partial u = 1$, $\partial z/\partial b = 1$</td></tr>
+            <tr><td>$a = \sigma(z)$</td><td>sigmoid</td><td>$\partial a/\partial z = a(1-a)$</td></tr>
+            <tr><td>$d = a-y$</td><td>차</td><td>$\partial d/\partial a = 1$</td></tr>
+            <tr><td>$L = d^2$</td><td>제곱</td><td>$\partial L/\partial d = 2d$</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <span class="hl">각 노드는 <strong>자기 국소 미분만</strong> 알면 되고, 전체 미분은 그 국소 미분들을 이어 곱해 만든다.</span>
+        이것이 자동미분이 임의로 복잡한 model 에서도 동작하는 이유다 — 새 층을 추가할 때
+        그 층의 국소 미분 하나만 등록하면 나머지는 그래프가 알아서 한다.
+      </p>
+
+      <span class="anchor" id="c-forward"></span>
+      <h3>Forward Pass 순전파</h3>
+      <p>
+        <span class="hl">그래프를 위상 순서대로 훑으며 각 노드의 <strong>값</strong>을 계산하고,
+        backward 에서 필요할 중간값을 저장하는 단계다.</span>
+        위 예에서 $w=0.5,\ x=2,\ b=-1,\ y=1$ 이면 $u=1$, $z=0$, $a=0.5$, $d=-0.5$, $L=0.25$ 가 차례로 나온다.
+      </p>
+      <p>
+        저장이 공짜가 아니다. $a$ 를 저장해 두어야 $\partial a/\partial z = a(1-a)$ 를 다시 계산하지 않는데,
+        <strong>층이 깊고 batch 가 크면 이 중간값(activation)이 GPU 메모리를 대부분 차지한다</strong>.
+        gradient checkpointing 은 일부러 저장을 포기하고 backward 때 다시 계산해 메모리와 시간을 맞바꾸는 기법이다.
+      </p>
+
+      <span class="anchor" id="c-backward"></span>
+      <h3>Reverse Differentiation 역방향 미분</h3>
+      <p>
+        각 노드 $v$ 에 <strong>adjoint(수반값)</strong> $\bar{v} = \dfrac{\partial L}{\partial v}$ 를 하나씩 둔다.
+        출력에서 $\bar{L}=1$ 로 시작해 거꾸로 전파한다.
+      </p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \bar{v} = \sum_{w \in \text{children}(v)} \bar{w}\,\frac{\partial w}{\partial v} $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl">"내 뒤에 오는 노드들의 adjoint에 국소 미분을 곱해서 <strong>전부 더한다</strong>" —
+        backpropagation 전체가 이 한 줄이다.</span>
+        vector 로 쓰면 <strong>VJP</strong>(vector–Jacobian product)가 된다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \bar{\mathbf{v}}^\top = \bar{\mathbf{w}}^\top \mathbf{J}_{\mathbf{w}/\mathbf{v}} \qquad (\text{VJP}) $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        중요한 것은 <strong>$\mathbf{J}$ 를 실제로 만들지 않는다</strong>는 점이다.
+        linear layer의 Jacobian은 $\mathbf{W}$ 이므로 VJP 는 그냥 $\mathbf{W}^\top\bar{\mathbf{w}}$ 이고,
+        원소별 activation의 Jacobian은 대각행렬이라 VJP 는 $\odot$ 한 번이다.
+        $(n,n)$ matrix를 메모리에 올리는 일이 없다.
+      </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>forward 는 <strong>재료가 요리가 되는 과정</strong>, backward 는 <strong>"이 요리가 짠 건 누구 탓인가"를 거슬러 묻는 과정</strong>입니다.</p>
+        <p>맨 끝에서 "짜다"라고 판정하면, 바로 앞 단계에 "네가 얼마나 기여했나"를 묻고, 그 단계는 다시 자기 앞 단계에 같은 질문을 넘깁니다. 한 재료가 <strong>두 군데에 들어갔으면 두 몫을 합쳐서</strong> 책임을 묻습니다 — 그것이 식 (3)의 합 기호입니다.</p>
+      </div>
+
+      <span class="anchor" id="c-autodiff"></span>
+      <h3>Automatic Differentiation 자동미분</h3>
+      <p>
+        <span class="hl">미분을 구하는 방법은 셋이고, 자동미분은 그중 <strong>수치 오차 없이 프로그램 그대로</strong> 미분하는 방법이다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>방법</th><th>하는 일</th><th>정확도</th><th>비용</th><th>문제</th></tr></thead>
+          <tbody>
+            <tr><td>수치 미분</td><td>$\dfrac{f(x+h)-f(x)}{h}$</td><td>근사 ($O(h)$)</td><td>파라미터당 1회 평가</td><td>느리고 반올림 오차</td></tr>
+            <tr><td>기호 미분</td><td>수식을 대수적으로 변형</td><td>정확</td><td>식이 <strong>지수적으로 팽창</strong></td><td>제어 흐름·반복문을 못 다룸</td></tr>
+            <tr><td><strong>자동미분</strong></td><td>원시 연산의 미분을 chain rule 로 조합</td><td><strong>정확</strong> (반올림만)</td><td>forward 의 상수배</td><td>메모리(중간값 저장)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        자동미분이 기호 미분과 다른 점은 <strong>수식이 아니라 값을 다룬다</strong>는 것이다.
+        $\frac{d}{dx}$ 의 결과로 "$2x$" 라는 <em>식</em>을 만드는 대신 "$x=3$ 에서 $6$" 이라는 <em>수</em>를 낸다.
+        그래서 <code>if</code> 문과 반복문이 섞인 프로그램도 그대로 미분할 수 있다 —
+        실행된 경로가 곧 그래프이기 때문이다<a class="cite" href="#ref-baydin2015-automatic-differentiation-in" data-ref="baydin2015-automatic-differentiation-in">1</a>.
+      </p>
+
+      <span class="anchor" id="c-reverse"></span>
+      <span class="anchor" id="c-fwdmode"></span>
+      <h3>Reverse Mode vs Forward Mode</h3>
+      <p>
+        식 (2)의 곱 $\mathbf{J}_L\cdots\mathbf{J}_1$ 을 어느 쪽부터 계산하느냐의 차이다.
+        행렬 곱은 결합법칙이 성립하므로 결과는 같지만 <strong>연산 횟수가 다르다</strong>.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>Forward Mode</th><th>Reverse Mode (backpropagation)</th></tr></thead>
+          <tbody>
+            <tr><td>곱하는 순서</td><td>오른쪽부터 $(\cdots(\mathbf{J}_L(\mathbf{J}_2\mathbf{J}_1)))$</td><td>왼쪽부터 $(((\mathbf{J}_L\mathbf{J}_{L-1})\cdots)\mathbf{J}_1)$</td></tr>
+            <tr><td>기본 연산</td><td>JVP $\mathbf{J}\mathbf{v}$ (Jacobian–vector)</td><td>VJP $\mathbf{u}^\top\mathbf{J}$ (vector–Jacobian)</td></tr>
+            <tr><td>한 번에 얻는 것</td><td>입력 <strong>한 방향</strong>에 대한 모든 출력의 미분</td><td>출력 <strong>하나</strong>에 대한 모든 입력의 미분</td></tr>
+            <tr><td>전체 Jacobian 비용</td><td>입력 개수 $n$ 회</td><td>출력 개수 $m$ 회</td></tr>
+            <tr><td>메모리</td><td>작다 (값과 함께 전진)</td><td><strong>크다</strong> (중간값 전부 저장)</td></tr>
+            <tr><td>유리한 경우</td><td>$n \ll m$ (입력이 적을 때)</td><td>$m \ll n$ — <strong>딥러닝이 여기</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        딥러닝은 입력(파라미터)이 $10^9$ 개, 출력(loss)이 1 개다.
+        <span class="hl">reverse mode 는 <strong>단 한 번의 backward</strong>로 $10^9$ 개 gradient를 전부 얻고,
+        forward mode 는 같은 일에 $10^9$ 번의 forward 가 필요하다.</span>
+        비용 차이가 $10^9$ 배다.
+      </p>
+      <p>
+        forward mode 가 쓸모없다는 뜻은 아니다. Hessian-vector product $\mathbf{Hv}$ 를
+        forward-over-reverse 로 계산하면 Hessian을 만들지 않고도 곡률 정보를 얻을 수 있고,
+        JAX 의 <code>jvp</code> 가 이 용도로 쓰인다.
+      </p>
+
+      <figure class="widget" data-widget="mode-cost">
+        <figcaption class="widget__bar">Forward vs Reverse — 언제 어느 쪽이 싼가</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">대각선 $n=m$ 을 경계로 유불리가 뒤집힙니다. 딥러닝의 위치($m=1$, $n$ 이 거대)는 <strong>그래프의 맨 오른쪽 아래</strong>입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-accum"></span>
+      <h3>Gradient Accumulation 기울기 누적</h3>
+      <p>
+        한 변수가 여러 곳에 쓰이면(fan-out) 경로마다 gradient가 오고, <strong>그것을 전부 더한다</strong>.
+        식 (3)의 합 기호가 이것이고, 근거는 다변수 chain rule 이다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ L = h(p(x),\, q(x)) \;\Longrightarrow\; \frac{dL}{dx} = \frac{\partial L}{\partial p}\frac{dp}{dx} + \frac{\partial L}{\partial q}\frac{dq}{dx} $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        residual connection $\mathbf{y}=\mathbf{x}+F(\mathbf{x})$ 이 정확히 이 구조다 —
+        $\mathbf{x}$ 가 두 경로로 갈라지므로 gradient가 $\bar{\mathbf{y}} + \bar{\mathbf{y}}\mathbf{J}_F$ 로 합쳐진다.
+        <span class="hl">첫 항 $\bar{\mathbf{y}}$ 가 <strong>아무것도 곱해지지 않은 채</strong> 그대로 흘러가는 것이
+        ResNet 이 깊어져도 gradient가 죽지 않는 이유다.</span>
+      </p>
+      <div class="note note--trap">
+        <span class="note__label">같은 이름, 다른 뜻</span>
+        <p>
+          실무에서 "gradient accumulation" 은 <strong>다른 뜻</strong>으로도 쓰인다 —
+          GPU 메모리가 모자라 batch 를 여러 micro-batch 로 쪼개 backward 를 여러 번 돌리고
+          <code>optimizer.step()</code> 을 한 번만 하는 기법이다.
+          이 경우 <code>.grad</code> 에 값이 <em>누적</em>되는 성질을 이용하는 것이라 이름이 같다.
+        </p>
+        <p>
+          PyTorch 에서 <code>optimizer.zero_grad()</code> 를 매 스텝 호출해야 하는 이유도 여기 있다 —
+          프레임워크는 gradient를 <strong>덮어쓰지 않고 더한다</strong>. 이 절의 fan-out 규칙과
+          micro-batch 기법이 같은 메커니즘을 공유한다.
+        </p>
+      </div>
+
+      <figure class="widget" data-widget="fanout-accum">
+        <figcaption class="widget__bar">Fan-out — 갈라진 경로의 기울기를 더한다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">두 경로의 기여를 각각 보고, 합이 <strong>수치 미분값과 일치</strong>하는지 확인하세요. 하나만 쓰면 틀립니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>딥러닝에서 매일 쓰는 층의 VJP 를 모으면 이렇다. <strong>Jacobian을 만들지 않고 처리하는 형태</strong>가 오른쪽 열이다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>forward</th><th>Jacobian</th><th>실제 계산하는 VJP</th></tr></thead>
+          <tbody>
+            <tr><td>$\mathbf{z}=\mathbf{Wx}+\mathbf{b}$</td><td>$\partial\mathbf{z}/\partial\mathbf{x}=\mathbf{W}$</td><td>$\bar{\mathbf{x}} = \mathbf{W}^\top\bar{\mathbf{z}}$</td></tr>
+            <tr><td>〃 (weight 쪽)</td><td>$\partial\mathbf{z}/\partial\mathbf{W}$ (3차 텐서)</td><td>$\bar{\mathbf{W}} = \bar{\mathbf{z}}\,\mathbf{x}^\top$ (outer product)</td></tr>
+            <tr><td>$\mathbf{a}=\phi(\mathbf{z})$ (원소별)</td><td>$\operatorname{diag}(\phi'(\mathbf{z}))$</td><td>$\bar{\mathbf{z}} = \bar{\mathbf{a}}\odot\phi'(\mathbf{z})$</td></tr>
+            <tr><td>$\mathbf{y}=\mathbf{x}_1+\mathbf{x}_2$</td><td>$\mathbf{I}$ 둘</td><td>$\bar{\mathbf{x}}_1=\bar{\mathbf{x}}_2=\bar{\mathbf{y}}$ (복사)</td></tr>
+            <tr><td>$s = \mathbf{u}^\top\mathbf{v}$</td><td>$\mathbf{v}^\top$, $\mathbf{u}^\top$</td><td>$\bar{\mathbf{u}}=\bar{s}\mathbf{v}$, $\bar{\mathbf{v}}=\bar{s}\mathbf{u}$ (교차)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        두 번째 줄이 실무에서 가장 자주 만나는 형태다. weight 의 gradient 는
+        <strong>들어온 gradient 와 입력의 outer product</strong> 이고, shape 이 $\mathbf{W}$ 와 같아진다.
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$\bar{v}$</td><td>v bar 브이 바 · adjoint</td><td>$\partial L/\partial v$</td><td>$v$ 와 같은 shape</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\bar{L}$</td><td>L bar</td><td>출력 자신의 adjoint = 1</td><td>scalar</td><td>$=1$ 로 시작</td></tr>
+            <tr><td>$\mathbf{J}$</td><td>Jacobian 야코비안</td><td>1차 편미분 matrix</td><td>$(m,n)$</td><td>실수</td></tr>
+            <tr><td>VJP</td><td>vector-Jacobian product</td><td>$\bar{\mathbf{u}}^\top\mathbf{J}$ — reverse mode 의 기본 연산</td><td>$(1,n)$</td><td>—</td></tr>
+            <tr><td>JVP</td><td>Jacobian-vector product</td><td>$\mathbf{J}\mathbf{v}$ — forward mode 의 기본 연산</td><td>$(m,1)$</td><td>—</td></tr>
+            <tr><td>$u,z,a,d$</td><td>—</td><td>계산 그래프의 중간 노드</td><td>scalar 또는 vector</td><td>—</td></tr>
+            <tr><td>$\odot$</td><td>Hadamard product 아다마르 곱</td><td>원소별 곱</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$\phi$, $\phi'$</td><td>phi 파이</td><td>activation과 그 도함수</td><td>$\mathbb{R}\to\mathbb{R}$</td><td>—</td></tr>
+            <tr><td>$n$</td><td>n</td><td>입력(파라미터) 개수</td><td>정수</td><td>$\geq1$</td></tr>
+            <tr><td>$m$</td><td>m</td><td>출력 개수 (loss 는 $m=1$)</td><td>정수</td><td>$\geq1$</td></tr>
+            <tr><td>$L$</td><td>L</td><td>loss (그래프의 최종 출력) 또는 층 수</td><td>scalar / 정수</td><td>문맥에 따라</td></tr>
+            <tr><td>$\operatorname{children}(v)$</td><td>children of v</td><td>$v$ 를 직접 쓰는 노드들</td><td>집합</td><td>—</td></tr>
+            <tr><td>$\mathbf{x}\mathbf{y}^\top$</td><td>outer product 외적</td><td>$(n,)$ 와 $(m,)$ 로 $(n,m)$ 만들기</td><td>$(n,m)$</td><td>—</td></tr>
+            <tr><td>$\epsilon$ (dual)</td><td>epsilon 엡실론</td><td>forward mode 의 무한소, $\epsilon^2=0$</td><td>—</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">표기 주의</span>
+        <p>
+          $L$ 이 두 뜻으로 쓰인다 — loss 와 층 수. 이 절에서는 <strong>아래첨자로 붙으면 층 번호</strong>
+          ($\mathbf{J}_L$), 단독으로 쓰면 loss 다. 문헌 대부분이 이 관행을 따르지만
+          겹치는 자리에서는 층 수를 $D$ 나 $N$ 으로 바꿔 쓰는 논문도 있다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — 곱셈 순서가 비용을 바꾼다</h3>
+      <p>$\mathbb{R}^{n}\to\mathbb{R}^{p}\to\mathbb{R}^{m}$ 인 두 층을 생각하자. Jacobian 은 $(p,n)$ 과 $(m,p)$ 다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{J} = \mathbf{J}_2\mathbf{J}_1, \qquad \mathbf{J}_2\in\mathbb{R}^{m\times p},\ \mathbf{J}_1\in\mathbb{R}^{p\times n} $$</div>
+          <div class="derive__why">전체 Jacobian은 $(m,n)$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{비용}(\mathbf{J}_2\mathbf{J}_1) = m\,p\,n $$</div>
+          <div class="derive__why">행렬 곱의 표준 비용. <strong>전체를 다 만들면 이만큼</strong> 든다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ m=1 \;\Longrightarrow\; \bar{\mathbf{u}}^\top\mathbf{J}_2 \ \text{는 } 1\cdot p \text{ 짜리 행벡터} $$</div>
+          <div class="derive__why">loss 는 scalar 라 <strong>왼쪽 인자가 행벡터</strong>다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ (\bar{\mathbf{u}}^\top\mathbf{J}_2)\mathbf{J}_1: \quad 1\!\cdot\!m\!\cdot\!p + 1\!\cdot\!p\!\cdot\!n = p(m+n) $$</div>
+          <div class="derive__why">reverse mode. <strong>행벡터를 유지하며 왼쪽부터</strong> 곱했다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{J}_2(\mathbf{J}_1\mathbf{v}): \quad p\!\cdot\!n\!\cdot\!1 + m\!\cdot\!p\!\cdot\!1 = p(m+n) \ \text{— 방향 하나당} $$</div>
+          <div class="derive__why">forward mode. 같은 비용이지만 <strong>입력 방향 하나</strong>만 얻는다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{전체 gradient: reverse } m\times p(m{+}n) \ \text{ vs forward } n\times p(m{+}n) $$</div>
+          <div class="derive__why">$m=1$, $n=10^9$ 이면 <strong>$10^9$ 배 차이</strong></div>
+        </div>
+      </div>
+      <div class="note note--tip">
+        <span class="note__label">한 줄로</span>
+        <p>
+          <strong>reverse 는 출력 개수만큼, forward 는 입력 개수만큼</strong> 훑는다.
+          딥러닝은 출력이 1(loss)이고 입력이 수십억(파라미터)이라 reverse 가 이긴다.
+          반대로 입력이 하나고 출력이 많은 문제(예: 초기조건 하나에 대한 궤적 전체의 민감도)에서는 forward 가 이긴다.
+        </p>
+      </div>
+
+      <h3>유도 2 — fan-out 에서 왜 더하는가</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ p = p(x), \quad q = q(x), \quad L = h(p, q) $$</div>
+          <div class="derive__why">$x$ 가 두 경로로 갈라진 그래프</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ L(x+\Delta) \approx h\bigl(p+p'\Delta,\ q+q'\Delta\bigr) $$</div>
+          <div class="derive__why">$x$ 를 흔들면 <strong>$p$ 와 $q$ 가 동시에</strong> 흔들린다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \approx h(p,q) + \frac{\partial h}{\partial p}p'\Delta + \frac{\partial h}{\partial q}q'\Delta $$</div>
+          <div class="derive__why">$h$ 의 1차 근사 (3.3 식 7의 1차항)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{L(x+\Delta)-L(x)}{\Delta} \to \frac{\partial h}{\partial p}p' + \frac{\partial h}{\partial q}q' $$</div>
+          <div class="derive__why"><strong>두 기여가 더해진다</strong> — 곱해지는 것이 아니다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \bar{x} = \bar{p}\,\frac{\partial p}{\partial x} + \bar{q}\,\frac{\partial q}{\partial x} $$</div>
+          <div class="derive__why">adjoint 표기로 쓰면 식 (3) 그 자체</div>
+        </div>
+      </div>
+
+      <h3>유도 3 — residual connection 이 gradient 를 지키는 이유</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{y} = \mathbf{x} + F(\mathbf{x}) $$</div>
+          <div class="derive__why">$\mathbf{x}$ 가 두 경로(직행 · $F$ 통과)로 간다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\partial\mathbf{y}}{\partial\mathbf{x}} = \mathbf{I} + \mathbf{J}_F $$</div>
+          <div class="derive__why">항등 경로의 Jacobian 은 $\mathbf{I}$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \bar{\mathbf{x}} = (\mathbf{I}+\mathbf{J}_F)^\top\bar{\mathbf{y}} = \bar{\mathbf{y}} + \mathbf{J}_F^\top\bar{\mathbf{y}} $$</div>
+          <div class="derive__why">식 (3)의 합. <strong>첫 항이 손상 없이 통과</strong>한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ L \ \text{개 쌓으면} \quad \prod_{\ell}(\mathbf{I}+\mathbf{J}_{F_\ell}) = \mathbf{I} + \sum_\ell \mathbf{J}_{F_\ell} + \cdots $$</div>
+          <div class="derive__why">전개하면 <strong>$\mathbf{I}$ 항이 살아남는다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{residual 없음: } \prod_\ell \mathbf{J}_\ell \;\to\; \mathbf{0} \ \text{ 또는 } \infty $$</div>
+          <div class="derive__why">곱만 있으면 <a href="../ch02/2.7-eigenvalues.html">2.7</a>의 $\rho^L$ 거동 — <strong>지수적으로 사라지거나 폭발</strong></div>
+        </div>
+      </div>
+      <details>
+        <summary>forward mode 를 dual number 로 구현하기</summary>
+        <p>
+          $\epsilon^2=0$ 인 기호 $\epsilon$ 을 도입해 수를 $a+b\epsilon$ 꼴로 확장한다(dual number).
+          그러면 곱셈이 이렇게 된다.
+        </p>
+        <p>
+          $(a+b\epsilon)(c+d\epsilon) = ac + (ad+bc)\epsilon + bd\epsilon^2 = ac + (ad+bc)\epsilon$.
+        </p>
+        <p>
+          $\epsilon$ 의 계수를 보면 <strong>곱의 법칙 $(uv)'=u'v+uv'$ 이 그대로 나온다</strong>.
+          $x$ 자리에 $x+1\cdot\epsilon$ 을 넣고 프로그램을 그냥 실행하면,
+          결과의 $\epsilon$ 계수가 $f'(x)$ 다. 코드를 한 줄도 고치지 않고 연산자 오버로딩만으로
+          forward mode 자동미분이 구현되는 이유이며, 이 우아함 때문에 교과서가 forward mode 를 먼저 소개한다.
+          다만 딥러닝에서는 입력이 너무 많아 실용성이 떨어진다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <p>
+        $L=(\sigma(wx+b)-y)^2$ 을 $w=0.5,\ x=2,\ b=-1,\ y=1$ 에서 계산하고,
+        $\partial L/\partial w$ 와 $\partial L/\partial b$ 를 손으로 구한다. 숫자가 전부 깔끔하게 떨어진다.
+      </p>
+
+      <h3>① Forward Pass</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ u = wx = 0.5\times2 = 1 $$</div>
+          <div class="derive__why">곱 노드</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ z = u+b = 1+(-1) = 0 $$</div>
+          <div class="derive__why">합 노드</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ a = \sigma(0) = \frac{1}{1+e^0} = \frac12 = 0.5 $$</div>
+          <div class="derive__why">sigmoid 노드. <strong>이 값을 저장해 둔다</strong> — backward 에서 쓴다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ d = a-y = 0.5-1 = -0.5 $$</div>
+          <div class="derive__why">차 노드</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ L = d^2 = (-0.5)^2 = 0.25 $$</div>
+          <div class="derive__why">제곱 노드 — 최종 loss</div>
+        </div>
+      </div>
+
+      <h3>② Backward Pass — 뒤에서부터</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \bar{L} = \frac{\partial L}{\partial L} = 1 $$</div>
+          <div class="derive__why"><strong>언제나 1 로 시작</strong>한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \bar{d} = \bar{L}\cdot\frac{\partial L}{\partial d} = 1\times 2d = 2(-0.5) = -1 $$</div>
+          <div class="derive__why">$L=d^2$ 이므로 국소 미분이 $2d$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \bar{a} = \bar{d}\cdot\frac{\partial d}{\partial a} = -1\times1 = -1 $$</div>
+          <div class="derive__why">$d=a-y$ 이므로 국소 미분이 1 — <strong>덧셈·뺄셈은 gradient 를 그대로 통과</strong>시킨다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \bar{z} = \bar{a}\cdot a(1-a) = -1\times 0.5\times0.5 = -0.25 $$</div>
+          <div class="derive__why">저장해 둔 $a$ 를 재사용. <strong>$\sigma$ 를 다시 계산하지 않는다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \bar{u} = \bar{z}\times1 = -0.25, \qquad \bar{b} = \bar{z}\times1 = -0.25 $$</div>
+          <div class="derive__why">$z=u+b$ — 합 노드는 gradient 를 <strong>양쪽에 복사</strong>한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \bar{w} = \bar{u}\cdot\frac{\partial u}{\partial w} = -0.25\times x = -0.25\times2 = -0.5 $$</div>
+          <div class="derive__why">$u=wx$ — 곱 노드는 gradient 에 <strong>상대편 값</strong>을 곱한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \bar{x} = \bar{u}\cdot w = -0.25\times0.5 = -0.125 $$</div>
+          <div class="derive__why">입력에 대한 gradient — 이전 층으로 넘어갈 값이다</div>
+        </div>
+      </div>
+
+      <h3>③ 검산 — 수치 미분과 비교</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ w = 0.501 \;\Rightarrow\; z = 0.501\times2-1 = 0.002 $$</div>
+          <div class="derive__why">$w$ 만 $h=0.001$ 만큼 키웠다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ a = \sigma(0.002) \approx 0.5005,\quad d \approx -0.4995,\quad L \approx 0.2495 $$</div>
+          <div class="derive__why">$\sigma(0.002)\approx0.5+0.25\times0.002$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{0.2495-0.25}{0.001} = \frac{-0.0005}{0.001} = -0.5 \ \checkmark $$</div>
+          <div class="derive__why"><strong>backward 로 얻은 $\bar{w}=-0.5$ 와 일치</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{한 걸음: } w \leftarrow 0.5-0.1(-0.5) = 0.55,\quad b \leftarrow -1-0.1(-0.25) = -0.975 $$</div>
+          <div class="derive__why">$\eta=0.1$ 로 gradient descent</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ z = 0.55\times2-0.975 = 0.125,\ \ a\approx0.5312,\ \ L\approx(0.5312-1)^2 \approx 0.2198 $$</div>
+          <div class="derive__why"><strong>$0.25 \to 0.2198$ 로 줄었다</strong> ✓ 목표인 $y=1$ 쪽으로 갔다</div>
+        </div>
+      </div>
+
+      <h3>④ Fan-out — 한 변수가 두 번 쓰일 때</h3>
+      <p>$f(x) = x^2 + 3x$ 를 계산 그래프로 보면 $x$ 가 두 갈래로 나간다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ p = x^2, \qquad q = 3x, \qquad f = p+q $$</div>
+          <div class="derive__why">$x=2$ 에서 $p=4$, $q=6$, $f=10$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \bar{f}=1 \;\Rightarrow\; \bar{p} = 1, \quad \bar{q} = 1 $$</div>
+          <div class="derive__why">합 노드는 복사</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{경로 1: } \bar{p}\cdot\frac{dp}{dx} = 1\times2x = 4 $$</div>
+          <div class="derive__why">$x=2$ 대입</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{경로 2: } \bar{q}\cdot\frac{dq}{dx} = 1\times3 = 3 $$</div>
+          <div class="derive__why">두 번째 갈래</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \bar{x} = 4+3 = 7 $$</div>
+          <div class="derive__why"><strong>더한다.</strong> 공식으로도 $f'=2x+3=7$ ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{경로 1 만 쓰면 } 4 \ (\text{틀림}), \quad \text{곱하면 } 12 \ (\text{틀림}) $$</div>
+          <div class="derive__why">덮어쓰기 버그와 곱셈 착각이 각각 이 두 값을 만든다</div>
+        </div>
+      </div>
+
+      <h3>⑤ 비용 비교 — 실제 숫자로</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>문제</th><th>입력 $n$</th><th>출력 $m$</th><th>forward mode</th><th>reverse mode</th><th>승자</th></tr></thead>
+          <tbody>
+            <tr><td>딥러닝 학습</td><td class="num">10⁹</td><td class="num">1</td><td>10⁹ 회</td><td><strong>1 회</strong></td><td>reverse</td></tr>
+            <tr><td>$f:\mathbb{R}\to\mathbb{R}^{1000}$ 민감도</td><td class="num">1</td><td class="num">1000</td><td><strong>1 회</strong></td><td>1000 회</td><td>forward</td></tr>
+            <tr><td>$3\times3$ Jacobian 전체</td><td class="num">3</td><td class="num">3</td><td>3 회</td><td>3 회</td><td>메모리가 적은 forward</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        표의 첫 줄이 딥러닝 전체를 가능하게 만든 계산이다.
+        <strong>파라미터가 몇 개든 backward 한 번</strong>이면 전부 얻는다 — 이 성질이 없었다면
+        수십억 파라미터 model 은 학습 자체가 불가능했을 것이다.
+      </p>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>계산 그래프</strong> · <strong>비용 비교</strong> · <strong>fan-out</strong> — 을 만져 본 뒤,
+        아래에서 <strong>자동미분과 수치 미분의 정확도 차이</strong>를 확인한다.
+        수치 미분은 $h$ 를 줄여도 어느 지점부터 <em>더 나빠진다</em>.
+      </p>
+
+      <figure class="widget" data-widget="numeric-vs-auto">
+        <figcaption class="widget__bar">수치 미분 vs 자동미분 — $h$ 를 줄이면 정말 좋아질까</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$h\approx10^{-8}$ 부근에서 오차가 <strong>바닥을 찍고 다시 커집니다</strong>. 왼쪽은 절단 오차, 오른쪽은 반올림 오차입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"자동미분은 수치 미분이다."</p>
+        <p>
+          <strong>실제로는</strong> 완전히 다르다. 자동미분은 $h$ 를 쓰지 않으며,
+          각 원시 연산의 <strong>정확한</strong> 미분 공식을 chain rule 로 조합한다.
+          오차는 부동소수점 반올림뿐이라 수치 미분보다 $10^8$ 배 정확하다(마지막 위젯).
+          "auto"라는 이름 때문에 근사처럼 들리지만, 실은 손으로 미분한 것과 같은 값을 낸다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"reverse mode 가 언제나 낫다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>출력이 적을 때만</strong> 낫다.
+          입력 1 개에 출력 1000 개인 문제에서는 forward 가 1000배 싸다(예제 ⑤).
+          그리고 reverse 는 중간값을 전부 들고 있어야 해 <strong>메모리를 많이 쓴다</strong> —
+          긴 sequence 나 깊은 model 에서 OOM 이 나는 주된 원인이며,
+          gradient checkpointing 으로 시간과 맞바꾼다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"fan-out 노드의 gradient 는 곱한다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>더한다</strong>(유도 2, 예제 ④).
+          직렬로 이어진 경로는 곱하고, 병렬로 갈라진 경로는 더한다 —
+          <em>직렬은 곱, 병렬은 합</em>이라고 외우면 헷갈리지 않는다.
+          직접 backward 를 구현할 때 이 규칙을 어기면 residual connection 이나
+          multi-head attention 처럼 갈라지는 구조에서 gradient 가 조용히 틀린 값이 된다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"<code>zero_grad()</code> 는 형식적인 호출이다."</p>
+        <p>
+          <strong>실제로는</strong> 빠뜨리면 <strong>이전 스텝의 gradient 가 그대로 남아 더해진다</strong>.
+          프레임워크가 덮어쓰지 않고 누적하는 것은 fan-out 규칙(식 3)을 그대로 구현했기 때문이며,
+          같은 성질을 이용해 micro-batch 를 여러 번 돌리는 기법이 실무의 gradient accumulation 이다.
+          기본 동작이 "누적"이라는 것을 알면 두 이야기가 하나로 이해된다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"계산 그래프는 미리 정해진 고정 구조다."</p>
+        <p>
+          <strong>실제로는</strong> PyTorch 같은 define-by-run 프레임워크에서는
+          <strong>실행하면서 그래프가 만들어진다</strong>. <code>if</code> 문의 분기나 반복 횟수가
+          입력에 따라 달라지면 그래프도 달라진다 — 그래도 자동미분은 문제없이 동작한다.
+          실행된 경로만이 그래프이기 때문이다. 반대로 기호 미분은 이런 프로그램을 다룰 수 없고,
+          이것이 자동미분이 딥러닝의 표준이 된 실질적 이유다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–④ 를 20줄짜리 자동미분 엔진으로 직접 구현한다. 외부 라이브러리 없이 동작한다.</p>
+      <details>
+        <summary>Python — 최소 reverse-mode 자동미분 (20줄)</summary>
+<pre><code>import math
+
+class V:                                   # 값 + adjoint + 역전파 훅
+    def __init__(s, d, kids=(), back=lambda: None):
+        s.d, s.g, s.kids, s._b = d, 0.0, kids, back
+    def __add__(s, o):
+        out = V(s.d + o.d, (s, o)); out._b = lambda: (add(s, out.g), add(o, out.g)); return out
+    def __sub__(s, o):
+        out = V(s.d - o.d, (s, o)); out._b = lambda: (add(s, out.g), add(o, -out.g)); return out
+    def __mul__(s, o):
+        out = V(s.d * o.d, (s, o)); out._b = lambda: (add(s, o.d*out.g), add(o, s.d*out.g)); return out
+    def sig(s):
+        a = 1/(1+math.exp(-s.d)); out = V(a, (s,)); out._b = lambda: add(s, a*(1-a)*out.g); return out
+
+def add(v, x): v.g += x                    # <- 덮어쓰지 않고 '더한다' (fan-out 규칙)
+def backward(root):
+    topo, seen = [], set()
+    def walk(v):
+        if id(v) in seen: return
+        seen.add(id(v)); [walk(k) for k in v.kids]; topo.append(v)
+    walk(root); root.g = 1.0
+    for v in reversed(topo): v._b()
+
+w, x, b, y = V(0.5), V(2.0), V(-1.0), V(1.0)
+d = (w*x + b).sig() - y;  L = d*d
+backward(L)
+print(L.d, w.g, b.g, x.g)   # 0.25 -0.5 -0.25 -0.125   <- 예제 ①②와 정확히 일치
+</code></pre>
+        <p>
+          <small>
+            <code>add()</code> 가 <code>+=</code> 인 것이 이 구현의 핵심이다 — 이 한 글자가 fan-out 규칙(식 3)이고,
+            $x^2+3x$ 처럼 변수가 두 번 쓰이는 식도 자동으로 맞는 값을 낸다.
+            Karpathy 의 micrograd 가 같은 구조를 100줄로 확장한 것이다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            예제와 같은 그래프에서 $\bar{z}=-0.25$, $x=2$ 일 때 $\bar{w}$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$-0.5$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$-0.125$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$-0.25$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $u=wx$ 이므로 $\partial u/\partial w = x = 2$, 따라서 $\bar w = -0.25\times2 = -0.5$.
+            <strong>나</strong>는 $\bar{x} = \bar{u}\cdot w = -0.25\times0.5$ 로 <strong>상대편을 바꿔 곱한</strong> 값이다.
+            곱 노드는 "gradient 에 상대편 값을 곱한다"가 규칙이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $f(x)=x^2+3x$ 를 계산 그래프로 미분하면 $x=2$ 에서 $\bar{x}$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$7$ (=$4+3$)</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$12$ (=$4\times3$)</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$4$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $x$ 가 두 경로로 갈라지므로 <strong>더한다</strong> — $2x + 3 = 4+3 = 7$(예제 ④).
+            <strong>나</strong>는 병렬 경로를 곱한 오답, <strong>다</strong>는 한 경로만 쓰고 다른 경로를 덮어쓴 오답이다.
+            직접 구현할 때 <code>v.g = ...</code> 로 쓰면 다가 나오고, <code>v.g += ...</code> 로 써야 가가 나온다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            입력 $n=10^6$, 출력 $m=1$ 일 때 전체 gradient 를 얻는 비용은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>reverse 는 backward 1회, forward 는 10⁶회</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>둘 다 10⁶회</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>reverse 가 10⁶회, forward 가 1회</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            <strong>reverse 는 출력 개수만큼, forward 는 입력 개수만큼</strong> 훑는다(유도 1).
+            출력이 1 개(loss)이므로 reverse 는 한 번이면 끝난다.
+            <strong>다</strong>는 정확히 반대로 기억한 것이며, 이 방향을 헷갈리면
+            "왜 딥러닝이 backprop 을 쓰는가"의 답이 뒤집힌다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            forward pass 에서 중간값 $a=\sigma(z)$ 를 저장하는 이유는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>backward 에서 $\partial a/\partial z = a(1-a)$ 를 계산할 때 재사용하기 위해</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>다음 epoch 에서 쓰기 위해</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>수치 안정성을 위해</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            sigmoid 의 국소 미분이 <strong>출력만으로 표현</strong>되므로 $a$ 만 있으면 다시 계산할 필요가 없다(예제 ②).
+            이 저장이 GPU 메모리의 큰 부분을 차지하며, gradient checkpointing 은
+            일부러 버리고 backward 때 다시 forward 를 돌려 메모리를 아낀다.
+            "시간과 메모리의 교환"이 바로 여기서 생긴다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            residual connection $\mathbf{y}=\mathbf{x}+F(\mathbf{x})$ 의 backward 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\bar{\mathbf{x}} = \bar{\mathbf{y}} + \mathbf{J}_F^\top\bar{\mathbf{y}}$ — 손상 없는 항이 하나 남는다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$\bar{\mathbf{x}} = \mathbf{J}_F^\top\bar{\mathbf{y}}$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$\bar{\mathbf{x}} = \bar{\mathbf{y}}\odot\mathbf{J}_F^\top\bar{\mathbf{y}}$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\mathbf{x}$ 가 두 경로로 갈라지므로 <strong>더한다</strong>(유도 3).
+            첫 항 $\bar{\mathbf{y}}$ 가 아무것도 곱해지지 않은 채 통과하는 것이
+            깊은 model 에서도 gradient 가 죽지 않는 이유다.
+            <strong>나</strong>는 항등 경로를 빠뜨린 것으로, 이것이 곧 residual 없는 평범한 층이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            수치 미분에서 $h$ 를 $10^{-15}$ 로 줄이면?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>오히려 오차가 커진다 — 뺄셈에서 유효숫자가 사라진다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>오차가 계속 줄어 정확해진다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>결과가 자동미분과 같아진다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $f(x+h)$ 와 $f(x)$ 가 거의 같은 값이라 뺄셈에서 <strong>유효숫자가 대량으로 소실</strong>된다(catastrophic cancellation).
+            float64 에서 최적 $h$ 는 대략 $10^{-8}$ 근처이고, 그보다 작으면 반올림 오차가 지배한다.
+            이 문제가 아예 없는 것이 자동미분의 장점이며, 마지막 위젯에서 V 자 곡선으로 확인할 수 있다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="3.6-gradient-descent.html">3.6 경사하강법</a></strong> — backward 로 얻은 gradient 를 실제로 쓰는 단계.</li>
+        <li><strong><a href="3.10-deep-learning-optimization.html">3.10 딥러닝 최적화</a></strong> — Jacobian 곱이 지수적으로 커지거나 작아지는 문제.</li>
+        <li><strong><a href="3.3-multivariable-derivatives.html">3.3 다변수 미분</a></strong> — 식 (2)의 Jacobian 곱이 어디서 왔는지.</li>
+        <li><strong>6장 신경망 기초</strong> — 층별 backward 공식이 이 절의 VJP 표를 그대로 쓴다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-baydin2015-automatic-differentiation-in" data-ref="baydin2015-automatic-differentiation-in">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Baydin, A. G., Pearlmutter, B. A., Radul, A. A. &amp; Siskind, J. M. (2018). <em>Automatic Differentiation in Machine Learning: a Survey</em>. JMLR, 18(153), 1–43.</span>
+          <span class="ref__where">2절 — 수치 미분·기호 미분·자동미분을 구분하는 표(이 절 '자동미분' 표의 근거)와 기호 미분의 식 팽창 문제. 3절 — forward/reverse mode 의 비용이 $n$ 과 $m$ 에 어떻게 의존하는지(유도 1)와 dual number 구현</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1502.05767">arXiv:1502.05767</a>
+        </li>
+        <li class="ref" id="ref-rumelhart1986-backprop" data-ref="rumelhart1986-backprop">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Rumelhart, D. E., Hinton, G. E. &amp; Williams, R. J. (1986). <em>Learning representations by back-propagating errors</em>. Nature, 323, 533–536.</span>
+          <span class="ref__where">backpropagation 을 신경망 학습에 도입한 원논문. adjoint 를 출력에서 입력 방향으로 전파하는 식 (3)의 원형과, 은닉층의 오차를 "뒤에서 온 오차의 가중합"으로 정의하는 서술</span>
+          <a class="ref__link" href="https://www.nature.com/articles/323533a0">nature.com</a>
+        </li>
+        <li class="ref" id="ref-karpathy-zero2hero" data-ref="karpathy-zero2hero">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Karpathy, A. <em>Neural Networks: Zero to Hero</em>, Lecture 1: <em>The spelled-out intro to neural networks and backpropagation</em> (micrograd).</span>
+          <span class="ref__where">전체 — 스칼라 노드마다 <code>grad</code> 를 두고 <code>+=</code> 로 누적하는 최소 자동미분 엔진. 이 절의 코드 상자가 같은 구조를 20줄로 줄인 것이고, fan-out 에서 <code>+=</code> 가 필요한 이유의 설명도 여기서 왔다</span>
+          <a class="ref__link" href="https://karpathy.ai/zero-to-hero.html">karpathy.ai</a>
+        </li>
+        <li class="ref" id="ref-pytorch-autograd-docs" data-ref="pytorch-autograd-docs">
+          <span class="ref__type" data-type="doc">문서</span>
+          <span class="ref__cite">PyTorch Team. <em>Autograd mechanics</em> · <em>torch.autograd</em>. PyTorch documentation.</span>
+          <span class="ref__where">"How autograd encodes the history" — define-by-run 으로 실행 중 그래프가 만들어진다는 서술(오해 5). "Gradients accumulate" — <code>.grad</code> 가 덮어쓰이지 않고 더해지므로 <code>zero_grad()</code> 가 필요하다는 근거(오해 4)</span>
+          <a class="ref__link" href="https://pytorch.org/docs/stable/notes/autograd.html">pytorch.org</a>
+        </li>
+        <li class="ref" id="ref-nielsen2015-nndl" data-ref="nielsen2015-nndl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Nielsen, M. (2015). <em>Neural Networks and Deep Learning</em>. Determination Press.</span>
+          <span class="ref__where">2장(How the backpropagation algorithm works) — 네 개의 기본 방정식으로 층별 backward 를 유도하는 부분. 이 절 '수식과 기호'의 VJP 표(특히 $\bar{\mathbf{W}}=\bar{\mathbf{z}}\mathbf{x}^\top$)와 대조했다</span>
+          <a class="ref__link" href="http://neuralnetworksanddeeplearning.com/">neuralnetworksanddeeplearning.com</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+/* 계산 그래프 노드를 상자로 그리는 헬퍼 */
+function gnode(p, x, y, title, val, on) {
+  var W = 0.86, H = 0.52;
+  p.add(VIZ.el('rect', {
+    x: p.X(x - W / 2), y: p.Y(y + H / 2),
+    width: p.X(x + W / 2) - p.X(x - W / 2),
+    height: p.Y(y - H / 2) - p.Y(y + H / 2),
+    rx: 5,
+    fill: on ? 'var(--jade)' : 'none',
+    'fill-opacity': on ? 0.16 : 0,
+    stroke: on ? 'var(--jade)' : 'var(--ink-3)',
+    'stroke-width': on ? 2 : 1.1
+  }));
+  p.add(VIZ.el('text', {
+    x: p.X(x), y: p.Y(y) - 2, 'text-anchor': 'middle',
+    class: 'viz-label', 'font-size': 11, text: title
+  }));
+  p.add(VIZ.el('text', {
+    x: p.X(x), y: p.Y(y) + 11, 'text-anchor': 'middle',
+    class: 'viz-label', 'font-size': 11,
+    fill: on ? 'var(--jade)' : 'var(--ink-2)', text: val
+  }));
+}
+function gedge(p, x1, y1, x2, y2, label, tone) {
+  p.add(VIZ.el('line', {
+    x1: p.X(x1 + 0.44), y1: p.Y(y1), x2: p.X(x2 - 0.46), y2: p.Y(y2),
+    stroke: tone || 'var(--ink-3)', 'stroke-width': tone ? 2.2 : 1.1
+  }));
+  if (label) {
+    p.add(VIZ.el('text', {
+      x: (p.X(x1 + 0.44) + p.X(x2 - 0.46)) / 2, y: (p.Y(y1) + p.Y(y2)) / 2 - 5,
+      'text-anchor': 'middle', class: 'viz-label', 'font-size': 10,
+      fill: tone || 'var(--ink-3)', text: label
+    }));
+  }
+}
+
+/* ============================================================
+   위젯 1 — 계산 그래프: forward 6단계 + backward 7단계
+   L = (σ(wx+b) − y)²
+   ============================================================ */
+WIDGETS.register('graph-flow', function (root, ctx) {
+  var W0 = 0.5, X0 = 2, B0 = -1, Y0 = 1;
+
+  var p = VIZ.plot({ w: 470, h: 320, xmin: -0.5, xmax: 6.6, ymin: -2.0, ymax: 2.6,
+    pad: { t: 8, r: 8, b: 8, l: 8 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'phase', label: '단계' },
+    { key: 'what', label: '지금 계산하는 것' },
+    { key: 'val', label: '값' },
+    { key: 'grads', label: '현재까지의 gradient' }
+  ]);
+
+  var LAB = [
+    'forward · u = wx', 'forward · z = u+b', 'forward · a = σ(z)',
+    'forward · d = a−y', 'forward · L = d²',
+    'backward · L̄ = 1', 'backward · d̄ = 2d', 'backward · ā = d̄',
+    'backward · z̄ = ā·a(1−a)', 'backward · ū, b̄ = z̄', 'backward · w̄ = ū·x', 'backward · x̄ = ū·w'
+  ];
+
+  function draw(step) {
+    var u = W0 * X0, z = u + B0, a = 1 / (1 + Math.exp(-z)), d = a - Y0, L = d * d;
+    var Lb = 1, db = 2 * d, ab = db, zb = ab * a * (1 - a), ub = zb, bb = zb, wb = ub * X0, xb = ub * W0;
+
+    var fwd = step + 1;                 /* 몇 번째 forward 노드까지 켤지 */
+    var bwd = step - 4;                 /* backward 진행 정도 */
+
+    p.clear();
+
+    /* 위치 */
+    var P = {
+      w: [0, 2.1], x: [0, 1.15], b: [0, 0.1], y: [0, -1.5],
+      u: [1.35, 1.6], z: [2.7, 0.85], a: [4.0, 0.85], d: [5.2, -0.3], L: [6.1, -0.3]
+    };
+
+    /* 엣지 */
+    var eTone = function (k) { return bwd >= k ? 'var(--seal)' : null; };
+    gedge(p, P.w[0], P.w[1], P.u[0], P.u[1], bwd >= 6 ? 'w̄=' + wb.toFixed(3) : '', eTone(6));
+    gedge(p, P.x[0], P.x[1], P.u[0], P.u[1], bwd >= 7 ? 'x̄=' + xb.toFixed(3) : '', eTone(7));
+    gedge(p, P.u[0], P.u[1], P.z[0], P.z[1], bwd >= 5 ? 'ū=' + ub.toFixed(3) : '', eTone(5));
+    gedge(p, P.b[0], P.b[1], P.z[0], P.z[1], bwd >= 5 ? 'b̄=' + bb.toFixed(3) : '', eTone(5));
+    gedge(p, P.z[0], P.z[1], P.a[0], P.a[1], bwd >= 4 ? 'z̄=' + zb.toFixed(3) : '', eTone(4));
+    gedge(p, P.a[0], P.a[1], P.d[0], P.d[1], bwd >= 3 ? 'ā=' + ab.toFixed(2) : '', eTone(3));
+    gedge(p, P.y[0], P.y[1], P.d[0], P.d[1], '', null);
+    gedge(p, P.d[0], P.d[1], P.L[0], P.L[1], bwd >= 2 ? 'd̄=' + db.toFixed(2) : '', eTone(2));
+
+    /* 노드 */
+    gnode(p, P.w[0], P.w[1], 'w', W0.toFixed(2), bwd >= 6);
+    gnode(p, P.x[0], P.x[1], 'x', X0.toFixed(2), bwd >= 7);
+    gnode(p, P.b[0], P.b[1], 'b', B0.toFixed(2), bwd >= 5);
+    gnode(p, P.y[0], P.y[1], 'y', Y0.toFixed(2), false);
+    gnode(p, P.u[0], P.u[1], 'u = wx', fwd >= 1 ? u.toFixed(3) : '?', bwd >= 5);
+    gnode(p, P.z[0], P.z[1], 'z = u+b', fwd >= 2 ? z.toFixed(3) : '?', bwd >= 4);
+    gnode(p, P.a[0], P.a[1], 'a = σ(z)', fwd >= 3 ? a.toFixed(3) : '?', bwd >= 3);
+    gnode(p, P.d[0], P.d[1], 'd = a−y', fwd >= 4 ? d.toFixed(3) : '?', bwd >= 2);
+    gnode(p, P.L[0], P.L[1], 'L = d²', fwd >= 5 ? L.toFixed(4) : '?', bwd >= 1);
+
+    var vals = [u, z, a, d, L];
+    out.setRaw('phase', step < 5 ? '순전파 (값이 오른쪽으로)' : '역전파 (기울기가 왼쪽으로)');
+    out.setRaw('what', LAB[step] || '');
+    out.setRaw('val', step < 5 ? vals[step].toFixed(4)
+      : [1, db, ab, zb, ub, wb, xb][step - 5].toFixed(4));
+    out.setRaw('grads', bwd < 5 ? '아직' :
+      'w̄=' + (bwd >= 6 ? wb.toFixed(3) : '—') + '  b̄=' + bb.toFixed(3) +
+      '  x̄=' + (bwd >= 7 ? xb.toFixed(3) : '—'));
+  }
+
+  WIDGETS.player({ host: ctx.controls, steps: 12, fps: 1.1, label: '한 스텝씩', onStep: draw });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'w', min: -2, max: 2, step: 0.1, value: 0.5, digits: 2,
+    onInput: function (v) { W0 = v; draw(11); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'b', min: -2, max: 2, step: 0.1, value: -1, digits: 2,
+    onInput: function (v) { B0 = v; draw(11); }
+  });
+});
+
+/* ============================================================
+   위젯 2 — forward vs reverse 비용
+   ============================================================ */
+WIDGETS.register('mode-cost', function (root, ctx) {
+  var logN = 6, logM = 0;
+
+  var p = VIZ.plot({ w: 460, h: 290, xmin: 0, xmax: 9, ymin: 0, ymax: 9,
+    pad: { t: 18, r: 14, b: 30, l: 44 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'n', label: '입력 개수 n' },
+    { key: 'm', label: '출력 개수 m' },
+    { key: 'ratio', label: 'forward ÷ reverse 비용' },
+    { key: 'win', label: '승자' }
+  ]);
+
+  function fmtPow(e) { return '10^' + e; }
+
+  function draw() {
+    p.clear().grid(1, 1).axes('log₁₀ n (입력)', 'log₁₀ m (출력)').ticks(2, 2);
+    /* 대각선: n = m 인 경계 */
+    p.line([[0, 0], [9, 9]], { alt: true, width: 2, dash: '6 4' });
+    p.callout(6.5, 6.5, 'n = m 경계', { dx: -20, dy: -18, tone: 'var(--ink-3)' });
+
+    /* 딥러닝 위치 표시 */
+    p.dot(9, 0, 5);
+    p.callout(9, 0, '딥러닝 (m=1)', { dx: -16, dy: -22, tone: 'var(--seal)' });
+
+    p.dot(logN, logM, 7);
+
+    var n = Math.pow(10, logN), m = Math.pow(10, logM);
+    out.setRaw('n', fmtPow(logN));
+    out.setRaw('m', fmtPow(logM));
+    var r = n / m;
+    out.setRaw('ratio', r >= 1 ? fmtPow(logN - logM) + ' 배 비쌈' : '1/' + fmtPow(logM - logN) + ' 배');
+    out.setRaw('win', logM < logN ? 'reverse mode (backpropagation)'
+      : (logM > logN ? 'forward mode' : '비용 같음 — 메모리 적은 forward'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '입력 개수 (10의 거듭제곱)', min: 0, max: 9, step: 1, value: 6, digits: 0,
+    onInput: function (v) { logN = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '출력 개수 (10의 거듭제곱)', min: 0, max: 9, step: 1, value: 0, digits: 0,
+    onInput: function (v) { logM = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — fan-out 기울기 누적
+   ============================================================ */
+WIDGETS.register('fanout-accum', function (root, ctx) {
+  var xv = 2, mode = 'sum';
+
+  var p = VIZ.plot({ w: 460, h: 250, xmin: -0.6, xmax: 4.4, ymin: -1.6, ymax: 1.6,
+    pad: { t: 8, r: 8, b: 8, l: 8 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'p1', label: '경로 1 (x²) 의 기여', digits: 3 },
+    { key: 'p2', label: '경로 2 (3x) 의 기여', digits: 3 },
+    { key: 'res', label: '이 방식의 결과', digits: 3 },
+    { key: 'truth', label: '수치 미분 (참값)', digits: 3 }
+  ]);
+
+  function draw() {
+    var g1 = 2 * xv, g2 = 3;
+    var res = mode === 'sum' ? g1 + g2 : (mode === 'mul' ? g1 * g2 : g1);
+    var h = 1e-5;
+    var f = function (t) { return t * t + 3 * t; };
+    var truth = (f(xv + h) - f(xv - h)) / (2 * h);
+
+    p.clear();
+    gnode(p, 0, 0, 'x', xv.toFixed(2), true);
+    gnode(p, 1.7, 0.95, 'p = x²', (xv * xv).toFixed(2), false);
+    gnode(p, 1.7, -0.95, 'q = 3x', (3 * xv).toFixed(2), false);
+    gnode(p, 3.5, 0, 'f = p+q', f(xv).toFixed(2), false);
+
+    gedge(p, 0, 0, 1.7, 0.95, 'dp/dx = ' + g1.toFixed(1), 'var(--seal)');
+    gedge(p, 0, 0, 1.7, -0.95, 'dq/dx = ' + g2.toFixed(1), 'var(--seal)');
+    gedge(p, 1.7, 0.95, 3.5, 0, 'p̄ = 1', null);
+    gedge(p, 1.7, -0.95, 3.5, 0, 'q̄ = 1', null);
+
+    p.add(VIZ.el('text', {
+      x: p.X(0), y: p.Y(-1.25), 'text-anchor': 'middle', class: 'viz-label',
+      'font-size': 12,
+      fill: Math.abs(res - truth) < 1e-3 ? 'var(--jade)' : 'var(--seal)',
+      text: 'x̄ = ' + res.toFixed(3) + (Math.abs(res - truth) < 1e-3 ? '  ✓ 맞음' : '  ✗ 틀림')
+    }));
+
+    out.set('p1', g1);
+    out.set('p2', g2);
+    out.set('res', res);
+    out.set('truth', truth);
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '두 경로를 어떻게 합칠까',
+    options: [
+      { value: 'sum', label: '더한다 (정답)' },
+      { value: 'mul', label: '곱한다' },
+      { value: 'over', label: '덮어쓴다' }
+    ],
+    value: 'sum', onChange: function (v) { mode = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'x 값', min: -3, max: 3, step: 0.25, value: 2, digits: 2,
+    onInput: function (v) { xv = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — 수치 미분의 V 자 오차 곡선
+   ============================================================ */
+WIDGETS.register('numeric-vs-auto', function (root, ctx) {
+  var logh = -4, kind = 'fwd';
+
+  var p = VIZ.plot({ w: 460, h: 280, xmin: -16, xmax: 0, ymin: -17, ymax: 1,
+    pad: { t: 18, r: 14, b: 30, l: 48 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'h', label: 'h' },
+    { key: 'est', label: '수치 미분값', digits: 10 },
+    { key: 'err', label: '오차' },
+    { key: 'auto', label: '자동미분 (정확)' }
+  ]);
+
+  var f = function (x) { return Math.sin(x) * Math.exp(0.3 * x); };
+  var df = function (x) { return Math.exp(0.3 * x) * (Math.cos(x) + 0.3 * Math.sin(x)); };
+  var X0 = 1.3;
+
+  function errAt(h) {
+    var est = kind === 'fwd' ? (f(X0 + h) - f(X0)) / h
+                             : (f(X0 + h) - f(X0 - h)) / (2 * h);
+    return { est: est, err: Math.abs(est - df(X0)) };
+  }
+
+  function draw() {
+    p.clear().grid(2, 2).axes('log₁₀ h', '').ticks(4, 4);
+    p.text(-16, 1, 'log₁₀ 오차', { dx: 3, dy: -4 });
+    p.curve(function (lh) {
+      var e = errAt(Math.pow(10, lh)).err;
+      return Math.max(-17, Math.log10(Math.max(e, 1e-17)));
+    }, { samples: 220 });
+
+    var cur = errAt(Math.pow(10, logh));
+    p.dot(logh, Math.max(-17, Math.log10(Math.max(cur.err, 1e-17))), 6);
+    p.line([[-16, -16], [0, -16]], { dash: '3 4' });
+    p.callout(-12, -16, '자동미분의 오차 수준', { dx: 14, dy: -14, tone: 'var(--jade)' });
+
+    out.setRaw('h', '10^' + logh);
+    out.set('est', cur.est);
+    out.setRaw('err', cur.err.toExponential(2));
+    out.setRaw('auto', df(X0).toFixed(10) + ' (오차 ~1e-16)');
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '차분 방식',
+    options: [{ value: 'fwd', label: '전방차분 O(h)' }, { value: 'cen', label: '중심차분 O(h²)' }],
+    value: 'fwd', onChange: function (v) { kind = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'log₁₀ h', min: -16, max: 0, step: 0.5, value: -4, digits: 1,
+    onInput: function (v) { logh = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

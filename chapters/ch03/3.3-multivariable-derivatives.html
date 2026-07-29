@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.3 다변수 미분 — AI 이론 학습</title>
+<meta name="description" content="gradient는 가장 가파른 오르막을 가리키는 vector다. 편미분·방향도함수·Jacobian·Hessian·행렬 미분을 등고선 위에서 확인한다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="3.3">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">3.3</span>
+        <span>3장 · 미적분과 최적화</span>
+      </div>
+      <h1>다변수 미분</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 60분</span>
+        <span><b>난이도</b>★★★☆☆</span>
+        <span><b>선수지식</b>
+          <a href="3.2-derivatives.html">3.2 미분</a> · <a href="../ch02/2.3-inner-product.html">2.3 내적과 유사도</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-partial">Partial Derivative</a>
+      <a class="chip" href="#c-grad">Gradient</a>
+      <a class="chip" href="#c-dirder">Directional Derivative</a>
+      <a class="chip" href="#c-jacobian">Jacobian</a>
+      <a class="chip" href="#c-hessian">Hessian</a>
+      <a class="chip" href="#c-mvchain">Multivariable Chain Rule</a>
+      <a class="chip" href="#c-vecfun">Vector-Valued Function</a>
+      <a class="chip" href="#c-matcalc">Matrix Calculus</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        gradient(그래디언트)는 <strong>partial derivative(편미분)를 나열한 vector</strong>일 뿐인데,
+        그 방향이 <strong>가장 가파른 오르막</strong>이고 등고선에 <strong>수직</strong>이다.
+        이 두 성질이 gradient descent의 전부다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>$f:\mathbb{R}^n\to\mathbb{R}$ 의 gradient와 Hessian을 손으로 계산하고 shape을 맞출 수 있다.</li>
+        <li>directional derivative(방향도함수)가 $\nabla f\cdot\mathbf{u}$ 인 이유와, 그 최댓값이 $\|\nabla f\|$ 인 이유를 설명할 수 있다.</li>
+        <li>$\|\mathbf{Ax}-\mathbf{b}\|^2$ 같은 행렬 표현을 미분해 $2\mathbf{A}^\top(\mathbf{Ax}-\mathbf{b})$ 를 얻을 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        안개 낀 산비탈에 서 있다. 볼 수 있는 것은 발밑 한 뼘뿐이다.
+        동쪽으로 한 걸음 갔을 때 얼마나 오르는지, 북쪽으로 한 걸음 갔을 때 얼마나 오르는지 —
+        이 두 숫자만 재면 <strong>모든 방향의 경사를 계산할 수 있다</strong>.
+        그 두 숫자가 partial derivative 이고, 나란히 세운 것이 gradient 다.
+      </p>
+      <p>
+        놀라운 것은 방향이다. $(\partial f/\partial x,\ \partial f/\partial y)$ 라는 vector를 그리면
+        그 화살표가 <strong>정확히 가장 가파른 오르막</strong>을 가리킨다.
+        그래서 내려가고 싶으면 그 반대로 가면 된다 — <a href="3.6-gradient-descent.html">3.6</a>의 전부가 이 한 문장이다.
+      </p>
+
+      <figure class="widget" data-widget="grad-field">
+        <figcaption class="widget__bar">Gradient Field — 등고선 위에 화살표를 얹으면</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">화살표가 언제나 등고선과 <strong>직각</strong>이고, 등고선이 촘촘한 곳에서 <strong>더 길다</strong>는 것을 보세요.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          gradient는 <strong>방향과 크기를 한꺼번에 담은 vector</strong>다.
+          방향은 가장 빠르게 <em>올라가는</em> 쪽, 크기는 그 방향으로 갔을 때의 경사다.
+          $\nabla f = \mathbf{0}$ 이면 어느 쪽으로 가도 (1차 근사로는) 변하지 않는 평평한 자리다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-partial"></span>
+      <h3>Partial Derivative 편미분</h3>
+      <div class="note note--key">
+        <span class="note__label">정의</span>
+        <p>
+          $$ \frac{\partial f}{\partial x_i}(\mathbf{x}) = \lim_{h\to0}\frac{f(x_1,\dots,x_i+h,\dots,x_n)-f(\mathbf{x})}{h} $$
+          <strong>$x_i$ 만 흔들고 나머지는 상수로 고정</strong>한 채 잰 변화율이다.
+        </p>
+      </div>
+      <p>
+        <span class="hl">편미분은 일변수 미분과 계산 규칙이 완전히 같다 — 다른 변수를 숫자처럼 취급하면 된다.</span>
+        기호가 $d$ 가 아니라 $\partial$ ("라운드 디" 또는 "델")인 것은 "여러 변수 중 하나만 봤다"는 표시일 뿐이다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ f(x,y)=x^2y+3y \;\Longrightarrow\; \frac{\partial f}{\partial x}=2xy, \qquad \frac{\partial f}{\partial y}=x^2+3 $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        $\partial f/\partial x$ 를 구할 때 $y$ 는 그냥 숫자이므로 $3y$ 는 상수라 사라졌고,
+        $\partial f/\partial y$ 를 구할 때 $x^2$ 은 계수라 그대로 남았다.
+      </p>
+
+      <span class="anchor" id="c-grad"></span>
+      <h3>Gradient 그래디언트</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \nabla f(\mathbf{x}) = \begin{bmatrix} \dfrac{\partial f}{\partial x_1} \\[4pt] \vdots \\[2pt] \dfrac{\partial f}{\partial x_n} \end{bmatrix} \in \mathbb{R}^{n} $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        <span class="hl">gradient는 편미분을 순서대로 세운 column vector이며, <strong>입력과 같은 shape</strong>을 갖는다.</span>
+        이 shape 규칙이 실무에서 가장 유용하다 — parameter가 $(768,3072)$ matrix면 그 gradient도 $(768,3072)$ 다.
+        그래서 $\boldsymbol{\theta} \leftarrow \boldsymbol{\theta} - \eta\nabla\mathcal{L}$ 라는 뺄셈이 성립한다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>성질</th><th>내용</th><th>쓰이는 곳</th></tr></thead>
+          <tbody>
+            <tr><td>최급상승 방향</td><td>$\nabla f$ 방향이 가장 빠르게 증가</td><td>gradient <strong>descent</strong>는 $-\nabla f$ 로 간다</td></tr>
+            <tr><td>등고선에 수직</td><td>등고선 접선과 $\nabla f$ 의 내적이 0</td><td>제약 최적화(<a href="3.9-constraints-regularization.html">3.9</a>)의 라그랑주 조건</td></tr>
+            <tr><td>크기 = 최대 경사</td><td>$\|\nabla f\|$ 가 그 방향의 변화율</td><td>gradient clipping(<a href="3.10-deep-learning-optimization.html">3.10</a>)</td></tr>
+            <tr><td>임계점에서 $\mathbf{0}$</td><td>극값·안장점의 필요조건</td><td>최적화 종료 판정(<a href="3.5-optimization-basics.html">3.5</a>)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <a href="3.1-functions-basics.html">3.1</a>의 국소 근사를 다변수로 옮기면 gradient 의 또 다른 얼굴이 나온다 —
+        <strong>tangent plane(접평면)</strong>이다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ f(\mathbf{x}+\mathbf{h}) \approx f(\mathbf{x}) + \nabla f(\mathbf{x})^\top\mathbf{h} \qquad\Longleftrightarrow\qquad z = f(a,b) + f_x(a,b)(x-a) + f_y(a,b)(y-b) $$</div>
+        <span class="eq__tag num">(2b)</span>
+      </div>
+      <p>
+        일변수에서 곡선을 <em>접선</em>으로 근사했듯, 다변수에서는 곡면을 <em>접평면</em>으로 근사한다.
+        <span class="hl">gradient 는 그 접평면의 <strong>기울기 계수</strong>이고, 최적화가 매 스텝 세우는 것이 바로 이 평면이다.</span>
+        오른쪽 형태가 표준 강의에서 쓰는 표기이며, 왼쪽의 vector 형태와 완전히 같은 식이다.
+      </p>
+
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>gradient는 <strong>물이 흘러내리는 방향의 반대</strong>입니다. 비탈에 물을 부으면 가장 가파른 아래쪽으로 흐르는데, gradient는 그 화살표를 거꾸로 뒤집은 것입니다.</p>
+        <p>그리고 물길은 언제나 <strong>등고선을 가로질러</strong> 흐르지, 등고선을 따라 옆으로 흐르지 않습니다. 등고선을 따라가면 높이가 안 변하니까요 — 이것이 "gradient가 등고선에 수직"의 뜻입니다.</p>
+      </div>
+
+      <span class="anchor" id="c-dirder"></span>
+      <h3>Directional Derivative 방향도함수</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ D_{\mathbf{u}}f(\mathbf{x}) = \lim_{h\to0}\frac{f(\mathbf{x}+h\mathbf{u})-f(\mathbf{x})}{h} = \nabla f(\mathbf{x})^\top \mathbf{u}, \qquad \|\mathbf{u}\|=1 $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl">임의의 단위 방향 $\mathbf{u}$ 로 갔을 때의 변화율이며, gradient와 $\mathbf{u}$ 의 <strong>내적</strong>으로 계산된다.</span>
+        편미분은 $\mathbf{u}$ 가 좌표축 방향인 특수한 경우일 뿐이다.
+      </p>
+      <p>
+        <a href="../ch02/2.3-inner-product.html">2.3</a>에서 본 $\mathbf{a}^\top\mathbf{b}=\|\mathbf{a}\|\|\mathbf{b}\|\cos\theta$ 를 쓰면
+        gradient가 왜 최급상승인지가 한 줄에 나온다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ D_{\mathbf{u}}f = \|\nabla f\|\,\|\mathbf{u}\|\cos\theta = \|\nabla f\|\cos\theta \;\;\Longrightarrow\;\; \max_{\mathbf{u}} D_{\mathbf{u}}f = \|\nabla f\| \ \ (\theta=0) $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        $\theta=90°$ 이면 $\cos\theta=0$ 이라 변화율이 0 — 그 방향이 바로 <strong>등고선을 따라가는 방향</strong>이다.
+        $\theta=180°$ 이면 $-\|\nabla f\|$ 로 가장 빠른 내리막이다.
+      </p>
+
+      <figure class="widget" data-widget="dir-deriv">
+        <figcaption class="widget__bar">Directional Derivative — 방향을 돌리면 경사가 어떻게 변하나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$\cos$ 곡선이 그대로 나옵니다. <strong>$0°$ 에서 최대, $90°$ 에서 0, $180°$ 에서 최소</strong> — 식 (4)를 눈으로 확인하는 것입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-vecfun"></span>
+      <span class="anchor" id="c-jacobian"></span>
+      <h3>Vector-Valued Function &amp; Jacobian 벡터값 함수와 야코비안</h3>
+      <p>
+        출력이 여러 개인 함수 $\mathbf{f}:\mathbb{R}^n\to\mathbb{R}^m$ 을 vector-valued function(벡터값 함수)이라 한다.
+        neural network의 한 층이 정확히 이것이다 — $\mathbb{R}^{768}\to\mathbb{R}^{3072}$ 같은 함수다.
+      </p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathbf{J}_{\mathbf{f}}(\mathbf{x}) = \frac{\partial \mathbf{f}}{\partial \mathbf{x}} = \begin{bmatrix} \dfrac{\partial f_1}{\partial x_1} & \cdots & \dfrac{\partial f_1}{\partial x_n} \\[6pt] \vdots & \ddots & \vdots \\[4pt] \dfrac{\partial f_m}{\partial x_1} & \cdots & \dfrac{\partial f_m}{\partial x_n} \end{bmatrix} \in \mathbb{R}^{m\times n} $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        <span class="hl">Jacobian은 <strong>$i$ 행이 $f_i$ 의 gradient의 전치</strong>인 $(m,n)$ matrix다.</span>
+        shape을 외우는 요령: <strong>출력 개수가 행, 입력 개수가 열</strong>이다.
+        $m=1$ 이면 $(1,n)$ 행벡터가 되고, 이것을 세운 것이 gradient다 — 즉 $\nabla f = \mathbf{J}_f^\top$.
+        문헌에 따라 $D\mathbf{f}$, $\mathbf{f}'(\mathbf{x})$, $\partial\mathbf{f}/\partial\mathbf{x}$ 로도 쓴다 — 전부 같은 것이다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>층</th><th>함수</th><th>Jacobian</th><th>shape</th></tr></thead>
+          <tbody>
+            <tr><td>linear</td><td>$\mathbf{f}(\mathbf{x})=\mathbf{Wx}+\mathbf{b}$</td><td>$\mathbf{W}$</td><td>$(m,n)$</td></tr>
+            <tr><td>원소별 activation</td><td>$f_i = \phi(x_i)$</td><td>$\operatorname{diag}(\phi'(x_1),\dots)$</td><td>$(n,n)$ 대각</td></tr>
+            <tr><td>softmax</td><td>$s_i = \dfrac{e^{x_i}}{\sum_k e^{x_k}}$</td><td>$\operatorname{diag}(\mathbf{s})-\mathbf{s}\mathbf{s}^\top$</td><td>$(n,n)$ 대칭</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        원소별 activation의 Jacobian이 <strong>대각행렬</strong>이라는 것이 중요하다 —
+        $(n,n)$ matrix를 실제로 만들지 않고 원소별 곱 $\odot$ 한 번으로 처리할 수 있어,
+        backpropagation의 메모리가 $O(n^2)$ 이 아니라 $O(n)$ 으로 유지된다.
+      </p>
+
+      <figure class="widget" data-widget="jacobian-box">
+        <figcaption class="widget__bar">Jacobian — 작은 정사각형이 어떻게 찌그러지나</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">한 점 주변의 <strong>작은</strong> 정사각형은 (곡선 변환인데도) 거의 평행사변형이 됩니다. Jacobian이 그 평행사변형을 만드는 matrix입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-hessian"></span>
+      <h3>Hessian 헤시안</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathbf{H}_f(\mathbf{x}) = \nabla^2 f(\mathbf{x}) = \begin{bmatrix} \dfrac{\partial^2 f}{\partial x_1^2} & \cdots & \dfrac{\partial^2 f}{\partial x_1\partial x_n} \\[6pt] \vdots & \ddots & \vdots \\[4pt] \dfrac{\partial^2 f}{\partial x_n\partial x_1} & \cdots & \dfrac{\partial^2 f}{\partial x_n^2} \end{bmatrix} \in \mathbb{R}^{n\times n} $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        <span class="hl">gradient의 Jacobian이 Hessian이며, $f$ 가 두 번 연속 미분 가능하면 <strong>항상 대칭</strong>이다
+        ($\partial^2 f/\partial x\partial y = \partial^2 f/\partial y\partial x$, <strong>Schwarz 정리</strong> —
+        영어권 강의에서는 <strong>Clairaut's theorem</strong>, 해석학 교재에서는 <strong>Young's theorem</strong> 이라고도 부른다. 같은 정리다).</span>
+        대칭이므로 <a href="../ch02/2.7-eigenvalues.html">2.7</a>의 spectral theorem이 그대로 적용되어
+        eigenvalue가 전부 실수이고 eigenvector를 orthogonal 하게 잡을 수 있다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ f(\mathbf{x}+\mathbf{h}) \approx f(\mathbf{x}) + \nabla f(\mathbf{x})^\top\mathbf{h} + \tfrac12 \mathbf{h}^\top \mathbf{H}\mathbf{h} $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        3.2 식 (4)의 다변수판이다. $f''h^2$ 자리에 $\mathbf{h}^\top\mathbf{H}\mathbf{h}$ 가 들어갔다.
+        Hessian의 eigenvalue가 <strong>각 축 방향의 곡률</strong>이며, 이것이 최적화를 지배한다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$\mathbf{H}$ 의 eigenvalue</th><th>임계점의 정체</th><th>모양</th></tr></thead>
+          <tbody>
+            <tr><td>모두 양수 (positive definite)</td><td>local minimum</td><td>그릇</td></tr>
+            <tr><td>모두 음수 (negative definite)</td><td>local maximum</td><td>엎어진 그릇</td></tr>
+            <tr><td>부호가 섞임 (indefinite)</td><td><strong>saddle point</strong></td><td>말안장</td></tr>
+            <tr><td>0 이 포함됨</td><td>판정 불가</td><td>평평한 방향이 있다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        $2\times2$ 에서는 eigenvalue 를 구하지 않고도 판정할 수 있다. 이것이 표준 강의에서 쓰는
+        <strong>second partial derivative test(2차 편미분 판정법)</strong>이며, 판별식 하나로 끝난다.
+      </p>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ D = f_{xx}f_{yy} - f_{xy}^2 = \det\mathbf{H} $$</div>
+        <span class="eq__tag num">(6b)</span>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$D=\det\mathbf{H}$</th><th>$f_{xx}$</th><th>판정</th><th>왜</th></tr></thead>
+          <tbody>
+            <tr><td>$D&gt;0$</td><td>$&gt;0$</td><td>local minimum</td><td>$\lambda_1\lambda_2&gt;0$ 이라 부호가 같고, 합이 양수</td></tr>
+            <tr><td>$D&gt;0$</td><td>$&lt;0$</td><td>local maximum</td><td>부호가 같고, 합이 음수</td></tr>
+            <tr><td>$D&lt;0$</td><td>—</td><td><strong>saddle point</strong></td><td>$\lambda_1\lambda_2&lt;0$ — 부호가 반드시 섞인다</td></tr>
+            <tr><td>$D=0$</td><td>—</td><td>판정 불가</td><td>eigenvalue 에 0 이 있다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <span class="hl">$\det\mathbf{H}=\lambda_1\lambda_2$, $\operatorname{tr}\mathbf{H}=\lambda_1+\lambda_2$ 라는
+        <a href="../ch02/2.7-eigenvalues.html">2.7</a>의 항등식을 그대로 쓴 것</span>이라 새로운 내용이 아니다 —
+        곱의 부호만 보면 "섞였는가"를 알 수 있고, 섞이지 않았다면 대각 원소 하나로 어느 쪽인지 알 수 있다.
+        $n\times n$ 으로 가면 판별식 하나로는 부족해 eigenvalue(또는 선행 주소행렬식)를 봐야 한다.
+      </p>
+      <p>
+        <span class="hl">$\lambda_{\max}/\lambda_{\min}$ 이 condition number(조건수) $\kappa$ 이고,
+        이 값이 크면 골짜기가 길고 좁아 gradient descent가 지그재그로 헤맨다.</span>
+        <a href="3.6-gradient-descent.html">3.6</a>의 주요 주제이며, 이 문제를 각 축의 스케일로 완화하려는 것이
+        Adam 같은 adaptive method(<a href="3.7-optimization-algorithms.html">3.7</a>)다.
+      </p>
+
+      <figure class="widget" data-widget="hessian-bowl">
+        <figcaption class="widget__bar">Hessian — 두 eigenvalue가 골짜기의 모양을 정한다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">두 eigenvalue의 부호가 <strong>다르면</strong> 등고선이 쌍곡선이 됩니다 — 안장점입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-mvchain"></span>
+      <h3>Multivariable Chain Rule 다변수 연쇄법칙</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ z=f(x_1,\dots,x_n),\ \ x_i=g_i(t) \;\Longrightarrow\; \frac{dz}{dt} = \sum_{i=1}^{n}\frac{\partial f}{\partial x_i}\frac{dx_i}{dt} = \nabla f^\top \frac{d\mathbf{x}}{dt} $$</div>
+        <span class="eq__tag num">(8)</span>
+      </div>
+      <p>
+        <span class="hl">여러 경로로 영향을 주면 <strong>경로마다 계산해서 더한다</strong> — 이 "더한다"가 backpropagation의
+        gradient accumulation(기울기 누적)의 정체다.</span>
+        vector-valued 함수의 합성으로 쓰면 Jacobian의 곱이 된다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbf{h}=\mathbf{g}(\mathbf{f}(\mathbf{x})) \;\Longrightarrow\; \mathbf{J}_{\mathbf{h}}(\mathbf{x}) = \mathbf{J}_{\mathbf{g}}\bigl(\mathbf{f}(\mathbf{x})\bigr)\,\mathbf{J}_{\mathbf{f}}(\mathbf{x}) $$</div>
+        <span class="eq__tag num">(9)</span>
+      </div>
+      <p>
+        <strong>순서가 바깥부터</strong>인 것에 주의한다. shape으로 확인하면 틀릴 수 없다 —
+        $\mathbb{R}^n\to\mathbb{R}^p\to\mathbb{R}^m$ 이면 $(m,p)\times(p,n)=(m,n)$ 이다.
+        층을 $L$ 개 쌓으면 Jacobian이 $L$ 개 곱해지고, 이 곱이 커지거나 작아지는 것이
+        exploding/vanishing gradient다. 계산 순서를 어떻게 잡느냐가 <a href="3.4-chain-rule-computation-graph.html">3.4</a>의 주제다.
+      </p>
+
+      <span class="anchor" id="c-matcalc"></span>
+      <h3>Matrix Calculus 행렬 미분</h3>
+      <p>
+        원소별로 편미분을 쓰지 않고 <strong>matrix·vector 단위로 한 번에</strong> 미분하는 표기다.
+        외워 두면 유용한 공식은 몇 개뿐이다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$f(\mathbf{x})$</th><th>$\nabla_{\mathbf{x}} f$</th><th>shape 확인</th><th>일변수 대응</th></tr></thead>
+          <tbody>
+            <tr><td>$\mathbf{a}^\top\mathbf{x}$</td><td>$\mathbf{a}$</td><td>$(n,)$</td><td>$(ax)'=a$</td></tr>
+            <tr><td>$\mathbf{x}^\top\mathbf{x}=\|\mathbf{x}\|^2$</td><td>$2\mathbf{x}$</td><td>$(n,)$</td><td>$(x^2)'=2x$</td></tr>
+            <tr><td>$\mathbf{x}^\top\mathbf{A}\mathbf{x}$</td><td>$(\mathbf{A}+\mathbf{A}^\top)\mathbf{x}$</td><td>$(n,)$</td><td>$(ax^2)'=2ax$</td></tr>
+            <tr><td>$\mathbf{x}^\top\mathbf{A}\mathbf{x}$, $\mathbf{A}$ 대칭</td><td>$2\mathbf{A}\mathbf{x}$</td><td>$(n,)$</td><td>—</td></tr>
+            <tr><td>$\|\mathbf{Ax}-\mathbf{b}\|^2$</td><td>$2\mathbf{A}^\top(\mathbf{Ax}-\mathbf{b})$</td><td>$(n,m)(m,)=(n,)$</td><td>$((ax-b)^2)'=2a(ax-b)$</td></tr>
+            <tr><td>$\operatorname{tr}(\mathbf{A}\mathbf{X})$</td><td>$\nabla_{\mathbf{X}}=\mathbf{A}^\top$</td><td>$\mathbf{X}$ 와 같은 shape</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <span class="hl">공식을 외우는 것보다 <strong>shape이 맞는지 확인하는 습관</strong>이 훨씬 안전하다 —
+        gradient는 언제나 미분하는 변수와 같은 shape이어야 한다.</span>
+        $\|\mathbf{Ax}-\mathbf{b}\|^2$ 에서 $\mathbf{A}^\top$ 이 붙는 이유도 shape 때문이다.
+        $\mathbf{A}$ 가 $(m,n)$ 이고 잔차가 $(m,)$ 인데 결과가 $(n,)$ 이어야 하니 전치가 필요하다.
+      </p>
+      <div class="note note--trap">
+        <span class="note__label">layout convention</span>
+        <p>
+          문헌마다 두 관례가 섞여 있다. <strong>denominator layout</strong>(분모 배치)은
+          $\partial y/\partial \mathbf{x}$ 를 $\mathbf{x}$ 와 같은 shape인 열벡터로 두고,
+          <strong>numerator layout</strong>(분자 배치)은 행벡터로 둔다. 둘은 서로 전치 관계다.
+        </p>
+        <p>
+          이 사이트는 <strong>gradient는 denominator layout(입력과 같은 shape),
+          Jacobian은 numerator layout($(m,n)$)</strong> 을 쓴다. 딥러닝 프레임워크의 실제 동작과 같은 규약이다 —
+          <code>param.grad</code> 는 언제나 <code>param</code> 과 같은 shape이다. 다른 책을 볼 때는
+          첫 페이지에서 어느 관례인지 확인하고 시작한다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>차수별로 무엇이 나오는지 shape과 함께 정리하면 이렇다. 이 표만 있으면 어떤 미분도 shape을 틀리지 않는다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>함수</th><th>1차 미분</th><th>shape</th><th>2차 미분</th><th>shape</th></tr></thead>
+          <tbody>
+            <tr><td>$f:\mathbb{R}\to\mathbb{R}$</td><td>$f'$</td><td>scalar</td><td>$f''$</td><td>scalar</td></tr>
+            <tr><td>$f:\mathbb{R}^n\to\mathbb{R}$</td><td>$\nabla f$</td><td>$(n,)$</td><td>$\mathbf{H}$</td><td>$(n,n)$</td></tr>
+            <tr><td>$\mathbf{f}:\mathbb{R}^n\to\mathbb{R}^m$</td><td>$\mathbf{J}$</td><td>$(m,n)$</td><td>—</td><td>$(m,n,n)$ 3차 텐서</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        마지막 칸이 실무에서 2차 최적화를 쓰지 않는 이유를 보여 준다.
+        parameter가 $10^9$ 개면 Hessian 하나가 $10^{18}$ 개 원소 — 저장 자체가 불가능하다
+        (<a href="3.7-optimization-algorithms.html">3.7</a>).
+      </p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$\partial$</td><td>partial 파셜 · 라운드 디</td><td>편미분 기호</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$\nabla$</td><td>nabla 나블라 · del 델</td><td>gradient 연산자</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$\nabla f$</td><td>nabla f · grad f</td><td>gradient</td><td>vector $(n,)$</td><td>$\mathbb{R}^n$</td></tr>
+            <tr><td>$\nabla^2 f$, $\mathbf{H}$</td><td>nabla squared f · Hessian 헤시안</td><td>2차 편미분 matrix</td><td>$(n,n)$ 대칭</td><td>실수</td></tr>
+            <tr><td>$\mathbf{J}$</td><td>Jacobian 야코비안</td><td>1차 편미분 matrix</td><td>$(m,n)$</td><td>실수</td></tr>
+            <tr><td>$D_{\mathbf{u}}f$</td><td>D sub u of f</td><td>$\mathbf{u}$ 방향 도함수</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\mathbf{u}$</td><td>bold u</td><td>단위 방향 vector</td><td>$(n,)$</td><td>$\|\mathbf{u}\|=1$</td></tr>
+            <tr><td>$\mathbf{h}$</td><td>bold h</td><td>입력의 작은 변위</td><td>$(n,)$</td><td>$\to\mathbf{0}$</td></tr>
+            <tr><td>$\theta$</td><td>theta 세타</td><td>$\nabla f$ 와 $\mathbf{u}$ 사이 각</td><td>scalar</td><td>$[0,\pi]$</td></tr>
+            <tr><td>$\odot$</td><td>Hadamard product 아다마르 곱</td><td>원소별 곱</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$\operatorname{diag}(\mathbf{v})$</td><td>diag 다이애그</td><td>$\mathbf{v}$ 를 대각에 놓은 matrix</td><td>$(n,n)$</td><td>—</td></tr>
+            <tr><td>$\operatorname{tr}$</td><td>trace 트레이스</td><td>대각 원소의 합</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\lambda_i$</td><td>lambda i 람다</td><td>Hessian의 eigenvalue</td><td>scalar</td><td>$\mathbb{R}$ (대칭이라 실수)</td></tr>
+            <tr><td>$\kappa$</td><td>kappa 카파</td><td>condition number $\lambda_{\max}/\lambda_{\min}$</td><td>scalar</td><td>$\geq1$</td></tr>
+            <tr><td>$\eta$</td><td>eta 에타</td><td>learning rate</td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>$\mathcal{L}$</td><td>script L</td><td>loss function</td><td>$\mathbb{R}^p\to\mathbb{R}$</td><td>보통 $\geq0$</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — 방향도함수가 내적인 이유</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ g(h) = f(\mathbf{x}+h\mathbf{u}) $$</div>
+          <div class="derive__why">$\mathbf{u}$ 방향의 직선을 따라가는 <strong>일변수 함수</strong>로 바꿨다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ D_{\mathbf{u}}f = g'(0) $$</div>
+          <div class="derive__why">방향도함수의 정의가 곧 $g$ 의 $h=0$ 에서의 미분</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ x_i(h) = x_i + h u_i \;\Longrightarrow\; \frac{dx_i}{dh}=u_i $$</div>
+          <div class="derive__why">각 좌표가 $h$ 에 어떻게 의존하는지</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ g'(h) = \sum_{i=1}^{n}\frac{\partial f}{\partial x_i}\cdot\frac{dx_i}{dh} = \sum_i \frac{\partial f}{\partial x_i}u_i $$</div>
+          <div class="derive__why">다변수 chain rule (식 8) — <strong>모든 경로의 기여를 더한다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ = \nabla f^\top\mathbf{u} $$</div>
+          <div class="derive__why">합 기호를 내적으로 다시 썼다 (<a href="../ch02/2.3-inner-product.html">2.3</a>)</div>
+        </div>
+      </div>
+
+      <h3>유도 2 — gradient가 가장 가파른 방향인 이유</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ D_{\mathbf{u}}f = \nabla f^\top\mathbf{u} = \|\nabla f\|\,\|\mathbf{u}\|\cos\theta $$</div>
+          <div class="derive__why">내적의 기하적 정의</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \|\mathbf{u}\|=1 \;\Longrightarrow\; D_{\mathbf{u}}f = \|\nabla f\|\cos\theta $$</div>
+          <div class="derive__why">단위 방향으로 제한했으므로 <strong>$\theta$ 만 자유</strong>다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ -1 \leq \cos\theta \leq 1 $$</div>
+          <div class="derive__why">Cauchy–Schwarz 부등식과 같은 내용</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \max D_{\mathbf{u}}f = \|\nabla f\| \ \text{ at } \theta=0, \qquad \min = -\|\nabla f\| \ \text{ at } \theta=\pi $$</div>
+          <div class="derive__why"><strong>gradient 방향이 최급상승, 반대가 최급하강</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \theta=\tfrac{\pi}{2} \;\Rightarrow\; D_{\mathbf{u}}f = 0 $$</div>
+          <div class="derive__why">값이 안 변하는 방향 = <strong>등고선의 접선</strong>. 그래서 gradient는 등고선에 수직이다</div>
+        </div>
+      </div>
+
+      <h3>유도 3 — $\nabla\|\mathbf{Ax}-\mathbf{b}\|^2 = 2\mathbf{A}^\top(\mathbf{Ax}-\mathbf{b})$</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ J(\mathbf{x}) = (\mathbf{Ax}-\mathbf{b})^\top(\mathbf{Ax}-\mathbf{b}) $$</div>
+          <div class="derive__why">$\|\mathbf{v}\|^2=\mathbf{v}^\top\mathbf{v}$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ = \mathbf{x}^\top\mathbf{A}^\top\mathbf{A}\mathbf{x} - 2\mathbf{b}^\top\mathbf{A}\mathbf{x} + \mathbf{b}^\top\mathbf{b} $$</div>
+          <div class="derive__why">전개. 중간 두 항 $\mathbf{x}^\top\mathbf{A}^\top\mathbf{b}$ 와 $\mathbf{b}^\top\mathbf{Ax}$ 는 <strong>서로 전치인 scalar라 같다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \nabla(\mathbf{x}^\top\mathbf{Mx}) = 2\mathbf{Mx} \quad (\mathbf{M}=\mathbf{A}^\top\mathbf{A} \ \text{대칭}) $$</div>
+          <div class="derive__why">$\mathbf{A}^\top\mathbf{A}$ 는 언제나 대칭이므로 대칭용 공식을 쓸 수 있다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \nabla(-2\mathbf{b}^\top\mathbf{Ax}) = -2\mathbf{A}^\top\mathbf{b} $$</div>
+          <div class="derive__why">$\mathbf{a}^\top\mathbf{x}$ 꼴에서 $\mathbf{a}=\mathbf{A}^\top\mathbf{b}$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \nabla J = 2\mathbf{A}^\top\mathbf{A}\mathbf{x} - 2\mathbf{A}^\top\mathbf{b} = 2\mathbf{A}^\top(\mathbf{Ax}-\mathbf{b}) $$</div>
+          <div class="derive__why">$\mathbf{A}^\top$ 로 묶었다. shape: $(n,m)(m,)=(n,)$ ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \nabla J = \mathbf{0} \;\Longrightarrow\; \mathbf{A}^\top\mathbf{A}\mathbf{x} = \mathbf{A}^\top\mathbf{b} $$</div>
+          <div class="derive__why"><strong>normal equation</strong>(<a href="../ch02/2.6-linear-systems.html">2.6</a>)이 그대로 나온다</div>
+        </div>
+      </div>
+      <details>
+        <summary>Hessian이 대칭인 이유 (Schwarz 정리의 요점)</summary>
+        <p>
+          $f$ 의 2계 편미분이 모두 연속이면 $\dfrac{\partial^2 f}{\partial x\partial y} = \dfrac{\partial^2 f}{\partial y\partial x}$ 다.
+          직관은 이렇다 — 작은 사각형 $[x, x+h]\times[y,y+k]$ 에서 $f$ 의 "이중 차분"
+          $f(x+h,y+k)-f(x+h,y)-f(x,y+k)+f(x,y)$ 을 계산하면,
+          이 값은 <strong>가로 먼저 세로 나중</strong>으로 읽어도 <strong>세로 먼저 가로 나중</strong>으로 읽어도 같은 식이다.
+        </p>
+        <p>
+          $hk$ 로 나누고 $h,k\to0$ 을 취하면 양쪽이 각각 $\partial^2 f/\partial y\partial x$ 와
+          $\partial^2 f/\partial x\partial y$ 로 수렴한다. 연속성 가정이 두 극한의 교환을 정당화한다.
+          <strong>연속이 아니면 반례가 있다</strong> — $f(x,y)=xy(x^2-y^2)/(x^2+y^2)$ 가 원점에서 교차 편미분이 다르다.
+          다만 딥러닝에서 쓰는 loss는 사실상 항상 조건을 만족해 Hessian은 대칭이라 가정해도 된다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <p>$f(x,y) = x^2 + 3xy + y^2$ 을 점 $(1, 2)$ 에서 조사한다.</p>
+
+      <h3>① 편미분과 gradient</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\partial f}{\partial x} = 2x + 3y $$</div>
+          <div class="derive__why">$y$ 를 상수로 보면 $y^2$ 은 사라지고 $3xy$ 는 $3y$ 만 남는다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\partial f}{\partial y} = 3x + 2y $$</div>
+          <div class="derive__why">$x$ 를 상수로 보면 $x^2$ 이 사라진다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \nabla f(1,2) = \begin{bmatrix} 2(1)+3(2) \\ 3(1)+2(2) \end{bmatrix} = \begin{bmatrix} 8 \\ 7 \end{bmatrix} $$</div>
+          <div class="derive__why">$2+6=8$, $3+4=7$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \|\nabla f\| = \sqrt{64+49} = \sqrt{113} \approx 10.63 $$</div>
+          <div class="derive__why"><strong>가장 가파른 방향의 경사</strong>다</div>
+        </div>
+      </div>
+
+      <h3>② 방향도함수 — 세 방향을 비교</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{u}_1 = (1,0)^\top \;\Rightarrow\; D_{\mathbf{u}_1}f = 8(1)+7(0) = 8 $$</div>
+          <div class="derive__why">$x$ 축 방향 — 편미분 $\partial f/\partial x$ 그 자체</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{u}_2 = \tfrac{1}{\sqrt2}(1,1)^\top \;\Rightarrow\; D_{\mathbf{u}_2}f = \frac{8+7}{\sqrt2} = \frac{15}{1.4142} \approx 10.61 $$</div>
+          <div class="derive__why">대각 방향. <strong>$x$ 축보다 가파르다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{u}_3 = \frac{1}{\sqrt{113}}(8,7)^\top \;\Rightarrow\; D_{\mathbf{u}_3}f = \frac{64+49}{\sqrt{113}} = \frac{113}{10.630} = 10.630 $$</div>
+          <div class="derive__why">gradient 방향 — <strong>정확히 $\|\nabla f\|$</strong> 다 (식 4) ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{u}_4 = \frac{1}{\sqrt{113}}(-7,8)^\top \;\Rightarrow\; D_{\mathbf{u}_4}f = \frac{-56+56}{\sqrt{113}} = 0 $$</div>
+          <div class="derive__why">gradient에 <strong>수직</strong>인 방향 — 등고선을 따라가므로 값이 안 변한다</div>
+        </div>
+      </div>
+      <p>
+        $10.61 < 10.630$ — 대각 방향이 아무리 좋아 보여도 gradient 방향보다 가파를 수 없다.
+        gradient가 최대라는 것을 숫자로 확인한 것이다.
+      </p>
+
+      <h3>③ Hessian과 임계점 판정</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\partial^2 f}{\partial x^2}=2, \quad \frac{\partial^2 f}{\partial x\partial y}=3, \quad \frac{\partial^2 f}{\partial y\partial x}=3, \quad \frac{\partial^2 f}{\partial y^2}=2 $$</div>
+          <div class="derive__why">$\partial f/\partial x = 2x+3y$ 를 다시 $x$ 와 $y$ 로 미분. <strong>교차항이 같다</strong> ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{H} = \begin{bmatrix} 2 & 3 \\ 3 & 2 \end{bmatrix} $$</div>
+          <div class="derive__why">이 $f$ 는 2차식이라 Hessian이 <strong>위치에 무관하게 일정</strong>하다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \operatorname{tr}\mathbf{H}=4, \quad \det\mathbf{H}=4-9=-5 $$</div>
+          <div class="derive__why">2.7의 $\lambda^2-\operatorname{tr}\lambda+\det=0$ 에 필요한 값</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lambda^2-4\lambda-5=0 \;\Rightarrow\; (\lambda-5)(\lambda+1)=0 \;\Rightarrow\; \lambda = 5,\ -1 $$</div>
+          <div class="derive__why">검산: 합 $5-1=4=\operatorname{tr}$ ✓, 곱 $5\times(-1)=-5=\det$ ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \nabla f = \mathbf{0} \;\Rightarrow\; 2x+3y=0,\ 3x+2y=0 \;\Rightarrow\; (x,y)=(0,0) $$</div>
+          <div class="derive__why">두 식을 빼면 $-x+y=0$, 즉 $x=y$. 대입하면 $5x=0$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lambda_1=5>0,\ \lambda_2=-1<0 \;\Longrightarrow\; \text{원점은 } \textbf{saddle point} $$</div>
+          <div class="derive__why">한 방향은 그릇, 다른 방향은 봉우리 — 부호가 섞였다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ D = f_{xx}f_{yy}-f_{xy}^2 = 2\cdot2 - 3^2 = -5 &lt; 0 $$</div>
+          <div class="derive__why"><strong>eigenvalue 를 안 구해도 같은 결론</strong> — 식 (6b)의 판정법 ✓</div>
+        </div>
+      </div>
+      <p>
+        실제로 확인해 보자. $(1,1)$ 방향으로 가면 $f(t,t)=t^2+3t^2+t^2=5t^2$ 로 <strong>올라가고</strong>,
+        $(1,-1)$ 방향으로 가면 $f(t,-t)=t^2-3t^2+t^2=-t^2$ 로 <strong>내려간다</strong>.
+        두 eigenvalue $5$ 와 $-1$ 이 정확히 이 두 방향의 계수다.
+      </p>
+
+      <h3>④ Jacobian — 출력이 둘인 함수</h3>
+      <p>$\mathbf{f}(x,y) = (x^2 y,\ x+y)^\top$ 을 $(2,3)$ 에서 계산한다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ f_1 = x^2y \;\Rightarrow\; \frac{\partial f_1}{\partial x}=2xy, \quad \frac{\partial f_1}{\partial y}=x^2 $$</div>
+          <div class="derive__why">1행이 될 값들</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f_2 = x+y \;\Rightarrow\; \frac{\partial f_2}{\partial x}=1, \quad \frac{\partial f_2}{\partial y}=1 $$</div>
+          <div class="derive__why">2행이 될 값들</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{J}(2,3) = \begin{bmatrix} 2(2)(3) & 2^2 \\ 1 & 1 \end{bmatrix} = \begin{bmatrix} 12 & 4 \\ 1 & 1 \end{bmatrix} $$</div>
+          <div class="derive__why">shape $(2,2)$ — 출력 2개(행) × 입력 2개(열) ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{f}(2.01, 3.00) \approx \mathbf{f}(2,3) + \mathbf{J}\begin{bmatrix}0.01\\0\end{bmatrix} = \begin{bmatrix}12\\5\end{bmatrix} + \begin{bmatrix}0.12\\0.01\end{bmatrix} $$</div>
+          <div class="derive__why">1차 근사. 참값은 $((2.01)^2\cdot3,\ 5.01) = (12.1203,\ 5.01)$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{예측 } 12.12 \ \text{ vs 참값 } 12.1203 \;\Rightarrow\; \text{오차 } 0.0003 $$</div>
+          <div class="derive__why"><strong>$h=0.01$ 인데 오차는 $3\times10^{-4}$</strong> — 국소 근사가 잘 맞는다</div>
+        </div>
+      </div>
+
+      <h3>⑤ 행렬 미분 — 작은 최소제곱</h3>
+      <p>$\mathbf{A}=\begin{bmatrix}1&0\\1&1\\0&1\end{bmatrix}$, $\mathbf{b}=(1,3,2)^\top$, $\mathbf{x}=(1,1)^\top$ 에서 gradient를 구한다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{Ax} = \begin{bmatrix}1\cdot1+0\cdot1\\ 1\cdot1+1\cdot1\\ 0\cdot1+1\cdot1\end{bmatrix} = \begin{bmatrix}1\\2\\1\end{bmatrix} $$</div>
+          <div class="derive__why">먼저 예측값</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{r} = \mathbf{Ax}-\mathbf{b} = \begin{bmatrix}1-1\\2-3\\1-2\end{bmatrix} = \begin{bmatrix}0\\-1\\-1\end{bmatrix} $$</div>
+          <div class="derive__why">잔차. $\|\mathbf{r}\|^2 = 0+1+1 = 2$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{A}^\top\mathbf{r} = \begin{bmatrix}1&1&0\\0&1&1\end{bmatrix}\begin{bmatrix}0\\-1\\-1\end{bmatrix} = \begin{bmatrix}0-1+0\\ 0-1-1\end{bmatrix} = \begin{bmatrix}-1\\-2\end{bmatrix} $$</div>
+          <div class="derive__why">전치가 $(2,3)$ 이라 결과가 $(2,)$ — <strong>$\mathbf{x}$ 와 같은 shape</strong> ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \nabla J = 2\mathbf{A}^\top\mathbf{r} = \begin{bmatrix}-2\\-4\end{bmatrix} $$</div>
+          <div class="derive__why">둘 다 음수 — <strong>$x_1, x_2$ 를 키우면 오차가 준다</strong>는 뜻</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{x}_{\text{new}} = \begin{bmatrix}1\\1\end{bmatrix} - 0.1\begin{bmatrix}-2\\-4\end{bmatrix} = \begin{bmatrix}1.2\\1.4\end{bmatrix} $$</div>
+          <div class="derive__why">$\eta=0.1$ 로 한 걸음. gradient descent의 첫 스텝이다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{A}\mathbf{x}_{\text{new}} = (1.2,\ 2.6,\ 1.4)^\top,\quad \|\mathbf{r}\|^2 = 0.04+0.16+0.36 = 0.56 $$</div>
+          <div class="derive__why"><strong>$2 \to 0.56$ 으로 줄었다</strong> ✓ 방향이 맞았다</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>gradient field</strong> · <strong>방향도함수</strong> ·
+        <strong>Jacobian</strong> · <strong>Hessian</strong> — 을 만져 본 뒤,
+        아래에서 <strong>condition number가 커질 때 최급하강 방향이 얼마나 엉뚱해지는지</strong>를 본다.
+        이것이 3.6에서 다룰 지그재그의 원인이다.
+      </p>
+
+      <figure class="widget" data-widget="condition-zigzag">
+        <figcaption class="widget__bar">condition number — gradient가 최솟값을 안 가리키는 이유</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$\kappa$ 를 키우면 gradient(초록)와 <strong>최솟값을 향하는 직선(빨강)</strong> 사이 각이 벌어집니다. gradient는 '가장 가파른' 방향이지 '가장 가까운' 방향이 아닙니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"gradient는 최솟값을 가리킨다."</p>
+        <p>
+          <strong>실제로는</strong> <em>가장 가파른</em> 방향을 가리킬 뿐, <em>가장 가까운</em> 방향이 아니다.
+          길쭉한 타원 골짜기에서 $-\nabla f$ 는 골짜기 바닥을 향해 거의 수직으로 꽂히고,
+          정작 최솟값은 골짜기를 따라 멀리 있다. 이 각도 차이가 condition number $\kappa$ 로 커지며
+          지그재그를 만든다(위 위젯). Newton 방법이 $\mathbf{H}^{-1}\nabla f$ 로 방향을 고치는 이유다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"편미분이 모두 존재하면 미분 가능하다."</p>
+        <p>
+          <strong>실제로는</strong> 다변수에서는 성립하지 않는다.
+          $f(x,y)=\dfrac{xy}{x^2+y^2}$ ($f(0,0)=0$)는 원점에서 두 편미분이 모두 0 으로 존재하지만,
+          $y=x$ 를 따라 다가가면 값이 $1/2$ 로 가서 <strong>연속조차 아니다</strong>.
+          진짜 미분 가능(전미분 가능)은 "모든 방향에서 하나의 선형근사가 통한다"는 더 강한 조건이다.
+          다행히 편미분이 <em>연속</em>이면 미분 가능이 보장되고, 실무의 loss는 대개 이 조건을 만족한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"Jacobian과 gradient는 전치만 다르니 아무렇게나 써도 된다."</p>
+        <p>
+          <strong>실제로는</strong> shape이 안 맞으면 코드가 조용히 broadcasting 되어 <em>틀린 값</em>을 낸다.
+          규약을 하나로 고정해야 한다 — 이 사이트는 <strong>gradient는 입력과 같은 shape,
+          Jacobian은 $(출력, 입력)$</strong> 이다. $m=1$ 일 때 $\nabla f = \mathbf{J}^\top$ 이 되고,
+          chain rule 식 (9)의 곱 순서는 <strong>바깥 함수가 왼쪽</strong>이다.
+          논문을 읽을 때는 먼저 그 논문의 layout convention을 확인한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"Hessian을 계산하면 최적화가 빨라진다."</p>
+        <p>
+          <strong>실제로는</strong> parameter가 $p$ 개면 Hessian은 $p^2$ 개 원소이고 역행렬은 $O(p^3)$ 이다.
+          $p=10^9$ 인 LLM 에서는 저장조차 불가능하다.
+          그래서 실무는 Hessian을 <strong>직접 만들지 않고</strong> 근사한다 —
+          대각 성분만 쓰거나(Adam 계열), Hessian-vector product 로 우회하거나, L-BFGS 로 저랭크 근사한다
+          (<a href="3.7-optimization-algorithms.html">3.7</a>).
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"$\partial^2 f/\partial x\partial y$ 와 $\partial^2 f/\partial y\partial x$ 는 항상 같다."</p>
+        <p>
+          <strong>실제로는</strong> 2계 편미분이 <em>연속</em>일 때만 같다(Schwarz 정리).
+          $f(x,y)=\dfrac{xy(x^2-y^2)}{x^2+y^2}$ 는 원점에서 두 값이 $-1$ 과 $+1$ 로 다르다.
+          실무에서 문제가 되는 경우는 드물지만, "Hessian은 대칭이니 절반만 계산하면 된다"는
+          최적화를 쓸 때는 가정이 성립하는지 확인해 두는 편이 좋다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–③·⑤ 를 수치 미분으로 검증한다.</p>
+      <details>
+        <summary>NumPy — gradient · 방향도함수 · Hessian · 최소제곱 (20줄)</summary>
+<pre><code>import numpy as np
+
+f = lambda v: v[0]**2 + 3*v[0]*v[1] + v[1]**2
+def num_grad(f, v, h=1e-5):
+    g = np.zeros_like(v)
+    for i in range(len(v)):
+        e = np.zeros_like(v); e[i] = h
+        g[i] = (f(v + e) - f(v - e)) / (2 * h)      # 중심차분
+    return g
+
+p = np.array([1.0, 2.0])
+g = num_grad(f, p);  print(g, np.linalg.norm(g))    # [8. 7.] 10.630...
+
+for u in [np.array([1,0.]), np.array([1,1.])/np.sqrt(2), g/np.linalg.norm(g)]:
+    print(u.round(3), g @ u)        # 8.0  10.606  10.630   <- gradient 방향이 최대
+
+H = np.array([[2., 3.], [3., 2.]])
+print(np.linalg.eigvalsh(H))        # [-1.  5.]   부호가 섞임 -> saddle point
+
+A = np.array([[1., 0.], [1., 1.], [0., 1.]])
+b = np.array([1., 3., 2.])
+x = np.array([1., 1.])
+r = A @ x - b
+print(r, r @ r, 2 * A.T @ r)        # [0. -1. -1.] 2.0 [-2. -4.]
+x2 = x - 0.1 * (2 * A.T @ r)
+print(x2, ((A @ x2 - b) ** 2).sum())  # [1.2 1.4] 0.56   <- 줄었다
+</code></pre>
+        <p>
+          <small>
+            중심차분 $\frac{f(x+h)-f(x-h)}{2h}$ 을 쓴 이유는 오차가 $O(h^2)$ 라 전방차분 $O(h)$ 보다 정확하기 때문이다.
+            gradient checking(자동미분 구현의 검증)에서 표준으로 쓰는 방법이다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $f(x,y)=x^2y$ 의 $\nabla f(2,3)$ 은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$(12,\ 4)^\top$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$(4,\ 12)^\top$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$(6,\ 4)^\top$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\partial f/\partial x = 2xy = 2(2)(3)=12$, $\partial f/\partial y = x^2 = 4$.
+            <strong>나</strong>는 순서를 바꾼 오답이다 — gradient의 성분 순서는
+            변수의 순서와 같아야 뺄셈 $\boldsymbol{\theta}-\eta\nabla$ 가 성립한다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\nabla f = (3,4)^\top$ 일 때 $\mathbf{u}=(0.6,0.8)^\top$ 방향의 방향도함수는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$5$ — 최댓값과 같다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$7$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$0$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $3(0.6)+4(0.8)=1.8+3.2=5$. 그리고 $\|\nabla f\|=\sqrt{9+16}=5$ 이므로 <strong>최댓값에 도달했다</strong> —
+            $\mathbf{u}$ 가 정확히 gradient 방향의 단위벡터($(3,4)/5$)였기 때문이다.
+            <strong>나</strong>는 성분을 그냥 더한 값이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\mathbf{f}:\mathbb{R}^5\to\mathbb{R}^3$ 의 Jacobian shape 은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$(3,\ 5)$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$(5,\ 3)$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$(5,\ 5)$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            <strong>출력이 행, 입력이 열</strong>이다(식 5). $i$ 행은 $f_i$ 의 편미분들이므로 열 개수가 입력 차원과 같다.
+            chain rule 로 확인해도 된다 — $\mathbb{R}^5\to\mathbb{R}^3$ 뒤에 $\mathbb{R}^3\to\mathbb{R}$ 을 붙이면
+            $(1,3)(3,5)=(1,5)$ 로 입력 차원의 gradient가 나온다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            Hessian의 eigenvalue가 $\{4, -2\}$ 인 임계점은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>saddle point</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>local minimum</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>local maximum</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            부호가 섞였으므로 한 방향은 올라가고($\lambda=4$) 다른 방향은 내려간다($\lambda=-2$) — 말안장 모양이다.
+            local minimum 이려면 <strong>모든</strong> eigenvalue가 양수여야 한다.
+            차원이 높아질수록 모든 eigenvalue의 부호가 같을 확률이 급격히 낮아지므로,
+            고차원에서는 임계점 대부분이 saddle point 다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            gradient가 등고선에 수직인 이유는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>등고선을 따라가면 값이 안 변하므로 그 방향의 방향도함수가 0, 즉 내적이 0</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>등고선이 원이기 때문</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>gradient의 크기가 1 이기 때문</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            등고선 접선 방향 $\mathbf{u}$ 로 가면 $f$ 가 변하지 않으므로 $D_{\mathbf{u}}f=\nabla f^\top\mathbf{u}=0$ 이고,
+            내적이 0 이면 직교다(<a href="../ch02/2.3-inner-product.html">2.3</a>).
+            등고선의 모양(원·타원·쌍곡선)과 무관하게 성립하며, gradient의 크기와도 무관하다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            원점에서 $\partial f/\partial x$ 와 $\partial f/\partial y$ 가 둘 다 존재한다. 반드시 참인 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>두 좌표축 방향의 변화율을 안다는 것뿐 — 연속조차 보장되지 않는다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$f$ 가 원점에서 미분 가능하다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$f$ 가 원점에서 연속이다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $f(x,y)=xy/(x^2+y^2)$ ($f(0,0)=0$)가 반례다 — 두 축을 따라가면 $f\equiv0$ 이라 편미분이 0 으로 존재하지만,
+            $y=x$ 를 따라가면 $f=1/2$ 로 극한이 다르다(오해 2).
+            편미분은 <strong>딱 두 방향만</strong> 본 것이라 나머지 방향에 대해 아무 말도 하지 못한다.
+            편미분이 <em>연속</em>이면 그때는 미분 가능이 보장된다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="3.4-chain-rule-computation-graph.html">3.4 연쇄법칙과 계산 그래프</a></strong> — 식 (9)의 Jacobian 곱을 어떤 순서로 계산할지가 backpropagation이다.</li>
+        <li><strong><a href="3.6-gradient-descent.html">3.6 경사하강법</a></strong> — $-\nabla\mathcal{L}$ 로 움직이고, Hessian의 condition number가 속도를 정한다.</li>
+        <li><strong><a href="3.9-constraints-regularization.html">3.9 제약과 정규화</a></strong> — 라그랑주 조건 $\nabla f = \lambda\nabla g$ 는 두 gradient가 나란하다는 뜻이다.</li>
+        <li><strong><a href="../ch02/2.7-eigenvalues.html">2.7 고유값과 고유벡터</a></strong> — Hessian이 대칭이라 spectral theorem이 그대로 쓰인다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Deisenroth, M. P., Faisal, A. A. &amp; Ong, C. S. (2020). <em>Mathematics for Machine Learning</em>. Cambridge University Press.</span>
+          <span class="ref__where">5.2절(Partial Differentiation and Gradients) — 편미분과 gradient의 정의, 다변수 chain rule(식 8). 5.3절(Gradients of Vector-Valued Functions) — Jacobian의 shape 규약과 식 (9)의 곱 순서. 5.5절 — 행렬 미분 공식표와 layout convention 서술</span>
+          <a class="ref__link" href="https://mml-book.github.io/">mml-book.github.io</a>
+        </li>
+        <li class="ref" id="ref-petersen2012-matrix-cookbook" data-ref="petersen2012-matrix-cookbook">
+          <span class="ref__type" data-type="doc">문서</span>
+          <span class="ref__cite">Petersen, K. B. &amp; Pedersen, M. S. (2012). <em>The Matrix Cookbook</em> (version 20121115). Technical University of Denmark.</span>
+          <span class="ref__where">2.4절(Derivatives of Vectors) 식 (69)·(81) — $\nabla(\mathbf{a}^\top\mathbf{x})=\mathbf{a}$ 와 $\nabla(\mathbf{x}^\top\mathbf{Ax})=(\mathbf{A}+\mathbf{A}^\top)\mathbf{x}$. 행렬 미분 공식표 전체의 대조 근거이자 유도 3 의 검산에 썼다</span>
+          <a class="ref__link" href="https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf">matrixcookbook.pdf</a>
+        </li>
+        <li class="ref" id="ref-goodfellow2016-dl" data-ref="goodfellow2016-dl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>. MIT Press.</span>
+          <span class="ref__where">4.3.1절(Beyond the Gradient: Jacobian and Hessian Matrices) — Hessian의 eigenvalue로 임계점을 분류하는 표, condition number가 gradient descent를 느리게 만든다는 서술, 큰 model 에서 Hessian을 만들 수 없다는 계산(오해 4)</span>
+          <a class="ref__link" href="https://www.deeplearningbook.org/">deeplearningbook.org</a>
+        </li>
+        <li class="ref" id="ref-3blue1brown-calculus" data-ref="3blue1brown-calculus">
+          <span class="ref__type" data-type="video">영상</span>
+          <span class="ref__cite">3Blue1Brown. <em>Essence of Calculus</em>, Ch.11 <em>Taylor series</em>.</span>
+          <span class="ref__where">04:00–13:00 — 2차 항 $\tfrac12 f''h^2$ 이 곡률을 맞추는 항이라는 설명. 식 (7)의 다변수 Taylor 근사와 Hessian 위젯의 해석이 여기에 기댄다</span>
+          <a class="ref__link" href="https://www.3blue1brown.com/topics/calculus">3blue1brown.com</a>
+        </li>
+        <li class="ref" id="ref-stanford-cs231n" data-ref="stanford-cs231n">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Li, F.-F., Johnson, J. &amp; Yeung, S. <em>CS231n: Deep Learning for Computer Vision</em>. Stanford University.</span>
+          <span class="ref__where">Backpropagation 강의노트(Gradients for vectorized operations) — "gradient는 언제나 변수와 같은 shape" 규칙과 원소별 activation의 Jacobian을 대각행렬로 만들지 않고 $\odot$ 로 처리하는 실무 관행. gradient checking 의 중심차분 권장도 여기</span>
+          <a class="ref__link" href="https://cs231n.github.io/optimization-2/">cs231n.github.io</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+/* 이 절에서 쓰는 2변수 함수들 — f, 편미분, Hessian */
+var F2 = {
+  saddle: {
+    f:  function (x, y) { return x * x + 3 * x * y + y * y; },
+    gx: function (x, y) { return 2 * x + 3 * y; },
+    gy: function (x, y) { return 3 * x + 2 * y; },
+    H:  function () { return [[2, 3], [3, 2]]; },
+    name: 'x² + 3xy + y²'
+  },
+  bowl: {
+    f:  function (x, y) { return x * x + y * y; },
+    gx: function (x) { return 2 * x; },
+    gy: function (x, y) { return 2 * y; },
+    H:  function () { return [[2, 0], [0, 2]]; },
+    name: 'x² + y²'
+  },
+  valley: {
+    f:  function (x, y) { return 0.2 * x * x + 3 * y * y; },
+    gx: function (x) { return 0.4 * x; },
+    gy: function (x, y) { return 6 * y; },
+    H:  function () { return [[0.4, 0], [0, 6]]; },
+    name: '0.2x² + 3y²'
+  },
+  wavy: {
+    f:  function (x, y) { return Math.sin(x) + 0.5 * y * y; },
+    gx: function (x) { return Math.cos(x); },
+    gy: function (x, y) { return y; },
+    H:  function (x) { return [[-Math.sin(x), 0], [0, 1]]; },
+    name: 'sin x + 0.5y²'
+  }
+};
+
+/* ============================================================
+   위젯 1 — 등고선 + gradient 화살표
+   ============================================================ */
+WIDGETS.register('grad-field', function (root, ctx) {
+  var cur = 'bowl', px = 1.2, py = 1.0;
+
+  var p = VIZ.plot({ w: 460, h: 330, xmin: -3, xmax: 3, ymin: -2.2, ymax: 2.2 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'pt', label: '위치 (x, y)' },
+    { key: 'g', label: '∇f' },
+    { key: 'norm', label: '‖∇f‖', digits: 4 },
+    { key: 'fv', label: 'f(x, y)', digits: 3 }
+  ]);
+
+  /* 등고선: 여러 레벨에서 f = c 인 점들을 격자 스캔으로 근사 */
+  function contours(F) {
+    var levels = [0.5, 1.5, 3, 5, 8, 12], N = 120;
+    for (var li = 0; li < levels.length; li++) {
+      var c = levels[li], pts = [];
+      for (var i = 0; i <= N; i++) {
+        var th = i / N * Math.PI * 2;
+        /* 반지름 방향 이분탐색으로 f = c 인 점 찾기 */
+        var lo = 0.01, hi = 4.2;
+        var f0 = F.f(lo * Math.cos(th), lo * Math.sin(th));
+        var f1 = F.f(hi * Math.cos(th), hi * Math.sin(th));
+        if ((f0 - c) * (f1 - c) > 0) { if (pts.length > 1) p.line(pts, { dash: '2 3' }); pts = []; continue; }
+        for (var k = 0; k < 26; k++) {
+          var mid = (lo + hi) / 2;
+          var fm = F.f(mid * Math.cos(th), mid * Math.sin(th));
+          if ((f0 - c) * (fm - c) <= 0) { hi = mid; } else { lo = mid; f0 = fm; }
+        }
+        var r = (lo + hi) / 2;
+        pts.push([r * Math.cos(th), r * Math.sin(th)]);
+      }
+      if (pts.length > 1) p.line(pts, { dash: '2 3' });
+    }
+  }
+
+  function draw() {
+    var F = F2[cur];
+    p.clear().axes('x', 'y').ticks(1, 1);
+    contours(F);
+
+    /* 격자 위 gradient 화살표 */
+    for (var gx = -2.5; gx <= 2.5; gx += 1.25) {
+      for (var gy = -1.8; gy <= 1.8; gy += 1.2) {
+        var vx = F.gx(gx, gy), vy = F.gy(gx, gy);
+        var n = Math.sqrt(vx * vx + vy * vy);
+        if (n < 1e-6) continue;
+        var s = Math.min(0.55, 0.12 + 0.06 * n) / n;
+        p.vector(gx + vx * s, gy + vy * s, { ox: gx, oy: gy, width: 1.5, head: 6, stroke: 'var(--ink-3)' });
+      }
+    }
+
+    var ux = F.gx(px, py), uy = F.gy(px, py);
+    var un = Math.sqrt(ux * ux + uy * uy) || 1;
+    p.vector(px + ux / un * 1.1, py + uy / un * 1.1, { ox: px, oy: py, width: 3, label: '∇f' });
+    p.dot(px, py, 6);
+
+    out.setRaw('pt', '(' + px.toFixed(2) + ', ' + py.toFixed(2) + ')');
+    out.setRaw('g', '(' + ux.toFixed(3) + ', ' + uy.toFixed(3) + ')');
+    out.set('norm', Math.sqrt(ux * ux + uy * uy));
+    out.set('fv', F.f(px, py));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '함수',
+    options: [
+      { value: 'bowl', label: '그릇' },
+      { value: 'valley', label: '긴 골짜기' },
+      { value: 'saddle', label: '안장' },
+      { value: 'wavy', label: '물결' }
+    ],
+    value: 'bowl', onChange: function (v) { cur = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '점의 x', min: -2.8, max: 2.8, step: 0.05, value: 1.2, digits: 2,
+    onInput: function (v) { px = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '점의 y', min: -2, max: 2, step: 0.05, value: 1.0, digits: 2,
+    onInput: function (v) { py = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — 방향도함수
+   ============================================================ */
+WIDGETS.register('dir-deriv', function (root, ctx) {
+  var ang = 30, cur = 'saddle';
+
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;width:100%';
+  ctx.stage.appendChild(wrap);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'ang', label: '방향 각도', digits: 0 },
+    { key: 'gap', label: '∇f 와의 각도 차', digits: 1 },
+    { key: 'dd', label: '방향도함수 Dᵤf', digits: 4 },
+    { key: 'max', label: '최댓값 ‖∇f‖', digits: 4 }
+  ]);
+
+  var PX = 1, PY = 2;
+
+  function draw() {
+    var F = F2[cur];
+    wrap.innerHTML = '';
+
+    var gx = F.gx(PX, PY), gy = F.gy(PX, PY);
+    var gn = Math.sqrt(gx * gx + gy * gy);
+    var t = ang * Math.PI / 180;
+    var ux = Math.cos(t), uy = Math.sin(t);
+    var dd = gx * ux + gy * uy;
+
+    /* 왼쪽: 벡터 그림 */
+    var p1 = VIZ.plot({ w: 250, h: 240, xmin: -1.3, xmax: 1.3, ymin: -1.3, ymax: 1.3,
+      pad: { t: 18, r: 12, b: 24, l: 32 } });
+    p1.grid(0.5, 0.5).axes('', '').ticks(1, 1);
+    p1.vector(gx / gn, gy / gn, { width: 3, label: '∇f' });
+    p1.vector(ux, uy, { width: 2.5, stroke: 'var(--seal)', label: 'u', lx: 8, ly: 16 });
+    wrap.appendChild(p1.svg);
+
+    /* 오른쪽: 각도 vs 방향도함수 곡선 */
+    var p2 = VIZ.plot({ w: 250, h: 240, xmin: 0, xmax: 360, ymin: -gn * 1.15, ymax: gn * 1.15,
+      pad: { t: 18, r: 12, b: 26, l: 54 } });
+    p2.grid(90, gn / 2).axes('각도', 'Dᵤf').ticks(90, gn / 2);
+    p2.curve(function (a) {
+      var r = a * Math.PI / 180;
+      return gx * Math.cos(r) + gy * Math.sin(r);
+    }, { samples: 360 });
+    p2.dot(ang, dd, 5);
+    wrap.appendChild(p2.svg);
+
+    var cosv = Math.max(-1, Math.min(1, (gx * ux + gy * uy) / gn));
+    out.set('ang', ang);
+    out.set('gap', Math.acos(cosv) * 180 / Math.PI);
+    out.set('dd', dd);
+    out.set('max', gn);
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '함수',
+    options: [{ value: 'saddle', label: 'x²+3xy+y²' }, { value: 'bowl', label: 'x²+y²' }, { value: 'valley', label: '긴 골짜기' }],
+    value: 'saddle', onChange: function (v) { cur = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '방향 u 의 각도', min: 0, max: 359, step: 1, value: 30, unit: '°', digits: 0,
+    onInput: function (v) { ang = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — Jacobian: 작은 사각형의 변형
+   ============================================================ */
+WIDGETS.register('jacobian-box', function (root, ctx) {
+  var px = 1.0, py = 0.8, size = 0.6;
+
+  /* f(x,y) = (x² − y², 2xy)  — 복소 제곱, 곡선 변환의 표본 */
+  function fmap(x, y) { return [x * x - y * y, 2 * x * y]; }
+  function jac(x, y) { return [[2 * x, -2 * y], [2 * y, 2 * x]]; }
+
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;width:100%';
+  ctx.stage.appendChild(wrap);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'J', label: 'Jacobian J(x,y)' },
+    { key: 'det', label: 'det J (넓이 배율)', digits: 4 },
+    { key: 'area', label: '실제 넓이 비', digits: 4 },
+    { key: 'note', label: '해석' }
+  ]);
+
+  function draw() {
+    wrap.innerHTML = '';
+    var J = jac(px, py);
+
+    var p1 = VIZ.plot({ w: 240, h: 220, xmin: -2, xmax: 2, ymin: -2, ymax: 2,
+      pad: { t: 18, r: 10, b: 24, l: 32 } });
+    p1.grid(0.5, 0.5).axes('x', 'y').ticks(1, 1);
+    var box = [[px, py], [px + size, py], [px + size, py + size], [px, py + size], [px, py]];
+    p1.line(box, { width: 2 });
+    p1.dot(px, py, 4);
+    wrap.appendChild(p1.svg);
+
+    var p2 = VIZ.plot({ w: 240, h: 220, xmin: -4, xmax: 4, ymin: -4, ymax: 4,
+      pad: { t: 18, r: 10, b: 24, l: 32 } });
+    p2.grid(1, 1).axes('f₁', 'f₂').ticks(2, 2);
+    /* 실제 상 (곡선) */
+    var img = [];
+    for (var i = 0; i < box.length - 1; i++) {
+      for (var t = 0; t <= 12; t++) {
+        var a = box[i], b = box[i + 1];
+        var x = a[0] + (b[0] - a[0]) * t / 12, y = a[1] + (b[1] - a[1]) * t / 12;
+        img.push(fmap(x, y));
+      }
+    }
+    img.push(fmap(box[0][0], box[0][1]));
+    p2.line(img, { width: 2 });
+    /* Jacobian 선형근사 상 (평행사변형) */
+    var o = fmap(px, py), lin = [];
+    box.forEach(function (q) {
+      var dx = q[0] - px, dy = q[1] - py;
+      lin.push([o[0] + J[0][0] * dx + J[0][1] * dy, o[1] + J[1][0] * dx + J[1][1] * dy]);
+    });
+    p2.line(lin, { alt: true, dash: '4 4', width: 2 });
+    p2.dot(o[0], o[1], 4);
+    wrap.appendChild(p2.svg);
+
+    var detJ = J[0][0] * J[1][1] - J[0][1] * J[1][0];
+    /* 실제 넓이는 신발끈 공식으로 */
+    var A = 0;
+    for (var k = 0; k < img.length - 1; k++) A += img[k][0] * img[k + 1][1] - img[k + 1][0] * img[k][1];
+    A = Math.abs(A) / 2;
+
+    out.setRaw('J', '[' + J[0][0].toFixed(2) + ' ' + J[0][1].toFixed(2) + ' ; ' +
+                        J[1][0].toFixed(2) + ' ' + J[1][1].toFixed(2) + ']');
+    out.set('det', detJ);
+    out.set('area', A / (size * size));
+    out.setRaw('note', size < 0.25 ? '작을수록 파선(근사)과 실선(참)이 겹친다' : '크게 잡으면 휘어짐이 보인다');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '사각형 크기', min: 0.05, max: 1.0, step: 0.05, value: 0.6, digits: 2,
+    onInput: function (v) { size = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '기준점 x', min: -1.8, max: 1.8, step: 0.1, value: 1.0, digits: 1,
+    onInput: function (v) { px = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '기준점 y', min: -1.8, max: 1.8, step: 0.1, value: 0.8, digits: 1,
+    onInput: function (v) { py = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — Hessian: eigenvalue 두 개로 등고선 모양이 갈린다
+   ============================================================ */
+WIDGETS.register('hessian-bowl', function (root, ctx) {
+  var l1 = 2, l2 = 1;
+
+  var p = VIZ.plot({ w: 460, h: 320, xmin: -3, xmax: 3, ymin: -2.2, ymax: 2.2 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'H', label: 'Hessian' },
+    { key: 'eig', label: 'eigenvalue' },
+    { key: 'kind', label: '임계점의 종류' },
+    { key: 'kap', label: 'condition number κ' }
+  ]);
+
+  function draw() {
+    /* f = ½(λ1 x² + λ2 y²) — 축이 좌표축과 나란한 표준형 */
+    var f = function (x, y) { return 0.5 * (l1 * x * x + l2 * y * y); };
+    p.clear().axes('x', 'y').ticks(1, 1);
+
+    var levels = [0.25, 1, 2.25, 4, 6.25];
+    for (var li = 0; li < levels.length; li++) {
+      var c = levels[li], pts = [];
+      for (var i = 0; i <= 240; i++) {
+        var th = i / 240 * Math.PI * 2;
+        var cx = Math.cos(th), cy = Math.sin(th);
+        var q = 0.5 * (l1 * cx * cx + l2 * cy * cy);
+        if (q <= 1e-9) { if (pts.length > 1) { p.line(pts, { dash: '2 3' }); pts = []; } continue; }
+        var r = Math.sqrt(c / q);
+        if (r > 5) { if (pts.length > 1) { p.line(pts, { dash: '2 3' }); pts = []; } continue; }
+        pts.push([r * cx, r * cy]);
+      }
+      if (pts.length > 1) p.line(pts, { dash: '2 3' });
+    }
+
+    /* gradient 화살표 몇 개 */
+    for (var gx = -2; gx <= 2; gx += 1) {
+      for (var gy = -1.5; gy <= 1.5; gy += 1.5) {
+        if (Math.abs(gx) < 1e-9 && Math.abs(gy) < 1e-9) continue;
+        var vx = l1 * gx, vy = l2 * gy;
+        var n = Math.sqrt(vx * vx + vy * vy) || 1;
+        p.vector(gx + vx / n * 0.45, gy + vy / n * 0.45, { ox: gx, oy: gy, width: 1.5, head: 6, stroke: 'var(--ink-3)' });
+      }
+    }
+    p.dot(0, 0, 6);
+    p.callout(0, 0, l1 * l2 < 0 ? '안장점' : (l1 > 0 ? '최솟값' : '최댓값'),
+      { dx: 24, dy: -22, tone: 'var(--seal)' });
+
+    var kap = (Math.abs(l1) > 1e-9 && Math.abs(l2) > 1e-9)
+      ? Math.max(Math.abs(l1), Math.abs(l2)) / Math.min(Math.abs(l1), Math.abs(l2)) : Infinity;
+
+    out.setRaw('H', '[' + l1.toFixed(1) + ' 0 ; 0 ' + l2.toFixed(1) + ']');
+    out.setRaw('eig', l1.toFixed(1) + ',  ' + l2.toFixed(1));
+    out.setRaw('kind', (l1 > 0 && l2 > 0) ? '극소 (둘 다 양수)'
+      : (l1 < 0 && l2 < 0) ? '극대 (둘 다 음수)'
+      : (l1 * l2 < 0) ? 'saddle point (부호가 섞임)' : '판정 불가 (0 이 있다)');
+    out.setRaw('kap', isFinite(kap) ? kap.toFixed(2) : '∞');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'eigenvalue λ₁', min: -3, max: 6, step: 0.5, value: 2, digits: 1,
+    onInput: function (v) { l1 = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'eigenvalue λ₂', min: -3, max: 6, step: 0.5, value: 1, digits: 1,
+    onInput: function (v) { l2 = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — condition number 와 gradient 방향의 어긋남
+   ============================================================ */
+WIDGETS.register('condition-zigzag', function (root, ctx) {
+  var kap = 4;
+
+  var p = VIZ.plot({ w: 460, h: 320, xmin: -3.2, xmax: 3.2, ymin: -2.3, ymax: 2.3 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'k', label: 'condition number κ', digits: 1 },
+    { key: 'ang', label: '−∇f 와 최단 경로의 각도차', digits: 1 },
+    { key: 'steps', label: '오차 1/100 까지 걸리는 스텝' },
+    { key: 'note', label: '해석' }
+  ]);
+
+  function draw() {
+    /* f = ½(x²/1 · κ + y²)  형태: λ1 = κ, λ2 = 1 */
+    var l1 = kap, l2 = 1;
+    p.clear().axes('x', 'y').ticks(1, 1);
+
+    var levels = [0.5, 1.5, 3, 5];
+    for (var li = 0; li < levels.length; li++) {
+      var c = levels[li], pts = [];
+      for (var i = 0; i <= 240; i++) {
+        var th = i / 240 * Math.PI * 2;
+        var cx = Math.cos(th), cy = Math.sin(th);
+        var q = 0.5 * (l1 * cx * cx + l2 * cy * cy);
+        var r = Math.sqrt(c / q);
+        if (r > 6) { if (pts.length > 1) { p.line(pts, { dash: '2 3' }); pts = []; } continue; }
+        pts.push([r * cx, r * cy]);
+      }
+      if (pts.length > 1) p.line(pts, { dash: '2 3' });
+    }
+
+    /* 시작점에서 -grad 방향과 원점을 향하는 방향 */
+    var sx = 2.2, sy = 1.6;
+    var gx = -l1 * sx, gy = -l2 * sy;
+    var gn = Math.sqrt(gx * gx + gy * gy);
+    p.vector(sx + gx / gn * 1.5, sy + gy / gn * 1.5, { ox: sx, oy: sy, width: 3, label: '−∇f' });
+
+    var dn = Math.sqrt(sx * sx + sy * sy);
+    p.vector(sx - sx / dn * 1.5, sy - sy / dn * 1.5,
+      { ox: sx, oy: sy, width: 2.5, stroke: 'var(--seal)', label: '최단 경로', lx: -70, ly: 18 });
+    p.dot(sx, sy, 5);
+    p.dot(0, 0, 6);
+
+    /* 실제 gradient descent 궤적 */
+    var eta = 1.8 / (l1 + l2), x = sx, y = sy, path = [[x, y]];
+    for (var s = 0; s < 40; s++) {
+      x = x - eta * l1 * x;
+      y = y - eta * l2 * y;
+      path.push([x, y]);
+    }
+    p.line(path, { alt: true, width: 1.8 });
+
+    var cosv = (gx * (-sx) + gy * (-sy)) / (gn * dn);
+    cosv = Math.max(-1, Math.min(1, cosv));
+    var rate = (kap - 1) / (kap + 1);
+    out.set('k', kap);
+    out.set('ang', Math.acos(cosv) * 180 / Math.PI);
+    out.setRaw('steps', rate < 1e-9 ? '1' : String(Math.ceil(Math.log(0.01) / Math.log(rate))));
+    out.setRaw('note', kap < 2 ? '거의 원 — gradient가 곧장 최솟값을 가리킨다'
+      : (kap < 8 ? '타원 — 조금 어긋난다' : '길쭉한 골짜기 — 지그재그로 헤맨다'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'condition number κ (λ₁/λ₂)', min: 1, max: 30, step: 0.5, value: 4, digits: 1,
+    onInput: function (v) { kap = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

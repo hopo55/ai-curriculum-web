@@ -2,14 +2,14 @@
 
 > 이 파일은 자동 생성됩니다. 손으로 고치지 말고 `node tools/build-progress.mjs` 를 실행하세요.
 
-**전체: 16 / 347 절 (5%)**
+**전체: 26 / 347 절 (7%)**
 · 28장 · 2884개 개념 항목
 
 | 장 | 제목 | 절 | 작성됨 | 진행 |
 |---:|---|---:|---:|---|
 | 1 | AI 개론 | 6 | 6 | `██████████` 100% |
 | 2 | 선형대수 | 10 | 10 | `██████████` 100% |
-| 3 | 미적분과 최적화 | 10 | 0 | `░░░░░░░░░░` 0% |
+| 3 | 미적분과 최적화 | 10 | 10 | `██████████` 100% |
 | 4 | 확률과 통계 | 10 | 0 | `░░░░░░░░░░` 0% |
 | 5 | 전통적 머신러닝 | 14 | 0 | `░░░░░░░░░░` 0% |
 | 6 | 딥러닝 기초 | 11 | 0 | `░░░░░░░░░░` 0% |
@@ -56,6 +56,16 @@
 | [2.8](chapters/ch02/2.8-svd.html) | 특이값 분해 | 2026-07-28 | 모든 matrix는 rotation → 축별 확대 → rotation으로 쪼개진다. 큰 singular value 몇 개만 남기면 최적의 근사가 된다. |
 | [2.9](chapters/ch02/2.9-dimensionality-reduction.html) | 차원 축소 | 2026-07-28 | dimensionality reduction은 어느 방향을 버릴지 고르는 일이고, PCA 는 variance가 가장 작은 방향부터 버린다. |
 | [2.10](chapters/ch02/2.10-linear-algebra-in-ai.html) | AI와 선형대수 | 2026-07-28 | deep learning 연산의 대부분은 matrix multiplication 하나이고, 구조의 차이는 무엇을 무엇에 곱하는가의 차이다. |
+| [3.1](chapters/ch03/3.1-functions-basics.html) | 함수의 기본 | 2026-07-29 | neural network는 층을 합성해 만든 함수 하나이고, domain·합성·연속성·국소 근사가 3장 전체의 문법이다. |
+| [3.2](chapters/ch03/3.2-derivatives.html) | 미분 | 2026-07-29 | 할선을 좁히면 접선이 되고, 그 기울기가 derivative다. 부호는 방향을, 크기는 급함을, f″는 휘는 정도를 알려 준다. |
+| [3.3](chapters/ch03/3.3-multivariable-derivatives.html) | 다변수 미분 | 2026-07-29 | gradient는 가장 가파른 오르막을 가리키고 등고선에 수직이다. Jacobian은 (출력, 입력), Hessian의 eigenvalue가 곡률이다. |
+| [3.4](chapters/ch03/3.4-chain-rule-computation-graph.html) | 연쇄법칙과 계산 그래프 | 2026-07-29 | chain rule은 Jacobian의 곱이고, 곱하는 순서가 forward mode와 reverse mode를 가른다. loss가 하나라 뒤에서부터가 싸다. |
+| [3.5](chapters/ch03/3.5-optimization-basics.html) | 최적화 기초 | 2026-07-29 | 볼록하면 지역 최적점이 곧 전역 최적점이고, 딥러닝의 진짜 방해물은 나쁜 지역 최소가 아니라 안장점이다. |
+| [3.6](chapters/ch03/3.6-gradient-descent.html) | 경사하강법 | 2026-07-29 | θ ← θ − η∇L 한 줄이 전부다. 세 변종은 gradient 추정 방식의 차이이고, η의 상한은 2/λmax가 정한다. |
+| [3.7](chapters/ch03/3.7-optimization-algorithms.html) | 최적화 알고리즘 | 2026-07-29 | 관성(momentum)과 축별 스케일(adaptive) 두 아이디어뿐이다. Adam은 둘을 합친 것, AdamW는 weight decay를 떼어낸 것. |
+| [3.8](chapters/ch03/3.8-learning-rate-schedules.html) | 학습률 전략 | 2026-07-29 | 학습률은 숫자가 아니라 시간의 함수다. 초반엔 크게, 후반엔 작게 — 오늘날의 표준은 linear warmup + cosine decay. |
+| [3.9](chapters/ch03/3.9-constraints-regularization.html) | 제약과 정규화 | 2026-07-29 | 제약과 벌점은 같은 것의 두 얼굴이다. L1은 마름모의 모서리에서 접해 파라미터를 정확히 0으로 만든다. |
+| [3.10](chapters/ch03/3.10-deep-learning-optimization.html) | 딥러닝 최적화 | 2026-07-29 | Jacobian이 L번 곱해져 gradient가 지수적으로 죽거나 터진다. 도달한 최소점의 모양이 일반화를 좌우한다. |
 
 ## 권장 진행 순서
 

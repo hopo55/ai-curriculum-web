@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.1 함수의 기본 — AI 이론 학습</title>
+<meta name="description" content="neural network는 함수 하나다. 정의역·공역·합성·역함수·연속성·국소 근사를 조작 가능한 그림으로 확인한다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="3.1">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">3.1</span>
+        <span>3장 · 미적분과 최적화</span>
+      </div>
+      <h1>함수의 기본</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 45분</span>
+        <span><b>난이도</b>★★☆☆☆</span>
+        <span><b>선수지식</b>
+          <a href="../ch02/2.1-numbers-and-spaces.html">2.1 수와 공간</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-function">Function</a>
+      <a class="chip" href="#c-domain">Domain</a>
+      <a class="chip" href="#c-codomain">Codomain</a>
+      <a class="chip" href="#c-composite">Composite Function</a>
+      <a class="chip" href="#c-inverse">Inverse Function</a>
+      <a class="chip" href="#c-multivar">Multivariable Function</a>
+      <a class="chip" href="#c-continuity">Continuity</a>
+      <a class="chip" href="#c-limit">Limit</a>
+      <a class="chip" href="#c-local">Local Approximation</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        neural network(신경망)는 <strong>층을 합성해 만든 함수 하나</strong>이고, 학습은 그 함수의 파라미터를 고르는 일이다.
+        그래서 <strong>정의역·공역·합성·연속성·국소 근사</strong> 다섯 가지가 3장 전체의 문법이 된다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>함수를 domain(정의역)·codomain(공역)·대응 규칙 세 가지로 특정할 수 있다.</li>
+        <li>composite function(합성함수)의 domain을 따지고, inverse function(역함수)이 존재하는 조건을 판정할 수 있다.</li>
+        <li>continuity(연속성)를 limit(극한)으로 정의하고, local approximation(국소 근사)이 미분의 출발점임을 설명할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        함수는 <strong>넣으면 하나가 나오는 기계</strong>다. 같은 것을 넣었는데 다른 것이 나오면 함수가 아니다.
+        machine learning(머신러닝)에서 model(모델)이란 이 기계의 다이얼을 돌려 원하는 입출력 관계를 만드는 일이고,
+        deep learning(딥러닝)은 <strong>작은 기계를 여러 대 이어 붙여</strong> 큰 기계를 만드는 방식이다.
+      </p>
+      <p>
+        기계를 이어 붙이려면 두 가지를 확인해야 한다. 앞 기계가 <em>뱉는 것</em>이 뒤 기계가 <em>받을 수 있는 것</em>인가
+        (domain과 codomain의 맞물림), 그리고 입력을 조금 흔들었을 때 출력도 조금만 흔들리는가(continuity).
+        둘 중 하나라도 깨지면 gradient(기울기)로 학습할 수 없다.
+      </p>
+
+      <figure class="widget" data-widget="func-machine">
+        <figcaption class="widget__bar">Function Machine — 넣으면 하나가 나온다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$1/x$ 와 $\sqrt{x}$ 로 바꿔 보세요. <strong>입력을 넣을 수 없는 자리</strong>가 생기는 것이 domain의 정체입니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          함수는 식이 아니라 <strong>(정의역, 공역, 대응 규칙)의 세 쌍</strong>이다.
+          같은 식 $y=x^2$ 도 정의역을 $\mathbb{R}$ 로 두느냐 $[0,\infty)$ 로 두느냐에 따라
+          역함수가 있기도 하고 없기도 하다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-function"></span>
+      <span class="anchor" id="c-domain"></span>
+      <span class="anchor" id="c-codomain"></span>
+      <h3>Function, Domain, Codomain 함수·정의역·공역</h3>
+      <div class="note note--key">
+        <span class="note__label">정의</span>
+        <p>
+          집합 $X$ 의 <strong>모든</strong> 원소에 집합 $Y$ 의 원소를 <strong>정확히 하나씩</strong> 대응시키는 규칙 $f$ 를
+          함수라 하고 $f: X \to Y$ 로 쓴다. 이때 $X$ 를 <strong>domain</strong>, $Y$ 를 <strong>codomain</strong>이라 한다.
+        </p>
+      </div>
+      <p>
+        정의에 조건이 두 개 들어 있다. <span class="hl">domain의 원소는 <strong>빠짐없이</strong> 대응되어야 하고(전체성),
+        한 입력에 출력이 <strong>둘 이상이면 안 된다</strong>(일의성).</span>
+        $f(x)=1/x$ 를 $X=\mathbb{R}$ 위의 함수라고 쓰면 $x=0$ 에서 값이 없으므로 첫 조건이 깨진다 —
+        그래서 domain을 $\mathbb{R}\setminus\{0\}$ 으로 좁혀야 비로소 함수가 된다.
+      </p>
+      <p>
+        codomain은 "나올 수 있다고 <em>선언한</em> 범위"이고, 실제로 나오는 값들의 집합은
+        <strong>image(상, 치역)</strong> $f(X)=\{f(x): x\in X\}$ 다.
+        <span class="hl">$f(X)=Y$ 일 때 surjective(전사), 서로 다른 입력이 서로 다른 출력을 주면 injective(단사),
+        둘 다면 bijective(전단사)라 한다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>AI 에서의 예</th><th>domain</th><th>codomain</th><th>image</th></tr></thead>
+          <tbody>
+            <tr><td>sigmoid $\sigma(x)=\frac{1}{1+e^{-x}}$</td><td>$\mathbb{R}$</td><td>$\mathbb{R}$</td><td>$(0,1)$ — 0과 1에 <em>도달하지 못한다</em></td></tr>
+            <tr><td>ReLU $\max(0,x)$</td><td>$\mathbb{R}$</td><td>$\mathbb{R}$</td><td>$[0,\infty)$</td></tr>
+            <tr><td>softmax</td><td>$\mathbb{R}^K$</td><td>$\mathbb{R}^K$</td><td>확률 단체 $\Delta^{K-1}$</td></tr>
+            <tr><td>cross-entropy loss</td><td>$(0,1]$ (예측 확률)</td><td>$\mathbb{R}$</td><td>$[0,\infty)$</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        sigmoid의 image가 열린 구간 $(0,1)$ 이라는 사실은 실무에서 바로 걸린다 —
+        <span class="hl">sigmoid 출력은 정확히 0이나 1이 될 수 없으므로 $\log(1-\hat{y})$ 는 언제나 유한하지만,
+        float 반올림으로 $\hat y$ 가 $1.0$ 이 되면 $\log 0 = -\infty$ 가 나온다.</span>
+        이것이 logit(로짓)을 직접 받는 <code>BCEWithLogitsLoss</code> 가 따로 있는 이유다.
+      </p>
+
+      <span class="anchor" id="c-composite"></span>
+      <h3>Composite Function 합성함수</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ (g\circ f)(x) = g\bigl(f(x)\bigr), \qquad f: X\to Y,\quad g: Y\to Z \;\Longrightarrow\; g\circ f: X\to Z $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">합성이 성립하려면 $f$ 의 image가 $g$ 의 domain 안에 들어가야 한다.</span>
+        $L$ 개 층을 쌓은 neural network는 정확히 이 합성이다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ f_{\boldsymbol{\theta}} = f_L \circ f_{L-1} \circ \cdots \circ f_1, \qquad f_\ell(\mathbf{h}) = \phi(\mathbf{W}_\ell\mathbf{h}+\mathbf{b}_\ell) $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        합성은 <strong>결합법칙</strong>이 성립한다: $(h\circ g)\circ f = h\circ(g\circ f)$.
+        반면 <strong>교환법칙은 성립하지 않는다</strong> — $\text{ReLU}(\mathbf{Wx})$ 와 $\mathbf{W}\,\text{ReLU}(\mathbf{x})$ 는 다른 함수다.
+        층의 순서를 바꾸면 다른 model이 되는 이유가 이것이다.
+      </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>합성은 <strong>공장의 컨베이어 벨트</strong>입니다. 1번 기계가 만든 부품을 2번 기계가 받고, 2번이 만든 것을 3번이 받습니다.</p>
+        <p>벨트를 이으려면 앞 기계가 내놓는 부품이 뒷 기계의 투입구에 들어가야 합니다. 그것이 "image가 domain 안에 있어야 한다"의 뜻입니다. 그리고 <strong>기계 순서를 바꾸면 다른 물건이 나옵니다</strong> — 자르고 칠하기와 칠하고 자르기가 다른 것처럼요.</p>
+      </div>
+
+      <figure class="widget" data-widget="compose-chain">
+        <figcaption class="widget__bar">Composite Function — 두 기계를 잇는다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$f$ 와 $g$ 의 순서를 바꿔 보세요. <strong>같은 두 함수인데 결과 곡선이 달라집니다</strong> — 합성은 교환법칙이 없습니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-inverse"></span>
+      <h3>Inverse Function 역함수</h3>
+      <div class="eq">
+        <div class="eq__body">$$ f^{-1}\bigl(f(x)\bigr)=x \ \ \forall x\in X, \qquad f\bigl(f^{-1}(y)\bigr)=y \ \ \forall y\in Y $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl">역함수는 $f$ 가 bijective일 때, 그리고 그때만 존재한다.</span>
+        단사가 깨지면 되돌릴 목적지가 여럿이라 하나로 정할 수 없고, 전사가 깨지면 되돌릴 출발점이 없는 $y$ 가 생긴다.
+      </p>
+      <p>
+        실수 함수에서 단사를 확인하는 가장 쉬운 방법은 <strong>순증가 또는 순감소인지 보는 것</strong>이다
+        (자세한 판정은 <a href="3.2-derivatives.html">3.2</a>의 monotonicity(단조성)에서 미분으로 다룬다).
+        AI 에서 자주 쓰는 역함수 쌍은 다음과 같다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$f$</th><th>$f^{-1}$</th><th>쓰임</th></tr></thead>
+          <tbody>
+            <tr><td>sigmoid $\sigma(x)=\dfrac{1}{1+e^{-x}}$</td><td>logit $\log\dfrac{p}{1-p}$</td><td>확률 ↔ 점수 왕복</td></tr>
+            <tr><td>$\exp$</td><td>$\log$</td><td>양수 파라미터를 자유롭게 학습</td></tr>
+            <tr><td>정규화 $\dfrac{x-\mu}{\sigma}$</td><td>$\sigma z+\mu$</td><td>전처리와 복원</td></tr>
+            <tr><td>ReLU $\max(0,x)$</td><td><strong>없음</strong></td><td>음수 정보가 전부 0으로 뭉개진다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        마지막 줄이 중요하다. ReLU는 단사가 아니라서 되돌릴 수 없고, 그래서 <strong>정보를 버리는 층</strong>이다.
+        normalizing flow(정규화 흐름)처럼 <em>되돌릴 수 있어야</em> 하는 model 이 ReLU 대신 가역 변환만 쓰는 이유다.
+      </p>
+
+      <figure class="widget" data-widget="inverse-mirror">
+        <figcaption class="widget__bar">Inverse Function — $y=x$ 에 대해 접어 보기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$x^2$ 를 고르면 접은 그림이 <strong>한 $x$ 에 두 값</strong>을 갖습니다 — 함수가 아니므로 역함수가 없습니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-multivar"></span>
+      <h3>Multivariable Function 다변수 함수</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ f: \mathbb{R}^n \to \mathbb{R}^m, \qquad \mathbf{y} = f(\mathbf{x}),\quad \mathbf{x}=(x_1,\dots,x_n) $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        입력이 여러 개인 함수다. AI 에서 다루는 함수는 사실상 전부 이쪽이다.
+        <span class="hl">$m=1$ 인 $f:\mathbb{R}^n\to\mathbb{R}$ 을 <strong>scalar field(스칼라장)</strong>이라 하고,
+        loss function(손실함수)이 바로 이 형태다 — 파라미터 수백만 개를 받아 숫자 하나를 낸다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>형태</th><th>이름</th><th>예</th><th>미분의 모양 (<a href="3.3-multivariable-derivatives.html">3.3</a>)</th></tr></thead>
+          <tbody>
+            <tr><td>$\mathbb{R}\to\mathbb{R}$</td><td>일변수 함수</td><td>ReLU, $\sigma$</td><td>도함수 (scalar)</td></tr>
+            <tr><td>$\mathbb{R}^n\to\mathbb{R}$</td><td>scalar field</td><td>loss $\mathcal{L}(\boldsymbol{\theta})$</td><td>gradient $(n,)$</td></tr>
+            <tr><td>$\mathbb{R}^n\to\mathbb{R}^m$</td><td>vector field(벡터장)</td><td>linear layer, softmax</td><td>Jacobian $(m,n)$</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        일변수 함수는 곡선으로 그리면 되지만 $f:\mathbb{R}^2\to\mathbb{R}$ 부터는 <strong>등고선</strong>(contour)으로 본다.
+        같은 값을 갖는 점들을 이은 선이며, 등고선이 촘촘한 곳이 가파른 곳이다.
+      </p>
+
+      <figure class="widget" data-widget="surface-contour">
+        <figcaption class="widget__bar">Multivariable Function — 등고선으로 보는 $f(x,y)$</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">한 변수를 고정하면 <strong>단면이 일변수 함수</strong>가 됩니다. 이 단면의 기울기가 3.3의 편미분입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-limit"></span>
+      <h3>Limit 극한</h3>
+      <div class="eq">
+        <div class="eq__body">$$ \lim_{x\to a} f(x) = L \;\;\overset{\text{def}}{\Longleftrightarrow}\;\; \forall \varepsilon>0,\ \exists \delta>0:\ 0<|x-a|<\delta \Rightarrow |f(x)-L|<\varepsilon $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        <span class="hl">"출력을 원하는 만큼($\varepsilon$) 가깝게 만들고 싶으면, 입력을 충분히($\delta$) 가깝게 넣으면 된다"는 뜻이다.</span>
+        $x=a$ <em>에서의 값</em>은 극한과 무관하다 — 조건에 $0<|x-a|$ 가 붙어 $x=a$ 자신을 제외하기 때문이다.
+      </p>
+      <p>
+        좌극한 $\lim_{x\to a^-}$ 과 우극한 $\lim_{x\to a^+}$ 이 <strong>둘 다 있고 같아야</strong> 극한이 존재한다.
+        계단함수 $H(x)$ 는 $x=0$ 에서 좌극한 0, 우극한 1 이라 극한이 없다.
+      </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>극한은 <strong>목표 사격</strong>입니다. 심판이 "과녁 중심에서 $\varepsilon$ 안에 넣어라"라고 하면, 나는 "그러면 발사대를 $a$ 에서 $\delta$ 안에 두겠다"라고 답합니다.</p>
+        <p>심판이 아무리 $\varepsilon$ 을 줄여도 내가 맞는 $\delta$ 를 매번 찾아낼 수 있으면, 극한이 $L$ 이라고 합니다. <strong>내가 이기는 게임</strong>이면 극한이 존재하는 것입니다.</p>
+      </div>
+
+      <span class="anchor" id="c-continuity"></span>
+      <h3>Continuity 연속성</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ f \text{ 가 } x=a \text{ 에서 연속} \;\overset{\text{def}}{\Longleftrightarrow}\; \lim_{x\to a} f(x) = f(a) $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        <span class="hl">이 한 줄에 세 조건이 들어 있다 — $f(a)$ 가 정의되고, 극한이 존재하고, 그 둘이 같아야 한다.</span>
+        연속이면 "입력을 조금 흔들면 출력도 조금만 흔들린다"가 보장된다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>함수</th><th>연속?</th><th>미분 가능?</th><th>학습에서</th></tr></thead>
+          <tbody>
+            <tr><td>ReLU</td><td>연속 ✓</td><td>$x=0$ 에서 불가</td><td>문제없음 — 한 점만 관례로 처리</td></tr>
+            <tr><td>계단함수 (perceptron)</td><td>$x=0$ 에서 불연속</td><td>불가 (다른 곳은 기울기 0)</td><td><strong>gradient로 학습 불가</strong></td></tr>
+            <tr><td>0/1 accuracy</td><td>불연속</td><td>불가</td><td>직접 최소화 불가 → 대리 loss 사용</td></tr>
+            <tr><td>sigmoid, tanh, GELU</td><td>연속 ✓</td><td>모든 점 가능 ✓</td><td>매끄러운 gradient</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        표의 2·3행이 <strong>1950년대 perceptron이 깊게 쌓이지 못한 이유</strong>이자, 오늘날에도 accuracy 대신
+        cross-entropy를 최소화하는 이유다. 불연속 함수는 gradient가 없거나 0 이라 방향을 알려 주지 못한다.
+      </p>
+
+      <figure class="widget" data-widget="limit-continuity">
+        <figcaption class="widget__bar">Limit &amp; Continuity — 좌우에서 다가가 보기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">계단함수를 고르면 좌극한과 우극한 값이 <strong>끝까지 달라집니다</strong>. 이것이 불연속의 정의입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-local"></span>
+      <h3>Local Approximation 국소 근사</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ f(a+h) = f(a) + f'(a)\,h + o(h), \qquad \frac{o(h)}{h}\to 0 \ \ (h\to0) $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        <span class="hl">매끄러운 함수를 충분히 확대하면 직선처럼 보인다 — 이 "국소적으로 직선"이 미분의 정의이자
+        gradient descent(경사하강법)가 작동하는 이유 전부다.</span>
+        $o(h)$ 는 $h$ 보다 <em>더 빨리</em> 0으로 가는 나머지를 뜻한다(little-o 표기).
+      </p>
+      <p>
+        최적화는 이 근사를 매 스텝 새로 세우는 일이다. 현재 위치에서 직선(또는 평면)으로 근사하고,
+        그 직선이 가리키는 방향으로 조금 움직이고, 다시 근사한다. <span class="hl">근사가 믿을 만한 범위가
+        곧 learning rate(학습률)가 커질 수 있는 한계다</span> — <a href="3.6-gradient-descent.html">3.6</a>에서 다시 만난다.
+      </p>
+
+      <figure class="widget" data-widget="local-zoom">
+        <figcaption class="widget__bar">Local Approximation — 확대하면 직선이 된다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">확대 배율을 올릴수록 곡선과 접선의 <strong>오차가 배율보다 빠르게</strong> 줄어듭니다. 그것이 $o(h)$ 의 뜻입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>이 절에서 쓴 기호를 모두 모았다. 3장 나머지 절이 전부 이 표기를 이어 쓴다.</p>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$f: X\to Y$</td><td>f from X to Y</td><td>domain $X$, codomain $Y$ 인 함수</td><td>함수</td><td>—</td></tr>
+            <tr><td>$X$</td><td>대문자 X</td><td>domain</td><td>집합</td><td>—</td></tr>
+            <tr><td>$Y$</td><td>대문자 Y</td><td>codomain</td><td>집합</td><td>—</td></tr>
+            <tr><td>$f(X)$</td><td>f of X · image</td><td>실제로 나오는 값들의 집합</td><td>집합</td><td>$\subseteq Y$</td></tr>
+            <tr><td>$g\circ f$</td><td>g circle f · g composed with f</td><td>합성함수 $g(f(x))$</td><td>함수</td><td>—</td></tr>
+            <tr><td>$f^{-1}$</td><td>f inverse 에프 인버스</td><td>역함수</td><td>함수</td><td>bijective일 때만 존재</td></tr>
+            <tr><td>$\mathbb{R}$</td><td>blackboard R 실수 집합</td><td>실수 전체</td><td>집합</td><td>—</td></tr>
+            <tr><td>$\mathbb{R}^n$</td><td>R to the n</td><td>실수 $n$ 개의 순서쌍 전체</td><td>집합</td><td>—</td></tr>
+            <tr><td>$\setminus$</td><td>set minus 차집합</td><td>$A\setminus B$ = $A$ 에서 $B$ 를 뺀 것</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$\lim_{x\to a}$</td><td>limit as x approaches a</td><td>$x$ 가 $a$ 로 갈 때의 극한</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$\varepsilon$</td><td>epsilon 엡실론</td><td>출력의 허용 오차</td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>$\delta$</td><td>delta 델타</td><td>입력의 허용 범위</td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>$\forall$ / $\exists$</td><td>for all / there exists</td><td>모든 · 어떤 것이 존재</td><td>논리 기호</td><td>—</td></tr>
+            <tr><td>$h$</td><td>h</td><td>입력의 작은 변화량</td><td>scalar</td><td>$\to 0$</td></tr>
+            <tr><td>$o(h)$</td><td>little-o of h 리틀오</td><td>$h$ 보다 빨리 0 이 되는 나머지</td><td>함수</td><td>$o(h)/h\to0$</td></tr>
+            <tr><td>$f'(a)$</td><td>f prime of a 에프 프라임</td><td>$a$ 에서의 순간 변화율</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\boldsymbol{\theta}$</td><td>bold theta 세타</td><td>model의 파라미터 전체</td><td>vector $(p,)$</td><td>$\mathbb{R}^p$</td></tr>
+            <tr><td>$\mathcal{L}$</td><td>script L 스크립트 엘</td><td>loss function</td><td>$\mathbb{R}^p\to\mathbb{R}$</td><td>보통 $\geq0$</td></tr>
+            <tr><td>$\phi$</td><td>phi 파이</td><td>activation function(활성화 함수)</td><td>$\mathbb{R}\to\mathbb{R}$</td><td>—</td></tr>
+            <tr><td>$\Delta^{K-1}$</td><td>delta K minus 1 · 확률 단체</td><td>합이 1인 음 아닌 $K$ 차원 vector 집합</td><td>집합</td><td>$\subset\mathbb{R}^K$</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">표기 충돌</span>
+        <p>
+          $f^{-1}$ 은 <strong>역함수</strong>이지 $1/f$ 가 아니다. 반면 $f^2(x)$ 는 문헌에 따라
+          $f(f(x))$ 이기도 하고 $(f(x))^2$ 이기도 하다. 이 사이트에서는 혼동을 피해
+          합성은 언제나 $f\circ f$ 로 쓴다. 단 $\sin^2 x = (\sin x)^2$ 는 관례가 굳었으므로 그대로 둔다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — 역함수가 존재하려면 bijective 여야 한다</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ f(x_1)=f(x_2)=y, \quad x_1\neq x_2 $$</div>
+          <div class="derive__why">단사가 깨진 상황을 가정한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f^{-1}(y) = x_1 \ \text{인가} \ x_2 \ \text{인가?} $$</div>
+          <div class="derive__why">되돌릴 목적지가 둘이라 <strong>하나로 정할 수 없다</strong> — 함수의 일의성 위반</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ y_0 \in Y,\quad y_0 \notin f(X) $$</div>
+          <div class="derive__why">이번에는 전사가 깨진 상황</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f^{-1}(y_0) \ \text{가 정의되지 않는다} $$</div>
+          <div class="derive__why">되돌릴 출발점이 없다 — domain 전체성 위반</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore \ f^{-1} \ \text{존재} \iff f \ \text{bijective} $$</div>
+          <div class="derive__why">두 조건 중 하나라도 빠지면 역함수가 성립하지 않는다</div>
+        </div>
+      </div>
+      <div class="note note--tip">
+        <span class="note__label">codomain을 좁히면 살아난다</span>
+        <p>
+          $\sigma:\mathbb{R}\to\mathbb{R}$ 은 전사가 아니라 역함수가 없지만,
+          codomain을 image인 $(0,1)$ 로 좁힌 $\sigma:\mathbb{R}\to(0,1)$ 은 bijective 라 역함수 logit이 생긴다.
+          <strong>함수가 (정의역, 공역, 규칙)의 세 쌍인 이유</strong>가 여기서 드러난다.
+        </p>
+      </div>
+
+      <h3>유도 2 — sigmoid의 역함수는 logit이다</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ p = \frac{1}{1+e^{-x}} $$</div>
+          <div class="derive__why">$y$ 대신 확률을 뜻하는 $p$ 로 쓴다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 1+e^{-x} = \frac{1}{p} \;\Longrightarrow\; e^{-x} = \frac{1}{p}-1 = \frac{1-p}{p} $$</div>
+          <div class="derive__why">양변의 역수를 취하고 1을 옮겼다. $p>0$ 이므로 나눗셈이 안전하다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ -x = \log\frac{1-p}{p} \;\Longrightarrow\; x = \log\frac{p}{1-p} $$</div>
+          <div class="derive__why">양변에 $\log$. 부호를 넘기는 것은 분자·분모를 뒤집는 것과 같다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sigma^{-1}(p) = \log\frac{p}{1-p} = \operatorname{logit}(p), \qquad p\in(0,1) $$</div>
+          <div class="derive__why">domain이 <strong>열린 구간</strong>인 것에 주목 — $p=0,1$ 에서 발산한다</div>
+        </div>
+      </div>
+
+      <h3>유도 3 — 국소 근사에서 미분의 정의로</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ f(a+h) = f(a) + c\,h + o(h) $$</div>
+          <div class="derive__why">"어떤 상수 $c$ 로 직선 근사가 된다"는 가정</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{f(a+h)-f(a)}{h} = c + \frac{o(h)}{h} $$</div>
+          <div class="derive__why">양변에서 $f(a)$ 를 빼고 $h$ 로 나눴다 ($h\neq0$)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lim_{h\to0}\frac{f(a+h)-f(a)}{h} = c + 0 = c $$</div>
+          <div class="derive__why">$o(h)/h\to0$ 이 little-o 의 정의</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore \ c = f'(a) $$</div>
+          <div class="derive__why"><strong>직선 근사의 기울기가 곧 도함수</strong>다 — <a href="3.2-derivatives.html">3.2</a>의 출발점</div>
+        </div>
+      </div>
+      <details>
+        <summary>연속이면 미분 가능한가? (아니다 — 반례 하나)</summary>
+        <p>
+          $f(x)=|x|$ 는 모든 점에서 연속이지만 $x=0$ 에서 미분 불가능하다.
+          좌쪽에서 온 기울기는 $-1$, 오른쪽에서 온 기울기는 $+1$ 이라 극한이 존재하지 않는다.
+        </p>
+        <p>
+          반대 방향은 성립한다 — <strong>미분 가능하면 반드시 연속</strong>이다.
+          식 (7)에서 $h\to0$ 을 취하면 $f(a+h)\to f(a)$ 가 바로 나오기 때문이다.
+          ReLU $=\max(0,x)$ 도 같은 이유로 $x=0$ 에서만 미분 불가이며, 실무에서는
+          그 점의 gradient를 0 (또는 1)로 정해 두고 넘어간다. 측도 0 인 한 점이라 학습에 지장이 없다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① 합성과 순서</h3>
+      <p>$f(x)=2x+1$, $g(x)=x^2$ 로 두고 $x=3$ 에서 계산한다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ f(3) = 2\cdot3+1 = 6+1 = 7 $$</div>
+          <div class="derive__why">먼저 $f$ 를 통과시킨다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ (g\circ f)(3) = g(7) = 7^2 = 49 $$</div>
+          <div class="derive__why">그 결과를 $g$ 에 넣는다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ g(3) = 3^2 = 9, \qquad (f\circ g)(3) = f(9) = 2\cdot9+1 = 19 $$</div>
+          <div class="derive__why">순서를 바꾸면 $19 \neq 49$ — <strong>교환법칙이 없다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ (g\circ f)(x) = (2x+1)^2 = 4x^2+4x+1 $$</div>
+          <div class="derive__why">식으로 확인: $x=3$ 이면 $36+12+1=49$ ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ (f\circ g)(x) = 2x^2+1 $$</div>
+          <div class="derive__why">$x=3$ 이면 $2\cdot9+1=19$ ✓ — 두 식의 모양 자체가 다르다</div>
+        </div>
+      </div>
+
+      <h3>② domain 이 좁아지는 합성</h3>
+      <p>$f(x)=x-4$, $g(u)=\sqrt{u}$ 일 때 $g\circ f$ 의 domain 을 구한다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \operatorname{dom} f = \mathbb{R}, \qquad \operatorname{dom} g = [0,\infty) $$</div>
+          <div class="derive__why">$\sqrt{\ }$ 는 음수를 받지 못한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ (g\circ f)(x) = \sqrt{x-4} \ \text{가 정의되려면} \ x-4\geq0 $$</div>
+          <div class="derive__why">$f$ 의 출력이 $g$ 의 domain 안에 들어가야 한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \operatorname{dom}(g\circ f) = [4,\infty) $$</div>
+          <div class="derive__why"><strong>$f$ 의 domain 보다 좁아졌다.</strong> 합성은 domain을 넓히지 않는다</div>
+        </div>
+      </div>
+
+      <h3>③ sigmoid ↔ logit 왕복 검산</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ x = \log 4 \approx 1.3863 $$</div>
+          <div class="derive__why">계산하기 좋은 값을 골랐다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ e^{-x} = e^{-\log 4} = \frac14 = 0.25 $$</div>
+          <div class="derive__why">$e^{-\log a} = 1/a$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sigma(x) = \frac{1}{1+0.25} = \frac{1}{1.25} = 0.8 $$</div>
+          <div class="derive__why">확률 0.8 이 나왔다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \operatorname{logit}(0.8) = \log\frac{0.8}{0.2} = \log 4 \approx 1.3863 \ \checkmark $$</div>
+          <div class="derive__why"><strong>정확히 되돌아왔다</strong> — 식 (3)의 $f^{-1}(f(x))=x$ 확인</div>
+        </div>
+      </div>
+
+      <h3>④ 불연속 판정 — 세 조건을 하나씩</h3>
+      <p>$H(x)=\begin{cases}0 & x<0\\ 1 & x\geq0\end{cases}$ 를 $x=0$ 에서 조사한다.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ H(0) = 1 $$</div>
+          <div class="derive__why">조건 1 (값이 정의됨) ✓</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lim_{x\to0^-}H(x) = 0, \qquad \lim_{x\to0^+}H(x) = 1 $$</div>
+          <div class="derive__why">$x=-0.001$ 이면 0, $x=+0.001$ 이면 1 — 아무리 가까이 가도 그대로다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 0 \neq 1 \;\Rightarrow\; \lim_{x\to0}H(x) \ \text{존재하지 않음} $$</div>
+          <div class="derive__why">조건 2 ✗ — 여기서 이미 불연속이 확정된다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore H \ \text{는 } x=0 \text{ 에서 불연속} $$</div>
+          <div class="derive__why">$\varepsilon=0.5$ 로 두면 어떤 $\delta$ 로도 조건을 못 맞춘다 (식 (5) 위반)</div>
+        </div>
+      </div>
+      <p>
+        ReLU 는 다르다. $\lim_{x\to0^-}\max(0,x)=0$, $\lim_{x\to0^+}\max(0,x)=0$, $\text{ReLU}(0)=0$ 으로
+        <strong>세 값이 모두 같아 연속</strong>이다. 미분 가능성만 깨진다.
+      </p>
+
+      <h3>⑤ 국소 근사의 오차가 얼마나 빨리 주는가</h3>
+      <p>$f(x)=x^2$, $a=3$ 에서 $f'(3)=6$ (3.2에서 유도). 근사식은 $f(3+h)\approx 9+6h$ 다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$h$</th><th>참값 $(3+h)^2$</th><th>근사 $9+6h$</th><th>오차</th><th>오차 / $h$</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td class="num">16</td><td class="num">15</td><td class="num">1</td><td class="num">1</td></tr>
+            <tr><td class="num">0.1</td><td class="num">9.61</td><td class="num">9.6</td><td class="num">0.01</td><td class="num">0.1</td></tr>
+            <tr><td class="num">0.01</td><td class="num">9.0601</td><td class="num">9.06</td><td class="num">0.0001</td><td class="num">0.01</td></tr>
+            <tr><td class="num">0.001</td><td class="num">9.006001</td><td class="num">9.006</td><td class="num">0.000001</td><td class="num">0.001</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        오차가 정확히 $h^2$ 이다 — $(3+h)^2 = 9+6h+h^2$ 이므로 당연하다.
+        마지막 열이 <strong>$h$ 와 함께 0 으로 간다</strong>는 것이 $o(h)$ 의 정의를 손으로 확인한 것이다.
+        $h$ 를 10배 줄이면 오차는 100배 줄어든다.
+      </p>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>Function Machine</strong> · <strong>합성</strong> · <strong>역함수</strong> ·
+        <strong>등고선</strong> · <strong>극한과 연속</strong> · <strong>국소 근사</strong> — 을 순서대로 만져 본 뒤,
+        아래에서 <strong>층을 쌓을수록 함수의 모양이 어떻게 복잡해지는지</strong> 확인한다.
+      </p>
+
+      <figure class="widget" data-widget="layer-stack">
+        <figcaption class="widget__bar">합성의 힘 — 같은 부품을 몇 번 겹치면 어디까지 휘는가</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">층을 늘리면 <strong>꺾이는 지점의 개수</strong>가 늘어납니다. 층 수가 표현력을 키우는 가장 단순한 그림입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"공역과 치역은 같은 말이다."</p>
+        <p>
+          <strong>실제로는</strong> codomain은 <em>선언</em>이고 image는 <em>실제</em>다.
+          $\sigma:\mathbb{R}\to\mathbb{R}$ 의 codomain은 $\mathbb{R}$ 이지만 image는 $(0,1)$ 뿐이다.
+          이 차이가 실무에서 걸리는 지점 — sigmoid 출력을 $\log$ 에 넣을 때 이론상 안전하지만
+          float32 반올림으로 정확히 $1.0$ 이 되면 $\log(1-1)=-\infty$ 가 터진다.
+          <code>BCEWithLogitsLoss</code> 처럼 logit을 직접 받는 API 가 있는 이유다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"$f^{-1}$ 은 $1/f$ 다."</p>
+        <p>
+          <strong>실제로는</strong> $f^{-1}$ 은 역함수, $1/f$ 는 역수다. 전혀 다르다.
+          $f(x)=2x$ 라면 $f^{-1}(x)=x/2$ 이고 $1/f(x)=1/(2x)$ 다.
+          $x=4$ 에서 각각 $2$ 와 $0.125$ — 값도 다르고 뜻도 다르다.
+          같은 혼동이 matrix에서도 일어난다: $\mathbf{A}^{-1}$ 은 inverse matrix(역행렬)이지 원소별 역수가 아니다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"연속이면 미분 가능하다."</p>
+        <p>
+          <strong>실제로는</strong> 한 방향만 성립한다. <strong>미분 가능 ⟹ 연속</strong>은 참이지만 역은 거짓이다.
+          $|x|$ 와 ReLU 가 $x=0$ 에서 반례다. 심지어 <em>어디서도</em> 미분 불가능한 연속함수
+          (Weierstrass 함수)도 존재한다. 함정은 "연속이니 gradient가 있겠지"라고 넘어가는 것이며,
+          ReLU 처럼 꺾이는 점이 있는 activation을 다룰 때는 그 점을 어떻게 처리하는지 확인해야 한다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"합성함수의 domain은 안쪽 함수의 domain이다."</p>
+        <p>
+          <strong>실제로는</strong> 바깥 함수가 받을 수 있는 값만 남으므로 <strong>좁아질 수 있다</strong>(예제 ②).
+          $f(x)=x-4$ 의 domain은 $\mathbb{R}$ 전체지만 $\sqrt{f(x)}$ 의 domain은 $[4,\infty)$ 다.
+          AI 에서는 $\log(\text{softmax 출력})$ 이 같은 함정이다 — softmax는 이론상 0 을 내지 않지만
+          수치적으로 0 이 되면 $\log$ 의 domain을 벗어난다. <code>log_softmax</code> 를 따로 쓰는 이유다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"극한값은 그 점에서의 함숫값이다."</p>
+        <p>
+          <strong>실제로는</strong> 극한의 정의는 $x=a$ 자신을 <strong>제외</strong>하고 본다($0<|x-a|$).
+          그래서 $f(a)$ 를 아무 값으로 고쳐도 극한은 변하지 않는다.
+          두 값이 같을 때를 특별히 <em>연속</em>이라 부르는 것이며, 같은 것이 당연했다면
+          연속이라는 개념 자체가 필요 없었을 것이다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①·③·⑤ 를 그대로 검증한다.</p>
+      <details>
+        <summary>NumPy — 합성 · 역함수 왕복 · 국소 근사 오차 (18줄)</summary>
+<pre><code>import numpy as np
+
+f = lambda x: 2 * x + 1
+g = lambda x: x ** 2
+print(g(f(3)), f(g(3)))          # 49 19   <- 순서가 다르면 값이 다르다
+
+sig   = lambda x: 1 / (1 + np.exp(-x))
+logit = lambda p: np.log(p / (1 - p))
+x = np.log(4.0)
+print(sig(x), logit(sig(x)), x)  # 0.8 1.3862943611198906 1.3862943611198906
+
+h = np.array([1.0, 0.1, 0.01, 0.001])
+true  = (3 + h) ** 2             # 참값
+approx = 9 + 6 * h               # 1차 근사
+err = true - approx
+print(err)                       # [1.e+00 1.e-02 1.e-04 1.e-06]  = h^2
+print(err / h)                   # [1.e+00 1.e-01 1.e-02 1.e-03]  -> 0  (o(h))
+
+relu = lambda x: np.maximum(0, x)
+print(relu(-1e-9), relu(0), relu(1e-9))   # 0.0 0 1e-09  <- 연속이지만 0에서 꺾인다
+</code></pre>
+        <p>
+          <small>
+            마지막 줄에서 왼쪽·오른쪽 값이 모두 0 에 붙는 것이 연속의 증거다.
+            반면 기울기는 왼쪽 0, 오른쪽 1 로 달라 미분이 정의되지 않는다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $f(x)=3x-2$, $g(x)=x^2+1$ 일 때 $(f\circ g)(2)$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$13$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$17$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$26$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            안쪽부터다. $g(2)=4+1=5$, 그다음 $f(5)=15-2=13$.
+            <strong>나</strong>는 순서를 뒤집은 $(g\circ f)(2)=g(4)=17$ 이고,
+            <strong>다</strong>는 $f(2)\cdot g(2)=4\cdot 5+\ldots$ 식으로 곱셈과 헷갈린 답이다.
+            $f\circ g$ 는 "$g$ 를 먼저"라는 것을 기억한다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $f(x)=\log(x-2)$ 의 domain 은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$(2,\infty)$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$[2,\infty)$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$\mathbb{R}$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\log$ 의 domain 은 <strong>양수</strong>이므로 $x-2>0$, 즉 $x>2$.
+            <strong>나</strong>가 함정이다 — $x=2$ 면 $\log 0$ 이고 이는 정의되지 않는다(발산).
+            열린 구간과 닫힌 구간의 차이가 여기서 갈린다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            ReLU 에 역함수가 없는 이유로 가장 정확한 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>음수 입력이 모두 0 으로 가서 injective 가 아니다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$x=0$ 에서 미분 불가능하다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>연속이 아니다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\text{ReLU}(-1)=\text{ReLU}(-5)=0$ 이라 되돌릴 목적지를 하나로 정할 수 없다(유도 1).
+            미분 가능성은 역함수 존재와 무관한 별개 성질이고, ReLU 는 <strong>연속이다</strong>.
+            이 성질 때문에 ReLU 층은 정보를 되돌릴 수 없는 층이며, 가역성이 필요한
+            normalizing flow 에서는 쓰이지 않는다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            $\lim_{x\to0}f(x)=3$ 이지만 $f(0)=5$ 인 함수가 있을 수 있는가?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>있다 — 그런 함수는 $x=0$ 에서 불연속이다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>없다 — 극한은 함숫값과 항상 같다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>없다 — 극한이 존재하면 연속이다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            극한의 정의는 $0<|x-a|$ 로 <strong>$x=a$ 를 제외</strong>하므로 $f(0)$ 을 마음대로 바꿔도 극한은 그대로다.
+            식 (6)이 "$\lim = f(a)$" 를 <em>추가로</em> 요구하는 것이 바로 연속의 조건이다.
+            둘이 다른 경우를 removable discontinuity(제거 가능한 불연속)라 부른다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            perceptron 의 계단 activation 을 sigmoid 로 바꾼 가장 큰 이유는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>연속·미분 가능해져서 gradient 로 방향을 알 수 있다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>계산이 더 빨라서</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>출력이 0 또는 1 로 명확해져서</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            계단함수는 불연속이고, 불연속점을 뺀 나머지에서는 기울기가 정확히 0 이라
+            "어느 쪽으로 움직여야 하는가"를 알려 주지 못한다.
+            sigmoid 는 $\exp$ 계산이 들어가 <em>느리고</em>, 출력도 0/1 이 아니라 그 사이 값이다 —
+            <strong>나·다는 사실과 반대</strong>다. 바꾼 이유는 오직 미분 가능성이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            $f:\mathbb{R}\to\mathbb{R}$, $f(x)=x^2$ 에 역함수가 없는데 $\sqrt{\ }$ 를 역함수라 부르는 이유는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>domain 을 $[0,\infty)$ 로 제한한 <em>다른 함수</em>의 역함수이기 때문</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$\sqrt{\ }$ 가 원래 $x^2$ 의 역함수라서</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$x^2$ 이 bijective 라서</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\mathbb{R}$ 위의 $x^2$ 은 $f(-2)=f(2)=4$ 라 injective 가 아니다.
+            $f:[0,\infty)\to[0,\infty)$ 로 <strong>정의역과 공역을 함께 좁히면</strong> bijective 가 되고,
+            그때 비로소 $\sqrt{\ }$ 가 역함수가 된다. 함수는 식이 아니라
+            (정의역, 공역, 규칙)의 세 쌍이라는 원칙이 이 문제의 핵심이다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="3.2-derivatives.html">3.2 미분</a></strong> — 국소 근사(식 7)의 기울기 $c$ 를 도함수로 정식화한다.</li>
+        <li><strong><a href="3.3-multivariable-derivatives.html">3.3 다변수 미분</a></strong> — 다변수 함수의 국소 근사가 gradient와 Jacobian이다.</li>
+        <li><strong><a href="3.4-chain-rule-computation-graph.html">3.4 연쇄법칙과 계산 그래프</a></strong> — 합성함수 (식 1·2)를 미분하는 법이 backpropagation(역전파)이다.</li>
+        <li><strong><a href="../ch02/2.5-linear-transformation.html">2.5 선형변환</a></strong> — 층 하나의 $\mathbf{Wh}+\mathbf{b}$ 부분이 여기서 다룬 함수다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Deisenroth, M. P., Faisal, A. A. &amp; Ong, C. S. (2020). <em>Mathematics for Machine Learning</em>. Cambridge University Press.</span>
+          <span class="ref__where">5.1절(Differentiation of Univariate Functions) — 국소 근사와 식 (7)의 little-o 형태. 5.2절 도입부 — 다변수 함수 $f:\mathbb{R}^n\to\mathbb{R}^m$ 의 분류(표 '형태·이름·미분의 모양')와 표기 규약</span>
+          <a class="ref__link" href="https://mml-book.github.io/">mml-book.github.io</a>
+        </li>
+        <li class="ref" id="ref-goodfellow2016-dl" data-ref="goodfellow2016-dl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>. MIT Press.</span>
+          <span class="ref__where">6.1–6.3절 — neural network를 $f_L\circ\cdots\circ f_1$ 합성으로 정의하는 서술(식 2)과 activation의 연속성·미분 가능성 논의. 4.1절 — sigmoid 출력을 $\log$ 에 넣을 때의 수치 문제(오해 1의 근거)</span>
+          <a class="ref__link" href="https://www.deeplearningbook.org/">deeplearningbook.org</a>
+        </li>
+        <li class="ref" id="ref-3blue1brown-calculus" data-ref="3blue1brown-calculus">
+          <span class="ref__type" data-type="video">영상</span>
+          <span class="ref__cite">3Blue1Brown. <em>Essence of Calculus</em>, Ch.1 <em>The essence of calculus</em> · Ch.7 <em>Limits</em>.</span>
+          <span class="ref__where">Ch.7 03:00–11:00 — $\varepsilon$–$\delta$ 정의를 "심판이 $\varepsilon$ 을 부르면 내가 $\delta$ 로 답한다"는 게임으로 설명하는 장면. 이 절의 '쉬운 말로 — 목표 사격'과 극한·연속 위젯의 구성이 여기서 왔다</span>
+          <a class="ref__link" href="https://www.3blue1brown.com/topics/calculus">3blue1brown.com</a>
+        </li>
+        <li class="ref" id="ref-prince2023-udl" data-ref="prince2023-udl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Prince, S. J. D. (2023). <em>Understanding Deep Learning</em>. MIT Press.</span>
+          <span class="ref__where">3.1–3.4절 — ReLU 를 이어 붙일수록 조각별 직선의 꺾인 점이 늘어난다는 그림('합성의 힘' 위젯의 원본 아이디어). 16장 — 가역 변환만으로 model 을 구성하는 normalizing flow, ReLU 가 쓰이지 않는 이유</span>
+          <a class="ref__link" href="https://udlbook.github.io/udlbook/">udlbook.github.io</a>
+        </li>
+        <li class="ref" id="ref-stanford-cs231n" data-ref="stanford-cs231n">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Li, F.-F., Johnson, J. &amp; Yeung, S. <em>CS231n: Deep Learning for Computer Vision</em>. Stanford University.</span>
+          <span class="ref__where">Neural Networks Part 1 강의노트(Commonly used activation functions) — sigmoid·tanh·ReLU 의 image 범위와 꺾인 점 처리 관례. '연속·미분 가능' 표의 실무 칸이 여기에 근거한다</span>
+          <a class="ref__link" href="https://cs231n.github.io/neural-networks-1/">cs231n.github.io</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+/* ============================================================
+   위젯 1 — Function Machine
+   입력을 넣으면 출력이 하나 나온다. domain 밖이면 나오지 않는다.
+   ============================================================ */
+WIDGETS.register('func-machine', function (root, ctx) {
+  var FN = {
+    lin:  { f: function (x) { return 2 * x + 1; }, dom: function () { return true; },  name: 'f(x) = 2x + 1', domTxt: '전체 실수' },
+    sq:   { f: function (x) { return x * x; },     dom: function () { return true; },  name: 'f(x) = x²',     domTxt: '전체 실수' },
+    inv:  { f: function (x) { return 1 / x; },     dom: function (x) { return Math.abs(x) > 1e-9; }, name: 'f(x) = 1/x', domTxt: 'x ≠ 0' },
+    sqrt: { f: function (x) { return Math.sqrt(x); }, dom: function (x) { return x >= 0; }, name: 'f(x) = √x', domTxt: 'x ≥ 0' },
+    relu: { f: function (x) { return Math.max(0, x); }, dom: function () { return true; }, name: 'f(x) = ReLU(x)', domTxt: '전체 실수' }
+  };
+  var cur = 'lin', xv = 1.5;
+
+  var p = VIZ.plot({ w: 460, h: 290, xmin: -4, xmax: 4, ymin: -4, ymax: 4 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'in', label: '입력 x', digits: 2 },
+    { key: 'outv', label: '출력 f(x)' },
+    { key: 'dom', label: 'domain' },
+    { key: 'img', label: 'image (실제 나오는 값)' }
+  ]);
+
+  var IMG = { lin: '전체 실수', sq: '[0, ∞)', inv: 'y ≠ 0', sqrt: '[0, ∞)', relu: '[0, ∞)' };
+
+  function draw() {
+    var F = FN[cur];
+    p.clear().grid(1, 1).axes('x', 'f(x)').ticks(1, 1);
+    p.curve(function (x) { return F.dom(x) ? F.f(x) : NaN; });
+
+    var ok = F.dom(xv);
+    if (ok) {
+      var y = F.f(xv);
+      p.line([[xv, 0], [xv, y]], { dash: '3 4' });
+      p.line([[0, y], [xv, y]], { dash: '3 4' });
+      p.dot(xv, y, 6);
+      p.callout(xv, y, '출력은 하나뿐', { dx: 18, dy: 26 });
+      out.set('in', xv);
+      out.set('outv', Number(y.toFixed(3)));
+    } else {
+      p.dot(xv, 0, 6, 'viz-point');
+      p.callout(xv, 0, 'domain 밖 — 값이 없다', { dx: 18, dy: -26, tone: 'var(--seal)' });
+      out.set('in', xv);
+      out.setRaw('outv', '정의되지 않음');
+    }
+    out.setRaw('dom', F.domTxt);
+    out.setRaw('img', IMG[cur]);
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '함수 고르기',
+    options: [
+      { value: 'lin', label: '2x+1' },
+      { value: 'sq', label: 'x²' },
+      { value: 'inv', label: '1/x' },
+      { value: 'sqrt', label: '√x' },
+      { value: 'relu', label: 'ReLU' }
+    ],
+    value: 'lin', onChange: function (v) { cur = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '입력 x', min: -4, max: 4, step: 0.05, value: 1.5, digits: 2,
+    onInput: function (v) { xv = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — 합성함수와 순서
+   ============================================================ */
+WIDGETS.register('compose-chain', function (root, ctx) {
+  var f = function (x) { return 2 * x + 1; };
+  var g = function (x) { return x * x; };
+  var order = 'gf', xv = 1.2;
+
+  var p = VIZ.plot({ w: 460, h: 300, xmin: -3, xmax: 3, ymin: -2, ymax: 10 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'x', label: '입력 x', digits: 2 },
+    { key: 'mid', label: '중간값', digits: 3 },
+    { key: 'fin', label: '최종 출력', digits: 3 },
+    { key: 'form', label: '합성식' }
+  ]);
+
+  function draw() {
+    var first = order === 'gf' ? f : g;
+    var second = order === 'gf' ? g : f;
+    p.clear().grid(1, 2).axes('x', 'y').ticks(1, 2);
+    p.curve(function (x) { return first(x); }, { dash: '4 4' });
+    p.curve(function (x) { return second(first(x)); });
+
+    var mid = first(xv), fin = second(mid);
+    p.dot(xv, mid, 5);
+    if (fin >= -2 && fin <= 10) {
+      p.dot(xv, fin, 6);
+      p.callout(xv, fin, '두 번 통과한 값', { dx: 20, dy: -20 });
+    }
+
+    out.set('x', xv);
+    out.set('mid', mid);
+    out.set('fin', fin);
+    out.setRaw('form', order === 'gf' ? 'g(f(x)) = (2x+1)²' : 'f(g(x)) = 2x²+1');
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '합성 순서',
+    options: [{ value: 'gf', label: 'g∘f  (f 먼저)' }, { value: 'fg', label: 'f∘g  (g 먼저)' }],
+    value: 'gf', onChange: function (v) { order = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '입력 x', min: -3, max: 3, step: 0.05, value: 1.2, digits: 2,
+    onInput: function (v) { xv = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — 역함수: y=x 대칭
+   ============================================================ */
+WIDGETS.register('inverse-mirror', function (root, ctx) {
+  var FN = {
+    lin:  { f: function (x) { return 2 * x + 1; }, inv: function (y) { return (y - 1) / 2; }, ok: true,  name: '2x+1', why: '순증가 — bijective' },
+    exp:  { f: function (x) { return Math.exp(x); }, inv: function (y) { return Math.log(y); }, ok: true, name: 'eˣ', why: '순증가 — 역함수는 log' },
+    sq:   { f: function (x) { return x * x; }, inv: function (y) { return Math.sqrt(y); }, ok: false, name: 'x²', why: 'f(-2)=f(2) — injective 아님' },
+    relu: { f: function (x) { return Math.max(0, x); }, inv: function (y) { return y; }, ok: false, name: 'ReLU', why: '음수가 전부 0 — injective 아님' }
+  };
+  var cur = 'lin';
+
+  var p = VIZ.plot({ w: 440, h: 320, xmin: -3, xmax: 3, ymin: -3, ymax: 3 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'name', label: '함수' },
+    { key: 'ok', label: '역함수 존재?' },
+    { key: 'why', label: '이유' },
+    { key: 'test', label: 'f(-2) vs f(2)' }
+  ]);
+
+  function draw() {
+    var F = FN[cur];
+    p.clear().grid(1, 1).axes('x', 'y').ticks(1, 1);
+    p.line([[-3, -3], [3, 3]], { dash: '2 4' });
+    p.curve(function (x) { return F.f(x); });
+    /* 거울상: (x, f(x)) 를 (f(x), x) 로 뒤집어 그린다 */
+    var pts = [];
+    for (var i = 0; i <= 200; i++) {
+      var x = -3 + 6 * i / 200;
+      var y = F.f(x);
+      if (isFinite(y)) pts.push([y, x]);
+    }
+    p.line(pts, { alt: true, width: 2 });
+    p.callout(0, 0, 'y = x 에 대해 접은 것이 파선', { dx: 16, dy: -30, tone: 'var(--ink-3)' });
+
+    out.setRaw('name', F.name);
+    out.setRaw('ok', F.ok ? '있다 ✓' : '없다 ✗ (접은 그림이 함수가 아님)');
+    out.setRaw('why', F.why);
+    out.setRaw('test', F.f(-2).toFixed(2) + '  vs  ' + F.f(2).toFixed(2) +
+      (Math.abs(F.f(-2) - F.f(2)) < 1e-9 ? '  ← 같다!' : '  ← 다르다'));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '함수 고르기',
+    options: [
+      { value: 'lin', label: '2x+1' },
+      { value: 'exp', label: 'eˣ' },
+      { value: 'sq', label: 'x²' },
+      { value: 'relu', label: 'ReLU' }
+    ],
+    value: 'lin', onChange: function (v) { cur = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — 다변수 함수의 등고선
+   ============================================================ */
+WIDGETS.register('surface-contour', function (root, ctx) {
+  var FN = {
+    bowl:   { f: function (x, y) { return x * x + y * y; }, name: 'x² + y²' },
+    saddle: { f: function (x, y) { return x * x - y * y; }, name: 'x² − y²' },
+    valley: { f: function (x, y) { return 0.2 * x * x + 2 * y * y; }, name: '0.2x² + 2y²' }
+  };
+  var cur = 'bowl', yfix = 0.5;
+
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center;width:100%';
+  ctx.stage.appendChild(wrap);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'fn', label: '함수' },
+    { key: 'yv', label: '고정한 y', digits: 2 },
+    { key: 'slice', label: '단면 f(x, y₀)' },
+    { key: 'at0', label: 'x=1 에서의 값', digits: 3 }
+  ]);
+
+  var N = 13;
+  function draw() {
+    var F = FN[cur];
+    wrap.innerHTML = '';
+
+    /* 왼쪽: 등고선 히트맵 */
+    var data = [];
+    for (var r = 0; r < N; r++) {
+      var row = [];
+      for (var c = 0; c < N; c++) {
+        var x = -3 + 6 * c / (N - 1);
+        var y = 3 - 6 * r / (N - 1);
+        row.push(F.f(x, y));
+      }
+      data.push(row);
+    }
+    wrap.appendChild(VIZ.heatmap({ data: data, cell: 17, min: -9, max: 18, showValues: false, padL: 8, padT: 8 }));
+
+    /* 오른쪽: y 를 고정한 단면 */
+    var p = VIZ.plot({ w: 250, h: 230, xmin: -3, xmax: 3, ymin: -9, ymax: 18,
+      pad: { t: 16, r: 12, b: 26, l: 34 } });
+    p.grid(1, 6).axes('x', 'f').ticks(1, 6);
+    p.curve(function (x) { return F.f(x, yfix); });
+    p.dot(1, F.f(1, yfix), 5);
+    wrap.appendChild(p.svg);
+
+    out.setRaw('fn', F.name);
+    out.set('yv', yfix);
+    out.setRaw('slice', 'y = ' + yfix.toFixed(2) + ' 로 자른 일변수 함수');
+    out.set('at0', F.f(1, yfix));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '함수 고르기',
+    options: [
+      { value: 'bowl', label: '그릇' },
+      { value: 'saddle', label: '안장' },
+      { value: 'valley', label: '긴 골짜기' }
+    ],
+    value: 'bowl', onChange: function (v) { cur = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '고정할 y', min: -3, max: 3, step: 0.1, value: 0.5, digits: 2,
+    onInput: function (v) { yfix = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — 극한과 연속
+   ============================================================ */
+WIDGETS.register('limit-continuity', function (root, ctx) {
+  var FN = {
+    step: { f: function (x) { return x < 0 ? 0 : 1; }, name: '계단함수', cont: false },
+    relu: { f: function (x) { return Math.max(0, x); }, name: 'ReLU', cont: true },
+    hole: { f: function (x) { return Math.abs(x) < 1e-9 ? 1.5 : x + 0.5; }, name: '구멍난 함수', cont: false },
+    smooth: { f: function (x) { return 1 / (1 + Math.exp(-4 * x)); }, name: 'sigmoid', cont: true }
+  };
+  var cur = 'step', d = 1.0;
+
+  var p = VIZ.plot({ w: 460, h: 280, xmin: -2, xmax: 2, ymin: -0.6, ymax: 2 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'left', label: '왼쪽에서 f(0−δ)', digits: 4 },
+    { key: 'right', label: '오른쪽에서 f(0+δ)', digits: 4 },
+    { key: 'val', label: 'f(0)', digits: 4 },
+    { key: 'verdict', label: 'x=0 에서' }
+  ]);
+
+  function draw() {
+    var F = FN[cur];
+    p.clear().grid(0.5, 0.5).axes('x', 'f(x)').ticks(1, 0.5);
+    p.curve(function (x) { return F.f(x); }, { samples: 400 });
+
+    var L = F.f(-d), R = F.f(d);
+    p.dot(-d, L, 5);
+    p.dot(d, R, 5);
+    p.line([[-d, L], [-d, -0.6]], { dash: '2 3' });
+    p.line([[d, R], [d, -0.6]], { dash: '2 3' });
+    p.callout(0, F.f(0), 'f(0) 자체', { dx: 22, dy: -24, tone: 'var(--seal)' });
+
+    out.set('left', L);
+    out.set('right', R);
+    out.set('val', F.f(0));
+    var same = Math.abs(L - R) < 1e-6;
+    out.setRaw('verdict', !same ? '좌·우 극한이 다르다 → 불연속'
+      : (Math.abs(L - F.f(0)) < 1e-6 ? '극한 = f(0) → 연속 ✓' : '극한은 있으나 f(0) 과 다르다 → 불연속'));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '함수 고르기',
+    options: [
+      { value: 'step', label: '계단' },
+      { value: 'relu', label: 'ReLU' },
+      { value: 'hole', label: '구멍' },
+      { value: 'smooth', label: 'sigmoid' }
+    ],
+    value: 'step', onChange: function (v) { cur = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '0 에서의 거리 δ', min: 0.01, max: 1.5, step: 0.01, value: 1.0, digits: 2,
+    onInput: function (v) { d = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 6 — 국소 근사: 확대하면 직선
+   ============================================================ */
+WIDGETS.register('local-zoom', function (root, ctx) {
+  var zoom = 1, a = 1.0;
+  var f = function (x) { return x * x; };
+  var df = function (x) { return 2 * x; };
+
+  var p = VIZ.plot({ w: 460, h: 280, xmin: -1, xmax: 1, ymin: -1, ymax: 1,
+    pad: { t: 18, r: 14, b: 28, l: 44 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'w', label: '보는 폭 (h 범위)', digits: 4 },
+    { key: 'err', label: '가장자리에서의 오차', digits: 6 },
+    { key: 'rel', label: '오차 ÷ h', digits: 6 },
+    { key: 'say', label: '판정' }
+  ]);
+
+  function draw() {
+    var half = 1 / zoom;
+    var fa = f(a), s = df(a);
+    /* a 를 중심으로 확대. y 범위도 같은 비율로 좁힌다 */
+    var q = VIZ.plot({
+      w: 460, h: 280,
+      xmin: a - half, xmax: a + half,
+      ymin: fa - half * (Math.abs(s) + 1), ymax: fa + half * (Math.abs(s) + 1),
+      pad: { t: 18, r: 14, b: 28, l: 46 }
+    });
+    q.grid(half / 2, half * (Math.abs(s) + 1) / 2).axes('x', 'f(x)');
+    q.curve(f, { samples: 300 });
+    q.line([[a - half, fa - s * half], [a + half, fa + s * half]], { alt: true, dash: '5 4', width: 2 });
+    q.dot(a, fa, 5);
+    q.callout(a, fa, '접선', { dx: 24, dy: -22, tone: 'var(--ink-3)' });
+
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(q.svg);
+
+    var h = half;
+    var err = Math.abs(f(a + h) - (fa + s * h));
+    out.set('w', 2 * h);
+    out.set('err', err);
+    out.set('rel', err / h);
+    out.setRaw('say', zoom < 3 ? '곡선과 직선이 눈에 띄게 다르다'
+      : (zoom < 20 ? '거의 겹친다' : '구분되지 않는다 — 국소적으로 직선'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '확대 배율', min: 1, max: 60, step: 1, value: 1, digits: 0,
+    onInput: function (v) { zoom = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '중심 a', min: -2, max: 2, step: 0.1, value: 1, digits: 1,
+    onInput: function (v) { a = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 7 — 합성을 반복하면 얼마나 휘는가
+   ReLU 조각 선형 함수를 여러 번 합성한다.
+   ============================================================ */
+WIDGETS.register('layer-stack', function (root, ctx) {
+  var depth = 1;
+
+  var p = VIZ.plot({ w: 460, h: 280, xmin: 0, xmax: 1, ymin: -0.1, ymax: 1.1,
+    pad: { t: 18, r: 14, b: 28, l: 40 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'd', label: '합성 횟수' },
+    { key: 'kinks', label: '꺾인 점의 개수' },
+    { key: 'note', label: '해석' },
+    { key: 'val', label: 'x=0.3 에서의 값', digits: 4 }
+  ]);
+
+  /* 삼각파 한 층: 0~0.5 는 상승, 0.5~1 은 하강 (ReLU 세 개로 만들 수 있다) */
+  function unit(x) {
+    return x < 0.5 ? 2 * x : 2 - 2 * x;
+  }
+  function stack(x, n) {
+    var y = x;
+    for (var i = 0; i < n; i++) y = unit(y);
+    return y;
+  }
+
+  function draw() {
+    p.clear().grid(0.25, 0.25).axes('x', 'f(x)').ticks(0.25, 0.5);
+    p.curve(function (x) { return stack(x, depth); }, { samples: 900 });
+    out.setRaw('d', depth + ' 번');
+    out.setRaw('kinks', String(Math.pow(2, depth) - 1));
+    out.setRaw('note', depth <= 2 ? '층 하나가 꺾인 점 하나를 만든다'
+      : '꺾인 점이 2배씩 늘어난다 — 깊이가 지수적으로 이득');
+    out.set('val', stack(0.3, depth));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '같은 부품을 몇 번 합성할까', min: 1, max: 5, step: 1, value: 1, digits: 0,
+    onInput: function (v) { depth = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.8 학습률 전략 — AI 이론 학습</title>
+<meta name="description" content="학습률은 숫자 하나가 아니라 시간의 함수다. step·exponential·cosine decay, warmup, restart, cyclic, one-cycle을 곡선 위에서 비교한다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="3.8">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">3.8</span>
+        <span>3장 · 미적분과 최적화</span>
+      </div>
+      <h1>학습률 전략</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 50분</span>
+        <span><b>난이도</b>★★★☆☆</span>
+        <span><b>선수지식</b>
+          <a href="3.6-gradient-descent.html">3.6 경사하강법</a> · <a href="3.7-optimization-algorithms.html">3.7 최적화 알고리즘</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-const">Constant Learning Rate</a>
+      <a class="chip" href="#c-step">Step Decay</a>
+      <a class="chip" href="#c-exp">Exponential Decay</a>
+      <a class="chip" href="#c-cos">Cosine Decay</a>
+      <a class="chip" href="#c-warmup">Warmup</a>
+      <a class="chip" href="#c-restart">Restart</a>
+      <a class="chip" href="#c-clr">Cyclic Learning Rate</a>
+      <a class="chip" href="#c-onecycle">One-Cycle Policy</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        learning rate 는 숫자 하나가 아니라 <strong>시간의 함수</strong> $\eta(t)$ 다.
+        <strong>초반엔 크게(탐색), 후반엔 작게(정착)</strong> 가 원칙이고,
+        오늘날의 표준 조합은 <strong>linear warmup + cosine decay</strong> 다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>고정 $\eta$ 의 SGD 가 최솟값에 정확히 수렴하지 않는 이유에서 decay 의 필요성을 유도할 수 있다.</li>
+        <li>step·exponential·cosine decay 의 $\eta(t)$ 를 손으로 계산하고 곡선 모양을 그릴 수 있다.</li>
+        <li>warmup 이 왜 필요한지, one-cycle policy 가 왜 momentum 을 반대로 움직이는지 설명할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        대장장이가 쇠를 담금질한다. 처음에는 뜨겁게 달궈 원자들이 자유롭게 움직이게 하고,
+        <strong>천천히 식히면</strong> 원자들이 낮은 에너지 배치를 찾아 정착한다.
+        급하게 식히면 어정쩡한 자리에 굳어 버린다.
+      </p>
+      <p>
+        학습률이 온도다. <span class="hl">$\eta$ 가 크면 파라미터가 크게 흔들려 넓은 영역을 탐색하고,
+        작으면 지금 있는 골짜기 바닥에 정착한다.</span>
+        <a href="3.6-gradient-descent.html">3.6</a>에서 본 대로 $\eta$ 를 고정하면 SGD 는 최솟값 주변을
+        $\eta$ 에 비례하는 반경으로 맴돌기만 한다 — 반경을 줄이려면 온도를 낮춰야 한다.
+      </p>
+
+      <figure class="widget" data-widget="schedule-viewer">
+        <figcaption class="widget__bar">Schedule 한눈에 — 같은 축 위에 겹쳐 보기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">cosine 은 <strong>초반에 천천히, 중반에 빠르게, 끝에서 다시 천천히</strong> 줄어듭니다. 이 모양이 step decay 보다 잘 되는 이유입니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          schedule 이 하는 일은 <strong>탐색과 정착의 배분</strong>이다.
+          초반의 큰 $\eta$ 는 안장점과 얕은 웅덩이를 지나가게 하고,
+          후반의 작은 $\eta$ 는 찾은 골짜기 바닥에 정확히 앉게 한다.
+          두 국면을 어떻게 잇느냐가 schedule 마다 다를 뿐이다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-const"></span>
+      <h3>Constant Learning Rate 고정 학습률</h3>
+      <div class="eq">
+        <div class="eq__body">$$ \eta(t) = \eta_0 $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        가장 단순하고, 여전히 자주 쓰인다 — 짧은 fine-tuning 이나 baseline 실험에서.
+        <span class="hl">문제는 SGD 의 잡음이다. 최솟값에 도달해도 gradient 추정 오차가 계속 파라미터를 흔들어
+        <strong>반경 $\propto\sqrt{\eta}$ 인 구름 속을 맴돈다</strong>(유도 1).</span>
+      </p>
+      <p>
+        Robbins–Monro 의 고전적 조건은 이 문제를 정확히 짚는다 — 수렴하려면
+        $\sum_t \eta_t = \infty$ (충분히 멀리 갈 수 있어야) 이고 동시에
+        $\sum_t \eta_t^2 < \infty$ (잡음이 결국 잦아들어야) 여야 한다<a class="cite" href="#ref-robbins1951-stochastic-approximation" data-ref="robbins1951-stochastic-approximation">1</a>.
+        고정 $\eta$ 는 두 번째 조건을 어긴다.
+      </p>
+
+      <span class="anchor" id="c-step"></span>
+      <h3>Step Decay 단계적 감쇠</h3>
+      <div class="eq">
+        <div class="eq__body">$$ \eta(t) = \eta_0 \cdot \gamma^{\lfloor t/S \rfloor}, \qquad \gamma \in (0,1) $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        <span class="hl">$S$ 스텝(또는 epoch)마다 $\gamma$ 배로 뚝 떨어뜨린다.</span>
+        ResNet 원논문의 "30·60 epoch 에서 $\eta$ 를 1/10 로" 가 대표적이며,
+        오랫동안 vision 의 표준이었다. loss 곡선에 <strong>계단 모양의 급강하</strong>가 나타나는 것이 특징이다.
+      </p>
+      <p>
+        단점은 <strong>언제 떨어뜨릴지를 사람이 정해야 한다</strong>는 것이다.
+        전체 학습 길이가 바뀌면 경계도 다시 잡아야 하고, 급격한 변화가 최적화를 흔들기도 한다.
+        이 두 문제를 함께 해결한 것이 cosine decay 다.
+      </p>
+
+      <span class="anchor" id="c-exp"></span>
+      <h3>Exponential Decay 지수 감쇠</h3>
+      <div class="eq">
+        <div class="eq__body">$$ \eta(t) = \eta_0\,e^{-\lambda t} \quad\text{또는}\quad \eta_0\,\gamma^{t} $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        step decay 를 매 스텝 조금씩 적용한 매끄러운 판이다.
+        <span class="hl">$\gamma$ 가 조금만 작아도 지수적으로 줄어들므로 <strong>후반에 $\eta$ 가 너무 작아지기 쉽다</strong>.</span>
+        $\gamma=0.95$ 로 100 스텝이면 이미 $0.0059\eta_0$ 다.
+        그래서 실무에서는 $\gamma$ 를 $0.999$ 수준으로 두거나, 뒤에서 볼 cosine 을 쓴다.
+      </p>
+
+      <span class="anchor" id="c-cos"></span>
+      <h3>Cosine Decay 코사인 감쇠</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \eta(t) = \eta_{\min} + \tfrac12\bigl(\eta_{\max}-\eta_{\min}\bigr)\left(1+\cos\frac{\pi t}{T}\right) $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        <span class="hl">$t=0$ 에서 $\eta_{\max}$, $t=T$ 에서 $\eta_{\min}$ 으로 <strong>끝점에서 기울기가 0 인 매끄러운 곡선</strong>을 그린다.</span>
+        오늘날 대부분의 대형 model 학습이 이것을 쓴다<a class="cite" href="#ref-loshchilov2016-sgdr-stochastic-gradient" data-ref="loshchilov2016-sgdr-stochastic-gradient">2</a>.
+        세 구간의 성질이 각각 유용하다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>구간</th><th>$\eta$ 의 변화</th><th>왜 좋은가</th></tr></thead>
+          <tbody>
+            <tr><td>초반 ($t\approx0$)</td><td>거의 평평하게 높다</td><td>탐색 시간을 충분히 준다</td></tr>
+            <tr><td>중반 ($t\approx T/2$)</td><td>가장 빠르게 감소</td><td>탐색에서 정착으로 신속히 전환</td></tr>
+            <tr><td>후반 ($t\to T$)</td><td>거의 평평하게 낮다</td><td>잡음 반경을 좁혀 <strong>정밀하게 앉는다</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        $T$ 를 <strong>실제 학습 스텝 수와 정확히 맞추는 것</strong>이 중요하다. $T$ 를 크게 잡고 일찍 멈추면
+        $\eta$ 가 충분히 안 내려가 마지막 정착 이득을 놓치고, 작게 잡으면 남은 스텝을 $\eta_{\min}$ 으로 낭비한다.
+      </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>주차할 때를 생각해 보세요. 주차장 입구에서는 <strong>빠르게 돌아다니며</strong> 빈자리를 찾습니다. 자리를 정하고 나면 <strong>속도를 줄여</strong> 조금씩 맞춰 넣습니다.</p>
+        <p>고정 속도로 계속 달리면 자리에 못 들어가고, 처음부터 기어가면 주차장을 다 돌지도 못합니다. cosine 은 <strong>돌아다니는 시간을 넉넉히 주고, 자리를 정한 뒤에는 확실히 느려지는</strong> 곡선입니다.</p>
+      </div>
+
+      <span class="anchor" id="c-warmup"></span>
+      <h3>Warmup 예열</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \eta(t) = \begin{cases} \dfrac{t}{T_w}\,\eta_{\max} & t < T_w \quad(\text{linear warmup})\\[8pt] \text{(이후 decay schedule)} & t \geq T_w \end{cases} $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        <span class="hl">학습 초반에 $\eta$ 를 0 에서 목표값까지 천천히 올린다.</span>
+        직관에 어긋나 보이지만 — 초반에 크게 가야 하는 것 아닌가? — 세 가지 이유가 있다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>이유</th><th>내용</th><th>어느 경우에 특히</th></tr></thead>
+          <tbody>
+            <tr><td>Adam 의 분산 추정이 부정확</td><td>$\hat{\mathbf{v}}$ 가 몇 스텝 안 되는 표본에 기반해 흔들린다</td><td>Adam·AdamW 사용 시</td></tr>
+            <tr><td>초기 gradient 가 크고 방향이 무의미</td><td>무작위 초기값에서의 gradient 는 신호보다 잡음에 가깝다</td><td>from scratch 학습</td></tr>
+            <tr><td>큰 batch 의 큰 $\eta$</td><td>linear scaling 으로 $\eta$ 를 키우면 초반이 불안정</td><td>$B\geq1024$</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        길이는 보통 전체의 1~10% 다 (Transformer 학습에서 흔히 2,000~10,000 스텝).
+        <strong>warmup 을 빼면 학습이 아예 발산하는 경우</strong>가 많아, Transformer 계열에서는 사실상 필수다<a class="cite" href="#ref-goyal2017-accurate-large-minibatch" data-ref="goyal2017-accurate-large-minibatch">3</a>.
+      </p>
+
+      <figure class="widget" data-widget="warmup-effect">
+        <figcaption class="widget__bar">Warmup — 초반 몇 스텝이 학습 전체를 가른다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">warmup 을 0 으로 두면 <strong>첫 몇 스텝에서 파라미터가 크게 튀고</strong> 회복하는 데 오래 걸립니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-restart"></span>
+      <h3>Restart 재시작</h3>
+      <div class="eq">
+        <div class="eq__body">$$ \eta(t) = \eta_{\min} + \tfrac12(\eta_{\max}-\eta_{\min})\left(1+\cos\frac{\pi\,t_{\text{cur}}}{T_i}\right), \qquad T_{i+1} = T_{\text{mult}}\cdot T_i $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        <span class="hl">cosine decay 를 끝까지 내린 뒤 <strong>$\eta$ 를 다시 최댓값으로 올리는</strong> 것을 반복한다 (SGDR).</span>
+        $t_{\text{cur}}$ 은 현재 사이클 안에서의 스텝 수이고, $T_{\text{mult}}$(보통 2)로 사이클이 점점 길어진다.
+      </p>
+      <p>
+        효과는 두 가지다. <strong>(1) 얕은 웅덩이 탈출</strong> — $\eta$ 를 다시 올리면 좁은 최소에서 튀어나와
+        더 넓고 평평한 곳을 찾을 수 있다. <strong>(2) 공짜 앙상블</strong> — 각 사이클 끝의 model 을
+        따로 저장해 앙상블하면 추가 학습 없이 성능이 오른다(snapshot ensemble).
+        다만 재시작 직후 loss 가 일시적으로 <em>올라가므로</em> 곡선만 보고 놀라지 않아야 한다.
+      </p>
+
+      <figure class="widget" data-widget="restart-view">
+        <figcaption class="widget__bar">Warm Restart — 다시 올려서 웅덩이를 빠져나오기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">재시작 직후 loss 가 <strong>일시적으로 올라갔다가</strong> 더 낮은 곳으로 내려가는 것을 보세요.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-clr"></span>
+      <h3>Cyclic Learning Rate 순환 학습률</h3>
+      <div class="eq">
+        <div class="eq__body">$$ \eta(t) = \eta_{\min} + (\eta_{\max}-\eta_{\min})\cdot\max\left(0,\ 1-\left|\frac{t \bmod 2S}{S}-1\right|\right) $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        <span class="hl">$\eta$ 를 두 경계 사이에서 <strong>삼각파로 오르내린다</strong>. 단조 감소가 아니라는 점이 근본적으로 다르다.</span>
+        Smith 의 논지는 "$\eta$ 를 일시적으로 올리는 것이 단기적으로는 손해지만
+        장기적으로는 이득"이라는 것이었고, 무엇보다 <strong>$\eta$ 를 튜닝할 필요를 없앴다</strong> —
+        적당한 구간만 정하면 그 안을 오가며 알아서 좋은 값을 지난다<a class="cite" href="#ref-smith2015-cyclical-learning-rates" data-ref="smith2015-cyclical-learning-rates">4</a>.
+      </p>
+      <p>
+        경계 $[\eta_{\min},\eta_{\max}]$ 는 <a href="3.6-gradient-descent.html">3.6</a>의 LR range test 로 정한다 —
+        loss 가 떨어지기 시작하는 지점과 발산하기 직전 지점.
+      </p>
+
+      <span class="anchor" id="c-onecycle"></span>
+      <h3>One-Cycle Policy 원사이클 정책</h3>
+      <p>
+        cyclic LR 을 <strong>단 한 번의 큰 사이클</strong>로 쓰고, 마지막에 $\eta_{\min}$ 보다도 훨씬 아래로 떨어뜨린다.
+        <span class="hl">특징은 <strong>momentum 을 $\eta$ 와 반대로 움직인다</strong>는 점이다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>구간</th><th>$\eta$</th><th>momentum $\beta$</th><th>이유</th></tr></thead>
+          <tbody>
+            <tr><td>1단계 (전반 45%)</td><td>$\eta_{\min}\to\eta_{\max}$ 상승</td><td>$0.95\to0.85$ 하강</td><td>보폭이 커지므로 관성을 줄여 안정 유지</td></tr>
+            <tr><td>2단계 (후반 45%)</td><td>$\eta_{\max}\to\eta_{\min}$ 하강</td><td>$0.85\to0.95$ 상승</td><td>보폭이 작아지니 관성으로 진전 보충</td></tr>
+            <tr><td>3단계 (마지막 10%)</td><td>$\eta_{\min}\to\eta_{\min}/100$</td><td>$0.95$ 유지</td><td>최종 정착 (annihilation)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        유효 보폭이 $\eta/(1-\beta)$ 이므로 (<a href="3.7-optimization-algorithms.html">3.7</a> 유도 1)
+        $\eta$ 를 올릴 때 $\beta$ 를 내리면 <strong>둘의 곱이 덜 요동친다</strong> — 반대로 움직이는 이유가 이것이다.
+        Smith 는 이 조합으로 기존보다 훨씬 적은 epoch 에 같은 정확도를 얻는 현상을
+        <strong>super-convergence</strong> 라 불렀다<a class="cite" href="#ref-smith2017-super-convergence-very" data-ref="smith2017-super-convergence-very">5</a>.
+      </p>
+
+      <figure class="widget" data-widget="one-cycle">
+        <figcaption class="widget__bar">One-Cycle — $\eta$ 와 momentum 이 서로 반대로</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">두 곡선의 <strong>유효 보폭 $\eta/(1-\beta)$</strong> 이 세 번째 곡선입니다. 개별 곡선보다 훨씬 완만합니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>고르는 기준을 정리하면 이렇다. 처음 쓴다면 <strong>warmup + cosine</strong> 을 기본으로 두면 된다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>schedule</th><th>튜닝할 것</th><th>강점</th><th>언제 쓰나</th></tr></thead>
+          <tbody>
+            <tr><td>constant</td><td>$\eta_0$</td><td>단순</td><td>짧은 fine-tuning, 디버깅</td></tr>
+            <tr><td>step decay</td><td>$\eta_0,\gamma,S$</td><td>익숙하고 재현 쉬움</td><td>기존 vision 논문 재현</td></tr>
+            <tr><td>exponential</td><td>$\eta_0,\gamma$</td><td>매끄럽다</td><td>강화학습 등 스텝 수가 미정일 때</td></tr>
+            <tr><td><strong>cosine</strong></td><td>$\eta_{\max},T$</td><td><strong>튜닝할 것이 적고 성능이 좋다</strong></td><td><strong>기본 선택</strong></td></tr>
+            <tr><td>warmup (+decay)</td><td>$T_w$</td><td>초반 안정</td><td>Adam·큰 batch·Transformer — 사실상 필수</td></tr>
+            <tr><td>SGDR (restart)</td><td>$T_0,T_{\text{mult}}$</td><td>앙상블 무료</td><td>충분한 예산이 있을 때</td></tr>
+            <tr><td>cyclic</td><td>$\eta_{\min},\eta_{\max},S$</td><td>$\eta$ 튜닝 부담 감소</td><td>탐색 예산이 적을 때</td></tr>
+            <tr><td>one-cycle</td><td>$\eta_{\max}$, 총 스텝</td><td>적은 epoch 로 빠르게</td><td>빠른 반복 실험</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$\eta(t)$</td><td>eta of t 에타</td><td>$t$ 스텝의 learning rate</td><td>scalar 함수</td><td>$>0$</td></tr>
+            <tr><td>$\eta_0$, $\eta_{\max}$</td><td>eta zero · eta max</td><td>초기·최대 학습률</td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>$\eta_{\min}$</td><td>eta min</td><td>최소 학습률 (보통 0 또는 $\eta_{\max}/100$)</td><td>scalar</td><td>$\geq0$</td></tr>
+            <tr><td>$t$</td><td>t</td><td>현재 스텝 (또는 epoch)</td><td>정수</td><td>$0\leq t\leq T$</td></tr>
+            <tr><td>$T$</td><td>T</td><td>전체 학습 길이</td><td>정수</td><td>$\geq1$</td></tr>
+            <tr><td>$T_w$</td><td>T warmup</td><td>warmup 구간 길이</td><td>정수</td><td>보통 $0.01T\!\sim\!0.1T$</td></tr>
+            <tr><td>$\gamma$</td><td>gamma 감마</td><td>감쇠 배율</td><td>scalar</td><td>$(0,1)$</td></tr>
+            <tr><td>$S$</td><td>S</td><td>step decay 의 주기 · cyclic 의 반주기</td><td>정수</td><td>$\geq1$</td></tr>
+            <tr><td>$\lfloor\,\cdot\,\rfloor$</td><td>floor 플로어 · 내림</td><td>정수 부분</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$\bmod$</td><td>modulo 모듈로</td><td>나머지</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$T_i$</td><td>T i</td><td>$i$ 번째 restart 사이클의 길이</td><td>정수</td><td>$\geq1$</td></tr>
+            <tr><td>$T_{\text{mult}}$</td><td>T mult</td><td>사이클 길이 배율</td><td>scalar</td><td>보통 $1$ 또는 $2$</td></tr>
+            <tr><td>$t_{\text{cur}}$</td><td>t current</td><td>현재 사이클 안에서의 스텝</td><td>정수</td><td>$0\leq t_{\text{cur}}&lt;T_i$</td></tr>
+            <tr><td>$\beta$</td><td>beta 베타</td><td>momentum 계수</td><td>scalar</td><td>$[0,1)$</td></tr>
+            <tr><td>$\lambda$ (식 3)</td><td>lambda 람다</td><td>지수 감쇠율</td><td>scalar</td><td>$>0$</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">단위 주의</span>
+        <p>
+          schedule 의 $t$ 가 <strong>step 인지 epoch 인지</strong>를 반드시 확인한다.
+          PyTorch 의 <code>CosineAnnealingLR(T_max=…)</code> 은 <code>scheduler.step()</code> 을
+          부르는 <em>횟수</em> 단위이므로, 매 batch 마다 부르면 step, 매 epoch 마다 부르면 epoch 이다.
+          이 둘을 헷갈리면 $T$ 가 수백 배 어긋나 $\eta$ 가 거의 안 내려가거나 즉시 0 이 된다.
+          <strong>학습 곡선이 이상하면 먼저 $\eta(t)$ 를 실제로 찍어 본다.</strong>
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — 고정 $\eta$ 의 SGD 는 왜 정확히 수렴하지 않는가</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \theta_{k+1} = \theta_k - \eta(\lambda\theta_k + \xi_k), \qquad \mathbb{E}[\xi_k]=0,\ \mathrm{Var}(\xi_k)=\sigma^2 $$</div>
+          <div class="derive__why">$f=\tfrac12\lambda\theta^2$ 에 gradient 잡음 $\xi$ 를 더한 model</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \theta_{k+1} = (1-\eta\lambda)\theta_k - \eta\xi_k $$</div>
+          <div class="derive__why">정리하면 <strong>수축 + 잡음 주입</strong> 형태다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}[\theta_{k+1}^2] = (1-\eta\lambda)^2\mathbb{E}[\theta_k^2] + \eta^2\sigma^2 $$</div>
+          <div class="derive__why">$\xi_k$ 가 $\theta_k$ 와 독립이라 교차항의 기댓값이 0</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{정상상태: } V = (1-\eta\lambda)^2 V + \eta^2\sigma^2 $$</div>
+          <div class="derive__why">$V=\lim\mathbb{E}[\theta_k^2]$ 라 두고 고정점을 찾는다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ V\bigl(1-(1-\eta\lambda)^2\bigr) = \eta^2\sigma^2, \qquad 1-(1-\eta\lambda)^2 = 2\eta\lambda-\eta^2\lambda^2 $$</div>
+          <div class="derive__why">전개해서 $V$ 로 묶었다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ V = \frac{\eta^2\sigma^2}{\eta\lambda(2-\eta\lambda)} = \frac{\eta\,\sigma^2}{\lambda(2-\eta\lambda)} \;\approx\; \frac{\eta\sigma^2}{2\lambda} \quad (\eta\lambda \ll 1) $$</div>
+          <div class="derive__why"><strong>$V \propto \eta$</strong> — 맴도는 반경의 제곱이 $\eta$ 에 비례한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sqrt{V} \propto \sqrt{\eta} \;\Longrightarrow\; \eta \to 0 \ \text{이어야 } \theta\to0 $$</div>
+          <div class="derive__why"><strong>decay 가 필요한 이유의 전부</strong>. $\eta$ 를 1/100 로 줄이면 반경이 1/10 로</div>
+        </div>
+      </div>
+
+      <h3>유도 2 — cosine decay 의 세 구간</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \eta(t) = \tfrac12\eta_{\max}\left(1+\cos\frac{\pi t}{T}\right) \quad (\eta_{\min}=0) $$</div>
+          <div class="derive__why">식 (4)를 단순화</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{d\eta}{dt} = -\frac{\pi\eta_{\max}}{2T}\sin\frac{\pi t}{T} $$</div>
+          <div class="derive__why">감소 <strong>속도</strong>가 sin 곡선을 그린다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ t=0: \ \sin 0 = 0 \;\Rightarrow\; \frac{d\eta}{dt} = 0 $$</div>
+          <div class="derive__why">시작에서 <strong>거의 안 줄어든다</strong> — 탐색 시간 확보</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ t=T/2: \ \sin\frac{\pi}{2}=1 \;\Rightarrow\; \left|\frac{d\eta}{dt}\right| = \frac{\pi\eta_{\max}}{2T} \ (\text{최대}) $$</div>
+          <div class="derive__why">중반에 <strong>가장 빠르게</strong> 전환</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ t=T: \ \sin\pi = 0 \;\Rightarrow\; \frac{d\eta}{dt} = 0 $$</div>
+          <div class="derive__why">끝에서 다시 평평 — <strong>낮은 $\eta$ 로 충분히 머문다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \int_0^T \eta(t)\,dt = \tfrac12\eta_{\max}T \quad (\text{선형 감쇠와 같다}) $$</div>
+          <div class="derive__why">$\int\cos$ 항이 0. <strong>총 이동 예산은 같은데 배분만 다르다</strong></div>
+        </div>
+      </div>
+
+      <h3>유도 3 — one-cycle 이 momentum 을 반대로 움직이는 이유</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \Delta\theta_{\text{eff}} = \frac{\eta}{1-\beta}\,g $$</div>
+          <div class="derive__why">momentum 의 유효 보폭 (<a href="3.7-optimization-algorithms.html">3.7</a> 유도 1)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \eta: \eta_{\min}\to\eta_{\max} \ (\text{10배 상승}), \quad \beta: 0.95\to0.85 $$</div>
+          <div class="derive__why">one-cycle 1단계의 설정</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{1}{1-0.95} = 20, \qquad \frac{1}{1-0.85} \approx 6.67 $$</div>
+          <div class="derive__why">관성 배율이 <strong>3배 줄어든다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{\eta_{\max}\cdot6.67}{\eta_{\min}\cdot20} = \frac{10\cdot6.67}{20} \approx 3.3 \ \text{배} $$</div>
+          <div class="derive__why">$\eta$ 만 보면 10배인데 <strong>유효 보폭은 3.3배</strong>만 커졌다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \beta \ \text{고정 시: } 10 \ \text{배} \;\Rightarrow\; \text{불안정} $$</div>
+          <div class="derive__why">momentum 을 낮추는 것이 <strong>브레이크</strong> 역할을 한다</div>
+        </div>
+      </div>
+      <details>
+        <summary>warmup 이 없으면 Adam 이 왜 불안정한가</summary>
+        <p>
+          Adam 의 갱신량은 $\eta\,\hat m/\sqrt{\hat v}$ 이고, $\hat v$ 는 gradient 제곱의 추정치다.
+          스텝이 몇 번 안 되면 이 추정이 아주 적은 표본에 기반해 <strong>분산이 크다</strong>.
+          운 나쁘게 $\hat v$ 가 작게 추정되면 그 스텝의 보폭이 크게 튀고,
+          한 번 크게 튄 파라미터는 다시 큰 gradient 를 만들어 악순환이 된다.
+        </p>
+        <p>
+          warmup 은 이 구간의 $\eta$ 를 작게 눌러 <strong>$\hat v$ 가 안정될 시간을 벌어 준다</strong>.
+          RAdam 은 같은 문제를 다른 방식으로 — 초반에는 분산 보정항을 곱해 자동으로 warmup 과 비슷한
+          효과를 내도록 — 해결하려 한 변형이다.
+          Transformer 학습에서 warmup 을 빼면 loss 가 발산하거나 초반 수천 스텝을 낭비하는 것이
+          널리 보고되어 있고, 그래서 <code>get_linear_schedule_with_warmup</code> 같은 함수가
+          라이브러리에 기본으로 들어 있다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① Cosine decay 를 손으로 — $\eta_{\max}=10^{-3}$, $\eta_{\min}=0$, $T=1000$</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \eta(0) = \tfrac12\times10^{-3}\times(1+\cos 0) = \tfrac12\times10^{-3}\times2 = 10^{-3} $$</div>
+          <div class="derive__why">$\cos0=1$ — 시작은 최댓값</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \eta(250) = \tfrac12\times10^{-3}\times\left(1+\cos\tfrac{\pi}{4}\right) = \tfrac12\times10^{-3}\times1.7071 $$</div>
+          <div class="derive__why">$\cos(\pi/4)=\tfrac{\sqrt2}{2}\approx0.7071$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ = 8.54\times10^{-4} \quad (\text{85\% 남음}) $$</div>
+          <div class="derive__why"><strong>1/4 지점인데 15% 밖에 안 줄었다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \eta(500) = \tfrac12\times10^{-3}\times(1+0) = 5\times10^{-4} \quad (\text{50\%}) $$</div>
+          <div class="derive__why">$\cos(\pi/2)=0$ — 중간에서 정확히 절반</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \eta(750) = \tfrac12\times10^{-3}\times(1-0.7071) = 1.46\times10^{-4} \quad (\text{15\%}) $$</div>
+          <div class="derive__why">$\cos(3\pi/4)=-0.7071$. <strong>중반 500 스텝에 70% 가 빠졌다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \eta(1000) = \tfrac12\times10^{-3}\times(1-1) = 0 $$</div>
+          <div class="derive__why">$\cos\pi=-1$ — 정확히 0 으로 끝난다</div>
+        </div>
+      </div>
+      <p>
+        구간별로 빠지는 양이 <strong>15% / 35% / 35% / 15%</strong> 다 — 양 끝이 완만하고 가운데가 가파르다.
+        선형 감쇠라면 25% / 25% / 25% / 25% 로 균등하다. 총 적분값은 같은데(유도 2) 배분이 다른 것이 전부다.
+      </p>
+
+      <h3>② Warmup + Cosine 을 이어 붙이기</h3>
+      <p>$T_w=100$, 전체 $T=1000$, $\eta_{\max}=10^{-3}$ 인 표준 조합이다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>스텝 $t$</th><th>구간</th><th>계산</th><th>$\eta(t)$</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0</td><td>warmup</td><td>$0/100 \times 10^{-3}$</td><td class="num">0</td></tr>
+            <tr><td class="num">50</td><td>warmup</td><td>$50/100\times10^{-3}$</td><td class="num">5.0e−4</td></tr>
+            <tr><td class="num">100</td><td>전환점</td><td>$100/100\times10^{-3}$</td><td class="num">1.0e−3</td></tr>
+            <tr><td class="num">325</td><td>cosine</td><td>$\tfrac12\times10^{-3}(1+\cos\tfrac{\pi\cdot225}{900})$</td><td class="num">8.54e−4</td></tr>
+            <tr><td class="num">550</td><td>cosine</td><td>$\tfrac12\times10^{-3}(1+\cos\tfrac{\pi}{2})$</td><td class="num">5.0e−4</td></tr>
+            <tr><td class="num">1000</td><td>끝</td><td>$\tfrac12\times10^{-3}(1+\cos\pi)$</td><td class="num">0</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        cosine 구간의 $t$ 는 <strong>warmup 이 끝난 뒤부터</strong> 세고 길이도 $T-T_w=900$ 이다.
+        이 재계산을 빼먹고 전체 $t$ 를 그대로 넣으면 $\eta$ 가 100 스텝만큼 앞당겨져 끝나기 전에 0 이 된다 —
+        직접 구현할 때 가장 흔한 버그다.
+      </p>
+
+      <h3>③ Step vs Exponential — 100 스텝 뒤 비교</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Step: } \eta_0=0.1,\ \gamma=0.1,\ S=30 \;\Rightarrow\; \eta(100) = 0.1\times0.1^{\lfloor100/30\rfloor} = 0.1\times0.1^3 $$</div>
+          <div class="derive__why">$\lfloor100/30\rfloor = \lfloor3.33\rfloor = 3$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ = 10^{-4} $$</div>
+          <div class="derive__why">1000배 감소. 30·60·90 에서 세 번 떨어졌다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Exp: } \gamma=0.95 \;\Rightarrow\; \eta(100) = 0.1\times0.95^{100} $$</div>
+          <div class="derive__why">$0.95^{100} = e^{100\ln0.95} = e^{-5.13}$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ = 0.1\times0.00592 = 5.9\times10^{-4} $$</div>
+          <div class="derive__why">170배 감소 — step decay 보다 <strong>덜</strong> 줄었다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Exp } \gamma=0.9: \ 0.9^{100} = e^{-10.54} = 2.6\times10^{-5} \;\Rightarrow\; \eta = 2.6\times10^{-6} $$</div>
+          <div class="derive__why"><strong>$\gamma$ 를 0.05 만 바꿨는데 200배 차이</strong> — 지수 감쇠가 민감한 이유</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Cosine } T=100: \ \eta(100)=0 $$</div>
+          <div class="derive__why">$T$ 만 맞추면 <strong>끝점이 자동으로 정해진다</strong> — 튜닝할 것이 하나 적다</div>
+        </div>
+      </div>
+
+      <h3>④ 잡음 반경이 $\eta$ 와 함께 줄어드는 것</h3>
+      <p>유도 1 의 $V=\dfrac{\eta\sigma^2}{2\lambda}$ 에 $\sigma=2$, $\lambda=1$ 을 넣는다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$\eta$</th><th>$V = \eta\sigma^2/(2\lambda)$</th><th>맴도는 반경 $\sqrt{V}$</th><th>loss $\tfrac12\lambda V$</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0.1</td><td class="num">0.2</td><td class="num">0.447</td><td class="num">0.100</td></tr>
+            <tr><td class="num">0.01</td><td class="num">0.02</td><td class="num">0.141</td><td class="num">0.010</td></tr>
+            <tr><td class="num">0.001</td><td class="num">0.002</td><td class="num">0.045</td><td class="num">0.001</td></tr>
+            <tr><td class="num">0.0001</td><td class="num">0.0002</td><td class="num">0.014</td><td class="num">0.0001</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>$\eta$ 를 1/10 로 줄일 때마다 최종 loss 가 1/10 로 준다.</strong>
+        step decay 의 loss 곡선에서 $\eta$ 를 떨어뜨리는 순간 <em>계단처럼 뚝</em> 떨어지는 현상이 정확히 이것이다 —
+        새로 학습된 것이 아니라 <strong>맴돌던 구름이 좁아진 것</strong>이다.
+        이 구분을 알면 "$\eta$ 를 낮췄더니 loss 가 좋아졌다"를 성능 향상으로 오해하지 않는다.
+      </p>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>schedule 비교</strong> · <strong>warmup</strong> · <strong>restart</strong> ·
+        <strong>one-cycle</strong> — 을 만져 본 뒤, 아래에서 <strong>$\eta$ 를 떨어뜨릴 때 loss 가
+        계단처럼 내려가는 현상</strong>을 직접 만들어 본다.
+      </p>
+
+      <figure class="widget" data-widget="noise-floor">
+        <figcaption class="widget__bar">잡음 바닥 — $\eta$ 를 낮추면 loss 가 계단처럼 떨어진다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$\eta$ 를 떨어뜨리는 순간 loss 가 <strong>즉시</strong> 내려갑니다 — 학습이 진전된 것이 아니라 <strong>흔들림이 줄어든 것</strong>입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"cosine decay 의 $T$ 는 대충 크게 잡으면 된다."</p>
+        <p>
+          <strong>실제로는</strong> $T$ 를 실제 학습 스텝 수와 <strong>정확히 맞춰야</strong> 한다.
+          $T$ 를 2배로 크게 잡고 절반에서 멈추면 $\eta$ 가 $\eta_{\max}/2$ 까지밖에 안 내려가
+          마지막 정착 이득(예제 ④)을 통째로 놓친다.
+          반대로 작게 잡으면 남은 구간을 $\eta=0$ 으로 낭비한다.
+          <strong>학습 길이를 바꿀 때마다 $T$ 도 함께 바꾼다.</strong>
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"$\eta$ 를 낮췄더니 loss 가 뚝 떨어졌다 — 좋은 신호다."</p>
+        <p>
+          <strong>실제로는</strong> 그 하락의 상당 부분이 <strong>잡음 반경이 좁아진 것</strong>이지
+          새로운 학습이 아니다(예제 ④). 실제로 더 나은 최소점을 찾은 것인지 확인하려면
+          <strong>validation 성능</strong>을 봐야 한다. training loss 만 보고 "$\eta$ 를 더 낮추자"를
+          반복하면 결국 그 자리에 갇힌 채 loss 숫자만 예쁘게 만든다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"warmup 은 큰 batch 를 쓸 때만 필요하다."</p>
+        <p>
+          <strong>실제로는</strong> Adam 계열을 쓰면 batch 크기와 무관하게 도움이 된다 —
+          초반의 $\hat{\mathbf{v}}$ 추정이 불안정하다는 것이 근본 원인이기 때문이다(유도 3 하단).
+          Transformer 학습에서는 warmup 없이 발산하는 경우가 흔하고,
+          그래서 <code>get_linear_schedule_with_warmup</code> 같은 함수가 라이브러리 기본으로 들어 있다.
+          <strong>Adam + Transformer 조합이면 batch 크기와 무관하게 warmup 을 넣는다.</strong>
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"restart 하면 loss 가 올라간다 — 뭔가 잘못됐다."</p>
+        <p>
+          <strong>실제로는</strong> <strong>정상적인 동작</strong>이다. $\eta$ 를 다시 올렸으니
+          잡음 반경이 넓어져 loss 가 일시적으로 오르고, 그 대가로 좁은 웅덩이를 빠져나온다.
+          판단은 <strong>다음 사이클 끝의 값이 이전 사이클 끝보다 낮은가</strong>로 한다.
+          사이클 중간의 값을 비교하는 것은 의미가 없다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"scheduler 를 붙였으니 $\eta_{\max}$ 는 아무 값이나 되어도 된다."</p>
+        <p>
+          <strong>실제로는</strong> $\eta_{\max}$ 가 여전히 가장 중요한 hyperparameter 다.
+          schedule 은 <em>배분</em>을 정할 뿐 <em>스케일</em>을 정해 주지 않는다.
+          $\eta_{\max}$ 가 발산 영역이면 warmup 이 끝나는 순간 터지고,
+          너무 작으면 곡선 모양과 무관하게 학습이 안 된다.
+          <strong>LR range test 로 $\eta_{\max}$ 를 먼저 정하고 schedule 을 얹는다</strong>가 순서다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①–④ 를 검증한다. 프레임워크 없이 schedule 을 직접 계산한다.</p>
+      <details>
+        <summary>NumPy — schedule 함수들과 잡음 바닥 (20줄)</summary>
+<pre><code>import numpy as np
+
+def cosine(t, T, hi=1e-3, lo=0.0):
+    return lo + 0.5 * (hi - lo) * (1 + np.cos(np.pi * t / T))
+for t in [0, 250, 500, 750, 1000]:
+    print(t, f"{cosine(t, 1000):.3e}")   # 1.000e-03 8.536e-04 5.000e-04 1.464e-04 0.000e+00
+
+def warm_cos(t, Tw=100, T=1000, hi=1e-3):
+    return hi * t / Tw if t &lt; Tw else cosine(t - Tw, T - Tw, hi)
+for t in [0, 50, 100, 325, 550, 1000]:
+    print(t, f"{warm_cos(t):.3e}")       # 0 5e-4 1e-3 8.54e-4 5e-4 0   <- 예제 ②
+
+step = lambda t: 0.1 * 0.1 ** (t // 30)
+expo = lambda t, g: 0.1 * g ** t
+print(step(100), expo(100, 0.95), expo(100, 0.9))   # 1e-4 5.92e-4 2.65e-6
+
+rng = np.random.default_rng(0)                       # 잡음 바닥: V = ησ²/(2λ)
+lam, sig = 1.0, 2.0
+for eta in [0.1, 0.01, 0.001]:
+    th = 0.0
+    tail = []
+    for k in range(20000):
+        th -= eta * (lam * th + rng.normal(0, sig))
+        if k &gt; 15000: tail.append(th)
+    print(eta, round(float(np.var(tail)), 5), round(eta * sig**2 / (2*lam), 5))
+# 0.1 0.2076 0.2 / 0.01 0.0201 0.02 / 0.001 0.00201 0.002   <- 이론과 일치
+</code></pre>
+        <p>
+          <small>
+            마지막 루프의 실측 분산과 이론값 $\eta\sigma^2/(2\lambda)$ 가 소수 셋째 자리까지 맞는다.
+            $\eta$ 를 1/10 로 줄일 때마다 분산도 1/10 이 되는 것이 그대로 보인다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\eta_{\max}=10^{-3}$, $\eta_{\min}=0$, $T=1000$ 인 cosine decay 에서 $\eta(500)$ 은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$5\times10^{-4}$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$7.07\times10^{-4}$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$0$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\cos(\pi\cdot500/1000)=\cos(\pi/2)=0$ 이므로 $\tfrac12\times10^{-3}\times(1+0)=5\times10^{-4}$ — 정확히 절반이다.
+            <strong>나</strong>는 $\cos$ 대신 $\eta_{\max}\cos(\pi/4)$ 를 계산한 값이고,
+            <strong>다</strong>는 $t=T$ 에서의 값이다. 중간 지점이 정확히 절반이라는 것이 cosine 의 편리한 성질이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\eta_0=0.1$, $\gamma=0.1$, $S=30$ 인 step decay 에서 $t=100$ 일 때 $\eta$ 는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$10^{-4}$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$10^{-3}$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$10^{-5}$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\lfloor100/30\rfloor=3$ 이므로 $0.1\times0.1^3=10^{-4}$.
+            30·60·90 에서 세 번 떨어졌다. <strong>나</strong>는 $\lfloor\cdot\rfloor$ 를 2로 센 오답,
+            <strong>다</strong>는 4로 센 오답이다. <strong>내림</strong>이라는 것이 핵심이며,
+            $t=90$ 부터 $t=119$ 까지 같은 값이 유지된다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $T_w=100$, $T=1000$ 인 warmup+cosine 에서 $t=550$ 일 때 cosine 에 넣을 진행률은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$(550-100)/(1000-100) = 0.5$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$550/1000 = 0.55$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$550/900 \approx 0.611$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            cosine 구간은 warmup 이 <strong>끝난 뒤부터</strong> 시작하고 길이도 $T-T_w=900$ 이다.
+            분자·분모 <strong>둘 다</strong> 보정해야 하며, <strong>다</strong>는 분모만 고친 흔한 버그다.
+            이것을 틀리면 $\eta$ 가 예정보다 일찍 0 에 닿아 마지막 구간을 낭비한다(예제 ②).
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            고정 $\eta$ 의 SGD 에서 최종 loss 를 1/10 로 줄이려면?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\eta$ 를 1/10 로 줄인다 — 잡음 분산이 $\eta$ 에 비례한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$\eta$ 를 $1/\sqrt{10}$ 로 줄인다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>스텝을 10배 더 돌린다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            유도 1 에서 $V=\eta\sigma^2/(2\lambda)$ 이고 loss $=\tfrac12\lambda V \propto \eta$ 다.
+            <strong>다</strong>는 안 된다 — 이미 정상상태에 도달했으면 <strong>더 돌려도 그 자리를 맴돌 뿐</strong>이다.
+            이것이 "학습이 정체됐다"의 진짜 원인일 때가 많고, decay 가 해결책이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            one-cycle 에서 $\eta$ 를 올릴 때 momentum 을 낮추는 이유는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>유효 보폭 $\eta/(1-\beta)$ 가 너무 커지지 않게 하려고</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>momentum 이 클수록 메모리를 많이 써서</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>gradient 잡음을 늘리려고</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\eta$ 가 10배 커질 때 $\beta$ 를 0.95→0.85 로 낮추면 관성 배율이 20→6.67 로 3배 줄어
+            유효 보폭 증가가 10배에서 3.3배로 완화된다(유도 3).
+            <strong>나</strong>는 틀렸다 — $\beta$ 값과 메모리는 무관하다(상태 개수는 동일).
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            epoch 마다 <code>scheduler.step()</code> 을 부르도록 짠 코드를 batch 마다 부르게 바꿨다. $T$ 를 그대로 두면?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\eta$ 가 훨씬 빨리 0 에 닿아 대부분의 학습을 $\eta\approx0$ 으로 낭비한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$\eta$ 가 거의 안 줄어든다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>차이가 없다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            1 epoch 이 $N/B$ 스텝이므로 호출 횟수가 수백 배 늘어난다.
+            $T$ 를 그대로 두면 $\eta$ 가 첫 몇 epoch 만에 0 에 닿는다.
+            <strong>schedule 의 $t$ 단위를 확인하는 것</strong>이 이런 종류 버그의 유일한 예방책이며,
+            의심스러우면 $\eta(t)$ 를 실제로 로그에 찍어 본다('단위 주의' 상자).
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="3.7-optimization-algorithms.html">3.7 최적화 알고리즘</a></strong> — schedule 은 optimizer 와 짝을 이룬다.</li>
+        <li><strong><a href="3.9-constraints-regularization.html">3.9 제약과 정규화</a></strong> — 조기 종료도 경로 위에서 멈추는 전략이다.</li>
+        <li><strong><a href="3.10-deep-learning-optimization.html">3.10 딥러닝 최적화</a></strong> — $\eta$ 와 batch 크기가 함께 일반화에 영향을 준다.</li>
+        <li><strong>12장 Transformer</strong> — warmup + cosine 이 사실상의 표준 설정이다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-loshchilov2016-sgdr-stochastic-gradient" data-ref="loshchilov2016-sgdr-stochastic-gradient">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Loshchilov, I. &amp; Hutter, F. (2017). <em>SGDR: Stochastic Gradient Descent with Warm Restarts</em>. ICLR 2017.</span>
+          <span class="ref__where">3절 — 식 (4)의 cosine annealing 정의와 식 (6)의 warm restart, $T_{\text{mult}}$ 로 사이클을 늘리는 규칙. 4절 — 재시작 직후 loss 가 오른 뒤 더 낮아진다는 곡선(오해 4 와 restart 위젯의 근거)</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1608.03983">arXiv:1608.03983</a>
+        </li>
+        <li class="ref" id="ref-smith2015-cyclical-learning-rates" data-ref="smith2015-cyclical-learning-rates">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Smith, L. N. (2017). <em>Cyclical Learning Rates for Training Neural Networks</em>. WACV 2017.</span>
+          <span class="ref__where">3절 — 식 (7)의 삼각파 정의와 "$\eta$ 를 일시적으로 올리는 것이 장기적으로 이득"이라는 논지. 3.3절(LR range test) — 경계 $[\eta_{\min},\eta_{\max}]$ 를 정하는 절차</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1506.01186">arXiv:1506.01186</a>
+        </li>
+        <li class="ref" id="ref-smith2017-super-convergence-very" data-ref="smith2017-super-convergence-very">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Smith, L. N. &amp; Topin, N. (2019). <em>Super-Convergence: Very Fast Training of Neural Networks Using Large Learning Rates</em>. SPIE 11006.</span>
+          <span class="ref__where">2–3절 — one-cycle policy 의 세 단계와 momentum 을 $\eta$ 와 반대로 움직이는 규칙('One-Cycle' 표와 유도 3). 4절 — 적은 epoch 로 같은 정확도에 도달하는 super-convergence 실험</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1708.07120">arXiv:1708.07120</a>
+        </li>
+        <li class="ref" id="ref-goyal2017-accurate-large-minibatch" data-ref="goyal2017-accurate-large-minibatch">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Goyal, P. et al. (2017). <em>Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour</em>. arXiv:1706.02677.</span>
+          <span class="ref__where">2.2절(Warmup) — 식 (5)의 gradual warmup 정의와, 큰 batch 에서 warmup 없이 학습하면 초반에 발산한다는 실험. warmup 표의 세 번째 줄과 오해 3 의 근거</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1706.02677">arXiv:1706.02677</a>
+        </li>
+        <li class="ref" id="ref-robbins1951-stochastic-approximation" data-ref="robbins1951-stochastic-approximation">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Robbins, H. &amp; Monro, S. (1951). <em>A Stochastic Approximation Method</em>. The Annals of Mathematical Statistics, 22(3), 400–407.</span>
+          <span class="ref__where">2절 — 수렴을 위한 스텝 크기 조건 $\sum\eta_t=\infty$, $\sum\eta_t^2<\infty$. 고정 $\eta$ 가 두 번째 조건을 어긴다는 것이 '고정 학습률' 절과 유도 1 의 출발점</span>
+          <a class="ref__link" href="https://projecteuclid.org/journals/annals-of-mathematical-statistics/volume-22/issue-3/A-Stochastic-Approximation-Method/10.1214/aoms/1177729586.full">projecteuclid.org</a>
+        </li>
+        <li class="ref" id="ref-zhang2023-d2l" data-ref="zhang2023-d2l">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Zhang, A., Lipton, Z. C., Li, M. &amp; Smola, A. J. (2023). <em>Dive into Deep Learning</em>. Cambridge University Press.</span>
+          <span class="ref__where">12.11절(Learning Rate Scheduling) — 고정·다항·지수·cosine schedule 을 같은 실험에서 비교한 곡선과 warmup 의 필요성 서술. '수식과 기호'의 선택 기준 표를 이 절과 대조했다</span>
+          <a class="ref__link" href="https://d2l.ai/">d2l.ai</a>
+        </li>
+        <li class="ref" id="ref-stanford-cs231n" data-ref="stanford-cs231n">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Li, F.-F., Johnson, J. &amp; Yeung, S. <em>CS231n: Deep Learning for Computer Vision</em>. Stanford University.</span>
+          <span class="ref__where">Neural Networks Part 3(Annealing the learning rate) — step·exponential·1/t decay 를 비교하고 step decay 를 기본으로 권하는 실무 지침. 예제 ③의 설정값(0.1 씩 30 epoch 마다)이 여기서 왔다</span>
+          <a class="ref__link" href="https://cs231n.github.io/neural-networks-3/">cs231n.github.io</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+/* ---------- schedule 함수들 (η_max = 1 로 정규화) ---------- */
+var SCH = {
+  const_: function (t, T) { return 1; },
+  step:   function (t, T) { return Math.pow(0.1, Math.floor(t / (T / 3))); },
+  expo:   function (t, T) { return Math.pow(0.001, t / T); },
+  cos:    function (t, T) { return 0.5 * (1 + Math.cos(Math.PI * Math.min(t, T) / T)); },
+  wcos:   function (t, T) {
+    var Tw = T * 0.1;
+    return t < Tw ? t / Tw : 0.5 * (1 + Math.cos(Math.PI * (t - Tw) / (T - Tw)));
+  },
+  sgdr:   function (t, T) {
+    var T0 = T / 7, acc = 0, len = T0;
+    while (acc + len <= t) { acc += len; len *= 2; }
+    return 0.5 * (1 + Math.cos(Math.PI * (t - acc) / len));
+  },
+  clr:    function (t, T) {
+    var S = T / 6;
+    var x = (t % (2 * S)) / S;
+    return 0.1 + 0.9 * Math.max(0, 1 - Math.abs(x - 1));
+  },
+  onecyc: function (t, T) {
+    var p = t / T;
+    if (p < 0.45) return 0.08 + 0.92 * (p / 0.45);
+    if (p < 0.9) return 1 - 0.92 * ((p - 0.45) / 0.45);
+    return 0.08 * (1 - (p - 0.9) / 0.1 * 0.99);
+  }
+};
+var SCH_NAME = {
+  const_: '고정', step: 'Step Decay', expo: 'Exponential', cos: 'Cosine',
+  wcos: 'Warmup + Cosine', sgdr: 'SGDR (restart)', clr: 'Cyclic', onecyc: 'One-Cycle'
+};
+
+/* ============================================================
+   위젯 1 — schedule 겹쳐 보기
+   ============================================================ */
+WIDGETS.register('schedule-viewer', function (root, ctx) {
+  var cur = 'cos', tq = 0.5;
+
+  var p = VIZ.plot({ w: 460, h: 290, xmin: 0, xmax: 1, ymin: 0, ymax: 1.1,
+    pad: { t: 18, r: 14, b: 30, l: 46 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'name', label: 'schedule' },
+    { key: 'now', label: '이 지점의 η / η_max', digits: 4 },
+    { key: 'area', label: '총 이동 예산 (∫η dt / η_max·T)', digits: 4 },
+    { key: 'note', label: '특징' }
+  ]);
+
+  var NOTE = {
+    const_: '줄지 않는다 — 잡음 반경이 그대로', step: '계단처럼 뚝 떨어진다',
+    expo: '초반부터 빠르게 줄어든다', cos: '양 끝이 완만, 중반이 가파르다',
+    wcos: '올렸다가 내린다 — 오늘날의 표준', sgdr: '내렸다가 다시 올린다',
+    clr: '삼각파로 오르내린다', onecyc: '한 번 크게 올렸다 내리고 끝에서 더 내린다'
+  };
+
+  function draw() {
+    p.clear().grid(0.25, 0.25).axes('진행률 t/T', 'η / η_max').ticks(0.25, 0.25);
+    /* 비교용으로 cosine 을 옅게 깔아 둔다 */
+    if (cur !== 'cos') p.curve(function (x) { return SCH.cos(x, 1); }, { samples: 300, dash: '3 4' });
+    p.curve(function (x) { return SCH[cur](x, 1); }, { samples: 500, alt: true });
+    p.dot(tq, SCH[cur](tq, 1), 6);
+
+    var area = 0, N = 2000;
+    for (var i = 0; i < N; i++) area += SCH[cur](i / N, 1) / N;
+
+    out.setRaw('name', SCH_NAME[cur]);
+    out.set('now', SCH[cur](tq, 1));
+    out.set('area', area);
+    out.setRaw('note', NOTE[cur]);
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: 'schedule',
+    options: [
+      { value: 'cos', label: 'Cosine' },
+      { value: 'wcos', label: 'Warmup+Cos' },
+      { value: 'step', label: 'Step' },
+      { value: 'expo', label: 'Exp' },
+      { value: 'const_', label: '고정' }
+    ],
+    value: 'cos', onChange: function (v) { cur = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '진행률 t/T', min: 0, max: 1, step: 0.01, value: 0.5, digits: 2,
+    onInput: function (v) { tq = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — warmup 효과
+   ============================================================ */
+WIDGETS.register('warmup-effect', function (root, ctx) {
+  var Tw = 0.1;
+
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:.35rem;width:100%;align-items:center';
+  ctx.stage.appendChild(wrap);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'tw', label: 'warmup 비율', digits: 3 },
+    { key: 'peak', label: '초반 50 스텝의 최대 |θ|', digits: 4 },
+    { key: 'end', label: '끝에서의 |θ|', digits: 5 },
+    { key: 'note', label: '판정' }
+  ]);
+
+  function sched(t, T) {
+    var w = Math.max(1e-9, Tw * T);
+    return t < w ? t / w : 0.5 * (1 + Math.cos(Math.PI * (t - w) / (T - w)));
+  }
+
+  function draw() {
+    wrap.innerHTML = '';
+    var T = 400, ETA = 0.9;
+
+    var p1 = VIZ.plot({ w: 440, h: 130, xmin: 0, xmax: T, ymin: 0, ymax: 1.1,
+      pad: { t: 18, r: 12, b: 22, l: 42 } });
+    p1.grid(100, 0.5).axes('스텝', 'η').ticks(100, 0.5);
+    p1.curve(function (t) { return sched(t, T); }, { samples: 400 });
+    wrap.appendChild(p1.svg);
+
+    /* 초반 gradient 가 크고 부정확한 상황을 흉내낸다 */
+    var p2 = VIZ.plot({ w: 440, h: 160, xmin: 0, xmax: T, ymin: -0.1, ymax: 2.6,
+      pad: { t: 18, r: 12, b: 24, l: 42 } });
+    p2.grid(100, 0.5).axes('스텝', '|θ| (0 이 목표)').ticks(100, 0.5);
+
+    var th = 1.0, pts = [[0, 1]], peak = 1;
+    for (var k = 1; k <= T; k++) {
+      /* 초반 30 스텝은 gradient 가 5배 과대 추정된다고 가정 */
+      var scale = k < 30 ? 5.0 : 1.0;
+      th = th - sched(k, T) * ETA * scale * th;
+      if (!isFinite(th)) th = 3;
+      th = Math.max(-3, Math.min(3, th));
+      if (k <= 50) peak = Math.max(peak, Math.abs(th));
+      pts.push([k, Math.abs(th)]);
+    }
+    p2.line(pts, { alt: true, width: 2 });
+    p2.callout(15, Math.min(2.4, peak), '초반 불안정 구간', { dx: 24, dy: -14, tone: 'var(--ink-3)' });
+    wrap.appendChild(p2.svg);
+
+    out.set('tw', Tw);
+    out.set('peak', peak);
+    out.set('end', Math.abs(th));
+    out.setRaw('note', peak > 1.5 ? '초반에 크게 튄다 — warmup 을 늘려 보세요'
+      : (Tw > 0.35 ? 'warmup 이 과해 학습 시간을 낭비한다' : '안정적'));
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'warmup 비율 (전체 대비)', min: 0, max: 0.5, step: 0.01, value: 0.1, digits: 2,
+    onInput: function (v) { Tw = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — warm restart
+   ============================================================ */
+WIDGETS.register('restart-view', function (root, ctx) {
+  var mult = 2;
+
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:.35rem;width:100%;align-items:center';
+  ctx.stage.appendChild(wrap);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'cycles', label: '사이클 경계' },
+    { key: 'ends', label: '각 사이클 끝의 loss' },
+    { key: 'best', label: '최종 loss', digits: 5 },
+    { key: 'note', label: '해석' }
+  ]);
+
+  function sched(t, T) {
+    var T0 = mult === 1 ? T / 4 : T / 7, acc = 0, len = T0;
+    while (acc + len <= t) { acc += len; len *= mult; }
+    return { v: 0.5 * (1 + Math.cos(Math.PI * (t - acc) / len)), start: acc };
+  }
+
+  function draw() {
+    wrap.innerHTML = '';
+    var T = 700;
+
+    var p1 = VIZ.plot({ w: 440, h: 126, xmin: 0, xmax: T, ymin: 0, ymax: 1.1,
+      pad: { t: 18, r: 12, b: 22, l: 42 } });
+    p1.grid(100, 0.5).axes('스텝', 'η').ticks(200, 0.5);
+    p1.curve(function (t) { return sched(t, T).v; }, { samples: 700 });
+    wrap.appendChild(p1.svg);
+
+    var p2 = VIZ.plot({ w: 440, h: 176, xmin: 0, xmax: T, ymin: -3.2, ymax: 0.4,
+      pad: { t: 18, r: 12, b: 24, l: 46 } });
+    p2.grid(100, 1).axes('스텝', 'log₁₀ loss').ticks(200, 1);
+
+    /* 얕은 웅덩이 → 재시작으로 탈출 → 깊은 웅덩이 */
+    var th = 1.1, pts = [], ends = [], prevStart = -1;
+    for (var k = 1; k <= T; k++) {
+      var s = sched(k, T);
+      if (s.start !== prevStart && prevStart >= 0) ends.push(loss(th));
+      prevStart = s.start;
+      /* 이중 우물: 0.6 에 얕은 최소, 0 에 깊은 최소 */
+      var g = 4 * 0.35 * th * (th - 0.6) * (th - 1.0) + 0.02;
+      th = th - s.v * 0.28 * g;
+      th = Math.max(-0.5, Math.min(1.6, th));
+      pts.push([k, Math.max(-3.2, Math.log10(Math.max(loss(th), 1e-3)))]);
+    }
+    ends.push(loss(th));
+    p2.line(pts, { alt: true, width: 1.8 });
+    wrap.appendChild(p2.svg);
+
+    out.setRaw('cycles', mult === 1 ? '길이 고정 (T₀ 반복)' : 'T₀, 2T₀, 4T₀ … 로 길어짐');
+    out.setRaw('ends', ends.map(function (e) { return e.toFixed(3); }).join(' → '));
+    out.set('best', ends[ends.length - 1]);
+    out.setRaw('note', ends[ends.length - 1] < ends[0]
+      ? '사이클마다 더 낮아졌다 ✓' : '개선 없음 — 이 지형에는 restart 가 불필요');
+  }
+
+  function loss(t) {
+    /* 0 근처가 깊은 최소, 0.6 근처가 얕은 최소 */
+    return 0.35 * t * t * (t - 1.2) * (t - 1.2) + 0.02 * t + 0.02;
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '사이클 길이',
+    options: [{ value: 2, label: 'T_mult = 2 (점점 길게)' }, { value: 1, label: 'T_mult = 1 (일정)' }],
+    value: 2, onChange: function (v) { mult = Number(v); draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — one-cycle: η 와 momentum
+   ============================================================ */
+WIDGETS.register('one-cycle', function (root, ctx) {
+  var coupled = 1;
+
+  var p = VIZ.plot({ w: 460, h: 290, xmin: 0, xmax: 1, ymin: 0, ymax: 1.15,
+    pad: { t: 18, r: 14, b: 30, l: 44 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'peakEta', label: 'η 최대 (정규화)', digits: 3 },
+    { key: 'peakEff', label: '유효 보폭 최대 (정규화)', digits: 3 },
+    { key: 'range', label: '유효 보폭의 변동 폭', digits: 3 },
+    { key: 'note', label: '해석' }
+  ]);
+
+  function etaAt(p_) { return SCH.onecyc(p_, 1); }
+  function betaAt(p_) {
+    if (!coupled) return 0.9;
+    if (p_ < 0.45) return 0.95 - 0.10 * (p_ / 0.45);
+    if (p_ < 0.9) return 0.85 + 0.10 * ((p_ - 0.45) / 0.45);
+    return 0.95;
+  }
+
+  function draw() {
+    p.clear().grid(0.25, 0.25).axes('진행률', '정규화 값').ticks(0.25, 0.25);
+
+    var le = p.curve(etaAt, { samples: 400 });
+    le.setAttribute('stroke', 'var(--jade)');
+    var lb = p.curve(betaAt, { samples: 400 });
+    lb.setAttribute('stroke', 'var(--seal)');
+
+    /* 유효 보폭 η/(1-β), 최대값으로 정규화 */
+    var mx = 0, mn = 1e9;
+    for (var i = 0; i <= 400; i++) {
+      var q = i / 400, e = etaAt(q) / (1 - betaAt(q));
+      mx = Math.max(mx, e); mn = Math.min(mn, e);
+    }
+    p.curve(function (q) { return etaAt(q) / (1 - betaAt(q)) / mx; }, { samples: 400, dash: '5 4' });
+
+    p.callout(0.45, 1, 'η (초록)', { dx: -30, dy: -16, tone: 'var(--jade)' });
+    p.callout(0.2, betaAt(0.2), 'momentum β (빨강)', { dx: 16, dy: 20, tone: 'var(--seal)' });
+    p.callout(0.7, etaAt(0.7) / (1 - betaAt(0.7)) / mx, '유효 보폭 (파선)', { dx: 12, dy: -22, tone: 'var(--ink-3)' });
+
+    out.set('peakEta', 1);
+    out.set('peakEff', 1);
+    out.set('range', (mx - mn) / mx);
+    out.setRaw('note', coupled ? 'β 를 반대로 움직여 유효 보폭이 완만하다'
+      : 'β 고정 — 유효 보폭이 η 를 그대로 따라 크게 요동한다');
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: 'momentum 처리',
+    options: [{ value: 1, label: 'η 와 반대로 (one-cycle)' }, { value: 0, label: '고정 0.9' }],
+    value: 1, onChange: function (v) { coupled = Number(v); draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — 잡음 바닥과 계단형 하락
+   ============================================================ */
+WIDGETS.register('noise-floor', function (root, ctx) {
+  var drops = 2, sigma = 2.0;
+
+  var p = VIZ.plot({ w: 460, h: 290, xmin: 0, xmax: 900, ymin: -4, ymax: 0.5,
+    pad: { t: 18, r: 14, b: 30, l: 46 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'seq', label: 'η 의 변화' },
+    { key: 'theory', label: '구간별 이론 loss (ησ²/4λ)' },
+    { key: 'end', label: '최종 loss', digits: 6 },
+    { key: 'note', label: '해석' }
+  ]);
+
+  function mkRand(seed) {
+    var s = seed;
+    return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+  }
+
+  function draw() {
+    p.clear().grid(150, 1).axes('스텝', 'log₁₀ loss').ticks(300, 1);
+
+    var rnd = mkRand(20260729);
+    var lam = 1.0, th = 1.0, pts = [], etas = [], seg = 900 / (drops + 1);
+    for (var k = 1; k <= 900; k++) {
+      var level = Math.min(drops, Math.floor(k / seg));
+      var eta = 0.2 * Math.pow(0.1, level);
+      if (etas.length <= level) etas.push(eta);
+      var noise = (rnd() * 2 - 1) * Math.sqrt(3) * sigma;
+      th = th - eta * (lam * th + noise);
+      if (!isFinite(th)) th = 0;
+      var L = 0.5 * lam * th * th;
+      pts.push([k, Math.max(-4, Math.log10(Math.max(L, 1e-4)))]);
+    }
+    p.line(pts, { alt: true, width: 1.4 });
+
+    /* 이론적인 잡음 바닥 선 */
+    for (var i = 0; i <= drops; i++) {
+      var V = etas[i] * sigma * sigma / (2 * lam);
+      var Lb = 0.5 * lam * V;
+      var y = Math.max(-4, Math.log10(Lb));
+      p.line([[i * seg, y], [(i + 1) * seg, y]], { dash: '4 4', width: 2 });
+    }
+    p.callout(seg * 0.5, Math.log10(0.5 * etas[0] * sigma * sigma / 2),
+      '이론 잡음 바닥', { dx: 16, dy: 28, tone: 'var(--ink-3)' });
+
+    out.setRaw('seq', etas.map(function (e) { return e.toFixed(4); }).join(' → '));
+    out.setRaw('theory', etas.map(function (e) {
+      return (0.25 * e * sigma * sigma).toExponential(1);
+    }).join(' → '));
+    out.set('end', 0.5 * th * th);
+    out.setRaw('note', drops === 0 ? '고정 η — 어느 선 아래로 못 내려간다'
+      : 'η 를 떨어뜨린 순간 loss 가 즉시 그 아래 선으로 내려간다');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'η 를 몇 번 떨어뜨릴까', min: 0, max: 3, step: 1, value: 2, digits: 0,
+    onInput: function (v) { drops = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'gradient 잡음 σ', min: 0.5, max: 4, step: 0.1, value: 2, digits: 1,
+    onInput: function (v) { sigma = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

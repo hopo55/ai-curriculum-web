@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.2 미분 — AI 이론 학습</title>
+<meta name="description" content="할선이 접선이 되는 순간이 도함수다. 고계도함수·미분 가능성·단조성·극값·곡률을 조작 가능한 그림으로 확인한다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="3.2">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">3.2</span>
+        <span>3장 · 미적분과 최적화</span>
+      </div>
+      <h1>미분</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 50분</span>
+        <span><b>난이도</b>★★☆☆☆</span>
+        <span><b>선수지식</b>
+          <a href="3.1-functions-basics.html">3.1 함수의 기본</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-rate">Rate of Change</a>
+      <a class="chip" href="#c-deriv">Derivative</a>
+      <a class="chip" href="#c-tangent">Tangent Line</a>
+      <a class="chip" href="#c-higher">Higher-Order Derivative</a>
+      <a class="chip" href="#c-diffable">Differentiability</a>
+      <a class="chip" href="#c-mono">Monotonicity</a>
+      <a class="chip" href="#c-extremum">Extremum</a>
+      <a class="chip" href="#c-curvature">Curvature</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        derivative(도함수)는 <strong>지금 이 순간의 변화율</strong>이고, 부호는 <strong>어느 쪽으로 가야 값이 커지는지</strong>,
+        크기는 <strong>얼마나 급한지</strong>를 알려 준다. 학습이란 이 부호의 반대로 조금씩 움직이는 일이다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>극한 정의로 $x^2$·$\sigma(x)$ 의 도함수를 직접 유도할 수 있다.</li>
+        <li>$f'$ 의 부호로 monotonicity(단조성)를, $f''$ 의 부호로 extremum(극값)의 종류를 판정할 수 있다.</li>
+        <li>sigmoid의 미분값이 최대 $0.25$ 라는 사실에서 vanishing gradient(기울기 소실)를 설명할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        자동차 계기판의 속도계를 생각한다. 100km 를 2시간에 갔다면 평균 속도는 50km/h 지만,
+        <strong>지금 이 순간</strong>의 속도는 다른 값이다. 두 지점을 잇는 직선의 기울기가 평균 변화율이고,
+        두 지점을 <em>무한히 가깝게</em> 붙였을 때 남는 기울기가 순간 변화율 — 즉 derivative 다.
+      </p>
+      <p>
+        <a href="3.1-functions-basics.html">3.1</a>에서 본 국소 근사와 같은 이야기다.
+        곡선을 충분히 확대하면 직선으로 보이고, 그 직선의 기울기가 도함수다.
+        <strong>학습에서 쓰는 정보는 이 기울기 하나뿐</strong>이다 — loss(손실)의 기울기가 양수면 왼쪽으로,
+        음수면 오른쪽으로 움직이면 값이 줄어든다.
+      </p>
+
+      <figure class="widget" data-widget="secant-tangent">
+        <figcaption class="widget__bar">Secant → Tangent — 두 점을 붙이면 접선이 된다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$h$ 를 0 으로 줄이면 할선의 기울기가 <strong>한 값에 정착</strong>합니다. 그 값이 $f'(a)$ 입니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          도함수는 <strong>부호와 크기 두 가지 정보</strong>를 준다.
+          부호는 방향(오르막인가 내리막인가), 크기는 급함(한 걸음에 얼마나 변하는가)이다.
+          gradient descent는 이 중 <em>부호를 뒤집고 크기에 비례해</em> 움직인다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-rate"></span>
+      <h3>Rate of Change 변화율</h3>
+      <div class="eq">
+        <div class="eq__body">$$ \text{평균 변화율} = \frac{\Delta y}{\Delta x} = \frac{f(a+h)-f(a)}{h} $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">두 점 $(a, f(a))$ 와 $(a+h, f(a+h))$ 를 잇는 secant line(할선)의 기울기가 평균 변화율이다.</span>
+        구간 전체에 걸친 평균이므로 구간 안에서 무슨 일이 있었는지는 알려 주지 않는다.
+        구간을 줄여 나가면 그 정보가 점점 좁은 곳에 집중된다.
+      </p>
+
+      <span class="anchor" id="c-deriv"></span>
+      <h3>Derivative 도함수</h3>
+      <div class="note note--key">
+        <span class="note__label">정의</span>
+        <p>
+          $$ f'(a) = \lim_{h\to0}\frac{f(a+h)-f(a)}{h} $$
+          이 극한이 존재하면 $f$ 는 $a$ 에서 <strong>미분 가능</strong>하고, 그 값을 $a$ 에서의 derivative 라 한다.
+        </p>
+      </div>
+      <p>
+        표기가 문헌마다 다르지만 뜻은 전부 같다. 어느 표기를 만나도 알아볼 수 있어야 하므로 대응표를 둔다.
+        이 사이트에서는 <strong>일변수는 $f'$, 다변수는 $\partial$</strong> 를 쓴다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>표기</th><th>이름</th><th>주로 보이는 곳</th><th>특징</th></tr></thead>
+          <tbody>
+            <tr><td>$f'(x)$, $f''(x)$</td><td>Lagrange 표기 (prime)</td><td>수학 교재, 이 사이트</td><td>짧다. 변수가 하나일 때만 명확</td></tr>
+            <tr><td>$\dfrac{df}{dx}$, $\dfrac{d^2f}{dx^2}$</td><td>Leibniz 표기</td><td>물리·공학, chain rule 설명</td><td><strong>무엇으로 미분했는지</strong>가 드러난다</td></tr>
+            <tr><td>$\dot{x}$, $\ddot{x}$</td><td>Newton 표기 (dot)</td><td>역학, 제어, 최적화 논문</td><td><strong>시간</strong> 미분 전용 관례</td></tr>
+            <tr><td>$D_x f$, $Df$</td><td>연산자 표기</td><td>해석학, 자동미분 문헌</td><td>미분을 <strong>함수→함수 사상</strong>으로 본다</td></tr>
+            <tr><td>$\partial f/\partial x$</td><td>편미분 (round d)</td><td>다변수 전반 (<a href="3.3-multivariable-derivatives.html">3.3</a>)</td><td>변수가 여럿일 때만 쓴다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$f(x)$</th><th>$f'(x)$</th><th>한 줄 근거</th></tr></thead>
+          <tbody>
+            <tr><td>$c$ (상수)</td><td>$0$</td><td>변하지 않으니 변화율이 0</td></tr>
+            <tr><td>$x^n$</td><td>$n x^{n-1}$</td><td>이항전개에서 $h^1$ 항의 계수 (유도 1)</td></tr>
+            <tr><td>$e^x$</td><td>$e^x$</td><td>자기 자신이 기울기 — $e$ 의 정의</td></tr>
+            <tr><td>$\log x$</td><td>$1/x$</td><td>$e^x$ 의 역함수라 기울기가 역수</td></tr>
+            <tr><td>$u(x)v(x)$</td><td>$u'v + uv'$</td><td>곱의 법칙 — 넓이 사각형의 두 변이 각각 자란다</td></tr>
+            <tr><td>$u(v(x))$</td><td>$u'(v(x))\,v'(x)$</td><td>chain rule(연쇄법칙) — <a href="3.4-chain-rule-computation-graph.html">3.4</a>의 주제</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        표의 다섯째 줄, <strong>곱의 법칙</strong>은 넓이로 보면 외울 것이 없다.
+        가로 $u$·세로 $v$ 인 직사각형의 넓이가 $uv$ 이고, 두 변이 각각 $du$·$dv$ 만큼 자라면
+        늘어난 넓이는 <strong>오른쪽 띠 $v\,du$ + 위쪽 띠 $u\,dv$ + 구석 조각 $du\,dv$</strong> 다.
+        구석 조각만 $du$ 와 $dv$ 를 <em>둘 다</em> 갖고 있어 다른 둘보다 훨씬 빨리 사라진다 — 그래서 $(uv)'=u'v+uv'$ 다.
+      </p>
+
+      <figure class="widget" data-widget="product-rule-area">
+        <figcaption class="widget__bar">Product Rule — 넓이가 자라는 세 조각</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">증가분을 줄이면 <strong>구석 조각의 비중만 급격히 0 으로</strong> 갑니다. 두 띠는 비중이 유지됩니다 — 그것이 곱의 법칙에 항이 둘뿐인 이유입니다.</p>
+        </div>
+      </figure>
+
+      <p>딥러닝에서 매일 쓰는 activation function의 도함수는 다음과 같다. 마지막 열이 학습을 좌우한다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>activation</th><th>$f(x)$</th><th>$f'(x)$</th><th>$f'$ 의 최댓값</th></tr></thead>
+          <tbody>
+            <tr><td>sigmoid</td><td>$\dfrac{1}{1+e^{-x}}$</td><td>$\sigma(x)\bigl(1-\sigma(x)\bigr)$</td><td class="num">0.25 (x=0)</td></tr>
+            <tr><td>tanh</td><td>$\tanh x$</td><td>$1-\tanh^2 x$</td><td class="num">1 (x=0)</td></tr>
+            <tr><td>ReLU</td><td>$\max(0,x)$</td><td>$\mathbb{1}[x>0]$</td><td class="num">1 (x&gt;0 전부)</td></tr>
+            <tr><td>Leaky ReLU</td><td>$\max(\alpha x, x)$</td><td>$1$ 또는 $\alpha$</td><td class="num">1</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <span class="hl">sigmoid의 도함수는 어디서도 $0.25$ 를 넘지 못하므로, 층을 $L$ 개 통과하면
+        gradient가 최대 $0.25^L$ 로 줄어든다.</span>
+        $L=10$ 이면 $10^{-6}$ 이다 — 이것이 sigmoid를 은닉층에서 몰아낸 계산이며
+        <a href="3.10-deep-learning-optimization.html">3.10</a>에서 정면으로 다룬다.
+      </p>
+
+      <span class="anchor" id="c-tangent"></span>
+      <h3>Tangent Line 접선</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ y = f(a) + f'(a)\,(x-a) $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        <span class="hl">점 $(a, f(a))$ 를 지나고 기울기가 $f'(a)$ 인 직선이며, $f$ 의 <strong>1차 Taylor 근사</strong>다.</span>
+        <a href="3.1-functions-basics.html">3.1</a>의 식 (7)을 다시 쓴 것에 지나지 않는다.
+      </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>접선은 <strong>안개 속 손전등</strong>입니다. 산 전체 모양은 안 보이지만, 지금 발 딛은 자리의 <strong>경사</strong>는 알 수 있습니다.</p>
+        <p>경사만 알면 "어느 쪽이 내리막인가"는 답할 수 있습니다. 다만 <strong>손전등이 비추는 거리 밖</strong>은 모르므로, 한 번에 너무 멀리 가면 엉뚱한 곳에 떨어집니다. 이것이 학습률을 크게 잡으면 발산하는 이유입니다.</p>
+      </div>
+
+      <figure class="widget" data-widget="deriv-pair">
+        <figcaption class="widget__bar">$f$ 와 $f'$ 를 나란히 — 부호가 뒤집히는 자리</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">아래 그림($f'$)이 <strong>0 을 지나는 $x$</strong> 와 위 그림($f$)이 봉우리·골짜기가 되는 $x$ 가 정확히 일치합니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-higher"></span>
+      <h3>Higher-Order Derivative 고계도함수</h3>
+      <div class="eq">
+        <div class="eq__body">$$ f''(x) = \bigl(f'\bigr)'(x), \qquad f^{(n)}(x) = \frac{d^n f}{dx^n} $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        도함수를 또 미분한 것이다. <span class="hl">$f'$ 이 "얼마나 빨리 변하는가"라면 $f''$ 은
+        "그 변화율이 얼마나 빨리 변하는가" — 즉 <strong>휘는 정도</strong>다.</span>
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$f''$</th><th>모양</th><th>이름</th><th>최적화에서</th></tr></thead>
+          <tbody>
+            <tr><td>$f''>0$</td><td>아래로 볼록 (∪)</td><td>convex(볼록)</td><td>골짜기 — 최솟값이 있다</td></tr>
+            <tr><td>$f''<0$</td><td>위로 볼록 (∩)</td><td>concave(오목)</td><td>봉우리</td></tr>
+            <tr><td>$f''=0$</td><td>변곡 가능</td><td>inflection(변곡점)</td><td>판정 불가 — 더 봐야 한다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Taylor 전개로 보면 왜 $f''$ 이 곡률과 연결되는지 바로 보인다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ f(a+h) = f(a) + f'(a)h + \tfrac12 f''(a)h^2 + o(h^2) $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        1차항은 직선, 2차항은 포물선이다. $f''>0$ 이면 포물선이 위로 열려 접선보다 위에 있고, 그래서 ∪ 모양이 된다.
+        다변수로 가면 $f''$ 자리에 Hessian(헤시안) matrix가 들어서며(<a href="3.3-multivariable-derivatives.html">3.3</a>),
+        그 eigenvalue(고유값)들이 learning rate의 상한을 정한다(<a href="3.6-gradient-descent.html">3.6</a>).
+      </p>
+
+      <span class="anchor" id="c-diffable"></span>
+      <h3>Differentiability 미분 가능성</h3>
+      <p>
+        <span class="hl">한 점에서 미분 가능하려면 좌미분계수와 우미분계수가 <strong>둘 다 존재하고 같아야</strong> 한다.</span>
+        미분 불가능해지는 방식은 셋뿐이다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>깨지는 방식</th><th>예</th><th>$x=0$ 에서</th></tr></thead>
+          <tbody>
+            <tr><td>꺾임 (좌·우 기울기가 다름)</td><td>$|x|$, ReLU</td><td>좌 $-1$ · 우 $+1$ / 좌 $0$ · 우 $1$</td></tr>
+            <tr><td>수직 접선 (기울기가 무한)</td><td>$x^{1/3}$</td><td>$f'\to\infty$</td></tr>
+            <tr><td>불연속</td><td>계단함수</td><td>극한 자체가 없다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>미분 가능 ⟹ 연속</strong>은 항상 참이고 그 역은 거짓이다(3.1 오해 3).
+        실무에서는 ReLU 의 $x=0$ 처럼 <em>측도 0 인 한 점</em>은 subgradient(하위기울기) 하나를 골라
+        (PyTorch는 0) 넘어간다. 학습에 영향이 없는 이유는 float 연산에서 정확히 0 이 나올 확률이 사실상 0 이기 때문이다.
+      </p>
+
+      <span class="anchor" id="c-mono"></span>
+      <h3>Monotonicity 단조성</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ f'(x) > 0 \ \ \forall x \in I \;\Longrightarrow\; f \text{ 는 } I \text{ 에서 순증가} $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        <span class="hl">도함수의 <strong>부호</strong>가 함수가 오르는지 내리는지를 결정한다.</span>
+        이 부호로 극값을 판정하는 절차를 <strong>first derivative test(1차 판정법)</strong>라 한다 —
+        $f'$ 이 $+\to-$ 로 바뀌면 극대, $-\to+$ 로 바뀌면 극소, 부호가 안 바뀌면 극값이 아니다.
+        $f''$ 이 0 이라 2차 판정이 침묵할 때 쓰는 대비책이다.
+        3.1에서 미뤄 둔 "역함수가 존재하는가"의 실용적 판정법이 이것이다 — 구간에서 순단조이면 그 구간에서 injective 이고,
+        따라서 역함수가 있다.
+      </p>
+      <p>
+        주의할 점 하나. 역방향은 정확히 성립하지 않는다. $f(x)=x^3$ 은 순증가지만 $f'(0)=0$ 이다.
+        정확한 명제는 <strong>"순증가 $\Longrightarrow f'\geq0$"</strong> 이다.
+      </p>
+
+      <span class="anchor" id="c-extremum"></span>
+      <h3>Extremum 극값</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ f'(x^\star) = 0 \quad (\text{1차 필요조건, critical point}) $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        <span class="hl">미분 가능한 함수가 내부에서 극값을 가지면 그 점에서 $f'=0$ 이다 — 필요조건일 뿐 충분조건이 아니다.</span>
+        $f(x)=x^3$ 은 $f'(0)=0$ 이지만 $x=0$ 은 극값이 아니라 그냥 지나가는 점이다.
+        종류를 가르려면 2차 도함수를 본다 — 이것을 <strong>second derivative test(2차 판정법)</strong>라 하고,
+        다변수판은 <a href="3.3-multivariable-derivatives.html">3.3</a>의 second partial derivative test 다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>조건</th><th>판정</th><th>예</th></tr></thead>
+          <tbody>
+            <tr><td>$f'(x^\star)=0$, $f''(x^\star)>0$</td><td>local minimum(극소)</td><td>$x^2$ at $0$</td></tr>
+            <tr><td>$f'(x^\star)=0$, $f''(x^\star)<0$</td><td>local maximum(극대)</td><td>$-x^2$ at $0$</td></tr>
+            <tr><td>$f'(x^\star)=0$, $f''(x^\star)=0$</td><td><strong>판정 불가</strong></td><td>$x^3$(극값 아님) · $x^4$(극소)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        local(지역)과 global(전역)의 구분도 필요하다. local minimum은 <em>주변에서</em> 가장 낮은 점이고,
+        global minimum은 <em>전체에서</em> 가장 낮은 점이다. 이 구분이 비볼록 최적화의 핵심 문제가 되며
+        <a href="3.5-optimization-basics.html">3.5</a>에서 saddle point(안장점)와 함께 다룬다.
+      </p>
+
+      <figure class="widget" data-widget="extremum-hunt">
+        <figcaption class="widget__bar">Extremum — $f'=0$ 인 점을 찾고 $f''$ 로 종류를 가른다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$x^3$ 을 고르면 $f'=0$ 인데도 <strong>극값이 아닌 점</strong>이 나옵니다. 1차 조건이 필요조건일 뿐인 증거입니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-curvature"></span>
+      <h3>Curvature 곡률</h3>
+      <div class="eq">
+        <div class="eq__body">$$ \kappa(x) = \frac{|f''(x)|}{\bigl(1+f'(x)^2\bigr)^{3/2}} $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        <span class="hl">곡선이 얼마나 급하게 휘는지를 재는 양이며, 그 점에 가장 잘 맞는 원(곡률원)의
+        반지름의 역수 $\kappa=1/R$ 다.</span>
+        분모의 $(1+f'^2)^{3/2}$ 이 하는 일은 <strong>기울어진 정도를 보정</strong>하는 것이다 —
+        가파른 직선은 $f''=0$ 이라 곡률이 0 이어야 하고, 실제로 그렇게 나온다.
+      </p>
+      <p>
+        최적화에서는 대개 이 정확한 곡률 대신 <strong>$f''$ 자체</strong>를 곡률이라 부른다.
+        최솟값 근처에서는 $f'\approx0$ 이라 $\kappa\approx|f''|$ 로 거의 같아지기 때문이다.
+        <span class="hl">$f''$ 이 크면 골짜기가 좁고 가팔라 큰 걸음이 튕겨 나가고, 작으면 평평해 진전이 느리다</span> —
+        이 둘의 비가 condition number(조건수)이며 gradient descent의 수렴 속도를 결정한다.
+      </p>
+
+      <figure class="widget" data-widget="curvature-circle">
+        <figcaption class="widget__bar">Curvature — 곡률원의 반지름으로 보기</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">직선 구간에서는 원이 <strong>무한히 커집니다</strong>($\kappa\to0$). 급히 휘는 곳일수록 원이 작아집니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>$f'$ 과 $f''$ 이 각각 무엇을 알려 주는지 한자리에 모으면 이렇다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>부호가 알려 주는 것</th><th>크기가 알려 주는 것</th><th>학습에서의 역할</th></tr></thead>
+          <tbody>
+            <tr><td>$f'$</td><td>오르막 / 내리막</td><td>얼마나 급한가</td><td>이동 <strong>방향</strong> — 부호를 뒤집어 쓴다</td></tr>
+            <tr><td>$f''$</td><td>∪ / ∩ (볼록 / 오목)</td><td>얼마나 휘는가</td><td>가능한 <strong>보폭</strong>의 상한</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$f'(a)$</td><td>f prime of a 에프 프라임</td><td>$a$ 에서의 derivative</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\dfrac{df}{dx}$</td><td>d f d x · Leibniz 표기</td><td>$f'$ 과 같은 뜻</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$f''$, $f^{(n)}$</td><td>f double prime · f n-th</td><td>2계·$n$ 계 도함수</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$h$</td><td>h</td><td>입력의 작은 변화량</td><td>scalar</td><td>$\to0$</td></tr>
+            <tr><td>$\Delta y/\Delta x$</td><td>delta y over delta x</td><td>평균 변화율</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\sigma$</td><td>sigma 시그마 · sigmoid</td><td>$1/(1+e^{-x})$</td><td>$\mathbb{R}\to(0,1)$</td><td>—</td></tr>
+            <tr><td>$\tanh$</td><td>tanh 탄젠트 하이퍼볼릭</td><td>쌍곡탄젠트</td><td>$\mathbb{R}\to(-1,1)$</td><td>—</td></tr>
+            <tr><td>$\mathbb{1}[\,\cdot\,]$</td><td>indicator 지시함수</td><td>참이면 1, 거짓이면 0</td><td>$\to\{0,1\}$</td><td>—</td></tr>
+            <tr><td>$x^\star$</td><td>x star 엑스 스타</td><td>임계점 · 최적점</td><td>scalar</td><td>$\mathbb{R}$</td></tr>
+            <tr><td>$\kappa$</td><td>kappa 카파</td><td>curvature 곡률</td><td>scalar</td><td>$\geq0$</td></tr>
+            <tr><td>$R$</td><td>R</td><td>곡률 반지름 $1/\kappa$</td><td>scalar</td><td>$>0$</td></tr>
+            <tr><td>$I$</td><td>I</td><td>구간 (interval)</td><td>집합</td><td>$\subseteq\mathbb{R}$</td></tr>
+            <tr><td>$\alpha$</td><td>alpha 알파</td><td>Leaky ReLU의 음수쪽 기울기</td><td>scalar</td><td>보통 $0.01$</td></tr>
+            <tr><td>$o(h^2)$</td><td>little-o of h squared</td><td>$h^2$ 보다 빨리 0 이 되는 나머지</td><td>함수</td><td>—</td></tr>
+            <tr><td>$\forall$</td><td>for all 모든</td><td>전칭 기호</td><td>논리 기호</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">표기 주의</span>
+        <p>
+          $\dfrac{df}{dx}$ 의 $df$ 와 $dx$ 는 <strong>각각 따로 떼어 쓸 수 있는 수가 아니다</strong> —
+          전체가 하나의 극한을 뜻하는 기호다. 다만 chain rule 에서 $\frac{dy}{du}\frac{du}{dx}$ 처럼
+          <em>약분되는 것처럼</em> 보이는 형태가 자주 나오고, 실제로 결과가 맞아 이 표기가 살아남았다
+          (<a href="3.4-chain-rule-computation-graph.html">3.4</a>).
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — $(x^n)' = nx^{n-1}$</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{(x+h)^n - x^n}{h} $$</div>
+          <div class="derive__why">정의에 대입</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ (x+h)^n = x^n + n x^{n-1}h + \binom{n}{2}x^{n-2}h^2 + \cdots + h^n $$</div>
+          <div class="derive__why">이항정리. $h$ 의 거듭제곱으로 정리했다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{n x^{n-1}h + \binom{n}{2}x^{n-2}h^2+\cdots}{h} = n x^{n-1} + \binom{n}{2}x^{n-2}h + \cdots $$</div>
+          <div class="derive__why">$x^n$ 이 상쇄되고 $h$ 로 나눴다 — <strong>$h^2$ 이상은 모두 $h$ 를 하나씩 남긴다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lim_{h\to0}\bigl(n x^{n-1} + O(h)\bigr) = n x^{n-1} $$</div>
+          <div class="derive__why">$h$ 가 곱해진 항은 전부 사라진다</div>
+        </div>
+      </div>
+
+      <h3>유도 2 — sigmoid의 도함수가 $\sigma(1-\sigma)$ 인 이유</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \sigma(x) = (1+e^{-x})^{-1} $$</div>
+          <div class="derive__why">거듭제곱 꼴로 다시 썼다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sigma'(x) = -(1+e^{-x})^{-2}\cdot\frac{d}{dx}(1+e^{-x}) $$</div>
+          <div class="derive__why">chain rule — 바깥은 거듭제곱, 안쪽은 $1+e^{-x}$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{d}{dx}(1+e^{-x}) = -e^{-x} \;\Longrightarrow\; \sigma'(x) = \frac{e^{-x}}{(1+e^{-x})^2} $$</div>
+          <div class="derive__why">음수 두 개가 곱해져 양수가 되었다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ = \frac{1}{1+e^{-x}}\cdot\frac{e^{-x}}{1+e^{-x}} = \sigma(x)\cdot\frac{e^{-x}}{1+e^{-x}} $$</div>
+          <div class="derive__why">분수를 두 조각으로 쪼갰다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{e^{-x}}{1+e^{-x}} = \frac{(1+e^{-x})-1}{1+e^{-x}} = 1-\sigma(x) $$</div>
+          <div class="derive__why"><strong>분자에 $1$ 을 더하고 빼는 것이 요령</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \therefore\ \sigma'(x) = \sigma(x)\bigl(1-\sigma(x)\bigr) $$</div>
+          <div class="derive__why">출력만 알면 기울기가 나온다 — 그래서 구현이 빠르다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \max_p p(1-p) = \tfrac14 \ \text{ at } p=\tfrac12 \;\Rightarrow\; \max_x \sigma'(x) = 0.25 $$</div>
+          <div class="derive__why">$p(1-p)$ 는 $p=0.5$ 에서 최대. <strong>이 값이 0.25 라는 것이 3.10의 출발점</strong></div>
+        </div>
+      </div>
+
+      <h3>유도 3 — 2차 판정법은 왜 맞는가</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ f(x^\star+h) = f(x^\star) + f'(x^\star)h + \tfrac12 f''(x^\star)h^2 + o(h^2) $$</div>
+          <div class="derive__why">식 (4)의 Taylor 전개</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f'(x^\star)=0 \;\Longrightarrow\; f(x^\star+h)-f(x^\star) = \tfrac12 f''(x^\star)h^2 + o(h^2) $$</div>
+          <div class="derive__why">임계점이므로 1차항이 사라진다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ h^2 > 0 \ \ (h\neq0) $$</div>
+          <div class="derive__why">제곱이라 <strong>부호가 $f''$ 에만 달렸다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f''(x^\star)>0 \;\Rightarrow\; f(x^\star+h) > f(x^\star) \ \ \forall\, \text{작은 } h\neq0 $$</div>
+          <div class="derive__why">주변이 모두 더 높다 = <strong>local minimum</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f''(x^\star)=0 \;\Rightarrow\; \tfrac12 f''h^2 = 0 $$</div>
+          <div class="derive__why">2차항까지 사라져 <strong>$o(h^2)$ 가 부호를 정한다 → 판정 불가</strong></div>
+        </div>
+      </div>
+      <details>
+        <summary>미분 가능하면 연속인 이유 (두 줄)</summary>
+        <p>
+          $\displaystyle \lim_{h\to0}\bigl(f(a+h)-f(a)\bigr)
+          = \lim_{h\to0}\frac{f(a+h)-f(a)}{h}\cdot h = f'(a)\cdot 0 = 0$.
+        </p>
+        <p>
+          즉 $f(a+h)\to f(a)$ 이고 이것이 곧 연속의 정의다.
+          $f'(a)$ 가 <strong>유한한 값으로 존재한다</strong>는 것이 핵심이다 —
+          $x^{1/3}$ 처럼 $f'\to\infty$ 인 경우에는 이 논증이 성립하지 않는다.
+          역방향($|x|$)은 이미 3.1에서 반례를 보았다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① 정의로 $f(x)=x^2$ 을 $a=3$ 에서 미분</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \frac{(3+h)^2-3^2}{h} = \frac{9+6h+h^2-9}{h} $$</div>
+          <div class="derive__why">전개하고 $3^2=9$ 를 뺐다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ = \frac{6h+h^2}{h} = 6+h \qquad (h\neq0) $$</div>
+          <div class="derive__why">$h$ 로 약분. <strong>$h\neq0$ 이라 나눌 수 있다</strong> — 극한은 $h=0$ 을 제외한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lim_{h\to0}(6+h) = 6 = f'(3) $$</div>
+          <div class="derive__why">공식 $2x$ 에 $x=3$ 을 넣은 값과 같다 ✓</div>
+        </div>
+      </div>
+      <p>수치로도 확인한다. $h$ 를 줄여 가며 평균 변화율을 계산하면 다음과 같다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>$h$</th><th>$(3+h)^2$</th><th>차이</th><th>차이 $\div h$</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td class="num">16</td><td class="num">7</td><td class="num">7</td></tr>
+            <tr><td class="num">0.5</td><td class="num">12.25</td><td class="num">3.25</td><td class="num">6.5</td></tr>
+            <tr><td class="num">0.1</td><td class="num">9.61</td><td class="num">0.61</td><td class="num">6.1</td></tr>
+            <tr><td class="num">0.01</td><td class="num">9.0601</td><td class="num">0.0601</td><td class="num">6.01</td></tr>
+            <tr><td class="num">−0.01</td><td class="num">8.9401</td><td class="num">−0.0599</td><td class="num">5.99</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>왼쪽에서는 5.99, 오른쪽에서는 6.01 — <strong>양쪽에서 같은 값 6 으로 조여 온다</strong>. 미분 가능하다는 뜻이다.</p>
+
+      <h3>② $f(x)=x^3-3x$ 의 극값을 전부 찾기</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ f'(x) = 3x^2-3 $$</div>
+          <div class="derive__why">각 항에 $nx^{n-1}$ 적용</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 3x^2-3 = 0 \;\Rightarrow\; x^2=1 \;\Rightarrow\; x=\pm1 $$</div>
+          <div class="derive__why">임계점 두 개 (식 6)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f''(x) = 6x $$</div>
+          <div class="derive__why">$f'$ 을 한 번 더 미분</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f''(1) = 6 > 0 \;\Rightarrow\; x=1 \ \text{에서 극소}, \quad f(1)=1-3=-2 $$</div>
+          <div class="derive__why">아래로 볼록 → 골짜기</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f''(-1) = -6 < 0 \;\Rightarrow\; x=-1 \ \text{에서 극대}, \quad f(-1)=-1+3=2 $$</div>
+          <div class="derive__why">위로 볼록 → 봉우리</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f(2)=8-6=2, \quad f(-2)=-8+6=-2 $$</div>
+          <div class="derive__why"><strong>극값은 global 최댓값·최솟값이 아니다</strong> — 더 멀리 가면 $\pm\infty$ 로 간다</div>
+        </div>
+      </div>
+
+      <h3>③ $x=0$ 이 극값이 아닌 경우</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ g(x)=x^3, \quad g'(x)=3x^2, \quad g'(0)=0 $$</div>
+          <div class="derive__why">1차 조건은 만족한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ g''(x)=6x, \quad g''(0)=0 $$</div>
+          <div class="derive__why">2차 판정 <strong>불가</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ g(-0.1) = -0.001 < 0 = g(0) < 0.001 = g(0.1) $$</div>
+          <div class="derive__why">직접 확인하면 <strong>왼쪽은 낮고 오른쪽은 높다</strong> — 극값이 아니다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ g'(x)=3x^2 \geq 0 \ \ \forall x $$</div>
+          <div class="derive__why">기울기가 음수인 적이 없으니 <strong>계속 오르기만 한다</strong> (순증가)</div>
+        </div>
+      </div>
+
+      <h3>④ sigmoid의 미분값을 직접 계산</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \sigma(0) = \frac{1}{1+e^0} = \frac{1}{2} = 0.5 $$</div>
+          <div class="derive__why">$e^0=1$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sigma'(0) = 0.5\times(1-0.5) = 0.25 $$</div>
+          <div class="derive__why"><strong>여기가 최대</strong>다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sigma(4) \approx 0.982 \;\Rightarrow\; \sigma'(4) \approx 0.982\times0.018 \approx 0.0177 $$</div>
+          <div class="derive__why">입력이 4만 되어도 기울기가 <strong>14배 줄어든다</strong> (포화)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ 0.25^{10} \approx 9.5\times10^{-7} $$</div>
+          <div class="derive__why">10층을 지나면 <strong>가장 좋은 경우에도</strong> 백만분의 1 — vanishing gradient</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{ReLU: } 1^{10} = 1 $$</div>
+          <div class="derive__why">활성인 경로에서는 기울기가 <strong>줄지 않는다</strong>. ReLU 가 이긴 이유</div>
+        </div>
+      </div>
+
+      <h3>⑤ 곡률 계산 — $f(x)=x^2$</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ f'(x)=2x, \qquad f''(x)=2 $$</div>
+          <div class="derive__why">$f''$ 은 어디서나 2 로 일정하다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \kappa(0) = \frac{2}{(1+0)^{3/2}} = 2 \;\Rightarrow\; R = 0.5 $$</div>
+          <div class="derive__why">꼭짓점에서 반지름 0.5 인 원이 가장 잘 맞는다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \kappa(2) = \frac{2}{(1+16)^{3/2}} = \frac{2}{70.09} \approx 0.0285 $$</div>
+          <div class="derive__why">$17^{3/2}=17\sqrt{17}\approx70.09$. <strong>$f''$ 은 그대로인데 곡률은 70배 줄었다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ R(2) = 1/0.0285 \approx 35 $$</div>
+          <div class="derive__why">멀리 갈수록 그래프가 직선에 가까워 보이는 이유 — 기울기가 커서 곡률이 희석된다</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>할선→접선</strong> · <strong>$f$ 와 $f'$</strong> · <strong>극값 판정</strong> ·
+        <strong>곡률원</strong> — 을 만져 본 뒤, 아래에서 <strong>activation 별 gradient의 크기</strong>를 비교한다.
+        여기서 본 숫자가 3.10의 vanishing gradient로 그대로 이어진다.
+      </p>
+
+      <figure class="widget" data-widget="act-derivative">
+        <figcaption class="widget__bar">activation의 도함수 — 층을 지날 때마다 곱해지는 수</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">sigmoid는 <strong>가장 좋은 자리에서도 0.25</strong> 입니다. 층 수를 늘려 보면 몇 층에서 신호가 사라지는지 보입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"$f'(x)=0$ 이면 극값이다."</p>
+        <p>
+          <strong>실제로는</strong> 필요조건일 뿐이다. $f(x)=x^3$ 은 $f'(0)=0$ 이지만 극값이 아니라 그냥 지나가는 점이다(예제 ③).
+          다변수로 가면 이 함정이 훨씬 커진다 — 고차원 loss 지형에서 $\nabla\mathcal{L}=0$ 인 점의 대부분은
+          local minimum이 아니라 <strong>saddle point</strong> 라는 것이 알려져 있다<a class="cite" href="#ref-dauphin2014-identifying-and-attacking" data-ref="dauphin2014-identifying-and-attacking">1</a>.
+          자세한 것은 <a href="3.5-optimization-basics.html">3.5</a>에서 다룬다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"$f'>0$ 이 아니면 증가하지 않는다."</p>
+        <p>
+          <strong>실제로는</strong> $f'\geq0$ 이면서 유한한 점에서만 0 이어도 순증가할 수 있다.
+          $f(x)=x^3$ 이 그 예 — 어디서나 증가하지만 $f'(0)=0$ 이다.
+          정확한 명제는 <strong>"$f'>0$ ⟹ 순증가"</strong> 한 방향뿐이고, 역은 $f'\geq0$ 까지만 말할 수 있다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"gradient가 크면 최솟값에서 멀다."</p>
+        <p>
+          <strong>실제로는</strong> gradient의 크기는 <em>급함</em>이지 <em>거리</em>가 아니다.
+          아주 좁고 깊은 골짜기에서는 최솟값 바로 옆인데도 gradient가 거대하고,
+          넓은 plateau(고원)에서는 최솟값이 아주 멀어도 gradient가 거의 0 이다.
+          <strong>거리를 재려면 곡률($f''$)까지 알아야 한다</strong> — Newton 방법이 $f'/f''$ 로 나누는 이유다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"ReLU 는 미분 불가능하니 학습에 쓸 수 없다."</p>
+        <p>
+          <strong>실제로는</strong> 미분 불가능한 점이 $x=0$ <em>하나</em>뿐이고,
+          float 연산에서 정확히 0 이 나올 확률은 사실상 0 이다.
+          프레임워크는 그 점의 gradient를 관례로 정해 둔다(PyTorch는 0).
+          진짜 문제는 미분 불가능이 아니라 <strong>dying ReLU</strong> — 음수 영역에 갇힌 뉴런은
+          gradient가 0 이라 영영 되살아나지 못한다. Leaky ReLU 가 $\alpha$ 를 두는 이유다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"$f''$ 이 곡률이다."</p>
+        <p>
+          <strong>실제로는</strong> 진짜 곡률은 식 (7)이고 $f''$ 은 분자일 뿐이다.
+          $f(x)=x^2$ 은 어디서나 $f''=2$ 지만 곡률은 $x=0$ 에서 2, $x=2$ 에서 0.03 이다(예제 ⑤).
+          다만 <strong>최솟값 근처에서는 $f'\approx0$ 이라 두 값이 거의 같아진다</strong> —
+          최적화 문헌이 $f''$ 을 그냥 곡률이라 부르는 것은 이 맥락에서만 옳다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①·②·④ 를 검증한다. 자동미분 없이 수치 미분으로만 확인한다.</p>
+      <details>
+        <summary>NumPy — 수치 미분 · 임계점 · sigmoid 포화 (19줄)</summary>
+<pre><code>import numpy as np
+
+f = lambda x: x ** 2
+for h in [1, 0.5, 0.1, 0.01, -0.01]:
+    print(h, (f(3 + h) - f(3)) / h)     # 7 6.5 6.1 6.01 5.99  -> 6 으로 조여든다
+
+g  = lambda x: x ** 3 - 3 * x
+dg = lambda x: 3 * x ** 2 - 3
+d2g = lambda x: 6 * x
+for c in [-1.0, 1.0]:
+    print(c, dg(c), d2g(c), "극대" if d2g(c) &lt; 0 else "극소")
+# -1.0 0.0 -6.0 극대   /   1.0 0.0 6.0 극소
+
+sig = lambda x: 1 / (1 + np.exp(-x))
+x = np.array([0.0, 1.0, 2.0, 4.0])
+print(sig(x) * (1 - sig(x)))            # [0.25 0.1966 0.105 0.0177]
+
+L = np.arange(1, 11)
+print(0.25 ** L)                        # 층을 지날수록 곱해진다
+# ...  0.25^10 = 9.5e-07   <- 신호가 백만분의 1 로
+print(1.0 ** L)                         # ReLU 활성 경로: 전부 1.0
+</code></pre>
+        <p>
+          <small>
+            수치 미분의 $h$ 를 무한정 줄이면 오히려 나빠진다 — $f(3+h)-f(3)$ 이
+            float 정밀도에 묻히기 때문이다. float64 에서는 $h\approx10^{-8}$ 근처가 최적이며,
+            이것이 자동미분(<a href="3.4-chain-rule-computation-graph.html">3.4</a>)을 쓰는 실용적 이유 중 하나다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $f(x)=x^3-6x^2+9x$ 의 임계점은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$x=1,\ 3$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$x=0,\ 3$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$x=2$ 뿐</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $f'(x)=3x^2-12x+9 = 3(x^2-4x+3) = 3(x-1)(x-3)$ 이므로 $x=1,3$.
+            <strong>다</strong>는 $f''(x)=6x-12=0$ 인 <em>변곡점</em>을 임계점으로 착각한 답이다.
+            검산: $f''(1)=-6<0$ 이라 극대, $f''(3)=6>0$ 이라 극소.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\sigma(2)\approx0.881$ 일 때 $\sigma'(2)$ 는 대략?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\approx 0.105$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$\approx 0.881$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$\approx 0.25$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\sigma'=\sigma(1-\sigma)=0.881\times0.119\approx0.105$.
+            <strong>다</strong>는 최댓값 0.25 인데 그것은 $x=0$ 에서만 나온다 —
+            입력이 2 만 되어도 기울기가 절반 이하로 떨어진다는 것이 이 문제의 요점이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            $f'(x^\star)=0$ 이고 $f''(x^\star)=0$ 일 때 옳은 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>극소·극대·극값 아님 셋 다 가능하다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>반드시 변곡점이다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>반드시 극값이 아니다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $x^4$ 는 극소, $-x^4$ 는 극대, $x^3$ 은 극값이 아니다 — 셋 모두 $f'=f''=0$ 이다.
+            2차 판정법이 침묵하는 경우이며, 더 높은 차수의 도함수나 직접 부호 조사가 필요하다.
+            유도 3 에서 2차항이 사라져 $o(h^2)$ 가 부호를 정하게 되는 것이 이유다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            sigmoid 대신 ReLU 를 은닉층에 쓰는 <strong>미분 관점</strong>의 가장 큰 이유는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>활성 영역의 도함수가 1 이라 층을 지나도 gradient가 줄지 않는다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>ReLU 가 모든 점에서 미분 가능하기 때문</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>ReLU 의 출력이 확률이기 때문</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            sigmoid는 $L$ 층에서 최대 $0.25^L$ 로 줄지만 ReLU 는 활성 경로에서 $1^L=1$ 이다(예제 ④).
+            <strong>나</strong>는 거짓 — ReLU 는 $x=0$ 에서 미분 불가능하다.
+            <strong>다</strong>도 거짓 — 확률로 해석되는 것은 sigmoid·softmax 쪽이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            "미분 가능하다"와 "연속이다"의 관계로 옳은 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>미분 가능 ⟹ 연속. 역은 성립하지 않는다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>연속 ⟹ 미분 가능. 역은 성립하지 않는다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>서로 무관한 성질이다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\lim_{h\to0}(f(a+h)-f(a)) = f'(a)\cdot0 = 0$ 이므로 미분 가능하면 연속이다(유도 3 하단).
+            역의 반례는 $|x|$ 와 ReLU — 연속이지만 $x=0$ 에서 꺾여 미분 불가능하다.
+            미분 가능은 연속보다 <strong>더 강한 조건</strong>이다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            어떤 지점에서 gradient의 크기가 $10^{-5}$ 로 아주 작다. 확실히 말할 수 있는 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>그 자리가 평평하다는 것뿐 — 최솟값 근처인지는 알 수 없다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>최솟값에 거의 도달했다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>학습이 끝났다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            gradient는 <strong>급함</strong>이지 <strong>거리</strong>가 아니다(오해 3).
+            넓은 plateau 한가운데면 최솟값이 아주 멀어도 gradient가 0 에 가깝고,
+            saddle point 근처에서도 마찬가지다. 실제로 깊은 신경망 학습이 멈춘 것처럼 보이는
+            구간의 상당수가 최솟값이 아니라 안장점 부근이다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="3.3-multivariable-derivatives.html">3.3 다변수 미분</a></strong> — $f'$ 이 gradient로, $f''$ 이 Hessian으로 확장된다.</li>
+        <li><strong><a href="3.4-chain-rule-computation-graph.html">3.4 연쇄법칙과 계산 그래프</a></strong> — 표의 미분 공식들을 자동으로 조합하는 것이 backpropagation이다.</li>
+        <li><strong><a href="3.5-optimization-basics.html">3.5 최적화 기초</a></strong> — $f'=0$ 의 세 가지 정체(극소·극대·안장점).</li>
+        <li><strong><a href="3.10-deep-learning-optimization.html">3.10 딥러닝 최적화</a></strong> — $0.25^L$ 계산이 vanishing gradient의 정체다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Deisenroth, M. P., Faisal, A. A. &amp; Ong, C. S. (2020). <em>Mathematics for Machine Learning</em>. Cambridge University Press.</span>
+          <span class="ref__where">5.1절(Differentiation of Univariate Functions) — 도함수의 극한 정의, 미분 공식표, Taylor 급수(식 4). 5.1.1절의 Taylor polynomial 서술이 유도 3(2차 판정법)의 근거</span>
+          <a class="ref__link" href="https://mml-book.github.io/">mml-book.github.io</a>
+        </li>
+        <li class="ref" id="ref-3blue1brown-calculus" data-ref="3blue1brown-calculus">
+          <span class="ref__type" data-type="video">영상</span>
+          <span class="ref__cite">3Blue1Brown. <em>Essence of Calculus</em>, Ch.2 <em>The paradox of the derivative</em> · Ch.3 <em>Derivative formulas through geometry</em>.</span>
+          <span class="ref__where">Ch.2 02:30–09:00 — 할선을 좁혀 접선으로 가는 애니메이션('Secant → Tangent' 위젯의 원본). Ch.3 — 곱의 법칙을 넓이 사각형으로 보이는 기하 논증(미분 공식표의 '한 줄 근거' 칸)</span>
+          <a class="ref__link" href="https://www.3blue1brown.com/topics/calculus">3blue1brown.com</a>
+        </li>
+        <li class="ref" id="ref-goodfellow2016-dl" data-ref="goodfellow2016-dl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>. MIT Press.</span>
+          <span class="ref__where">4.3절(Gradient-Based Optimization) — 임계점의 세 종류와 2차 도함수 판정법. 6.3.1절 — ReLU 의 $x=0$ 처리 관례와 dying ReLU(오해 4). 6.3.2절 — sigmoid 포화가 gradient 학습을 막는다는 서술</span>
+          <a class="ref__link" href="https://www.deeplearningbook.org/">deeplearningbook.org</a>
+        </li>
+        <li class="ref" id="ref-dauphin2014-identifying-and-attacking" data-ref="dauphin2014-identifying-and-attacking">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Dauphin, Y. N., Pascanu, R., Gulcehre, C., Cho, K., Ganguli, S. &amp; Bengio, Y. (2014). <em>Identifying and attacking the saddle point problem in high-dimensional non-convex optimization</em>. NeurIPS 2014.</span>
+          <span class="ref__where">2–3절 — 고차원에서 $\nabla f=0$ 인 점 대부분이 극값이 아니라 saddle point라는 무작위 행렬 논증. 오해 1 에서 "1차 조건은 필요조건일 뿐"이 실제로 얼마나 큰 문제인지의 근거</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1406.2572">arXiv:1406.2572</a>
+        </li>
+        <li class="ref" id="ref-stanford-cs231n" data-ref="stanford-cs231n">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Li, F.-F., Johnson, J. &amp; Yeung, S. <em>CS231n: Deep Learning for Computer Vision</em>. Stanford University.</span>
+          <span class="ref__where">Optimization Part 1 강의노트(Computing the gradient numerically) — 수치 미분에서 $h$ 를 줄일수록 나빠지는 구간과 권장 $h$ 값. 코드 상자 아래의 주석이 이 서술에 근거한다</span>
+          <a class="ref__link" href="https://cs231n.github.io/optimization-1/">cs231n.github.io</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+/* 이 절에서 쓰는 함수들 — f, f', f'' 을 함께 들고 다닌다 */
+var FUNCS = {
+  sq:    { f: function (x) { return x * x; },
+           d1: function (x) { return 2 * x; },
+           d2: function () { return 2; }, name: 'x²' },
+  cubic: { f: function (x) { return x * x * x - 3 * x; },
+           d1: function (x) { return 3 * x * x - 3; },
+           d2: function (x) { return 6 * x; }, name: 'x³ − 3x' },
+  cube:  { f: function (x) { return x * x * x; },
+           d1: function (x) { return 3 * x * x; },
+           d2: function (x) { return 6 * x; }, name: 'x³' },
+  sin:   { f: function (x) { return 2 * Math.sin(x); },
+           d1: function (x) { return 2 * Math.cos(x); },
+           d2: function (x) { return -2 * Math.sin(x); }, name: '2 sin x' },
+  sig:   { f: function (x) { return 4 / (1 + Math.exp(-x)) - 2; },
+           d1: function (x) { var s = 1 / (1 + Math.exp(-x)); return 4 * s * (1 - s); },
+           d2: function (x) { var s = 1 / (1 + Math.exp(-x)); return 4 * s * (1 - s) * (1 - 2 * s); },
+           name: '4σ(x) − 2' }
+};
+
+/* ============================================================
+   위젯 1 — 할선에서 접선으로
+   ============================================================ */
+WIDGETS.register('secant-tangent', function (root, ctx) {
+  var a = 1.0, h = 1.5, cur = 'sq';
+
+  var p = VIZ.plot({ w: 460, h: 300, xmin: -3, xmax: 3, ymin: -3, ymax: 6,
+    pad: { t: 18, r: 14, b: 28, l: 40 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'h', label: '간격 h', digits: 4 },
+    { key: 'sec', label: '할선의 기울기', digits: 5 },
+    { key: 'tan', label: '접선의 기울기 f′(a)', digits: 5 },
+    { key: 'gap', label: '차이', digits: 6 }
+  ]);
+
+  function draw() {
+    var F = FUNCS[cur];
+    p.clear().grid(1, 1).axes('x', 'f(x)').ticks(1, 2);
+    p.curve(F.f, { samples: 300 });
+
+    var fa = F.f(a), fb = F.f(a + h);
+    var sec = (fb - fa) / h;
+    var tan = F.d1(a);
+
+    /* 할선 */
+    p.line([[-3, fa + sec * (-3 - a)], [3, fa + sec * (3 - a)]], { dash: '5 4', width: 1.8 });
+    /* 접선 */
+    p.line([[-3, fa + tan * (-3 - a)], [3, fa + tan * (3 - a)]], { alt: true, width: 2.2 });
+    p.dot(a, fa, 6);
+    p.dot(a + h, fb, 5);
+    p.callout(a, fa, 'a', { dx: -12, dy: 22, tone: 'var(--ink-3)' });
+
+    out.set('h', h);
+    out.set('sec', sec);
+    out.set('tan', tan);
+    out.set('gap', Math.abs(sec - tan));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '함수',
+    options: [{ value: 'sq', label: 'x²' }, { value: 'cubic', label: 'x³−3x' }, { value: 'sin', label: '2 sin x' }],
+    value: 'sq', onChange: function (v) { cur = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '간격 h (0 으로 줄여 보세요)', min: 0.01, max: 2, step: 0.01, value: 1.5, digits: 2,
+    onInput: function (v) { h = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '위치 a', min: -2.5, max: 2.5, step: 0.1, value: 1, digits: 1,
+    onInput: function (v) { a = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 2 — f 와 f' 를 나란히
+   ============================================================ */
+WIDGETS.register('deriv-pair', function (root, ctx) {
+  var cur = 'cubic', xv = 0.5;
+
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:.4rem;width:100%;align-items:center';
+  ctx.stage.appendChild(wrap);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'x', label: '위치 x', digits: 2 },
+    { key: 'f', label: 'f(x)', digits: 3 },
+    { key: 'd', label: 'f′(x)', digits: 3 },
+    { key: 'say', label: '지금 이 자리는' }
+  ]);
+
+  function draw() {
+    var F = FUNCS[cur];
+    wrap.innerHTML = '';
+
+    var p1 = VIZ.plot({ w: 440, h: 170, xmin: -3, xmax: 3, ymin: -4, ymax: 4,
+      pad: { t: 16, r: 12, b: 22, l: 36 } });
+    p1.grid(1, 2).axes('x', 'f').ticks(1, 2);
+    p1.curve(F.f, { samples: 300 });
+    p1.dot(xv, F.f(xv), 5);
+    wrap.appendChild(p1.svg);
+
+    var p2 = VIZ.plot({ w: 440, h: 170, xmin: -3, xmax: 3, ymin: -4, ymax: 8,
+      pad: { t: 16, r: 12, b: 22, l: 36 } });
+    p2.grid(1, 2).axes('x', "f'").ticks(1, 4);
+    p2.line([[-3, 0], [3, 0]], { dash: '3 4' });
+    p2.curve(F.d1, { samples: 300, alt: true });
+    p2.dot(xv, F.d1(xv), 5);
+    wrap.appendChild(p2.svg);
+
+    var d = F.d1(xv);
+    out.set('x', xv);
+    out.set('f', F.f(xv));
+    out.set('d', d);
+    out.setRaw('say', Math.abs(d) < 0.05 ? '기울기 ≈ 0 — 봉우리·골짜기 또는 정체'
+      : (d > 0 ? '오르막 (f′ > 0)' : '내리막 (f′ < 0)'));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '함수',
+    options: [{ value: 'cubic', label: 'x³−3x' }, { value: 'sin', label: '2 sin x' }, { value: 'sig', label: 'sigmoid' }],
+    value: 'cubic', onChange: function (v) { cur = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '위치 x', min: -3, max: 3, step: 0.05, value: 0.5, digits: 2,
+    onInput: function (v) { xv = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — 극값 판정
+   ============================================================ */
+WIDGETS.register('extremum-hunt', function (root, ctx) {
+  var cur = 'cubic', xv = 0.0;
+
+  var p = VIZ.plot({ w: 460, h: 300, xmin: -2.6, xmax: 2.6, ymin: -4, ymax: 4,
+    pad: { t: 18, r: 14, b: 28, l: 40 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'd1', label: "f′(x)", digits: 4 },
+    { key: 'd2', label: "f″(x)", digits: 4 },
+    { key: 'kind', label: '판정' },
+    { key: 'crit', label: '이 함수의 임계점' }
+  ]);
+
+  var CRIT = { sq: 'x = 0 (극소)', cubic: 'x = −1 (극대), x = +1 (극소)', cube: 'x = 0 (극값 아님)', sin: 'x = ±π/2, ±3π/2 …' };
+
+  function draw() {
+    var F = FUNCS[cur];
+    p.clear().grid(1, 1).axes('x', 'f(x)').ticks(1, 2);
+    p.curve(F.f, { samples: 400 });
+
+    /* 임계점 표시 — 촘촘히 훑어 f' 의 부호가 바뀌는 곳 */
+    var prev = F.d1(-2.6), step = 0.005;
+    for (var x = -2.6 + step; x <= 2.6; x += step) {
+      var cu = F.d1(x);
+      if (prev === 0 || (prev < 0) !== (cu < 0)) {
+        var xc = x - step / 2;
+        if (Math.abs(F.d1(xc)) < 0.05) p.dot(xc, F.f(xc), 6);
+      }
+      prev = cu;
+    }
+
+    var y = F.f(xv), s = F.d1(xv);
+    p.line([[xv - 1, y - s], [xv + 1, y + s]], { alt: true, width: 2, dash: '5 4' });
+    p.dot(xv, y, 5);
+
+    var d1 = F.d1(xv), d2 = F.d2(xv);
+    out.set('d1', d1);
+    out.set('d2', d2);
+    out.setRaw('kind', Math.abs(d1) > 0.03 ? '임계점 아님 (f′ ≠ 0)'
+      : (d2 > 0.03 ? '극소 (f″ > 0)' : (d2 < -0.03 ? '극대 (f″ < 0)' : '판정 불가 (f″ = 0)')));
+    out.setRaw('crit', CRIT[cur]);
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '함수',
+    options: [
+      { value: 'cubic', label: 'x³−3x' },
+      { value: 'sq', label: 'x²' },
+      { value: 'cube', label: 'x³' },
+      { value: 'sin', label: '2 sin x' }
+    ],
+    value: 'cubic', onChange: function (v) { cur = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '조사할 위치 x', min: -2.5, max: 2.5, step: 0.01, value: 0, digits: 2,
+    onInput: function (v) { xv = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — 곡률원
+   ============================================================ */
+WIDGETS.register('curvature-circle', function (root, ctx) {
+  var cur = 'sq', a = 0.0;
+
+  var p = VIZ.plot({ w: 460, h: 300, xmin: -3, xmax: 3, ymin: -1.6, ymax: 4.4,
+    pad: { t: 18, r: 14, b: 28, l: 40 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'd2', label: "f″(a)", digits: 4 },
+    { key: 'kap', label: '곡률 κ', digits: 5 },
+    { key: 'rad', label: '곡률 반지름 R = 1/κ', digits: 4 },
+    { key: 'note', label: '해석' }
+  ]);
+
+  function draw() {
+    var F = FUNCS[cur];
+    p.clear().grid(1, 1).axes('x', 'f(x)').ticks(1, 1);
+    p.curve(F.f, { samples: 300 });
+
+    var d1 = F.d1(a), d2 = F.d2(a);
+    var kap = Math.abs(d2) / Math.pow(1 + d1 * d1, 1.5);
+    var R = kap < 1e-9 ? Infinity : 1 / kap;
+
+    if (isFinite(R) && R < 40) {
+      /* 곡률원의 중심: 접점에서 법선 방향으로 R 만큼 */
+      var nlen = Math.sqrt(1 + d1 * d1);
+      var sgn = d2 >= 0 ? 1 : -1;
+      var cx = a - sgn * R * d1 / nlen;
+      var cy = F.f(a) + sgn * R / nlen;
+      var pts = [];
+      for (var t = 0; t <= 64; t++) {
+        var th = t / 64 * Math.PI * 2;
+        pts.push([cx + R * Math.cos(th), cy + R * Math.sin(th)]);
+      }
+      p.line(pts, { alt: true, dash: '4 4', width: 1.8 });
+      p.dot(cx, cy, 3);
+    }
+    p.dot(a, F.f(a), 6);
+    p.callout(a, F.f(a), isFinite(R) && R < 40 ? '이 원이 가장 잘 맞는다' : '거의 직선 — 원이 무한대',
+      { dx: 20, dy: -24, tone: 'var(--ink-3)' });
+
+    out.set('d2', d2);
+    out.set('kap', kap);
+    out.setRaw('rad', isFinite(R) ? R.toFixed(4) : '∞');
+    out.setRaw('note', kap < 0.05 ? '거의 직선' : (kap > 1 ? '급하게 휜다' : '완만하게 휜다'));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '함수',
+    options: [{ value: 'sq', label: 'x²' }, { value: 'sin', label: '2 sin x' }, { value: 'cube', label: 'x³' }],
+    value: 'sq', onChange: function (v) { cur = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '위치 a', min: -2.5, max: 2.5, step: 0.05, value: 0, digits: 2,
+    onInput: function (v) { a = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — activation 의 도함수와 층 누적
+   ============================================================ */
+WIDGETS.register('act-derivative', function (root, ctx) {
+  var cur = 'sigmoid', L = 10;
+
+  var ACT = {
+    sigmoid: { d: function (x) { var s = 1 / (1 + Math.exp(-x)); return s * (1 - s); }, best: 0.25, name: 'sigmoid' },
+    tanh:    { d: function (x) { var t = Math.tanh(x); return 1 - t * t; }, best: 1.0, name: 'tanh' },
+    relu:    { d: function (x) { return x > 0 ? 1 : 0; }, best: 1.0, name: 'ReLU' },
+    leaky:   { d: function (x) { return x > 0 ? 1 : 0.01; }, best: 1.0, name: 'Leaky ReLU' }
+  };
+
+  var p = VIZ.plot({ w: 460, h: 260, xmin: -6, xmax: 6, ymin: -0.1, ymax: 1.15,
+    pad: { t: 18, r: 14, b: 28, l: 42 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'best', label: "f′ 의 최댓값", digits: 3 },
+    { key: 'at2', label: 'x=2 에서의 f′', digits: 4 },
+    { key: 'pow', label: 'L 층 통과 후 (최선의 경우)' },
+    { key: 'verdict', label: '판정' }
+  ]);
+
+  function fmtExp(v) {
+    if (v === 0) return '0';
+    var e = Math.floor(Math.log10(Math.abs(v)));
+    return Math.abs(e) < 4 ? v.toPrecision(3) : (v / Math.pow(10, e)).toFixed(2) + '×10^' + e;
+  }
+
+  function draw() {
+    var A = ACT[cur];
+    p.clear().grid(1, 0.25).axes('x', "f′(x)").ticks(2, 0.25);
+    p.curve(A.d, { samples: 500 });
+    p.line([[-6, 0.25], [6, 0.25]], { dash: '3 4' });
+    p.callout(-4, 0.25, '0.25 — sigmoid의 상한', { dx: 16, dy: -18, tone: 'var(--ink-3)' });
+
+    var acc = Math.pow(A.best, L);
+    out.set('best', A.best);
+    out.set('at2', A.d(2));
+    out.setRaw('pow', A.best.toFixed(2) + '^' + L + ' = ' + fmtExp(acc));
+    out.setRaw('verdict', acc < 1e-3 ? '신호가 사실상 사라진다' : '신호가 유지된다');
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: 'activation',
+    options: [
+      { value: 'sigmoid', label: 'sigmoid' },
+      { value: 'tanh', label: 'tanh' },
+      { value: 'relu', label: 'ReLU' },
+      { value: 'leaky', label: 'Leaky' }
+    ],
+    value: 'sigmoid', onChange: function (v) { cur = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '층 수 L', min: 1, max: 40, step: 1, value: 10, digits: 0,
+    onInput: function (v) { L = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 6 — 곱의 법칙을 넓이로
+   (uv)' = u'v + uv'  :  구석 조각 du·dv 만 빨리 사라진다
+   ============================================================ */
+WIDGETS.register('product-rule-area', function (root, ctx) {
+  var h = 0.6;
+  var U = 2.6, V = 1.8, DU = 1.0, DV = 0.7;   /* u'=1.0, v'=0.7 */
+
+  var p = VIZ.plot({ w: 460, h: 300, xmin: -0.4, xmax: 4.4, ymin: -0.4, ymax: 3.2,
+    pad: { t: 18, r: 14, b: 30, l: 40 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'a', label: '오른쪽 띠  v·du', digits: 5 },
+    { key: 'b', label: '위쪽 띠  u·dv', digits: 5 },
+    { key: 'c', label: '구석 조각  du·dv', digits: 5 },
+    { key: 'r', label: '구석이 차지하는 비중' }
+  ]);
+
+  function box(x0, y0, x1, y1, tone, op) {
+    p.add(VIZ.el('rect', {
+      x: p.X(x0), y: p.Y(y1),
+      width: p.X(x1) - p.X(x0), height: p.Y(y0) - p.Y(y1),
+      fill: tone, 'fill-opacity': op, stroke: tone, 'stroke-width': 1.2
+    }));
+  }
+
+  function draw() {
+    var du = DU * h, dv = DV * h;
+    p.clear().grid(1, 1).axes('u', 'v').ticks(1, 1);
+
+    box(0, 0, U, V, 'var(--ink-3)', 0.14);                 /* 원래 넓이 uv */
+    box(U, 0, U + du, V, 'var(--jade)', 0.30);             /* v·du */
+    box(0, V, U, V + dv, 'var(--jade)', 0.30);             /* u·dv */
+    box(U, V, U + du, V + dv, 'var(--seal)', 0.45);        /* du·dv */
+
+    p.text(U / 2, V / 2, 'u v', { anchor: 'middle', size: 13 });
+    if (du > 0.06) p.text(U + du / 2, V / 2, 'v du', { anchor: 'middle', size: 11 });
+    if (dv > 0.05) p.text(U / 2, V + dv / 2, 'u dv', { anchor: 'middle', size: 11 });
+    p.callout(U + du, V + dv, 'du·dv', { dx: 18, dy: -18, tone: 'var(--seal)' });
+
+    var a = V * du, b = U * dv, c = du * dv;
+    out.set('a', a);
+    out.set('b', b);
+    out.set('c', c);
+    out.setRaw('r', (100 * c / (a + b + c)).toFixed(2) + ' %');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '증가분 h (0 으로 줄여 보세요)', min: 0.01, max: 1, step: 0.01, value: 0.6, digits: 2,
+    onInput: function (v) { h = v; draw(); }
+  });
+  draw();
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

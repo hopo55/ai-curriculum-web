@@ -178,6 +178,118 @@ window.PAGES = {
       "low-rank adaptation", "matrix factorization", "pruning", "graph", "adjacency",
       "GNN", "im2col", "GEMM", "CLIP", "multimodal", "FLOPs", "어텐션 맵", "저랭크 적응"
     ]
+  },
+
+  "3.1": {
+    href: "chapters/ch03/3.1-functions-basics.html",
+    updated: "2026-07-29",
+    summary: "neural network는 층을 합성해 만든 함수 하나이고, domain·합성·연속성·국소 근사가 3장 전체의 문법이다.",
+    tags: [
+      "function", "domain", "codomain", "image", "composite function", "inverse function",
+      "bijective", "injective", "surjective", "multivariable", "scalar field",
+      "limit", "epsilon delta", "continuity", "local approximation", "little-o",
+      "logit", "sigmoid", "정의역", "공역", "합성함수", "역함수", "연속성", "극한", "국소 근사"
+    ]
+  },
+  "3.2": {
+    href: "chapters/ch03/3.2-derivatives.html",
+    updated: "2026-07-29",
+    summary: "할선을 좁히면 접선이 되고, 그 기울기가 derivative다. 부호는 방향을, 크기는 급함을, f″는 휘는 정도를 알려 준다.",
+    tags: [
+      "derivative", "rate of change", "tangent line", "second derivative",
+      "differentiability", "monotonicity", "extremum", "critical point", "curvature",
+      "Taylor", "sigmoid derivative", "ReLU", "dying ReLU", "saturation",
+      "변화율", "도함수", "접선", "고계도함수", "단조성", "극값", "곡률", "포화"
+    ]
+  },
+  "3.3": {
+    href: "chapters/ch03/3.3-multivariable-derivatives.html",
+    updated: "2026-07-29",
+    summary: "gradient는 가장 가파른 오르막을 가리키고 등고선에 수직이다. Jacobian은 (출력, 입력), Hessian의 eigenvalue가 곡률이다.",
+    tags: [
+      "partial derivative", "gradient", "directional derivative", "Jacobian", "Hessian",
+      "chain rule", "vector-valued", "matrix calculus", "layout convention",
+      "condition number", "saddle point", "positive definite", "Schwarz",
+      "편미분", "그래디언트", "방향도함수", "헤시안", "행렬 미분", "조건수", "등고선"
+    ]
+  },
+  "3.4": {
+    href: "chapters/ch03/3.4-chain-rule-computation-graph.html",
+    updated: "2026-07-29",
+    summary: "chain rule은 Jacobian의 곱이고, 곱하는 순서가 forward mode와 reverse mode를 가른다. loss가 하나라 뒤에서부터가 싸다.",
+    tags: [
+      "chain rule", "computation graph", "forward pass", "backpropagation",
+      "automatic differentiation", "autodiff", "reverse mode", "forward mode",
+      "VJP", "JVP", "adjoint", "gradient accumulation", "micrograd", "dual number",
+      "checkpointing", "residual", "zero_grad", "계산 그래프", "순전파", "역전파", "자동미분", "기울기 누적"
+    ]
+  },
+  "3.5": {
+    href: "chapters/ch03/3.5-optimization-basics.html",
+    updated: "2026-07-29",
+    summary: "볼록하면 지역 최적점이 곧 전역 최적점이고, 딥러닝의 진짜 방해물은 나쁜 지역 최소가 아니라 안장점이다.",
+    tags: [
+      "objective function", "loss function", "constraint", "feasible set",
+      "global optimum", "local optimum", "saddle point", "convexity", "non-convexity",
+      "optimization path", "argmin", "empirical risk", "surrogate loss",
+      "permutation symmetry", "목적함수", "손실함수", "제약조건", "안장점", "볼록성", "최적화 경로"
+    ]
+  },
+  "3.6": {
+    href: "chapters/ch03/3.6-gradient-descent.html",
+    updated: "2026-07-29",
+    summary: "θ ← θ − η∇L 한 줄이 전부다. 세 변종은 gradient 추정 방식의 차이이고, η의 상한은 2/λmax가 정한다.",
+    tags: [
+      "batch gradient descent", "SGD", "mini-batch", "learning rate", "convergence",
+      "divergence", "initialization", "condition number", "plateau", "epoch", "step",
+      "linear scaling rule", "LR range test", "Xavier", "He", "noise floor",
+      "경사하강법", "학습률", "수렴", "발산", "초기값", "조건수", "고원", "지그재그"
+    ]
+  },
+  "3.7": {
+    href: "chapters/ch03/3.7-optimization-algorithms.html",
+    updated: "2026-07-29",
+    summary: "관성(momentum)과 축별 스케일(adaptive) 두 아이디어뿐이다. Adam은 둘을 합친 것, AdamW는 weight decay를 떼어낸 것.",
+    tags: [
+      "momentum", "Nesterov", "AdaGrad", "RMSProp", "Adam", "AdamW", "LAMB", "Lion",
+      "bias correction", "first-order", "second-order", "Newton", "L-BFGS", "K-FAC",
+      "trust ratio", "decoupled weight decay", "optimizer memory",
+      "모멘텀", "적응적 학습률", "1차 최적화", "2차 최적화", "헤시안 근사"
+    ]
+  },
+  "3.8": {
+    href: "chapters/ch03/3.8-learning-rate-schedules.html",
+    updated: "2026-07-29",
+    summary: "학습률은 숫자가 아니라 시간의 함수다. 초반엔 크게, 후반엔 작게 — 오늘날의 표준은 linear warmup + cosine decay.",
+    tags: [
+      "learning rate schedule", "constant", "step decay", "exponential decay",
+      "cosine decay", "warmup", "warm restart", "SGDR", "cyclic learning rate",
+      "one-cycle", "super-convergence", "annealing", "noise floor",
+      "고정 학습률", "코사인 감쇠", "예열", "재시작", "순환 학습률", "원사이클", "담금질"
+    ]
+  },
+  "3.9": {
+    href: "chapters/ch03/3.9-constraints-regularization.html",
+    updated: "2026-07-29",
+    summary: "제약과 벌점은 같은 것의 두 얼굴이다. L1은 마름모의 모서리에서 접해 파라미터를 정확히 0으로 만든다.",
+    tags: [
+      "Lagrange multiplier", "constrained optimization", "KKT", "L1", "L2",
+      "ridge", "lasso", "weight decay", "sparsity", "soft thresholding",
+      "early stopping", "implicit regularization", "min-norm", "double descent",
+      "라그랑주 승수", "제약 최적화", "정규화", "희소성", "조기 종료", "암묵적 정규화"
+    ]
+  },
+  "3.10": {
+    href: "chapters/ch03/3.10-deep-learning-optimization.html",
+    updated: "2026-07-29",
+    summary: "Jacobian이 L번 곱해져 gradient가 지수적으로 죽거나 터진다. 도달한 최소점의 모양이 일반화를 좌우한다.",
+    tags: [
+      "vanishing gradient", "exploding gradient", "gradient clipping", "sharp minimum",
+      "flat minimum", "batch size", "generalization", "loss landscape", "scale invariance",
+      "residual", "spectral radius", "filter normalization", "critical batch size",
+      "BatchNorm", "effective learning rate", "mode connectivity",
+      "기울기 소실", "기울기 폭주", "손실 지형", "일반화", "스케일 불변성"
+    ]
   }
 
   // 새 절을 만들면 이 형태로 추가한다 (등록해야 목차·검색에 나타난다):

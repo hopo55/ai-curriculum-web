@@ -49,7 +49,15 @@
         "2.5",
         "2.6",
         "2.7",
-        "2.8"
+        "2.8",
+        "3.1",
+        "3.10",
+        "3.2",
+        "3.3",
+        "3.5",
+        "3.6",
+        "3.7",
+        "3.9"
       ]
     },
     "zhang2023-d2l": {
@@ -78,8 +86,18 @@
       "cited_by": [
         "2.10",
         "2.2",
-        "2.3"
-      ]
+        "2.3",
+        "3.8"
+      ],
+      "archived": {
+        "path": "references/library/book/zhang2023-d2l.pdf",
+        "sha256": "b3129f44c4a26b534176bb0f83d85e1ed26a6cdf93ebebacb20104eab2d6bc00",
+        "bytes": 44685994,
+        "content_type": "application/pdf",
+        "pages": 1151,
+        "fetched": "2026-07-29",
+        "source_url": "https://d2l.ai/d2l-en.pdf"
+      }
     },
     "deisenroth2020-mml": {
       "type": "book",
@@ -120,7 +138,10 @@
         "2.6",
         "2.7",
         "2.8",
-        "2.9"
+        "2.9",
+        "3.1",
+        "3.2",
+        "3.3"
       ]
     },
     "bishop2006-prml": {
@@ -144,7 +165,16 @@
       "file_url": "https://www.microsoft.com/en-us/research/uploads/prod/2006/01/Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf",
       "cited_by": [
         "2.9"
-      ]
+      ],
+      "archived": {
+        "path": "references/library/book/bishop2006-prml.pdf",
+        "sha256": "4ee767e0a6b04fa05ba7e599e9dbb4637a94a4407ccedf0b4d316b1fd7c8ec64",
+        "bytes": 18090775,
+        "content_type": "application/pdf",
+        "pages": 758,
+        "fetched": "2026-07-29",
+        "source_url": "https://www.microsoft.com/en-us/research/wp-content/uploads/2006/01/Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf"
+      }
     },
     "hastie2009-esl": {
       "type": "book",
@@ -168,8 +198,19 @@
       "cited_by": [
         "1.4",
         "1.5",
-        "1.6"
-      ]
+        "1.6",
+        "3.9"
+      ],
+      "archived": {
+        "path": "references/library/book/hastie2009-esl.html",
+        "sha256": "48b0441481206413e54b23cbf1380ae3d45763f3b34e2a6ae1d03685f5841c56",
+        "bytes": 707,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-29",
+        "source_url": "https://hastie.su.domains/ElemStatLearn/",
+        "warning": "HTML 랜딩 페이지를 받았습니다. PDF 직접 주소를 file_url 에 지정하세요."
+      }
     },
     "murphy2022-pml": {
       "type": "book",
@@ -192,7 +233,17 @@
       "checked": "2026-07-25",
       "cited_by": [
         "1.5"
-      ]
+      ],
+      "archived": {
+        "path": "references/library/book/murphy2022-pml.html",
+        "sha256": "28a6f90d476c1be4a2c4ddf90880362d364a19e4cfa183bdc58d771d8980afb0",
+        "bytes": 4329,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-29",
+        "source_url": "https://probml.github.io/pml-book/",
+        "warning": "HTML 랜딩 페이지를 받았습니다. PDF 직접 주소를 file_url 에 지정하세요."
+      }
     },
     "prince2023-udl": {
       "type": "book",
@@ -212,7 +263,19 @@
         "12"
       ],
       "checked": "2026-07-25",
-      "file_url": "https://github.com/udlbook/udlbook/releases/download/v5.00/UnderstandingDeepLearning_11_21_24_C.pdf"
+      "file_url": "https://github.com/udlbook/udlbook/releases/download/v5.00/UnderstandingDeepLearning_11_21_24_C.pdf",
+      "archived": {
+        "path": "references/library/book/prince2023-udl.bin",
+        "sha256": "2a3669a87fca4504aff2cd81e72d42fd049c14736f79a8463a65d7a1141f09e2",
+        "bytes": 22340747,
+        "content_type": "application/octet-stream",
+        "pages": 541,
+        "fetched": "2026-07-29",
+        "source_url": "https://release-assets.githubusercontent.com/github-production-release-asset/520128820/6e67dd89-4354-467e-960b-39abbaef53f9?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-07-29T05%3A17%3A27Z&rscd=attachment%3B+filename%3DUnderstandingDeepLearning_11_21_24_C.pdf&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-07-29T04%3A16%3A28Z&ske=2026-07-29T05%3A17%3A27Z&sks=b&skv=2018-11-09&sig=oKObhwBKyft6AYP4O0ubnfsGfcKhVfDuzcT3nKYDU14%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc4NTMwMjA1MCwibmJmIjoxNzg1MzAwMjUwLCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.D5wmiv9lppf0TgUlRSuI-_mCbcD2UojmQkS5Qho4f1U&response-content-disposition=attachment%3B%20filename%3DUnderstandingDeepLearning_11_21_24_C.pdf&response-content-type=application%2Foctet-stream"
+      },
+      "cited_by": [
+        "3.1"
+      ]
     },
     "sutton2018-rl": {
       "type": "book",
@@ -267,7 +330,16 @@
       "file_url": "https://web.stanford.edu/~jurafsky/slp3/ed3book.pdf",
       "cited_by": [
         "1.3"
-      ]
+      ],
+      "archived": {
+        "path": "references/library/book/jurafsky2025-slp3.pdf",
+        "sha256": "50a9efbb459e8dc3811c88f417e9eaab085be473d8cdf1d558a05ee33290f661",
+        "bytes": 26357909,
+        "content_type": "application/pdf",
+        "pages": 626,
+        "fetched": "2026-07-29",
+        "source_url": "https://web.stanford.edu/~jurafsky/slp3/ed3book.pdf"
+      }
     },
     "boyd2004-convex": {
       "type": "book",
@@ -286,7 +358,20 @@
         "3"
       ],
       "checked": "2026-07-25",
-      "file_url": "https://web.stanford.edu/~boyd/cvxbook/bv_cvxbook.pdf"
+      "file_url": "https://web.stanford.edu/~boyd/cvxbook/bv_cvxbook.pdf",
+      "archived": {
+        "path": "references/library/book/boyd2004-convex.pdf",
+        "sha256": "40d976c83c18cce1900eff8c41bd5ad408c102b813af39d05ff85678ccf8d76e",
+        "bytes": 6881335,
+        "content_type": "application/pdf",
+        "pages": 714,
+        "fetched": "2026-07-29",
+        "source_url": "https://web.stanford.edu/~boyd/cvxbook/bv_cvxbook.pdf"
+      },
+      "cited_by": [
+        "3.5",
+        "3.9"
+      ]
     },
     "mackay2003-itila": {
       "type": "book",
@@ -304,7 +389,16 @@
         "4"
       ],
       "checked": "2026-07-25",
-      "file_url": "https://www.inference.org.uk/itprnn/book.pdf"
+      "file_url": "https://www.inference.org.uk/itprnn/book.pdf",
+      "archived": {
+        "path": "references/library/book/mackay2003-itila.pdf",
+        "sha256": "868adc5f0ef6630366b122d88d691acfbe8339978b4ec3f38fca5e231f135791",
+        "bytes": 11675219,
+        "content_type": "application/pdf",
+        "pages": 640,
+        "fetched": "2026-07-29",
+        "source_url": "https://www.inference.org.uk/itprnn/book.pdf"
+      }
     },
     "szeliski2022-cv": {
       "type": "book",
@@ -325,7 +419,17 @@
       "note": "직접 PDF 주소가 공개돼 있지 않다. 페이지에서 링크를 찾아 file_url 에 넣으면 보관할 수 있다.",
       "cited_by": [
         "1.3"
-      ]
+      ],
+      "archived": {
+        "path": "references/library/book/szeliski2022-cv.html",
+        "sha256": "7b418610f1775a8d7235476e1a3425602624f763d89b53e4545cd7439f71f631",
+        "bytes": 8671,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-29",
+        "source_url": "https://szeliski.org/Book/",
+        "warning": "HTML 랜딩 페이지를 받았습니다. PDF 직접 주소를 file_url 에 지정하세요."
+      }
     },
     "hamilton2020-grl": {
       "type": "book",
@@ -343,7 +447,16 @@
         "9"
       ],
       "checked": "2026-07-25",
-      "file_url": "https://www.cs.mcgill.ca/~wlh/grl_book/files/GRL_Book.pdf"
+      "file_url": "https://www.cs.mcgill.ca/~wlh/grl_book/files/GRL_Book.pdf",
+      "archived": {
+        "path": "references/library/book/hamilton2020-grl.pdf",
+        "sha256": "bc25ed42b3cc2d5663f1f83172404bec8927e9b09546f69c1fdc914860b3955e",
+        "bytes": 2530915,
+        "content_type": "application/pdf",
+        "pages": 141,
+        "fetched": "2026-07-29",
+        "source_url": "https://www.cs.mcgill.ca/~wlh/grl_book/files/GRL_Book.pdf"
+      }
     },
     "molnar2025-iml": {
       "type": "book",
@@ -387,7 +500,17 @@
       "topics": [
         "20"
       ],
-      "checked": "2026-07-25"
+      "checked": "2026-07-25",
+      "archived": {
+        "path": "references/library/book/hernan2025-whatif.html",
+        "sha256": "71ba8ae7cf71acbf78967e9f91e6fddb3b0a37d3d9e55eb9b439c0dae63a50e3",
+        "bytes": 192106,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-29",
+        "source_url": "https://miguelhernan.org/whatifbook",
+        "warning": "HTML 랜딩 페이지를 받았습니다. PDF 직접 주소를 file_url 에 지정하세요."
+      }
     },
     "peters2017-eci": {
       "type": "book",
@@ -406,7 +529,17 @@
       "topics": [
         "20"
       ],
-      "checked": "2026-07-25"
+      "checked": "2026-07-25",
+      "archived": {
+        "path": "references/library/book/peters2017-eci.html",
+        "sha256": "b30a2747c3ce45120d1ea764395a3ad4468809b5c247c32c6c6e1e8b22d3987c",
+        "bytes": 3085,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-29",
+        "source_url": "https://web.math.ku.dk/~peters/",
+        "warning": "HTML 랜딩 페이지를 받았습니다. PDF 직접 주소를 file_url 에 지정하세요."
+      }
     },
     "nielsen2015-nndl": {
       "type": "book",
@@ -422,7 +555,21 @@
       "topics": [
         "6"
       ],
-      "checked": "2026-07-25"
+      "checked": "2026-07-25",
+      "archived": {
+        "path": "references/library/book/nielsen2015-nndl.html",
+        "sha256": "bb6cf5f21be56ede782b81e3dd09eeedae200e8fb1bb77b80ca89f62af5cda0c",
+        "bytes": 22282,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-29",
+        "source_url": "http://neuralnetworksanddeeplearning.com/",
+        "warning": "HTML 랜딩 페이지를 받았습니다. PDF 직접 주소를 file_url 에 지정하세요."
+      },
+      "cited_by": [
+        "3.10",
+        "3.4"
+      ]
     },
     "stanford-cs231n": {
       "type": "course",
@@ -442,8 +589,22 @@
       "cited_by": [
         "1.3",
         "1.5",
-        "2.10"
-      ]
+        "2.10",
+        "3.1",
+        "3.2",
+        "3.3",
+        "3.6",
+        "3.8"
+      ],
+      "archived": {
+        "path": "references/library/course/stanford-cs231n.html",
+        "sha256": "ec2c6dc6a36e3af1273ee907112a4a965ab331142c242311b0d5c6223d29c9f0",
+        "bytes": 22611,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-29",
+        "source_url": "https://cs231n.stanford.edu/"
+      }
     },
     "stanford-cs224n": {
       "type": "course",
@@ -459,7 +620,16 @@
         "12",
         "13"
       ],
-      "checked": "2026-07-25"
+      "checked": "2026-07-25",
+      "archived": {
+        "path": "references/library/course/stanford-cs224n.html",
+        "sha256": "51043804c40220ac498f76a20ca62d5042fe4a1ebb6d834650c6405cdf8e79a8",
+        "bytes": 63891,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-29",
+        "source_url": "https://web.stanford.edu/class/cs224n/"
+      }
     },
     "stanford-cs336": {
       "type": "course",
@@ -475,7 +645,16 @@
         "13",
         "16"
       ],
-      "checked": "2026-07-25"
+      "checked": "2026-07-25",
+      "archived": {
+        "path": "references/library/course/stanford-cs336.html",
+        "sha256": "2754583fe0977dfb746c0ae40fc19afd82437641d52919e3693d94fcaace9004",
+        "bytes": 30463,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-29",
+        "source_url": "http://cs336.stanford.edu/spring2025/"
+      }
     },
     "berkeley-cs285": {
       "type": "course",
@@ -492,7 +671,16 @@
         "25",
         "27"
       ],
-      "checked": "2026-07-25"
+      "checked": "2026-07-25",
+      "archived": {
+        "path": "references/library/course/berkeley-cs285.html",
+        "sha256": "2552b8477a675d8485dea7fa45369e9a7ca3da923607c8cfb0cb2d2d9886cafd",
+        "bytes": 85519,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-29",
+        "source_url": "https://rail.eecs.berkeley.edu/deeprlcourse/"
+      }
     },
     "mit-6s191": {
       "type": "course",
@@ -513,7 +701,16 @@
         "1.2",
         "1.3",
         "1.6"
-      ]
+      ],
+      "archived": {
+        "path": "references/library/course/mit-6s191.html",
+        "sha256": "5bb2b26d6337a9cb8a8872239b8080797b5ae950363336aaad324b9442420e4e",
+        "bytes": 92395,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-29",
+        "source_url": "https://introtodeeplearning.com/"
+      }
     },
     "mit-1806": {
       "type": "course",
@@ -540,7 +737,16 @@
         "2.7",
         "2.8",
         "2.9"
-      ]
+      ],
+      "archived": {
+        "path": "references/library/course/mit-1806.html",
+        "sha256": "e0eb4ae601d5a90badcf11b6ca44e7910bcff9a060f7363e24c34cc18e919752",
+        "bytes": 47884,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-29",
+        "source_url": "https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/"
+      }
     },
     "karpathy-zero2hero": {
       "type": "course",
@@ -557,7 +763,10 @@
         "12",
         "13"
       ],
-      "checked": "2026-07-25"
+      "checked": "2026-07-25",
+      "cited_by": [
+        "3.4"
+      ]
     },
     "hf-courses": {
       "type": "course",
@@ -579,7 +788,16 @@
       "cited_by": [
         "1.2",
         "1.4"
-      ]
+      ],
+      "archived": {
+        "path": "references/library/course/hf-courses.html",
+        "sha256": "c220c88549b3c2e1f6f185e7362e60a53eae4a6e05dfd5214e87dbb02cf67b90",
+        "bytes": 70073,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-29",
+        "source_url": "https://huggingface.co/learn"
+      }
     },
     "3blue1brown-nn": {
       "type": "video",
@@ -619,7 +837,16 @@
         "12",
         "18"
       ],
-      "checked": "2026-07-25"
+      "checked": "2026-07-25",
+      "archived": {
+        "path": "references/library/web/distill.html",
+        "sha256": "2a687c9e615696378f70517c9ade53465018f6c7141ebb39d45ae78d18d8e064",
+        "bytes": 62026,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-29",
+        "source_url": "https://distill.pub/"
+      }
     },
     "transformer-circuits": {
       "type": "web",
@@ -634,7 +861,16 @@
         "12",
         "18"
       ],
-      "checked": "2026-07-25"
+      "checked": "2026-07-25",
+      "archived": {
+        "path": "references/library/web/transformer-circuits.html",
+        "sha256": "629e4253933bcaf65bacc7d7711bf6b5da78084947d65999325708c7d837859e",
+        "bytes": 37873,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-29",
+        "source_url": "https://transformer-circuits.pub/"
+      }
     },
     "lilianweng-log": {
       "type": "web",
@@ -656,7 +892,16 @@
       "cited_by": [
         "1.2",
         "1.3"
-      ]
+      ],
+      "archived": {
+        "path": "references/library/web/lilianweng-log.html",
+        "sha256": "1c53b1199d37ef464a19d244fc84cc0f343f6fb7c6263077fbd318cd70a9ede0",
+        "bytes": 26437,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-29",
+        "source_url": "https://lilianweng.github.io/"
+      }
     },
     "vaswani2017-attention-is-all": {
       "type": "paper",
@@ -715,7 +960,16 @@
       "checked": "2026-07-25",
       "cited_by": [
         "2.3"
-      ]
+      ],
+      "archived": {
+        "path": "references/library/paper/mikolov2013-efficient-estimation-of.pdf",
+        "sha256": "a44d7e22d2005752271c9cc1929c6462d4c8270916b063977992a883e3a54362",
+        "bytes": 228716,
+        "content_type": "application/pdf",
+        "pages": 12,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1301.3781"
+      }
     },
     "radford2021-learning-transferable-visual": {
       "type": "paper",
@@ -1194,7 +1448,16 @@
       "cited_by": [
         "1.4",
         "1.5"
-      ]
+      ],
+      "archived": {
+        "path": "references/library/web/google-rules-of-ml.html",
+        "sha256": "f3fe9e292eb5f68083c6e22e675da8cc5eeb30c526c540e38ea0cf903c5f8b6c",
+        "bytes": 263505,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-29",
+        "source_url": "https://developers.google.com/machine-learning/guides/rules-of-ml?hl=bn"
+      }
     },
     "sculley2015-tech-debt": {
       "type": "paper",
@@ -1404,7 +1667,8 @@
         "2.4",
         "2.5",
         "2.6",
-        "2.8"
+        "2.8",
+        "3.3"
       ]
     },
     "kolda2009-tensor-decompositions": {
@@ -1499,6 +1763,887 @@
       },
       "cited_by": [
         "2.7"
+      ]
+    },
+    "kingma2014-adam-a-method": {
+      "type": "paper",
+      "title": "Adam: A Method for Stochastic Optimization",
+      "authors": [
+        "Diederik P. Kingma",
+        "Jimmy Ba"
+      ],
+      "year": 2014,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1412.6980",
+      "file_url": "https://arxiv.org/pdf/1412.6980",
+      "arxiv": "1412.6980",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/kingma2014-adam-a-method.pdf",
+        "sha256": "eab9c73ae2ceda884b94830bda99312254bac4806f6c9f045cbab90721ecda31",
+        "bytes": 584641,
+        "content_type": "application/pdf",
+        "pages": 15,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1412.6980"
+      },
+      "cited_by": [
+        "3.7"
+      ]
+    },
+    "baydin2015-automatic-differentiation-in": {
+      "type": "paper",
+      "title": "Automatic differentiation in machine learning: a survey",
+      "authors": [
+        "Atilim Gunes Baydin",
+        "Barak A. Pearlmutter",
+        "Alexey Andreyevich Radul",
+        "Jeffrey Mark Siskind"
+      ],
+      "year": 2015,
+      "venue": "Atilim Gunes Baydin, Barak A. Pearlmutter, Alexey Andreyevich Radul, Jeffrey Mark Siskind. Automatic differentiation in machine learning: a survey. The Journal of Machine Learning Research, 18(153):1--43, 2018",
+      "url": "https://arxiv.org/abs/1502.05767",
+      "file_url": "https://arxiv.org/pdf/1502.05767",
+      "arxiv": "1502.05767",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/baydin2015-automatic-differentiation-in.pdf",
+        "sha256": "6f72720b86da67c0471efb879677e3909cdf32ff4d73c006663b8c441a4cf552",
+        "bytes": 587304,
+        "content_type": "application/pdf",
+        "pages": 43,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1502.05767"
+      },
+      "cited_by": [
+        "3.4"
+      ]
+    },
+    "dauphin2014-identifying-and-attacking": {
+      "type": "paper",
+      "title": "Identifying and attacking the saddle point problem in high-dimensional non-convex optimization",
+      "authors": [
+        "Yann Dauphin",
+        "Razvan Pascanu",
+        "Caglar Gulcehre",
+        "Kyunghyun Cho",
+        "Surya Ganguli",
+        "Yoshua Bengio"
+      ],
+      "year": 2014,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1406.2572",
+      "file_url": "https://arxiv.org/pdf/1406.2572",
+      "arxiv": "1406.2572",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/dauphin2014-identifying-and-attacking.pdf",
+        "sha256": "0245191294dc02410a9af9f35f8be4a11655f0d479c215bd581f51f8effdd316",
+        "bytes": 1306632,
+        "content_type": "application/pdf",
+        "pages": 14,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1406.2572"
+      },
+      "cited_by": [
+        "3.2",
+        "3.5"
+      ]
+    },
+    "bottou2016-optimization-methods-for": {
+      "type": "paper",
+      "title": "Optimization Methods for Large-Scale Machine Learning",
+      "authors": [
+        "Léon Bottou",
+        "Frank E. Curtis",
+        "Jorge Nocedal"
+      ],
+      "year": 2016,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1606.04838",
+      "file_url": "https://arxiv.org/pdf/1606.04838",
+      "arxiv": "1606.04838",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/bottou2016-optimization-methods-for.pdf",
+        "sha256": "6d09a78cc225e29a10fcff75974692e1900810fb04222076bf69dfbbf35931d2",
+        "bytes": 1954019,
+        "content_type": "application/pdf",
+        "pages": 95,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1606.04838"
+      },
+      "cited_by": [
+        "3.6"
+      ]
+    },
+    "ruder2016-an-overview-of": {
+      "type": "paper",
+      "title": "An overview of gradient descent optimization algorithms",
+      "authors": [
+        "Sebastian Ruder"
+      ],
+      "year": 2016,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1609.04747",
+      "file_url": "https://arxiv.org/pdf/1609.04747",
+      "arxiv": "1609.04747",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/ruder2016-an-overview-of.pdf",
+        "sha256": "e951bbb8557e172a99b56ae82aae8f37108b5dea31c3606c8539a3d98023b5ca",
+        "bytes": 659026,
+        "content_type": "application/pdf",
+        "pages": 14,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1609.04747"
+      }
+    },
+    "loshchilov2017-decoupled-weight-decay": {
+      "type": "paper",
+      "title": "Decoupled Weight Decay Regularization",
+      "authors": [
+        "Ilya Loshchilov",
+        "Frank Hutter"
+      ],
+      "year": 2017,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1711.05101",
+      "file_url": "https://arxiv.org/pdf/1711.05101",
+      "arxiv": "1711.05101",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/loshchilov2017-decoupled-weight-decay.pdf",
+        "sha256": "9d5af48931e773d6983d167e15c06ef594475b751c1f263827f5ed3c7a00d0d8",
+        "bytes": 6063896,
+        "content_type": "application/pdf",
+        "pages": 19,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1711.05101"
+      },
+      "cited_by": [
+        "3.7",
+        "3.9"
+      ]
+    },
+    "you2019-large-batch-optimization": {
+      "type": "paper",
+      "title": "Large Batch Optimization for Deep Learning: Training BERT in 76 minutes",
+      "authors": [
+        "Yang You",
+        "Jing Li",
+        "Sashank Reddi",
+        "Jonathan Hseu",
+        "Sanjiv Kumar",
+        "Srinadh Bhojanapalli",
+        "Xiaodan Song",
+        "James Demmel",
+        "Kurt Keutzer",
+        "Cho-Jui Hsieh"
+      ],
+      "year": 2019,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1904.00962",
+      "file_url": "https://arxiv.org/pdf/1904.00962",
+      "arxiv": "1904.00962",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/you2019-large-batch-optimization.pdf",
+        "sha256": "f795038034407053ae887881bf5292e4b7ab0e977e7dca974ff6b13874cecce7",
+        "bytes": 977812,
+        "content_type": "application/pdf",
+        "pages": 37,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1904.00962"
+      },
+      "cited_by": [
+        "3.7"
+      ]
+    },
+    "chen2023-symbolic-discovery-of": {
+      "type": "paper",
+      "title": "Symbolic Discovery of Optimization Algorithms",
+      "authors": [
+        "Xiangning Chen",
+        "Chen Liang",
+        "Da Huang",
+        "Esteban Real",
+        "Kaiyuan Wang",
+        "Yao Liu",
+        "Hieu Pham",
+        "Xuanyi Dong",
+        "Thang Luong",
+        "Cho-Jui Hsieh",
+        "Yifeng Lu",
+        "Quoc V. Le"
+      ],
+      "year": 2023,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/2302.06675",
+      "file_url": "https://arxiv.org/pdf/2302.06675",
+      "arxiv": "2302.06675",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/chen2023-symbolic-discovery-of.pdf",
+        "sha256": "a3a7c83cfe354ddf00734bb04e4315ed1fe56de3fe231b05af5f6e18650bf95a",
+        "bytes": 1560733,
+        "content_type": "application/pdf",
+        "pages": 30,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/2302.06675"
+      },
+      "cited_by": [
+        "3.7"
+      ]
+    },
+    "loshchilov2016-sgdr-stochastic-gradient": {
+      "type": "paper",
+      "title": "SGDR: Stochastic Gradient Descent with Warm Restarts",
+      "authors": [
+        "Ilya Loshchilov",
+        "Frank Hutter"
+      ],
+      "year": 2016,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1608.03983",
+      "file_url": "https://arxiv.org/pdf/1608.03983",
+      "arxiv": "1608.03983",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/loshchilov2016-sgdr-stochastic-gradient.pdf",
+        "sha256": "f14bcfe4dc713782b6b1df90e73f691a8a4d1fa625a08c490c7270fd283a9caa",
+        "bytes": 1540360,
+        "content_type": "application/pdf",
+        "pages": 16,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1608.03983"
+      },
+      "cited_by": [
+        "3.8"
+      ]
+    },
+    "smith2015-cyclical-learning-rates": {
+      "type": "paper",
+      "title": "Cyclical Learning Rates for Training Neural Networks",
+      "authors": [
+        "Leslie N. Smith"
+      ],
+      "year": 2015,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1506.01186",
+      "file_url": "https://arxiv.org/pdf/1506.01186",
+      "arxiv": "1506.01186",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/smith2015-cyclical-learning-rates.pdf",
+        "sha256": "c4306299816858ca3c0cf03864218ca3d84ef186590dbbe313c0e1aed0c90d14",
+        "bytes": 988236,
+        "content_type": "application/pdf",
+        "pages": 10,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1506.01186"
+      },
+      "cited_by": [
+        "3.8"
+      ]
+    },
+    "smith2017-super-convergence-very": {
+      "type": "paper",
+      "title": "Super-Convergence: Very Fast Training of Neural Networks Using Large Learning Rates",
+      "authors": [
+        "Leslie N. Smith",
+        "Nicholay Topin"
+      ],
+      "year": 2017,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1708.07120",
+      "file_url": "https://arxiv.org/pdf/1708.07120",
+      "arxiv": "1708.07120",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/smith2017-super-convergence-very.pdf",
+        "sha256": "8656ea332f26542b7b9eab6c54eda62a585aa8c33f4e1723636d44d22407f820",
+        "bytes": 3017812,
+        "content_type": "application/pdf",
+        "pages": 18,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1708.07120"
+      },
+      "cited_by": [
+        "3.8"
+      ]
+    },
+    "goyal2017-accurate-large-minibatch": {
+      "type": "paper",
+      "title": "Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour",
+      "authors": [
+        "Priya Goyal",
+        "Piotr Dollár",
+        "Ross Girshick",
+        "Pieter Noordhuis",
+        "Lukasz Wesolowski",
+        "Aapo Kyrola",
+        "Andrew Tulloch",
+        "Yangqing Jia",
+        "Kaiming He"
+      ],
+      "year": 2017,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1706.02677",
+      "file_url": "https://arxiv.org/pdf/1706.02677",
+      "arxiv": "1706.02677",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/goyal2017-accurate-large-minibatch.pdf",
+        "sha256": "761b87763b59e48c090d0ace419613ae18040acbcbccf1973a25ec5b744b6f33",
+        "bytes": 679228,
+        "content_type": "application/pdf",
+        "pages": 12,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1706.02677"
+      },
+      "cited_by": [
+        "3.10",
+        "3.6",
+        "3.8"
+      ]
+    },
+    "zhang2016-understanding-deep-learning": {
+      "type": "paper",
+      "title": "Understanding deep learning requires rethinking generalization",
+      "authors": [
+        "Chiyuan Zhang",
+        "Samy Bengio",
+        "Moritz Hardt",
+        "Benjamin Recht",
+        "Oriol Vinyals"
+      ],
+      "year": 2016,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1611.03530",
+      "file_url": "https://arxiv.org/pdf/1611.03530",
+      "arxiv": "1611.03530",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/zhang2016-understanding-deep-learning.pdf",
+        "sha256": "a71f1294a021cebc6939ec977fc073b6d7b4f183950eba761ec55364d30b729f",
+        "bytes": 403563,
+        "content_type": "application/pdf",
+        "pages": 15,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1611.03530"
+      },
+      "cited_by": [
+        "3.9"
+      ]
+    },
+    "pascanu2012-on-the-difficulty": {
+      "type": "paper",
+      "title": "On the difficulty of training Recurrent Neural Networks",
+      "authors": [
+        "Razvan Pascanu",
+        "Tomas Mikolov",
+        "Yoshua Bengio"
+      ],
+      "year": 2012,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1211.5063",
+      "file_url": "https://arxiv.org/pdf/1211.5063",
+      "arxiv": "1211.5063",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/pascanu2012-on-the-difficulty.pdf",
+        "sha256": "cc8692b8d9d4ef8c8a377e0a894832a92186007792fce4f7e313925ea20f6cd5",
+        "bytes": 625611,
+        "content_type": "application/pdf",
+        "pages": 12,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1211.5063"
+      },
+      "cited_by": [
+        "3.10"
+      ]
+    },
+    "keskar2016-on-large-batch": {
+      "type": "paper",
+      "title": "On Large-Batch Training for Deep Learning: Generalization Gap and Sharp Minima",
+      "authors": [
+        "Nitish Shirish Keskar",
+        "Dheevatsa Mudigere",
+        "Jorge Nocedal",
+        "Mikhail Smelyanskiy",
+        "Ping Tak Peter Tang"
+      ],
+      "year": 2016,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1609.04836",
+      "file_url": "https://arxiv.org/pdf/1609.04836",
+      "arxiv": "1609.04836",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/keskar2016-on-large-batch.pdf",
+        "sha256": "bcd5497ace654f4dc354a32cfe68cfdf5dc88e823150726d3e6a9cfa680557ad",
+        "bytes": 862436,
+        "content_type": "application/pdf",
+        "pages": 16,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1609.04836"
+      },
+      "cited_by": [
+        "3.10",
+        "3.6"
+      ]
+    },
+    "li2017-visualizing-the-loss": {
+      "type": "paper",
+      "title": "Visualizing the Loss Landscape of Neural Nets",
+      "authors": [
+        "Hao Li",
+        "Zheng Xu",
+        "Gavin Taylor",
+        "Christoph Studer",
+        "Tom Goldstein"
+      ],
+      "year": 2017,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1712.09913",
+      "file_url": "https://arxiv.org/pdf/1712.09913",
+      "arxiv": "1712.09913",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/li2017-visualizing-the-loss.pdf",
+        "sha256": "f1d5a34270925e3915d558594a06626ee62a645a8c8f90d1afb70954157261c6",
+        "bytes": 4381401,
+        "content_type": "application/pdf",
+        "pages": 18,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1712.09913"
+      },
+      "cited_by": [
+        "3.10",
+        "3.5"
+      ]
+    },
+    "laarhoven2017-l2-regularization-versus": {
+      "type": "paper",
+      "title": "L2 Regularization versus Batch and Weight Normalization",
+      "authors": [
+        "Twan van Laarhoven"
+      ],
+      "year": 2017,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1706.05350",
+      "file_url": "https://arxiv.org/pdf/1706.05350",
+      "arxiv": "1706.05350",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/laarhoven2017-l2-regularization-versus.pdf",
+        "sha256": "652e327537bc80b7f6fb0019f704e69c806bbda9663654847f0b31c4273293be",
+        "bytes": 164439,
+        "content_type": "application/pdf",
+        "pages": 9,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1706.05350"
+      },
+      "cited_by": [
+        "3.10"
+      ]
+    },
+    "bengio2012-practical-recommendations-for": {
+      "type": "paper",
+      "title": "Practical recommendations for gradient-based training of deep architectures",
+      "authors": [
+        "Yoshua Bengio"
+      ],
+      "year": 2012,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1206.5533",
+      "file_url": "https://arxiv.org/pdf/1206.5533",
+      "arxiv": "1206.5533",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/bengio2012-practical-recommendations-for.pdf",
+        "sha256": "13b45892fd59e675fb1b9611b4926357f7eee3893d2cc763ceddb4b2e2a5a46a",
+        "bytes": 500953,
+        "content_type": "application/pdf",
+        "pages": 33,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1206.5533"
+      }
+    },
+    "dinh2017-sharp-minima-can": {
+      "type": "paper",
+      "title": "Sharp Minima Can Generalize For Deep Nets",
+      "authors": [
+        "Laurent Dinh",
+        "Razvan Pascanu",
+        "Samy Bengio",
+        "Yoshua Bengio"
+      ],
+      "year": 2017,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1703.04933",
+      "file_url": "https://arxiv.org/pdf/1703.04933",
+      "arxiv": "1703.04933",
+      "doi": null,
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개. 개인 학습용 보관 — 저장소에 커밋하지 않는다.",
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/dinh2017-sharp-minima-can.pdf",
+        "sha256": "997b6a7863cf10bb834b25d23984e2f614d4039d004240fd24f8683646b1e7da",
+        "bytes": 521358,
+        "content_type": "application/pdf",
+        "pages": 13,
+        "fetched": "2026-07-29",
+        "source_url": "https://arxiv.org/pdf/1703.04933"
+      },
+      "cited_by": [
+        "3.10"
+      ]
+    },
+    "robbins1951-stochastic-approximation": {
+      "type": "paper",
+      "title": "A Stochastic Approximation Method",
+      "authors": [
+        "Herbert Robbins",
+        "Sutton Monro"
+      ],
+      "year": 1951,
+      "venue": "The Annals of Mathematical Statistics, 22(3), 400-407",
+      "url": "https://projecteuclid.org/journals/annals-of-mathematical-statistics/volume-22/issue-3/A-Stochastic-Approximation-Method/10.1214/aoms/1177729586.full",
+      "doi": "10.1214/aoms/1177729586",
+      "access": "free-online",
+      "archivable": false,
+      "license": "Project Euclid 공개 열람. 재배포 조건 불명 — 링크로만 인용.",
+      "topics": [
+        "3"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "3.6",
+        "3.8"
+      ]
+    },
+    "rumelhart1986-backprop": {
+      "type": "paper",
+      "title": "Learning representations by back-propagating errors",
+      "authors": [
+        "David E. Rumelhart",
+        "Geoffrey E. Hinton",
+        "Ronald J. Williams"
+      ],
+      "year": 1986,
+      "venue": "Nature, 323, 533-536",
+      "url": "https://www.nature.com/articles/323533a0",
+      "doi": "10.1038/323533a0",
+      "access": "paywalled",
+      "archivable": false,
+      "license": "Nature 게재. 저자 공개본 링크로만 인용.",
+      "topics": [
+        "3",
+        "6"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "3.4"
+      ]
+    },
+    "duchi2011-adagrad": {
+      "type": "paper",
+      "title": "Adaptive Subgradient Methods for Online Learning and Stochastic Optimization",
+      "authors": [
+        "John Duchi",
+        "Elad Hazan",
+        "Yoram Singer"
+      ],
+      "year": 2011,
+      "venue": "JMLR, 12, 2121-2159",
+      "url": "https://www.jmlr.org/papers/v12/duchi11a.html",
+      "file_url": "https://www.jmlr.org/papers/volume12/duchi11a/duchi11a.pdf",
+      "access": "free-online",
+      "archivable": true,
+      "license": "JMLR 오픈액세스.",
+      "topics": [
+        "3"
+      ],
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/duchi2011-adagrad.pdf",
+        "sha256": "691043712c05c19c98223fba52507beff0480afb11fa17ea40a2a032d6f0bf3c",
+        "bytes": 307882,
+        "content_type": "application/pdf",
+        "pages": 39,
+        "fetched": "2026-07-29",
+        "source_url": "https://www.jmlr.org/papers/volume12/duchi11a/duchi11a.pdf"
+      },
+      "cited_by": [
+        "3.7"
+      ]
+    },
+    "tieleman2012-rmsprop": {
+      "type": "course",
+      "title": "Lecture 6.5 — RMSProp: Divide the gradient by a running average of its recent magnitude",
+      "authors": [
+        "Tijmen Tieleman",
+        "Geoffrey Hinton"
+      ],
+      "year": 2012,
+      "venue": "Coursera: Neural Networks for Machine Learning",
+      "url": "https://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf",
+      "file_url": "https://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf",
+      "access": "free-online",
+      "archivable": true,
+      "license": "강의 슬라이드 공개본.",
+      "topics": [
+        "3"
+      ],
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/course/tieleman2012-rmsprop.pdf",
+        "sha256": "328eff5e413f16004bce8857598b34be798c4d15e7fc7ecbe85c1da6e16b9fd1",
+        "bytes": 546843,
+        "content_type": "application/pdf",
+        "pages": 31,
+        "fetched": "2026-07-29",
+        "source_url": "https://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf"
+      },
+      "cited_by": [
+        "3.7"
+      ]
+    },
+    "tibshirani1996-lasso": {
+      "type": "paper",
+      "title": "Regression Shrinkage and Selection via the Lasso",
+      "authors": [
+        "Robert Tibshirani"
+      ],
+      "year": 1996,
+      "venue": "Journal of the Royal Statistical Society, Series B, 58(1), 267-288",
+      "url": "https://www.jstor.org/stable/2346178",
+      "doi": "10.1111/j.2517-6161.1996.tb02080.x",
+      "access": "paywalled",
+      "archivable": false,
+      "license": "JRSS-B 게재. 링크로만 인용.",
+      "topics": [
+        "3",
+        "5"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "3.9"
+      ]
+    },
+    "sutskever2013-momentum": {
+      "type": "paper",
+      "title": "On the importance of initialization and momentum in deep learning",
+      "authors": [
+        "Ilya Sutskever",
+        "James Martens",
+        "George Dahl",
+        "Geoffrey Hinton"
+      ],
+      "year": 2013,
+      "venue": "ICML 2013, PMLR 28(3), 1139-1147",
+      "url": "https://proceedings.mlr.press/v28/sutskever13.html",
+      "file_url": "https://proceedings.mlr.press/v28/sutskever13.pdf",
+      "access": "free-online",
+      "archivable": true,
+      "license": "PMLR 오픈액세스.",
+      "topics": [
+        "3"
+      ],
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/paper/sutskever2013-momentum.pdf",
+        "sha256": "0ffbc02e2ce6ddcb50705615389829896b700289548be4afacd9a57903e1a1c9",
+        "bytes": 538423,
+        "content_type": "application/pdf",
+        "pages": 9,
+        "fetched": "2026-07-29",
+        "source_url": "https://proceedings.mlr.press/v28/sutskever13.pdf"
+      }
+    },
+    "3blue1brown-calculus": {
+      "type": "video",
+      "title": "Essence of Calculus",
+      "authors": [
+        "Grant Sanderson (3Blue1Brown)"
+      ],
+      "url": "https://www.3blue1brown.com/topics/calculus",
+      "access": "free-online",
+      "archivable": false,
+      "license": "영상 재배포 불가. 링크와 타임스탬프로만 인용한다.",
+      "topics": [
+        "3"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "3.1",
+        "3.2",
+        "3.3"
+      ]
+    },
+    "goh2017-momentum": {
+      "type": "web",
+      "title": "Why Momentum Really Works",
+      "authors": [
+        "Gabriel Goh"
+      ],
+      "year": 2017,
+      "venue": "Distill",
+      "url": "https://distill.pub/2017/momentum/",
+      "file_url": "https://distill.pub/2017/momentum/",
+      "doi": "10.23915/distill.00006",
+      "access": "free-online",
+      "archivable": true,
+      "license": "CC BY 4.0 — 출처 표기 시 재사용 가능.",
+      "topics": [
+        "3"
+      ],
+      "checked": "2026-07-29",
+      "archived": {
+        "path": "references/library/web/goh2017-momentum.html",
+        "sha256": "288b5fb8b4daec4a1ed3e17111a8e86dd5ae7c13488fe6148f3cf84c24a0daea",
+        "bytes": 1091673,
+        "content_type": "text/html",
+        "pages": null,
+        "fetched": "2026-07-29",
+        "source_url": "https://distill.pub/2017/momentum/"
+      },
+      "cited_by": [
+        "3.7"
+      ]
+    },
+    "stanford-ee364a": {
+      "type": "course",
+      "title": "EE364A: Convex Optimization I",
+      "authors": [
+        "Stephen Boyd"
+      ],
+      "venue": "Stanford University",
+      "url": "https://web.stanford.edu/class/ee364a/",
+      "access": "free-online",
+      "archivable": false,
+      "license": "강의 페이지. 슬라이드는 교재와 함께 공개.",
+      "topics": [
+        "3"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "3.5",
+        "3.9"
+      ]
+    },
+    "nocedal2006-numerical-optimization": {
+      "type": "book",
+      "title": "Numerical Optimization (2nd ed.)",
+      "authors": [
+        "Jorge Nocedal",
+        "Stephen J. Wright"
+      ],
+      "year": 2006,
+      "publisher": "Springer",
+      "url": "https://link.springer.com/book/10.1007/978-0-387-40065-5",
+      "doi": "10.1007/978-0-387-40065-5",
+      "access": "paywalled",
+      "archivable": false,
+      "license": "Springer 게재. 링크로만 인용.",
+      "topics": [
+        "3"
+      ],
+      "checked": "2026-07-29"
+    },
+    "pytorch-autograd-docs": {
+      "type": "doc",
+      "title": "Autograd mechanics · torch.autograd — PyTorch documentation",
+      "authors": [
+        "PyTorch Team"
+      ],
+      "url": "https://pytorch.org/docs/stable/notes/autograd.html",
+      "access": "free-online",
+      "archivable": false,
+      "license": "BSD-3-Clause 프로젝트 문서.",
+      "topics": [
+        "3",
+        "6"
+      ],
+      "checked": "2026-07-29",
+      "cited_by": [
+        "3.4"
       ]
     },
     "khan-linear-algebra": {

@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.7 최적화 알고리즘 — AI 이론 학습</title>
+<meta name="description" content="관성(momentum)과 축별 스케일(adaptive) 두 계열이 전부다. Adam은 둘을 합친 것이고 AdamW는 weight decay를 떼어낸 것이다.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23b23a2b'/><text x='16' y='23' font-size='20' font-family='Georgia,serif' fill='%23fbf8f3' text-anchor='middle'>A</text></svg>">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+
+<body data-root="../../" data-section="3.7">
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="../../index.html">
+      <span class="brand__mark tex">AI</span>
+      <span class="brand__text">이론 학습 커리큘럼</span>
+    </a>
+    <div class="search">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input class="search__input" type="search" placeholder="절 · 개념 검색  ( / )" aria-label="절과 개념 검색" autocomplete="off">
+      <div class="search__results" role="listbox" aria-label="검색 결과"></div>
+    </div>
+    <span class="topbar__spacer"></span>
+    <button class="iconbtn" type="button" data-act="slides" aria-pressed="false">▤ 슬라이드</button>
+    <button class="iconbtn" type="button" data-act="theme">◑ 자동</button>
+  </div>
+  <div class="ruler" role="progressbar" aria-label="전체 학습 진도"><div class="ruler__fill"></div></div>
+</header>
+
+<div class="shell">
+<div class="wrap page">
+
+  <aside class="rail">
+    <p class="rail__title">이 절의 구성</p>
+    <nav class="rail__list" aria-label="절 내부 목차"></nav>
+  </aside>
+
+  <main id="main" class="prose">
+
+    <!-- ===== 0. 헤더 ===== -->
+    <header class="sechead">
+      <div class="sechead__eyebrow">
+        <span class="sechead__id num">3.7</span>
+        <span>3장 · 미적분과 최적화</span>
+      </div>
+      <h1>최적화 알고리즘</h1>
+      <div class="sechead__meta">
+        <span><b>학습시간</b>약 70분</span>
+        <span><b>난이도</b>★★★★☆</span>
+        <span><b>선수지식</b>
+          <a href="3.6-gradient-descent.html">3.6 경사하강법</a>
+        </span>
+      </div>
+    </header>
+
+    <!-- ===== 1. 다루는 항목 ===== -->
+    <nav class="chips" aria-label="이 절에서 다루는 항목">
+      <a class="chip" href="#c-momentum">Momentum</a>
+      <a class="chip" href="#c-nesterov">Nesterov Momentum</a>
+      <a class="chip" href="#c-adagrad">AdaGrad</a>
+      <a class="chip" href="#c-rmsprop">RMSProp</a>
+      <a class="chip" href="#c-adam">Adam</a>
+      <a class="chip" href="#c-adamw">AdamW</a>
+      <a class="chip" href="#c-lamb">LAMB</a>
+      <a class="chip" href="#c-lion">Lion</a>
+      <a class="chip" href="#c-first">First-Order Optimization</a>
+      <a class="chip" href="#c-second">Second-Order Optimization</a>
+    </nav>
+
+    <!-- ===== 2. 한 줄 요약 ===== -->
+    <section class="sec" id="s-summary">
+      <div class="sec__head"><span class="sec__n num">1</span><h2>한 줄 요약</h2></div>
+      <p class="tldr">
+        아이디어는 <strong>두 가지</strong>뿐이다 — <strong>관성</strong>(지난 방향을 기억해 지그재그를 상쇄)과
+        <strong>축별 스케일</strong>(축마다 다른 보폭). Adam은 둘을 합친 것이고,
+        AdamW·LAMB·Lion 은 Adam 의 한 조각씩을 고친 변형이다.
+      </p>
+
+      <h3>학습 목표</h3>
+      <ol class="goals">
+        <li>momentum 이 지그재그를 줄이고 유효 learning rate 를 $1/(1-\beta)$ 배로 키우는 이유를 설명할 수 있다.</li>
+        <li>Adam 의 네 줄 갱신식을 쓰고 bias correction 이 왜 필요한지 유도할 수 있다.</li>
+        <li>AdamW 의 weight decay 가 Adam+L2 와 왜 다른지, 2차 최적화를 왜 안 쓰는지 설명할 수 있다.</li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 직관 ===== -->
+    <section class="sec" id="s-intuition">
+      <div class="sec__head"><span class="sec__n num">2</span><h2>직관</h2></div>
+
+      <p>
+        <a href="3.6-gradient-descent.html">3.6</a>에서 본 문제는 둘이었다.
+        <strong>(1) 좁은 골짜기에서 지그재그</strong> — 급한 축은 튀고 완만한 축은 기어간다.
+        <strong>(2) 축마다 스케일이 다르다</strong> — 하나의 $\eta$ 로 전부 감당해야 한다.
+      </p>
+      <p>
+        처방도 둘이다. <span class="hl">지그재그는 <strong>관성</strong>으로 상쇄한다 —
+        왔다 갔다 하는 성분은 서로 지워지고 한 방향으로 꾸준한 성분만 쌓인다.</span>
+        스케일 문제는 <strong>축마다 다른 보폭</strong>으로 푼다 — 그동안 많이 움직인 축은 보폭을 줄이고
+        적게 움직인 축은 키운다. 이 두 아이디어의 조합이 오늘날 쓰는 optimizer 전부다.
+      </p>
+
+      <figure class="widget" data-widget="optimizer-race">
+        <figcaption class="widget__bar">Optimizer 경주 — 같은 골짜기, 다른 궤적</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">SGD 는 골짜기를 <strong>가로지르며</strong> 진동하고, momentum 은 <strong>바닥을 따라</strong> 미끄러집니다. Adam 은 축 스케일을 맞춰 거의 직선으로 갑니다.</p>
+        </div>
+      </figure>
+
+      <div class="note note--key">
+        <span class="note__label">핵심</span>
+        <p>
+          어떤 optimizer 도 <strong>gradient 말고 새로운 정보를 얻지 않는다</strong>.
+          같은 gradient 를 <em>어떻게 누적하고 어떻게 나누느냐</em>만 다르다.
+          그래서 optimizer 를 바꿔도 gradient 자체가 죽어 있으면(<a href="3.10-deep-learning-optimization.html">3.10</a>) 아무 소용이 없다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. 형식적 정의 ===== -->
+    <section class="sec" id="s-definition">
+      <div class="sec__head"><span class="sec__n num">3</span><h2>형식적 정의</h2></div>
+
+      <span class="anchor" id="c-momentum"></span>
+      <h3>Momentum 모멘텀</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \mathbf{v}_{k} = \beta\,\mathbf{v}_{k-1} + \mathbf{g}_k, \qquad \boldsymbol\theta_{k+1} = \boldsymbol\theta_k - \eta\,\mathbf{v}_k $$</div>
+        <span class="eq__tag num">(1)</span>
+      </div>
+      <p>
+        <span class="hl">gradient 를 그대로 쓰지 않고 <strong>지수적으로 감쇠하는 누적합</strong>을 쓴다.
+        $\beta=0.9$ 면 최근 약 10 스텝의 gradient 가 섞인다.</span>
+        비탈을 굴러 내려가는 공에 비유되며, 두 가지 효과가 있다.
+        최적화 문헌에서는 <strong>heavy ball method</strong> 또는 제안자의 이름을 따 <strong>Polyak momentum</strong>
+        이라 부르고, Nesterov 쪽은 <strong>NAG</strong>(Nesterov Accelerated Gradient)로 줄여 쓴다 — 전부 같은 것이다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>효과</th><th>메커니즘</th><th>결과</th></tr></thead>
+          <tbody>
+            <tr><td>지그재그 상쇄</td><td>부호가 매번 바뀌는 성분은 더하면 서로 지워진다</td><td>골짜기를 가로지르는 진동 감소</td></tr>
+            <tr><td>가속</td><td>같은 부호가 계속되면 $1+\beta+\beta^2+\cdots=\frac{1}{1-\beta}$ 로 쌓인다</td><td>유효 보폭이 $\frac{\eta}{1-\beta}$ — $\beta=0.9$ 면 <strong>10배</strong></td></tr>
+            <tr><td>plateau 통과</td><td>gradient 가 작아져도 관성이 남는다</td><td>평평한 구간을 미끄러져 지나간다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        이론적 이득도 크다. gradient descent 의 수렴이 $\kappa$ 에 비례했다면
+        <span class="hl">momentum 은 $\sqrt{\kappa}$ 로 개선된다</span> — $\kappa=10^4$ 이면
+        스텝 수가 $10^4$ 에서 $10^2$ 로 줄어드는 셈이다.
+      </p>
+      <div class="note note--tip">
+        <span class="note__label">쉬운 말로</span>
+        <p>좁은 계곡에 공을 굴리면, 좌우로 튕기는 움직임은 <strong>서로 상쇄되어 잦아들고</strong> 계곡을 따라 내려가는 움직임만 남아 점점 빨라집니다.</p>
+        <p>gradient 만 쓰는 것은 <strong>매 걸음 멈춰 서서 다시 출발하는 것</strong>과 같습니다. momentum 은 멈추지 않고 속도를 유지합니다 — 그래서 같은 보폭 설정으로도 훨씬 멀리 갑니다.</p>
+      </div>
+
+      <figure class="widget" data-widget="momentum-beta">
+        <figcaption class="widget__bar">$\beta$ 가 만드는 관성 — 몇 스텝을 기억하는가</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">$\beta$ 를 키우면 <strong>기억이 길어지고 유효 보폭이 커집니다</strong>. 너무 키우면 최솟값을 지나쳐 넘어갑니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-nesterov"></span>
+      <h3>Nesterov Momentum 네스테로프 모멘텀</h3>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbf{v}_k = \beta\mathbf{v}_{k-1} + \nabla\mathcal{L}\bigl(\boldsymbol\theta_k - \eta\beta\mathbf{v}_{k-1}\bigr), \qquad \boldsymbol\theta_{k+1}=\boldsymbol\theta_k-\eta\mathbf{v}_k $$</div>
+        <span class="eq__tag num">(2)</span>
+      </div>
+      <p>
+        <span class="hl">gradient 를 <strong>현재 위치가 아니라 관성으로 갈 곳</strong>에서 계산한다 — "먼저 보고 나서 방향을 정하는" 것이다.</span>
+        관성 때문에 어차피 $\eta\beta\mathbf{v}_{k-1}$ 만큼은 갈 것이므로, 그 지점의 경사를 미리 보는 편이 정확하다.
+      </p>
+      <p>
+        효과는 <strong>과속에 대한 제동</strong>이다. 최솟값을 지나치려 할 때 앞을 미리 보면 이미 반대편 오르막이므로
+        gradient 가 브레이크로 작용한다. 일반 momentum 은 지나친 뒤에야 알아차린다.
+        볼록 문제에서 수렴률이 $O(1/k)$ 에서 $O(1/k^2)$ 로 개선되는 것이 이론적 근거다.
+      </p>
+
+      <span class="anchor" id="c-adagrad"></span>
+      <h3>AdaGrad</h3>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbf{G}_k = \mathbf{G}_{k-1} + \mathbf{g}_k^{\odot2}, \qquad \boldsymbol\theta_{k+1} = \boldsymbol\theta_k - \frac{\eta}{\sqrt{\mathbf{G}_k}+\epsilon}\odot\mathbf{g}_k $$</div>
+        <span class="eq__tag num">(3)</span>
+      </div>
+      <p>
+        <span class="hl">지금까지 받은 gradient 제곱의 <strong>총합</strong>으로 나눈다 — 많이 움직인 축은 자동으로 보폭이 줄어든다.</span>
+        sparse feature 에 특히 강하다. 드물게 등장하는 feature 는 gradient 를 거의 못 받아
+        $\mathbf{G}$ 가 작고, 그래서 나타났을 때 <strong>큰 보폭</strong>으로 갱신된다<a class="cite" href="#ref-duchi2011-adagrad" data-ref="duchi2011-adagrad">1</a>.
+      </p>
+      <p>
+        치명적 약점이 하나 있다. $\mathbf{G}$ 가 <strong>단조 증가</strong>하므로 유효 learning rate 가
+        $\eta/\sqrt{k}$ 처럼 계속 줄어들고, 딥러닝처럼 오래 학습하면
+        <span class="hl">최솟값에 도달하기 전에 보폭이 0 에 수렴해 학습이 멈춘다.</span>
+      </p>
+
+      <span class="anchor" id="c-rmsprop"></span>
+      <h3>RMSProp</h3>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbf{s}_k = \rho\,\mathbf{s}_{k-1} + (1-\rho)\,\mathbf{g}_k^{\odot2}, \qquad \boldsymbol\theta_{k+1} = \boldsymbol\theta_k - \frac{\eta}{\sqrt{\mathbf{s}_k}+\epsilon}\odot\mathbf{g}_k $$</div>
+        <span class="eq__tag num">(4)</span>
+      </div>
+      <p>
+        <span class="hl">AdaGrad 의 <strong>누적합을 지수이동평균으로 바꾼 것</strong>이 전부다.</span>
+        오래된 gradient 를 잊으므로 $\mathbf{s}$ 가 무한정 커지지 않고, 학습률이 조기에 0 이 되지 않는다.
+        $\rho=0.9$ 가 표준이다. Hinton 이 강의에서 소개했고 논문 없이 널리 퍼진 드문 사례다<a class="cite" href="#ref-tieleman2012-rmsprop" data-ref="tieleman2012-rmsprop">2</a>.
+      </p>
+
+      <span class="anchor" id="c-adam"></span>
+      <h3>Adam</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \begin{aligned} \mathbf{m}_k &= \beta_1\mathbf{m}_{k-1} + (1-\beta_1)\mathbf{g}_k & &\text{(1차 모멘트 — 방향)}\\ \mathbf{v}_k &= \beta_2\mathbf{v}_{k-1} + (1-\beta_2)\mathbf{g}_k^{\odot2} & &\text{(2차 모멘트 — 크기)}\\ \hat{\mathbf{m}}_k &= \frac{\mathbf{m}_k}{1-\beta_1^k}, \quad \hat{\mathbf{v}}_k = \frac{\mathbf{v}_k}{1-\beta_2^k} & &\text{(bias correction)}\\ \boldsymbol\theta_{k+1} &= \boldsymbol\theta_k - \eta\,\frac{\hat{\mathbf{m}}_k}{\sqrt{\hat{\mathbf{v}}_k}+\epsilon} & &\text{(갱신)} \end{aligned} $$</div>
+        <span class="eq__tag num">(5)</span>
+      </div>
+      <p>
+        <span class="hl">Adam = momentum($\mathbf{m}$) + RMSProp($\mathbf{v}$) + bias correction 이다.</span>
+        기본값 $\beta_1=0.9$, $\beta_2=0.999$, $\epsilon=10^{-8}$ 이 거의 모든 프레임워크의 기본이며,
+        대부분의 문제에서 그대로 두어도 잘 동작한다<a class="cite" href="#ref-kingma2014-adam-a-method" data-ref="kingma2014-adam-a-method">3</a>.
+      </p>
+      <p>
+        bias correction 이 필요한 이유는 $\mathbf{m}_0=\mathbf{v}_0=\mathbf{0}$ 으로 시작하기 때문이다.
+        첫 스텝에서 $\mathbf{m}_1=(1-\beta_1)\mathbf{g}_1 = 0.1\mathbf{g}_1$ 로 <strong>참값의 1/10 밖에 안 된다</strong>.
+        $1-\beta_1^k$ 로 나누면 이 편향이 정확히 상쇄된다(유도 2).
+        $\beta_2=0.999$ 쪽이 특히 심해서 — 보정 없이는 초반 수백 스텝이 거의 낭비된다.
+      </p>
+      <div class="note note--key">
+        <span class="note__label">Adam 의 첫 스텝은 정확히 $\eta$ 다</span>
+        <p>
+          $k=1$ 에서 $\hat{\mathbf{m}}_1=\mathbf{g}_1$, $\hat{\mathbf{v}}_1=\mathbf{g}_1^{\odot2}$ 이므로
+          갱신량이 $\eta\,\mathbf{g}_1/|\mathbf{g}_1| = \eta\cdot\mathrm{sign}(\mathbf{g}_1)$ 다.
+          <strong>gradient 의 크기와 무관하게 정확히 $\eta$ 만큼 움직인다.</strong>
+          그래서 Adam 의 $\eta$ 는 "파라미터가 한 스텝에 얼마나 변할 수 있는가"의 상한으로 읽히며,
+          SGD 의 $\eta$ 와 스케일이 전혀 다르다 (SGD 는 $10^{-1}$, Adam 은 $10^{-3}$ 대).
+        </p>
+      </div>
+
+      <figure class="widget" data-widget="adam-inside">
+        <figcaption class="widget__bar">Adam 내부 — $m$, $v$, 보정, 실제 보폭</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">bias correction 을 끄면 초반 수십 스텝의 보폭이 <strong>거의 0</strong> 입니다. 켜면 첫 스텝부터 $\eta$ 만큼 나갑니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-adamw"></span>
+      <h3>AdamW</h3>
+      <div class="eq eq--key">
+        <div class="eq__body">$$ \boldsymbol\theta_{k+1} = \boldsymbol\theta_k - \eta\left(\frac{\hat{\mathbf{m}}_k}{\sqrt{\hat{\mathbf{v}}_k}+\epsilon} + \lambda\,\boldsymbol\theta_k\right) $$</div>
+        <span class="eq__tag num">(6)</span>
+      </div>
+      <p>
+        <span class="hl">weight decay 항 $\lambda\boldsymbol\theta$ 를 gradient 에 <strong>더하지 않고</strong>
+        갱신식에 <strong>따로 붙인다</strong>(decoupled).</span> 한 줄 차이지만 결과가 크게 다르다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>Adam + L2 (기존)</th><th>AdamW (decoupled)</th></tr></thead>
+          <tbody>
+            <tr><td>어디에 넣나</td><td>$\mathbf{g}\leftarrow\mathbf{g}+\lambda\boldsymbol\theta$</td><td>갱신식 끝에 $-\eta\lambda\boldsymbol\theta$</td></tr>
+            <tr><td>$\sqrt{\hat{\mathbf{v}}}$ 로 나뉘나</td><td><strong>나뉜다</strong></td><td>안 나뉜다</td></tr>
+            <tr><td>실제 감쇠 강도</td><td>축마다 다르다 — gradient 가 큰 축은 <strong>덜</strong> 감쇠</td><td>모든 축에 동일</td></tr>
+            <tr><td>$\eta$ 와 $\lambda$</td><td>서로 얽힘 — 하나 바꾸면 다른 쪽도 다시 튜닝</td><td>독립적으로 조절 가능</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        기존 방식의 문제는 <strong>정규화를 강하게 걸고 싶은 축(gradient 가 큰 축)에 오히려 약하게 걸린다</strong>는 것이다.
+        AdamW 로 바꾸면 Adam 의 일반화 성능이 SGD+momentum 수준으로 회복되며, 이것이
+        오늘날 Transformer 학습의 기본 optimizer 가 된 이유다<a class="cite" href="#ref-loshchilov2017-decoupled-weight-decay" data-ref="loshchilov2017-decoupled-weight-decay">4</a>.
+        자세한 정규화 관점은 <a href="3.9-constraints-regularization.html">3.9</a>에서 다룬다.
+      </p>
+
+      <figure class="widget" data-widget="adamw-vs-adam">
+        <figcaption class="widget__bar">AdamW vs Adam+L2 — 축마다 다른 감쇠</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">Adam+L2 는 gradient 가 큰 축의 감쇠가 <strong>$\sqrt{v}$ 로 나뉘어 약해집니다</strong>. AdamW 는 두 축이 같은 비율로 줄어듭니다.</p>
+        </div>
+      </figure>
+
+      <span class="anchor" id="c-lamb"></span>
+      <h3>LAMB</h3>
+      <div class="eq">
+        <div class="eq__body">$$ \boldsymbol\theta^{(l)}_{k+1} = \boldsymbol\theta^{(l)}_k - \eta\,\underbrace{\frac{\|\boldsymbol\theta^{(l)}_k\|}{\|\mathbf{r}^{(l)}_k\|}}_{\text{trust ratio}}\,\mathbf{r}^{(l)}_k, \qquad \mathbf{r}^{(l)} = \frac{\hat{\mathbf{m}}^{(l)}}{\sqrt{\hat{\mathbf{v}}^{(l)}}+\epsilon}+\lambda\boldsymbol\theta^{(l)} $$</div>
+        <span class="eq__tag num">(7)</span>
+      </div>
+      <p>
+        <span class="hl">AdamW 의 갱신량을 <strong>층(layer)마다</strong> 그 층 weight 의 크기에 비례하도록 다시 스케일한다.</span>
+        층마다 weight 노름이 100배씩 차이 나는 것이 흔한데, 같은 절대 보폭을 쓰면
+        어떤 층은 거의 안 변하고 어떤 층은 뒤집힌다. trust ratio 는
+        <strong>"weight 크기 대비 몇 % 를 바꿀 것인가"</strong>로 통일해 준다.
+      </p>
+      <p>
+        이 안정성 덕분에 아주 큰 batch 를 쓸 수 있다 —
+        BERT 학습을 $B=32{,}768$ 로 밀어붙여 3일에서 76분으로 줄인 것이 원논문의 결과다<a class="cite" href="#ref-you2019-large-batch-optimization" data-ref="you2019-large-batch-optimization">5</a>.
+        보통 규모의 학습에서는 AdamW 대비 이득이 크지 않아, <strong>수천 이상의 batch 를 쓸 때</strong> 고려한다.
+      </p>
+
+      <span class="anchor" id="c-lion"></span>
+      <h3>Lion</h3>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbf{u}_k = \mathrm{sign}\bigl(\beta_1\mathbf{m}_{k-1}+(1-\beta_1)\mathbf{g}_k\bigr), \quad \boldsymbol\theta_{k+1}=\boldsymbol\theta_k-\eta(\mathbf{u}_k+\lambda\boldsymbol\theta_k), \quad \mathbf{m}_k = \beta_2\mathbf{m}_{k-1}+(1-\beta_2)\mathbf{g}_k $$</div>
+        <span class="eq__tag num">(8)</span>
+      </div>
+      <p>
+        <span class="hl">2차 모멘트 $\mathbf{v}$ 를 아예 버리고 <strong>부호만</strong> 쓴다.</span>
+        상태가 $\mathbf{m}$ 하나뿐이라 <strong>optimizer 메모리가 Adam 의 절반</strong>이고,
+        수십억 파라미터 model 에서는 이 차이가 GPU 수십 장에 해당한다.
+        프로그램 탐색(symbolic discovery)으로 자동 발견된 알고리즘이라는 점도 특이하다<a class="cite" href="#ref-chen2023-symbolic-discovery-of" data-ref="chen2023-symbolic-discovery-of">6</a>.
+      </p>
+      <p>
+        모든 좌표의 갱신 크기가 정확히 $\eta$ 로 같아지므로 <strong>$\eta$ 를 AdamW 보다 3~10배 작게,
+        $\lambda$ 는 그만큼 크게</strong> 잡아야 한다. 이 재조정을 빼먹고 "Lion 이 나쁘다"고 결론 내리는 것이 흔한 실수다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>optimizer</th><th>파라미터당 추가 상태</th><th>7B model 기준 optimizer 메모리 (fp32)</th></tr></thead>
+          <tbody>
+            <tr><td>SGD</td><td>0</td><td class="num">0 GB</td></tr>
+            <tr><td>SGD + momentum</td><td>1 ($\mathbf{v}$)</td><td class="num">28 GB</td></tr>
+            <tr><td>Lion</td><td>1 ($\mathbf{m}$)</td><td class="num">28 GB</td></tr>
+            <tr><td>Adam / AdamW</td><td>2 ($\mathbf{m},\mathbf{v}$)</td><td class="num">56 GB</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <span class="anchor" id="c-first"></span>
+      <span class="anchor" id="c-second"></span>
+      <h3>First-Order vs Second-Order 1차 최적화와 2차 최적화</h3>
+      <p>
+        <span class="hl">지금까지의 모든 알고리즘은 gradient 만 쓰는 <strong>1차 최적화</strong>다.
+        2차 최적화는 곡률(Hessian)까지 써서 방향과 보폭을 동시에 정한다.</span>
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \boldsymbol\theta_{k+1} = \boldsymbol\theta_k - \mathbf{H}^{-1}\nabla\mathcal{L}(\boldsymbol\theta_k) \qquad (\text{Newton 방법}) $$</div>
+        <span class="eq__tag num">(9)</span>
+      </div>
+      <p>
+        Newton 방법에는 learning rate 가 없다 — 2차 근사의 최솟값으로 <strong>곧장</strong> 이동하기 때문이다.
+        2차 함수라면 <strong>한 스텝에 정확히 도착</strong>하고, condition number 의 영향도 받지 않는다.
+        그런데도 딥러닝에서 쓰지 않는 이유는 비용이다.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>1차 (SGD, Adam)</th><th>2차 (Newton)</th><th>준2차 (L-BFGS, K-FAC)</th></tr></thead>
+          <tbody>
+            <tr><td>필요한 정보</td><td>$\nabla\mathcal{L}$</td><td>$\nabla\mathcal{L}$, $\mathbf{H}$</td><td>$\nabla\mathcal{L}$ + 근사 곡률</td></tr>
+            <tr><td>메모리</td><td>$O(p)$</td><td>$O(p^2)$</td><td>$O(mp)$ 또는 블록 대각</td></tr>
+            <tr><td>스텝당 계산</td><td>$O(p)$</td><td>$O(p^3)$ (역행렬)</td><td>$O(mp)$</td></tr>
+            <tr><td>$p=10^9$ 일 때</td><td>가능</td><td><strong>불가능</strong> ($10^{18}$ 원소)</td><td>제한적으로 가능</td></tr>
+            <tr><td>안장점에서</td><td>느리지만 통과</td><td><strong>끌려간다</strong> (음의 곡률 방향으로 <em>올라감</em>)</td><td>수정 필요</td></tr>
+            <tr><td>확률적 gradient</td><td>잘 견딘다</td><td>잡음에 매우 취약</td><td>취약</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        다섯 번째 줄이 덜 알려진 문제다 — <strong>Newton 방법은 안장점을 최적점으로 착각해 오히려 그쪽으로 간다</strong>.
+        $\mathbf{H}^{-1}$ 이 음의 eigenvalue 방향에서 부호를 뒤집기 때문이다.
+        <a href="3.5-optimization-basics.html">3.5</a>에서 본 대로 고차원 임계점의 대부분이 안장점이므로 치명적이며,
+        saddle-free Newton 같은 변형이 제안된 이유이기도 하다.
+        <span class="hl">Adam 은 Hessian의 <strong>대각 성분만</strong> 근사한 것으로 볼 수 있어, 값싼 2차 정보의 절충안이다.</span>
+      </p>
+
+      <figure class="widget" data-widget="order-compare">
+        <figcaption class="widget__bar">1차 vs 2차 — 정확도와 비용의 맞바꿈</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">Newton 은 2차 함수에서 <strong>한 스텝</strong>에 도착합니다. 파라미터 수를 늘려 보면 왜 못 쓰는지 바로 보입니다.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 5. 수식과 기호 ===== -->
+    <section class="sec" id="s-math">
+      <div class="sec__head"><span class="sec__n num">4</span><h2>수식과 기호</h2></div>
+
+      <p>전부 한 표에 모으면 계보가 보인다. <strong>관성 열과 스케일 열의 조합</strong>이 알고리즘의 이름을 결정한다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>알고리즘</th><th>관성 (1차)</th><th>축별 스케일 (2차)</th><th>추가 상태</th><th>전형적 $\eta$</th></tr></thead>
+          <tbody>
+            <tr><td>SGD</td><td>—</td><td>—</td><td class="num">0</td><td class="num">1e−1</td></tr>
+            <tr><td>Momentum</td><td>EMA</td><td>—</td><td class="num">1</td><td class="num">1e−2</td></tr>
+            <tr><td>Nesterov</td><td>EMA + lookahead</td><td>—</td><td class="num">1</td><td class="num">1e−2</td></tr>
+            <tr><td>AdaGrad</td><td>—</td><td>누적합</td><td class="num">1</td><td class="num">1e−2</td></tr>
+            <tr><td>RMSProp</td><td>—</td><td>EMA</td><td class="num">1</td><td class="num">1e−3</td></tr>
+            <tr><td>Adam</td><td>EMA</td><td>EMA</td><td class="num">2</td><td class="num">1e−3</td></tr>
+            <tr><td>AdamW</td><td>EMA</td><td>EMA (decay 분리)</td><td class="num">2</td><td class="num">1e−3</td></tr>
+            <tr><td>LAMB</td><td>EMA</td><td>EMA + 층별 trust ratio</td><td class="num">2</td><td class="num">1e−3</td></tr>
+            <tr><td>Lion</td><td>EMA → sign</td><td>—</td><td class="num">1</td><td class="num">1e−4</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>기호표</h3>
+      <div class="tablewrap">
+        <table class="symtab">
+          <thead>
+            <tr><th>기호</th><th>읽는 법</th><th>의미</th><th>타입 / shape</th><th>범위</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$\mathbf{g}_k$</td><td>bold g k</td><td>$k$ 스텝의 gradient</td><td>$(p,)$</td><td>$\mathbb{R}^p$</td></tr>
+            <tr><td>$\mathbf{v}$ (momentum)</td><td>bold v · velocity</td><td>gradient 의 누적 (속도)</td><td>$(p,)$</td><td>$\mathbb{R}^p$</td></tr>
+            <tr><td>$\mathbf{m}_k$</td><td>bold m · 1차 모멘트</td><td>gradient 의 EMA — <strong>방향</strong></td><td>$(p,)$</td><td>$\mathbb{R}^p$</td></tr>
+            <tr><td>$\mathbf{v}_k$ (Adam)</td><td>bold v · 2차 모멘트</td><td>gradient 제곱의 EMA — <strong>크기</strong></td><td>$(p,)$</td><td>$\geq0$</td></tr>
+            <tr><td>$\hat{\mathbf{m}},\hat{\mathbf{v}}$</td><td>m hat · v hat</td><td>bias correction 을 거친 값</td><td>$(p,)$</td><td>—</td></tr>
+            <tr><td>$\beta_1$</td><td>beta one 베타 원</td><td>1차 모멘트 감쇠율</td><td>scalar</td><td>보통 $0.9$</td></tr>
+            <tr><td>$\beta_2$</td><td>beta two</td><td>2차 모멘트 감쇠율</td><td>scalar</td><td>보통 $0.999$</td></tr>
+            <tr><td>$\rho$</td><td>rho 로</td><td>RMSProp 의 감쇠율</td><td>scalar</td><td>보통 $0.9$</td></tr>
+            <tr><td>$\epsilon$</td><td>epsilon 엡실론</td><td>0으로 나누기 방지</td><td>scalar</td><td>$10^{-8}$</td></tr>
+            <tr><td>$\lambda$</td><td>lambda 람다</td><td>weight decay 계수</td><td>scalar</td><td>$0.01\!\sim\!0.1$</td></tr>
+            <tr><td>$\odot$</td><td>Hadamard product 아다마르 곱</td><td>원소별 곱</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$\mathbf{g}^{\odot2}$</td><td>g elementwise squared</td><td>원소별 제곱</td><td>$(p,)$</td><td>$\geq0$</td></tr>
+            <tr><td>$\mathrm{sign}$</td><td>sign 사인 · 부호함수</td><td>$+1$, $0$, $-1$</td><td>연산자</td><td>—</td></tr>
+            <tr><td>$\mathbf{G}_k$</td><td>bold G</td><td>AdaGrad 의 제곱 누적합</td><td>$(p,)$</td><td>단조 증가</td></tr>
+            <tr><td>$\mathbf{s}_k$</td><td>bold s</td><td>RMSProp 의 EMA</td><td>$(p,)$</td><td>$\geq0$</td></tr>
+            <tr><td>$\boldsymbol\theta^{(l)}$</td><td>theta superscript l</td><td>$l$ 번째 층의 파라미터</td><td>층마다 다름</td><td>—</td></tr>
+            <tr><td>$p$</td><td>p</td><td>파라미터 개수</td><td>정수</td><td>$\geq1$</td></tr>
+            <tr><td>EMA</td><td>exponential moving average</td><td>지수이동평균</td><td>—</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">표기 충돌</span>
+        <p>
+          $\mathbf{v}$ 가 두 뜻으로 쓰인다 — momentum 문헌에서는 <strong>속도</strong>(1차 모멘트),
+          Adam 문헌에서는 <strong>2차 모멘트</strong>다. 이 절에서는 momentum 절의 식 (1)에서만 속도이고
+          식 (5) 이후에는 전부 2차 모멘트다. 코드를 읽을 때는 옆의 제곱 $\mathbf{g}^{\odot2}$ 유무로 구분한다.
+        </p>
+        <p>
+          $\epsilon$ 의 <strong>위치</strong>도 구현마다 다르다. PyTorch 는
+          $\frac{\hat m}{\sqrt{\hat v}+\epsilon}$ (분모 밖), 원논문의 한 변형은
+          $\frac{\hat m}{\sqrt{\hat v+\epsilon}}$ (제곱근 안)이다. 값이 미묘하게 달라지므로
+          $\epsilon$ 을 $10^{-8}$ 에서 크게 바꿀 때는 어느 쪽인지 확인해야 한다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 6. 유도 ===== -->
+    <section class="sec" id="s-derivation">
+      <div class="sec__head"><span class="sec__n num">5</span><h2>유도</h2></div>
+
+      <h3>유도 1 — momentum 의 유효 learning rate 가 $\eta/(1-\beta)$ 인 이유</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{v}_k = \beta\mathbf{v}_{k-1}+\mathbf{g}_k, \qquad \mathbf{v}_0=\mathbf{0} $$</div>
+          <div class="derive__why">식 (1)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{v}_k = \mathbf{g}_k + \beta\mathbf{g}_{k-1} + \beta^2\mathbf{g}_{k-2}+\cdots = \sum_{j=0}^{k-1}\beta^j\mathbf{g}_{k-j} $$</div>
+          <div class="derive__why">재귀를 풀면 <strong>지수 가중합</strong>이다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{g}_j \equiv \mathbf{g} \ (\text{일정}) \;\Longrightarrow\; \mathbf{v}_k = \mathbf{g}\sum_{j=0}^{k-1}\beta^j = \mathbf{g}\,\frac{1-\beta^k}{1-\beta} $$</div>
+          <div class="derive__why">등비급수. 방향이 계속 같은 경우를 가정</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ k\to\infty \;\Longrightarrow\; \mathbf{v}\to\frac{\mathbf{g}}{1-\beta} $$</div>
+          <div class="derive__why">$\beta^k\to0$. <strong>$\beta=0.9$ 면 10배, $0.99$ 면 100배</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Delta\boldsymbol\theta = -\eta\mathbf{v} = -\frac{\eta}{1-\beta}\mathbf{g} $$</div>
+          <div class="derive__why">유효 보폭이 $\eta/(1-\beta)$ — <strong>$\beta$ 를 키우면 $\eta$ 를 줄여야 한다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{g}_j \ \text{부호가 매번 반전} \;\Rightarrow\; \mathbf{v} \to \mathbf{g}\frac{1}{1+\beta} \approx 0.53\,\mathbf{g} $$</div>
+          <div class="derive__why">지그재그 성분은 <strong>거의 절반으로 억제</strong>된다. 이것이 진동이 잦아드는 이유</div>
+        </div>
+      </div>
+
+      <h3>유도 2 — Adam 의 bias correction</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbf{m}_k = (1-\beta_1)\sum_{j=1}^{k}\beta_1^{\,k-j}\mathbf{g}_j $$</div>
+          <div class="derive__why">식 (5) 첫 줄의 재귀를 $\mathbf{m}_0=\mathbf{0}$ 에서 풀었다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}[\mathbf{g}_j]\approx\mathbf{g} \;\Longrightarrow\; \mathbb{E}[\mathbf{m}_k] \approx \mathbf{g}\,(1-\beta_1)\sum_{j=1}^{k}\beta_1^{\,k-j} $$</div>
+          <div class="derive__why">gradient 가 대략 일정하다고 두면 밖으로 나온다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ (1-\beta_1)\sum_{i=0}^{k-1}\beta_1^{\,i} = (1-\beta_1)\cdot\frac{1-\beta_1^k}{1-\beta_1} = 1-\beta_1^k $$</div>
+          <div class="derive__why">등비급수. <strong>정확히 $1-\beta_1^k$ 만큼 축소</strong>되어 있다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \mathbb{E}[\mathbf{m}_k] \approx (1-\beta_1^k)\,\mathbf{g} \;\Longrightarrow\; \hat{\mathbf{m}}_k = \frac{\mathbf{m}_k}{1-\beta_1^k} $$</div>
+          <div class="derive__why">그만큼 나눠 주면 <strong>편향이 사라진다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ k=1: \ 1-\beta_1^1 = 0.1 \;\Rightarrow\; \hat{\mathbf{m}}_1 = \frac{0.1\mathbf{g}}{0.1} = \mathbf{g} $$</div>
+          <div class="derive__why">첫 스텝에서 <strong>정확히 $\mathbf{g}$ 로 복원</strong>된다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ k=1,\ \beta_2=0.999: \ 1-\beta_2 = 0.001 \;\Rightarrow\; \text{보정 없으면 } \sqrt{\mathbf{v}_1} = 0.032\,|\mathbf{g}| $$</div>
+          <div class="derive__why">$\sqrt{0.001}\approx0.0316$. <strong>분모가 30배 작아 보폭이 30배 커진다</strong> — 보정이 없으면 초반이 불안정</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ k\to\infty: \ \beta_1^k\to0 \;\Rightarrow\; \hat{\mathbf{m}}_k \to \mathbf{m}_k $$</div>
+          <div class="derive__why">보정은 <strong>초반에만</strong> 작용하고 나중에는 사라진다</div>
+        </div>
+      </div>
+
+      <h3>유도 3 — Newton 방법이 2차 함수를 한 스텝에 푸는 이유</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ f(\boldsymbol\theta+\mathbf{d}) \approx f(\boldsymbol\theta) + \nabla f^\top\mathbf{d} + \tfrac12\mathbf{d}^\top\mathbf{H}\mathbf{d} $$</div>
+          <div class="derive__why">2차 Taylor 근사 (<a href="3.3-multivariable-derivatives.html">3.3</a> 식 7)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \nabla_{\mathbf{d}}\left[\nabla f^\top\mathbf{d} + \tfrac12\mathbf{d}^\top\mathbf{H}\mathbf{d}\right] = \nabla f + \mathbf{H}\mathbf{d} $$</div>
+          <div class="derive__why">$\mathbf{H}$ 가 대칭이라 $\nabla(\tfrac12\mathbf{d}^\top\mathbf{Hd})=\mathbf{Hd}$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \nabla f + \mathbf{Hd} = \mathbf{0} \;\Longrightarrow\; \mathbf{d} = -\mathbf{H}^{-1}\nabla f $$</div>
+          <div class="derive__why"><strong>근사의 최솟값으로 곧장 간다</strong> — learning rate 가 필요 없다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ f \ \text{가 정확히 2차} \;\Rightarrow\; \text{근사 = 참 함수} \;\Rightarrow\; \text{한 스텝에 도착} $$</div>
+          <div class="derive__why">3.6 예제 ①의 $\eta=1/\lambda$ 가 1차원 Newton 이었다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \lambda_i<0 \;\Longrightarrow\; \frac{1}{\lambda_i}<0 \;\Longrightarrow\; \mathbf{d} \ \text{가 그 방향으로} \ \textbf{올라간다} $$</div>
+          <div class="derive__why"><strong>안장점에 끌려가는 이유</strong> — 음의 곡률 방향에서 부호가 뒤집힌다</div>
+        </div>
+      </div>
+      <details>
+        <summary>Adam 은 어떤 의미에서 2차 정보를 쓰는가</summary>
+        <p>
+          Newton 스텝은 $\mathbf{H}^{-1}\nabla f$ 다. Hessian을 <strong>대각행렬로 근사</strong>하면
+          $\theta_i \leftarrow \theta_i - \frac{g_i}{H_{ii}}$ 가 된다. Adam 의 갱신은
+          $\theta_i \leftarrow \theta_i - \eta\frac{\hat m_i}{\sqrt{\hat v_i}}$ 이고,
+          $\hat v_i \approx \mathbb{E}[g_i^2]$ 다.
+        </p>
+        <p>
+          $\mathbb{E}[g_i^2]$ 는 Fisher 정보 행렬의 대각 성분이고, 이는 특정 조건에서
+          Hessian의 대각 성분과 연결된다(Gauss–Newton 근사).
+          그래서 Adam 은 <strong>"$\mathbf{H}$ 의 대각을 gradient 제곱으로 값싸게 추정한 준2차 방법"</strong> 으로 읽을 수 있다.
+          다만 $\sqrt{}$ 를 취하는 것은 이 해석과 정확히 맞지 않아, 순수한 2차 방법으로 보기는 어렵다.
+          그럼에도 축별 스케일을 맞춘다는 효과는 condition number 완화라는 같은 목적을 달성한다.
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 7. 수치 예제 ===== -->
+    <section class="sec" id="s-example">
+      <div class="sec__head"><span class="sec__n num">6</span><h2>손으로 푸는 예제</h2></div>
+
+      <h3>① Momentum 3 스텝 — SGD 와 비교</h3>
+      <p>$f(w)=\tfrac12 w^2$, $g=w$, $\eta=0.1$, $\beta=0.9$, $w_0=1$.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ v_1 = 0.9(0)+1 = 1, \qquad w_1 = 1-0.1(1) = 0.9 $$</div>
+          <div class="derive__why">첫 스텝은 SGD 와 같다 ($v_0=0$)</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ v_2 = 0.9(1)+0.9 = 1.8, \qquad w_2 = 0.9-0.1(1.8) = 0.72 $$</div>
+          <div class="derive__why"><strong>속도가 쌓였다</strong> — 보폭이 2배</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ v_3 = 0.9(1.8)+0.72 = 2.34, \qquad w_3 = 0.72-0.234 = 0.486 $$</div>
+          <div class="derive__why">계속 가속</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{SGD: } 0.9,\ 0.81,\ 0.729 \quad\text{vs}\quad \text{Momentum: } 0.9,\ 0.72,\ 0.486 $$</div>
+          <div class="derive__why">3 스텝 만에 <strong>1.5배 차이</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{정상상태 보폭} \to \frac{\eta}{1-\beta} = \frac{0.1}{0.1} = 1.0 $$</div>
+          <div class="derive__why">유효 learning rate 가 <strong>10배</strong>. 여기서는 $\eta=1$ 인 SGD 와 같아지고, 상한 $2/\lambda=2$ 안이라 안전하다</div>
+        </div>
+      </div>
+
+      <h3>② Adam 의 첫 스텝은 gradient 크기와 무관하다</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ g_1 = 500 \ \text{(아주 큰 gradient)}, \quad \beta_1=0.9,\ \beta_2=0.999 $$</div>
+          <div class="derive__why">극단적인 값으로 확인한다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ m_1 = 0.1\times500 = 50, \qquad v_1 = 0.001\times500^2 = 250 $$</div>
+          <div class="derive__why">$(1-\beta_1)=0.1$, $(1-\beta_2)=0.001$</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \hat{m}_1 = \frac{50}{1-0.9} = 500, \qquad \hat{v}_1 = \frac{250}{1-0.999} = 250{,}000 $$</div>
+          <div class="derive__why">보정하면 $\hat m = g$, $\hat v = g^2$ 로 <strong>정확히 복원</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \sqrt{\hat{v}_1} = \sqrt{250000} = 500 = |g_1| $$</div>
+          <div class="derive__why">분모가 gradient 의 절댓값과 같아졌다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \Delta\theta = -\eta\frac{500}{500+10^{-8}} \approx -\eta $$</div>
+          <div class="derive__why"><strong>$g=500$ 이든 $g=0.001$ 이든 첫 스텝은 정확히 $\eta$</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{보정 없이: } \frac{m_1}{\sqrt{v_1}} = \frac{50}{15.81} = 3.16 = \frac{\sqrt{1-\beta_2}}{1-\beta_1}\ \text{배} $$</div>
+          <div class="derive__why">$\sqrt{0.001}/0.1 = 0.316$ 의 역수. <strong>보정 없으면 첫 스텝이 3.16배 과하다</strong></div>
+        </div>
+      </div>
+
+      <h3>③ AdaGrad 의 학습률이 사라지는 속도</h3>
+      <p>gradient 크기가 대략 1 로 일정하다고 하자. $\eta=0.1$.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>스텝 $k$</th><th>$G_k=\sum g^2$</th><th>$\sqrt{G_k}$</th><th>유효 learning rate $\eta/\sqrt{G_k}$</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">0.1</td></tr>
+            <tr><td class="num">100</td><td class="num">100</td><td class="num">10</td><td class="num">0.01</td></tr>
+            <tr><td class="num">10,000</td><td class="num">10,000</td><td class="num">100</td><td class="num">0.001</td></tr>
+            <tr><td class="num">1,000,000</td><td class="num">10⁶</td><td class="num">1,000</td><td class="num">0.0001</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>백만 스텝이면 보폭이 1/1000 로 준다.</strong> convex 문제에서는 이 감소가 오히려 수렴을 보장하지만,
+        LLM 학습처럼 수십만~수백만 스텝을 도는 딥러닝에서는 최솟값 근처에도 못 간 채 멈춘다.
+        RMSProp 의 EMA($\rho=0.9$)는 최근 약 10 스텝만 기억하므로
+        $s\approx\mathbb{E}[g^2]=1$ 로 <strong>일정하게 유지</strong>된다.
+      </p>
+
+      <h3>④ AdamW 와 Adam+L2 의 실제 차이</h3>
+      <p>두 축의 gradient 크기가 크게 다른 상황을 만든다. $\eta=0.01$, $\lambda=0.1$, $\theta_1=\theta_2=1$.</p>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ \sqrt{\hat v_1} = 10 \ (\text{gradient 큰 축}), \qquad \sqrt{\hat v_2} = 0.1 \ (\text{작은 축}) $$</div>
+          <div class="derive__why">100배 차이 나는 두 축</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Adam+L2 축1: } \eta\frac{\lambda\theta_1}{\sqrt{\hat v_1}} = 0.01\times\frac{0.1}{10} = 10^{-4} $$</div>
+          <div class="derive__why">decay 가 $\sqrt{\hat v}$ 로 <strong>나뉜다</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Adam+L2 축2: } 0.01\times\frac{0.1}{0.1} = 10^{-2} $$</div>
+          <div class="derive__why"><strong>100배 강한 감쇠</strong> — 두 축이 전혀 다른 정규화를 받는다</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{AdamW 두 축 모두: } \eta\lambda\theta = 0.01\times0.1\times1 = 10^{-3} $$</div>
+          <div class="derive__why"><strong>$\sqrt{\hat v}$ 와 무관하게 동일</strong></div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{비율 } \frac{10^{-2}}{10^{-4}} = 100 \ \text{배 vs } \frac{10^{-3}}{10^{-3}} = 1 \ \text{배} $$</div>
+          <div class="derive__why">Adam+L2 는 <strong>gradient 가 큰(중요한) 축을 덜 정규화</strong>한다 — 의도와 반대</div>
+        </div>
+      </div>
+
+      <h3>⑤ optimizer 메모리 — 7B model 기준</h3>
+      <div class="derive">
+        <div class="derive__row">
+          <div class="derive__math">$$ p = 7\times10^9, \qquad \text{fp32 } 1\text{개} = 4\ \text{바이트} $$</div>
+          <div class="derive__why">파라미터 자체는 $7\times10^9\times4 = 28$ GB</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Adam: } \mathbf{m},\mathbf{v} \ \text{두 개} \;\Rightarrow\; 2\times28 = 56\ \text{GB} $$</div>
+          <div class="derive__why">파라미터 <strong>본체보다 2배</strong> 많은 메모리</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{Lion: } \mathbf{m} \ \text{하나} \;\Rightarrow\; 28\ \text{GB} $$</div>
+          <div class="derive__why"><strong>28 GB 절약</strong> — A100 80GB 한 장에 해당</div>
+        </div>
+        <div class="derive__row">
+          <div class="derive__math">$$ \text{gradient } 28 + \text{파라미터 } 28 + \text{Adam } 56 = 112\ \text{GB} $$</div>
+          <div class="derive__why">activation 을 빼고도 이만큼 — <strong>7B 를 GPU 한 장에 못 올리는 이유</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 8. 인터랙티브 ===== -->
+    <section class="sec" id="s-lab">
+      <div class="sec__head"><span class="sec__n num">7</span><h2>직접 조작해 보기</h2></div>
+
+      <p>
+        본문의 위젯 — <strong>optimizer 경주</strong> · <strong>$\beta$ 와 관성</strong> · <strong>Adam 내부</strong> ·
+        <strong>AdamW</strong> · <strong>1차 vs 2차</strong> — 를 만져 본 뒤,
+        아래에서 <strong>어느 optimizer 가 어떤 지형에 강한지</strong> 정면으로 비교한다.
+      </p>
+
+      <figure class="widget" data-widget="opt-landscape">
+        <figcaption class="widget__bar">지형별 승자 — 좁은 골짜기 · 안장점 · plateau</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">안장점에서는 <strong>momentum 계열이 훨씬 빨리 빠져나옵니다</strong>. 지형을 바꿔 가며 순위가 뒤집히는 것을 보세요.</p>
+        </div>
+      </figure>
+    </section>
+
+    <!-- ===== 9. 함정 ===== -->
+    <section class="sec" id="s-traps">
+      <div class="sec__head"><span class="sec__n num">8</span><h2>흔한 오해와 함정</h2></div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 1</span>
+        <p>"Adam 이 항상 SGD 보다 낫다."</p>
+        <p>
+          <strong>실제로는</strong> Adam 은 <em>수렴이 빠르지만</em> 최종 일반화 성능은
+          <strong>잘 튜닝한 SGD+momentum 이 더 나은 경우</strong>가 많다 — 특히 vision 분야의 CNN 학습이 그렇다.
+          NLP·Transformer 에서는 Adam(W) 이 확실히 우세한데, 층마다 gradient 스케일 차이가 커서
+          축별 스케일 조정이 결정적이기 때문이다.
+          <strong>분야에 따라 답이 다르다</strong>는 것이 정답이며, ImageNet 계열 논문이 여전히 SGD 를 쓰는 이유다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 2</span>
+        <p>"Adam 의 weight_decay 는 L2 정규화다."</p>
+        <p>
+          <strong>실제로는</strong> PyTorch 의 <code>Adam(weight_decay=λ)</code> 는
+          gradient 에 $\lambda\theta$ 를 더하는 <strong>L2 방식</strong>이고,
+          <code>AdamW(weight_decay=λ)</code> 는 갱신식에 따로 붙이는 <strong>decoupled 방식</strong>이다.
+          두 결과가 크게 다르다(예제 ④) — 같은 $\lambda$ 를 써도 실제 감쇠 강도가 축마다 100배까지 벌어진다.
+          <strong>Transformer 학습에서는 AdamW 를 쓴다</strong>가 사실상의 표준이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 3</span>
+        <p>"Adam 은 학습률을 자동으로 정해 주니 튜닝이 필요 없다."</p>
+        <p>
+          <strong>실제로는</strong> Adam 이 조정하는 것은 <strong>축들 사이의 상대적</strong> 보폭이지
+          전체 스케일이 아니다. $\eta$ 는 여전히 가장 중요한 hyperparameter 이며,
+          $10^{-3}$ 과 $10^{-4}$ 의 결과가 완전히 다르다.
+          다만 Adam 의 $\eta$ 는 예제 ②에서 본 대로 <strong>"한 스텝의 최대 이동량"</strong> 이라는
+          해석이 가능해 SGD 보다 감이 잡히기 쉽다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 4</span>
+        <p>"2차 최적화는 곡률을 알아서 언제나 빠르다."</p>
+        <p>
+          <strong>실제로는</strong> 세 가지가 막는다. (1) $\mathbf{H}$ 가 $p^2$ 개 원소라
+          $p=10^9$ 에서 저장 불가. (2) mini-batch 로 추정한 Hessian은 잡음이 심해 역행렬이 폭주.
+          (3) <strong>안장점에서 오히려 그쪽으로 끌려간다</strong>(유도 3 마지막 줄).
+          Newton 이 "정확한 방향"을 주는 것은 <em>볼록하고 정확한 gradient 가 있을 때</em>뿐이다.
+        </p>
+      </div>
+
+      <div class="note note--trap">
+        <span class="note__label">오해 5</span>
+        <p>"optimizer 를 바꾸면 안 되던 학습이 된다."</p>
+        <p>
+          <strong>실제로는</strong> optimizer 는 <strong>gradient 를 재활용하는 방식</strong>일 뿐
+          없는 신호를 만들어 내지 못한다. gradient 가 죽었거나(vanishing) 폭발하거나
+          data·label 이 잘못되었다면 어떤 optimizer 도 해결하지 못한다.
+          <strong>학습이 안 될 때 optimizer 를 바꾸는 것은 마지막에 시도할 일</strong>이며,
+          먼저 learning rate·초기화·정규화·data 를 점검한다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 10. 코드 ===== -->
+    <section class="sec" id="s-code">
+      <div class="sec__head"><span class="sec__n num">9</span><h2>코드로 확인</h2></div>
+      <p>예제 ①·②·④ 를 프레임워크 없이 직접 구현해 검증한다.</p>
+      <details>
+        <summary>NumPy — momentum · Adam · AdamW 를 20줄로</summary>
+<pre><code>import numpy as np
+
+w, v = 1.0, 0.0                                   # momentum,  f = ½w², g = w
+for k in range(3):
+    g = w;  v = 0.9 * v + g;  w = w - 0.1 * v
+    print(k+1, round(v, 4), round(w, 4))          # 1 1.0 0.9 / 2 1.8 0.72 / 3 2.34 0.486
+
+def adam_step(g, m, v, k, eta=1e-3, b1=.9, b2=.999, eps=1e-8, correct=True):
+    m = b1*m + (1-b1)*g;  v = b2*v + (1-b2)*g*g
+    mh, vh = (m/(1-b1**k), v/(1-b2**k)) if correct else (m, v)
+    return -eta * mh / (np.sqrt(vh) + eps), m, v
+
+for g in [500.0, 0.001]:                          # gradient 크기가 10^6 배 차이
+    d, _, _ = adam_step(g, 0., 0., 1)
+    print(g, round(d, 8))                         # 둘 다 -0.001  <- 첫 스텝 = η
+d_nc, _, _ = adam_step(500., 0., 0., 1, correct=False)
+print(round(d_nc / 1e-3, 3))                      # -3.162  <- 보정 없으면 3.16배 과함
+
+lam, eta, th = 0.1, 0.01, 1.0
+for sv in [10.0, 0.1]:                            # √v̂ 가 100배 차이 나는 두 축
+    print(sv, eta*lam*th/sv, eta*lam*th)          # Adam+L2 vs AdamW
+# 10.0 1e-04 1e-03   /   0.1 1e-02 1e-03   <- L2 는 100배 벌어지고 W 는 일정
+</code></pre>
+        <p>
+          <small>
+            마지막 두 줄이 AdamW 의 존재 이유 전부다 — 왼쪽(Adam+L2)은 축에 따라 100배 차이 나고,
+            오른쪽(AdamW)은 $10^{-3}$ 으로 동일하다.
+          </small>
+        </p>
+      </details>
+    </section>
+
+    <!-- ===== 11. 자가 점검 ===== -->
+    <section class="sec" id="s-quiz">
+      <div class="sec__head"><span class="sec__n num">10</span><h2>자가 점검</h2></div>
+
+      <div class="quiz">
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            $\beta=0.99$ 인 momentum 의 유효 learning rate 는 $\eta$ 의 몇 배?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>100배</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>99배</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>1.01배</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\frac{1}{1-\beta} = \frac{1}{0.01} = 100$ (유도 1).
+            그래서 <strong>$\beta$ 를 0.9 에서 0.99 로 올리면 $\eta$ 를 대략 10배 줄여야</strong> 비슷한 보폭이 된다.
+            이 조정을 빼먹고 $\beta$ 만 올리면 대개 발산한다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            Adam 의 첫 스텝($k=1$)에서 $g_1=1000$ 일 때 파라미터 변화량의 크기는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\approx\eta$ — gradient 크기와 무관</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>$1000\eta$</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>$\eta/1000$</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\hat m_1 = g_1$, $\hat v_1 = g_1^2$ 이므로 $\hat m_1/\sqrt{\hat v_1} = g_1/|g_1| = \mathrm{sign}(g_1)$ (예제 ②).
+            <strong>나</strong>는 SGD 의 거동이다.
+            Adam 의 이 성질 때문에 gradient 가 폭발해도 첫 스텝은 안전하지만,
+            반대로 <strong>gradient 가 아주 작아도 $\eta$ 만큼 움직인다</strong>는 뜻이기도 하다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">계산</span>
+            7B 파라미터 model 을 fp32 AdamW 로 학습할 때 optimizer 상태만의 메모리는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 56 GB</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>약 28 GB</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>약 7 GB</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            $\mathbf{m}$ 과 $\mathbf{v}$ 두 개이므로 $2\times7\times10^9\times4\ \text{B} = 56$ GB (예제 ⑤).
+            <strong>나</strong>는 상태가 하나인 경우(Lion, SGD+momentum)의 값이다.
+            여기에 파라미터 28 GB, gradient 28 GB 가 더해져 activation 전에 이미 112 GB 다 —
+            대규모 학습에서 optimizer 선택이 곧 하드웨어 예산인 이유다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            AdaGrad 를 딥러닝에 그대로 쓰기 어려운 이유는?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>$\mathbf{G}$ 가 단조 증가해 유효 학습률이 0 으로 수렴한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>메모리를 너무 많이 쓴다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>축별 스케일을 조정하지 못한다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            제곱의 <strong>누적합</strong>이라 절대 줄지 않는다. 백만 스텝이면 보폭이 1/1000 이 된다(예제 ③).
+            RMSProp 은 이 누적합을 EMA 로 바꿔 정확히 이 문제만 고쳤다.
+            <strong>나</strong>는 틀렸다 — 상태가 하나뿐이라 Adam 보다 가볍다.
+            <strong>다</strong>도 틀렸다 — 축별 조정이 바로 AdaGrad 의 기여다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">개념</span>
+            Newton 방법을 딥러닝에 쓰지 않는 이유로 <strong>틀린</strong> 것은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>수렴이 gradient descent 보다 느려서</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>Hessian이 $p^2$ 개 원소라 저장할 수 없어서</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>안장점 방향으로 오히려 끌려가서</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            Newton 은 <strong>스텝 수로는 훨씬 빠르다</strong> — 2차 함수면 한 스텝이다(유도 3).
+            문제는 스텝 <em>하나의 비용</em>과 안장점 문제, 그리고 확률적 gradient 에 대한 취약성이다.
+            "느리다"는 진단이 틀렸고, 정확히는 <strong>"스텝은 적지만 스텝당 비용이 감당 불가"</strong> 다.
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__stem"><span class="q__tag">함정</span>
+            AdamW 에서 SGD 로 바꾸면서 $\eta$ 를 그대로 $10^{-3}$ 으로 두었다. 예상되는 일은?</p>
+          <div class="opts">
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>거의 학습되지 않는다 — SGD 는 보통 $10^{-1}$ 대가 필요하다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>발산한다</span></button>
+            <button class="opt" type="button"><span class="opt__mark">다</span><span>같은 결과가 나온다</span></button>
+          </div>
+          <div class="q__explain"><strong>풀이 ·</strong>
+            Adam 은 gradient 를 $\sqrt{\hat v}$ 로 나눠 정규화하므로 갱신량이 $\eta$ 근처로 유지되지만,
+            SGD 는 gradient 를 <strong>그대로</strong> 곱한다. gradient 가 작으면 갱신량이 그만큼 작아진다.
+            그래서 optimizer 를 바꿀 때는 <strong>$\eta$ 를 반드시 다시 튜닝</strong>해야 하고,
+            이 조정 없이 비교한 실험은 결론이 무효다('수식과 기호' 표의 전형적 $\eta$ 열 참고).
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 12. 연결 + 출처 ===== -->
+    <section class="sec" id="s-links">
+      <div class="sec__head"><span class="sec__n num">11</span><h2>어디에 쓰이는가</h2></div>
+
+      <ul>
+        <li><strong><a href="3.8-learning-rate-schedules.html">3.8 학습률 전략</a></strong> — optimizer 와 짝을 이루는 $\eta$ 의 시간 변화.</li>
+        <li><strong><a href="3.9-constraints-regularization.html">3.9 제약과 정규화</a></strong> — AdamW 의 weight decay 를 정규화 관점에서.</li>
+        <li><strong><a href="3.10-deep-learning-optimization.html">3.10 딥러닝 최적화</a></strong> — optimizer 선택이 일반화에 미치는 영향.</li>
+        <li><strong>12장 Transformer</strong> — AdamW + warmup + cosine decay 가 사실상의 표준 조합이다.</li>
+      </ul>
+
+      <h3>출처</h3>
+      <ol class="refs">
+        <li class="ref" id="ref-kingma2014-adam-a-method" data-ref="kingma2014-adam-a-method">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Kingma, D. P. &amp; Ba, J. (2015). <em>Adam: A Method for Stochastic Optimization</em>. ICLR 2015.</span>
+          <span class="ref__where">Algorithm 1 — 식 (5)의 네 줄 갱신식과 기본값 $\beta_1{=}0.9$, $\beta_2{=}0.999$, $\epsilon{=}10^{-8}$. 3절(Initialization Bias Correction) — 유도 2 의 $1-\beta^k$ 유도. 2.1절 — 갱신량이 $\eta$ 로 상한된다는 서술(예제 ②)</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1412.6980">arXiv:1412.6980</a>
+        </li>
+        <li class="ref" id="ref-loshchilov2017-decoupled-weight-decay" data-ref="loshchilov2017-decoupled-weight-decay">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Loshchilov, I. &amp; Hutter, F. (2019). <em>Decoupled Weight Decay Regularization</em>. ICLR 2019.</span>
+          <span class="ref__where">2절과 Algorithm 2 — L2 정규화와 weight decay 가 adaptive method 에서 동등하지 않다는 증명, 식 (6)의 decoupled 형태. Figure 2 — $\eta$ 와 $\lambda$ 가 분리되어 튜닝이 쉬워진다는 실험. 예제 ④와 오해 2 의 근거</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1711.05101">arXiv:1711.05101</a>
+        </li>
+        <li class="ref" id="ref-duchi2011-adagrad" data-ref="duchi2011-adagrad">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Duchi, J., Hazan, E. &amp; Singer, Y. (2011). <em>Adaptive Subgradient Methods for Online Learning and Stochastic Optimization</em>. JMLR, 12, 2121–2159.</span>
+          <span class="ref__where">1절과 Figure 1 — 식 (3)의 축별 학습률과 sparse feature 에서의 이점. 정규화 항 $\sqrt{\sum g^2}$ 가 누적합이라 단조 증가한다는 성질이 예제 ③(학습률 소멸)의 직접 근거</span>
+          <a class="ref__link" href="https://www.jmlr.org/papers/v12/duchi11a.html">jmlr.org</a>
+        </li>
+        <li class="ref" id="ref-tieleman2012-rmsprop" data-ref="tieleman2012-rmsprop">
+          <span class="ref__type" data-type="course">강의</span>
+          <span class="ref__cite">Tieleman, T. &amp; Hinton, G. (2012). <em>Lecture 6.5 — RMSProp</em>. Coursera: Neural Networks for Machine Learning.</span>
+          <span class="ref__where">슬라이드 29–31 — AdaGrad 의 누적합을 지수이동평균으로 바꾸는 식 (4)와 $\rho=0.9$ 권장. 논문 없이 강의로만 발표된 원출처</span>
+          <a class="ref__link" href="https://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf">cs.toronto.edu · PDF</a>
+        </li>
+        <li class="ref" id="ref-goh2017-momentum" data-ref="goh2017-momentum">
+          <span class="ref__type" data-type="web">웹문서</span>
+          <span class="ref__cite">Goh, G. (2017). <em>Why Momentum Really Works</em>. Distill. doi:10.23915/distill.00006</span>
+          <span class="ref__where">전체 — momentum 을 고유기저에서 축별 2차 점화식으로 분해해 지그재그 억제와 $\sqrt{\kappa}$ 개선을 보이는 인터랙티브 해설. 유도 1 과 'momentum 효과' 표, optimizer 경주 위젯의 설계가 여기서 왔다</span>
+          <a class="ref__link" href="https://distill.pub/2017/momentum/">distill.pub/2017/momentum</a>
+        </li>
+        <li class="ref" id="ref-you2019-large-batch-optimization" data-ref="you2019-large-batch-optimization">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">You, Y. et al. (2020). <em>Large Batch Optimization for Deep Learning: Training BERT in 76 minutes</em>. ICLR 2020.</span>
+          <span class="ref__where">3절과 Algorithm 1 — 식 (7)의 층별 trust ratio $\|\theta\|/\|r\|$ 정의와, $B=32{,}768$ 에서도 안정적으로 학습된다는 결과. LAMB 를 언제 쓰는지의 판단 근거</span>
+          <a class="ref__link" href="https://arxiv.org/abs/1904.00962">arXiv:1904.00962</a>
+        </li>
+        <li class="ref" id="ref-chen2023-symbolic-discovery-of" data-ref="chen2023-symbolic-discovery-of">
+          <span class="ref__type" data-type="paper">논문</span>
+          <span class="ref__cite">Chen, X. et al. (2023). <em>Symbolic Discovery of Optimization Algorithms</em>. NeurIPS 2023.</span>
+          <span class="ref__where">Algorithm 2 — 식 (8)의 Lion 갱신식과 상태가 $\mathbf{m}$ 하나뿐이라는 메모리 이점. 5.1절 — AdamW 대비 $\eta$ 를 3~10배 작게, $\lambda$ 를 그만큼 크게 잡아야 한다는 실무 지침</span>
+          <a class="ref__link" href="https://arxiv.org/abs/2302.06675">arXiv:2302.06675</a>
+        </li>
+        <li class="ref" id="ref-goodfellow2016-dl" data-ref="goodfellow2016-dl">
+          <span class="ref__type" data-type="book">교재</span>
+          <span class="ref__cite">Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>. MIT Press.</span>
+          <span class="ref__where">8.3.2–8.3.3절 — momentum 과 Nesterov 의 갱신식과 물리적 해석. 8.5절 — AdaGrad·RMSProp·Adam 을 한 계보로 정리한 서술('수식과 기호'의 계보 표). 8.6절 — Newton 방법이 안장점에 끌려간다는 서술(유도 3·오해 4)</span>
+          <a class="ref__link" href="https://www.deeplearningbook.org/">deeplearningbook.org</a>
+        </li>
+      </ol>
+    </section>
+
+    <div class="donebar">
+      <button class="donebtn" type="button" data-act="done" aria-pressed="false">
+        <span class="donebtn__seal tex">讀</span>
+        <span class="donebtn__t">학습 완료로 표시</span>
+      </button>
+      <small>진도는 이 브라우저에만 저장됩니다.</small>
+    </div>
+
+    <nav class="pager" aria-label="절 이동"></nav>
+
+  </main>
+</div>
+
+  <footer class="foot">
+    <div class="wrap"><p><a href="../../index.html">← 전체 목차</a></p></div>
+  </footer>
+</div>
+
+<script src="../../assets/js/curriculum-data.js"></script>
+<script src="../../assets/js/pages.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/contrib/auto-render.min.js"></script>
+<script src="../../assets/js/viz.js"></script>
+<script src="../../assets/js/widgets.js"></script>
+
+<script>
+/* ---------- optimizer 구현 (2차원 전용, 교육용 최소 구현) ---------- */
+function makeOpt(kind, eta) {
+  var st = { m: [0, 0], v: [0, 0], k: 0 };
+  return function (g) {
+    st.k++;
+    var d = [0, 0], i;
+    if (kind === 'sgd') {
+      for (i = 0; i < 2; i++) d[i] = -eta * g[i];
+    } else if (kind === 'mom' || kind === 'nag') {
+      for (i = 0; i < 2; i++) { st.m[i] = 0.9 * st.m[i] + g[i]; d[i] = -eta * st.m[i]; }
+    } else if (kind === 'rms') {
+      for (i = 0; i < 2; i++) {
+        st.v[i] = 0.9 * st.v[i] + 0.1 * g[i] * g[i];
+        d[i] = -eta * g[i] / (Math.sqrt(st.v[i]) + 1e-8);
+      }
+    } else if (kind === 'adam') {
+      for (i = 0; i < 2; i++) {
+        st.m[i] = 0.9 * st.m[i] + 0.1 * g[i];
+        st.v[i] = 0.999 * st.v[i] + 0.001 * g[i] * g[i];
+        var mh = st.m[i] / (1 - Math.pow(0.9, st.k));
+        var vh = st.v[i] / (1 - Math.pow(0.999, st.k));
+        d[i] = -eta * mh / (Math.sqrt(vh) + 1e-8);
+      }
+    } else if (kind === 'lion') {
+      for (i = 0; i < 2; i++) {
+        var u = 0.9 * st.m[i] + 0.1 * g[i];
+        d[i] = -eta * (u > 0 ? 1 : (u < 0 ? -1 : 0));
+        st.m[i] = 0.99 * st.m[i] + 0.01 * g[i];
+      }
+    }
+    return d;
+  };
+}
+
+var OPT_LABEL = { sgd: 'SGD', mom: 'Momentum', nag: 'Nesterov', rms: 'RMSProp', adam: 'Adam', lion: 'Lion' };
+
+/* ---------- 2차원 지형 ---------- */
+var SURF = {
+  valley: {
+    f: function (x, y) { return 0.5 * (12 * x * x + 0.6 * y * y); },
+    g: function (x, y) { return [12 * x, 0.6 * y]; },
+    start: [0.85, 1.6], name: '좁은 골짜기 (κ = 20)'
+  },
+  saddle: {
+    f: function (x, y) { return x * x - 0.6 * y * y; },
+    g: function (x, y) { return [2 * x, -1.2 * y]; },
+    start: [1.2, 0.03], name: '안장점'
+  },
+  plate: {
+    f: function (x, y) { return 0.9 * (1 - Math.exp(-0.25 * (x * x + y * y))) + 0.02 * x; },
+    g: function (x, y) {
+      var e = Math.exp(-0.25 * (x * x + y * y));
+      return [0.9 * 0.5 * x * e + 0.02, 0.9 * 0.5 * y * e];
+    },
+    start: [2.4, 1.6], name: 'plateau (바깥이 평평)'
+  }
+};
+
+function drawContours(p, F, levels) {
+  levels.forEach(function (c) {
+    var pts = [];
+    for (var i = 0; i <= 240; i++) {
+      var th = i / 240 * Math.PI * 2;
+      var cx = Math.cos(th), cy = Math.sin(th);
+      /* 반지름 이분탐색 */
+      var lo = 0.01, hi = 6;
+      var flo = F.f(lo * cx, lo * cy) - c, fhi = F.f(hi * cx, hi * cy) - c;
+      if (flo * fhi > 0) { if (pts.length > 1) { p.line(pts, { dash: '2 3' }); pts = []; } continue; }
+      for (var k = 0; k < 24; k++) {
+        var mid = (lo + hi) / 2;
+        if ((F.f(lo * cx, lo * cy) - c) * (F.f(mid * cx, mid * cy) - c) <= 0) hi = mid; else lo = mid;
+      }
+      pts.push([(lo + hi) / 2 * cx, (lo + hi) / 2 * cy]);
+    }
+    if (pts.length > 1) p.line(pts, { dash: '2 3' });
+  });
+}
+
+/* ============================================================
+   위젯 1 — optimizer 경주
+   ============================================================ */
+WIDGETS.register('optimizer-race', function (root, ctx) {
+  var picks = ['sgd', 'mom', 'adam'];
+
+  var p = VIZ.plot({ w: 460, h: 320, xmin: -1.4, xmax: 1.4, ymin: -1.0, ymax: 2.0 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'a', label: 'SGD — 30 스텝 뒤 거리', digits: 4 },
+    { key: 'b', label: 'Momentum', digits: 4 },
+    { key: 'c', label: 'Adam', digits: 4 },
+    { key: 'note', label: '해석' }
+  ]);
+
+  var TONE = { sgd: 'var(--ink-3)', mom: 'var(--jade)', adam: 'var(--seal)' };
+
+  function draw(step) {
+    var F = SURF.valley;
+    p.clear().axes('x', 'y').ticks(0.5, 0.5);
+    drawContours(p, F, [0.15, 0.6, 1.5, 3]);
+
+    var res = {};
+    picks.forEach(function (kind) {
+      var eta = kind === 'adam' ? 0.09 : (kind === 'mom' ? 0.012 : 0.075);
+      var opt = makeOpt(kind, eta);
+      var x = F.start[0], y = F.start[1], pts = [[x, y]];
+      for (var i = 0; i < step; i++) {
+        var d = opt(F.g(x, y));
+        x += d[0]; y += d[1];
+        if (!isFinite(x) || Math.abs(x) > 6) break;
+        pts.push([x, y]);
+      }
+      var path = p.line(pts, { width: 2 });
+      path.setAttribute('stroke', TONE[kind]);
+      p.dot(x, y, 5);
+      res[kind] = Math.sqrt(x * x + y * y);
+    });
+    p.dot(0, 0, 6);
+
+    out.set('a', res.sgd);
+    out.set('b', res.mom);
+    out.set('c', res.adam);
+    var best = ['sgd', 'mom', 'adam'].sort(function (u, w) { return res[u] - res[w]; })[0];
+    out.setRaw('note', step === 0 ? '재생을 눌러 보세요' : '현재 1위: ' + OPT_LABEL[best]);
+  }
+
+  WIDGETS.player({ host: ctx.controls, steps: 31, fps: 6, label: '스텝', onStep: draw });
+});
+
+/* ============================================================
+   위젯 2 — β 와 관성
+   ============================================================ */
+WIDGETS.register('momentum-beta', function (root, ctx) {
+  var beta = 0.9, eta = 0.08;
+
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;width:100%';
+  ctx.stage.appendChild(wrap);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'eff', label: '유효 보폭 η/(1−β)', digits: 4 },
+    { key: 'mem', label: '기억하는 스텝 수 ≈ 1/(1−β)', digits: 1 },
+    { key: 'end', label: '40 스텝 뒤 위치', digits: 5 },
+    { key: 'over', label: '최솟값을 지나쳤나' }
+  ]);
+
+  function draw() {
+    wrap.innerHTML = '';
+
+    /* 왼쪽: 가중치 감쇠 막대 */
+    var p1 = VIZ.plot({ w: 240, h: 210, xmin: 0, xmax: 25, ymin: 0, ymax: 1.05,
+      pad: { t: 18, r: 10, b: 26, l: 36 } });
+    p1.grid(5, 0.25).axes('몇 스텝 전', '가중치').ticks(5, 0.5);
+    p1.curve(function (j) { return Math.pow(beta, j); }, { samples: 200 });
+    p1.dot(0, 1, 4);
+    wrap.appendChild(p1.svg);
+
+    /* 오른쪽: 궤적 */
+    var p2 = VIZ.plot({ w: 240, h: 210, xmin: 0, xmax: 40, ymin: -1.2, ymax: 1.2,
+      pad: { t: 18, r: 10, b: 26, l: 36 } });
+    p2.grid(10, 0.5).axes('스텝', 'w').ticks(10, 0.5);
+    p2.line([[0, 0], [40, 0]], { dash: '3 4' });
+
+    var w = 1, v = 0, pts = [[0, 1]], overshoot = false;
+    for (var i = 1; i <= 40; i++) {
+      v = beta * v + w;
+      w = w - eta * v;
+      if (w < -0.02) overshoot = true;
+      pts.push([i, Math.max(-1.2, Math.min(1.2, w))]);
+    }
+    p2.line(pts, { alt: true, width: 2 });
+    wrap.appendChild(p2.svg);
+
+    out.set('eff', eta / (1 - beta));
+    out.set('mem', 1 / (1 - beta));
+    out.set('end', w);
+    out.setRaw('over', overshoot ? '지나쳤다 — 관성이 과하다' : '지나치지 않음');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: 'β (관성)', min: 0, max: 0.98, step: 0.02, value: 0.9, digits: 2,
+    onInput: function (v) { beta = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'η', min: 0.01, max: 0.3, step: 0.01, value: 0.08, digits: 2,
+    onInput: function (v) { eta = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 3 — Adam 내부
+   ============================================================ */
+WIDGETS.register('adam-inside', function (root, ctx) {
+  var correct = 1, gmag = 2.0;
+
+  var p = VIZ.plot({ w: 460, h: 280, xmin: 0, xmax: 60, ymin: -0.2, ymax: 2.4,
+    pad: { t: 18, r: 14, b: 28, l: 46 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 's1', label: '1 스텝의 보폭 (η 배수)', digits: 4 },
+    { key: 's10', label: '10 스텝', digits: 4 },
+    { key: 's50', label: '50 스텝', digits: 4 },
+    { key: 'note', label: '해석' }
+  ]);
+
+  function stepSize(k) {
+    /* gradient 가 gmag 로 일정할 때 k 스텝의 보폭 (η 배수) */
+    var m = 0, v = 0;
+    for (var i = 1; i <= k; i++) {
+      m = 0.9 * m + 0.1 * gmag;
+      v = 0.999 * v + 0.001 * gmag * gmag;
+    }
+    var mh = correct ? m / (1 - Math.pow(0.9, k)) : m;
+    var vh = correct ? v / (1 - Math.pow(0.999, k)) : v;
+    return mh / (Math.sqrt(vh) + 1e-8);
+  }
+
+  function draw() {
+    p.clear().grid(10, 0.5).axes('스텝 k', '보폭 ÷ η').ticks(10, 0.5);
+    p.line([[0, 1], [60, 1]], { dash: '3 4' });
+    p.curve(function (k) { return stepSize(Math.max(1, Math.round(k))); }, { samples: 120 });
+    p.dot(1, stepSize(1), 5);
+    p.callout(30, 1, '1.0 = η 만큼 움직임', { dx: 14, dy: -16, tone: 'var(--ink-3)' });
+
+    out.set('s1', stepSize(1));
+    out.set('s10', stepSize(10));
+    out.set('s50', stepSize(50));
+    out.setRaw('note', correct ? '보정 켬 — 처음부터 η 근처' : '보정 끔 — 초반 보폭이 크게 어긋난다');
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: 'bias correction',
+    options: [{ value: 1, label: '켬 (Adam 원본)' }, { value: 0, label: '끔' }],
+    value: 1, onChange: function (v) { correct = Number(v); draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'gradient 크기 |g|', min: 0.05, max: 50, step: 0.05, value: 2, digits: 2,
+    onInput: function (v) { gmag = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 4 — AdamW vs Adam + L2
+   ============================================================ */
+WIDGETS.register('adamw-vs-adam', function (root, ctx) {
+  var mode = 'w', lam = 0.1;
+
+  var p = VIZ.plot({ w: 460, h: 280, xmin: 0, xmax: 60, ymin: 0, ymax: 1.1,
+    pad: { t: 18, r: 14, b: 28, l: 44 } });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'a', label: '축 A (√v̂ = 10) 60 스텝 뒤', digits: 5 },
+    { key: 'b', label: '축 B (√v̂ = 0.1) 60 스텝 뒤', digits: 5 },
+    { key: 'ratio', label: '두 축의 감쇠 비', digits: 2 },
+    { key: 'note', label: '해석' }
+  ]);
+
+  var ETA = 0.01;
+
+  function run(sv) {
+    var th = 1.0, pts = [[0, 1]];
+    for (var k = 1; k <= 60; k++) {
+      var decay = mode === 'w' ? ETA * lam * th : ETA * lam * th / sv;
+      th = th - decay;
+      pts.push([k, Math.max(0, th)]);
+    }
+    return pts;
+  }
+
+  function draw() {
+    p.clear().grid(10, 0.25).axes('스텝', '‖θ‖ (초기 = 1)').ticks(10, 0.25);
+    var A = run(10), B = run(0.1);
+    var la = p.line(A, { width: 2.2 });
+    la.setAttribute('stroke', 'var(--jade)');
+    var lb = p.line(B, { width: 2.2 });
+    lb.setAttribute('stroke', 'var(--seal)');
+    p.callout(45, A[45][1], '축 A (gradient 큰 축)', { dx: -20, dy: -16, tone: 'var(--jade)' });
+    p.callout(30, B[30][1], '축 B', { dx: 14, dy: 18, tone: 'var(--seal)' });
+
+    var ea = A[60][1], eb = B[60][1];
+    out.set('a', ea);
+    out.set('b', eb);
+    out.set('ratio', (1 - eb) / Math.max(1e-9, 1 - ea));
+    out.setRaw('note', mode === 'w' ? '두 축이 정확히 겹친다 — 동일한 감쇠'
+      : '축 B 가 100배 강하게 감쇠 — 의도한 정규화가 아니다');
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: 'weight decay 방식',
+    options: [{ value: 'w', label: 'AdamW (decoupled)' }, { value: 'l2', label: 'Adam + L2' }],
+    value: 'w', onChange: function (v) { mode = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: 'λ (decay 계수)', min: 0.01, max: 0.5, step: 0.01, value: 0.1, digits: 2,
+    onInput: function (v) { lam = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 5 — 1차 vs 2차 비용
+   ============================================================ */
+WIDGETS.register('order-compare', function (root, ctx) {
+  var logp = 6;
+
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;width:100%';
+  ctx.stage.appendChild(wrap);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'p', label: '파라미터 수 p' },
+    { key: 'g', label: 'gradient 메모리 (fp32)' },
+    { key: 'h', label: 'Hessian 메모리 (fp32)' },
+    { key: 'note', label: '판정' }
+  ]);
+
+  function human(bytes) {
+    var u = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB'];
+    var i = 0;
+    while (bytes >= 1024 && i < u.length - 1) { bytes /= 1024; i++; }
+    return bytes.toFixed(1) + ' ' + u[i];
+  }
+
+  function draw() {
+    wrap.innerHTML = '';
+
+    /* 왼쪽: 2차 함수에서 GD vs Newton 궤적 */
+    var p1 = VIZ.plot({ w: 240, h: 220, xmin: -1.5, xmax: 1.5, ymin: -0.2, ymax: 2.4,
+      pad: { t: 18, r: 10, b: 26, l: 34 } });
+    p1.grid(0.5, 0.5).axes('w', 'f').ticks(1, 1);
+    p1.curve(function (x) { return x * x; }, { samples: 200 });
+    var w = 1.2, pts = [[w, w * w]];
+    for (var i = 0; i < 6; i++) { w = w - 0.25 * 2 * w; pts.push([w, w * w]); }
+    p1.line(pts, { width: 2 });
+    pts.forEach(function (q) { p1.dot(q[0], q[1], 3); });
+    p1.line([[1.2, 1.44], [0, 0]], { alt: true, dash: '5 4', width: 2.2 });
+    p1.dot(0, 0, 6);
+    p1.callout(0.6, 0.35, 'Newton: 한 스텝', { dx: 10, dy: -18, tone: 'var(--seal)' });
+    wrap.appendChild(p1.svg);
+
+    /* 오른쪽: 메모리 비교 (로그 스케일) */
+    var p2 = VIZ.plot({ w: 240, h: 220, xmin: 2, xmax: 10, ymin: 0, ymax: 22,
+      pad: { t: 18, r: 10, b: 26, l: 36 } });
+    p2.grid(2, 5).axes('log₁₀ p', 'log₁₀ 바이트').ticks(2, 5);
+    p2.curve(function (lp) { return lp + Math.log10(4); }, { samples: 100 });
+    p2.curve(function (lp) { return 2 * lp + Math.log10(4); }, { samples: 100, alt: true });
+    p2.line([[2, Math.log10(80e9)], [10, Math.log10(80e9)]], { dash: '3 4' });
+    p2.dot(logp, logp + Math.log10(4), 5);
+    p2.dot(logp, 2 * logp + Math.log10(4), 5);
+    p2.callout(4, Math.log10(80e9), 'GPU 80GB', { dx: 12, dy: -14, tone: 'var(--ink-3)' });
+    wrap.appendChild(p2.svg);
+
+    var pnum = Math.pow(10, logp);
+    out.setRaw('p', '10^' + logp);
+    out.setRaw('g', human(pnum * 4));
+    out.setRaw('h', human(pnum * pnum * 4));
+    out.setRaw('note', pnum * pnum * 4 > 80e9 ? 'Hessian 저장 불가 — 1차 방법만 가능'
+      : 'Hessian 을 올릴 수 있다 (작은 문제)');
+  }
+
+  WIDGETS.slider({
+    host: ctx.controls, label: '파라미터 수 (10의 거듭제곱)', min: 2, max: 10, step: 1, value: 6, digits: 0,
+    onInput: function (v) { logp = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 6 — 지형별 승자
+   ============================================================ */
+WIDGETS.register('opt-landscape', function (root, ctx) {
+  var surf = 'saddle';
+
+  var p = VIZ.plot({ w: 460, h: 320, xmin: -3, xmax: 3, ymin: -2.2, ymax: 2.2 });
+  ctx.stage.appendChild(p.svg);
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'sgd', label: 'SGD — 60 스텝 뒤 f 값', digits: 4 },
+    { key: 'mom', label: 'Momentum', digits: 4 },
+    { key: 'adam', label: 'Adam', digits: 4 },
+    { key: 'win', label: '이 지형의 승자' }
+  ]);
+
+  var TONE = { sgd: 'var(--ink-3)', mom: 'var(--jade)', adam: 'var(--seal)' };
+  var ETA = { valley: { sgd: 0.07, mom: 0.012, adam: 0.1 },
+              saddle: { sgd: 0.08, mom: 0.02, adam: 0.09 },
+              plate:  { sgd: 0.6, mom: 0.09, adam: 0.09 } };
+
+  function draw(step) {
+    var F = SURF[surf];
+    p.clear().axes('x', 'y').ticks(1, 1);
+    drawContours(p, F, surf === 'saddle' ? [-1.5, -0.4, 0.4, 1.5] : [0.15, 0.5, 1.2, 2.5]);
+
+    var res = {};
+    ['sgd', 'mom', 'adam'].forEach(function (kind) {
+      var opt = makeOpt(kind, ETA[surf][kind]);
+      var x = F.start[0], y = F.start[1], pts = [[x, y]];
+      for (var i = 0; i < step; i++) {
+        var d = opt(F.g(x, y));
+        x += d[0]; y += d[1];
+        if (!isFinite(x) || Math.abs(x) > 8 || Math.abs(y) > 8) break;
+        pts.push([x, y]);
+      }
+      var ln = p.line(pts, { width: 2 });
+      ln.setAttribute('stroke', TONE[kind]);
+      p.dot(x, y, 5);
+      res[kind] = F.f(x, y);
+    });
+
+    out.set('sgd', res.sgd);
+    out.set('mom', res.mom);
+    out.set('adam', res.adam);
+    var best = ['sgd', 'mom', 'adam'].sort(function (u, w) { return res[u] - res[w]; })[0];
+    out.setRaw('win', step === 0 ? '재생을 눌러 보세요' : OPT_LABEL[best] + ' (' + SURF[surf].name + ')');
+  }
+
+  var pl = null;
+  WIDGETS.toggle({
+    host: ctx.controls, label: '지형',
+    options: [
+      { value: 'saddle', label: '안장점' },
+      { value: 'valley', label: '좁은 골짜기' },
+      { value: 'plate', label: 'plateau' }
+    ],
+    value: 'saddle', onChange: function (v) { surf = v; draw(pl ? pl.at() : 0); }
+  });
+  pl = WIDGETS.player({ host: ctx.controls, steps: 61, fps: 10, label: '스텝', onStep: draw });
+});
+</script>
+
+<script src="../../assets/js/core.js"></script>
+</body>
+</html>

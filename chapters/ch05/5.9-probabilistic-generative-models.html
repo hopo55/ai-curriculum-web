@@ -226,6 +226,27 @@
         </table>
       </div>
       <p>
+        표의 마지막 줄 <strong>"$K-1$ 차원으로 사영 가능"</strong> 은 유도 1 의 부산물이다.
+        경계가 $\mathbf{w}^\top\mathbf{x}+b$ 꼴이고 $\mathbf{w}=\boldsymbol{\Sigma}^{-1}(\boldsymbol{\mu}_1-\boldsymbol{\mu}_0)$ 이므로,
+        <strong>분류에 필요한 정보가 이 한 방향에 전부 실려 있다</strong> —
+        나머지 방향은 두 class 를 가르는 데 아무 기여도 하지 않는다.
+        class 가 $K$개면 중심들이 만드는 부분공간이 $K-1$ 차원이라 그만큼 남는다.
+      </p>
+      <div class="eq">
+        <div class="eq__body">$$ \mathbf{S}_W=\sum_c\sum_{i\in c}(\mathbf{x}_i-\boldsymbol{\mu}_c)(\cdot)^\top, \quad \mathbf{S}_B=\sum_c n_c(\boldsymbol{\mu}_c-\bar{\mathbf{x}})(\cdot)^\top \ \Rightarrow\ \mathbf{S}_W^{-1}\mathbf{S}_B \text{ 의 상위 } K-1 \text{ 개 고유vector} $$</div>
+        <span class="eq__tag num">(4b)</span>
+      </div>
+      <p>
+        <span class="hl">즉 <strong>class 안의 흩어짐 $\mathbf{S}_W$ 대비 class 사이의 벌어짐 $\mathbf{S}_B$ 를 최대로 하는 방향</strong>들을 고르는 것이고,
+        2-class 면 그 답이 정확히 $\mathbf{S}_W^{-1}(\boldsymbol{\mu}_1-\boldsymbol{\mu}_0)$ 하나다.</span>
+        <a href="../ch02/2.9-dimensionality-reduction.html">2.9</a>·<a href="5.11-dimensionality-reduction-manifold.html">5.11</a>의 PCA 가
+        <strong>label 을 안 보고 분산이 큰 방향</strong>을 고르는 것과 달리,
+        이쪽은 <strong>label 을 보고 판별에 쓸모 있는 방향</strong>을 고른다 —
+        5.11 오해 2 가 "label 을 쓰는 축소가 필요하면 LDA"라고 한 것이 이 절차다.
+        <strong>축소한 차원이 $K-1$ 로 묶이는 것</strong>이 한계이며, class 가 둘이면 <strong>1차원</strong>밖에 못 얻는다.
+      </p>
+
+      <p>
         <span class="hl">GDA 와 logistic regression 은 <strong>같은 형태의 posterior</strong> 를 낳는다 —
         GDA 가정이 맞으면 posterior 가 <strong>정확히 sigmoid</strong> 가 되지만,
         그 역은 성립하지 않는다(유도 1).</span>
@@ -725,6 +746,20 @@
         특히 <strong>EM 위젯의 로그우도 곡선이 한 번도 내려가지 않는지</strong> 확인해 보라 —
         유도 2 가 보장하는 성질이며, 구현이 맞는지 검사하는 가장 좋은 방법이다.
       </p>
+
+      <p>
+        아래에서는 유도 1 의 결론 — <strong>공분산을 공유하면 직선, 따로 두면 이차 곡선</strong> — 을 눈으로 본다.
+      </p>
+
+      <figure class="widget" data-widget="lda-qda">
+        <figcaption class="widget__bar">LDA vs QDA — 공분산 가정이 경계의 모양을 정한다</figcaption>
+        <div class="widget__body">
+          <div class="widget__stage" data-stage></div>
+          <div class="controls" data-controls></div>
+          <div class="readout" data-readout></div>
+          <p class="watch">공분산을 따로 두면 경계가 <strong>타원·쌍곡선·평행선</strong>으로 휩니다. 두 class 의 산포가 비슷하면 QDA 도 거의 직선이 됩니다.</p>
+        </div>
+      </figure>
     </section>
 
     <!-- ===== 9. 함정 ===== -->
@@ -1548,6 +1583,129 @@ WIDGETS.register('nb-independence', function (root, ctx) {
   WIDGETS.slider({
     host: ctx.controls, label: 'p(x|class 0)', min: 0.05, max: 0.95, step: 0.05, value: 0.3, digits: 2,
     onInput: function (v) { p0 = v; draw(); }
+  });
+  draw();
+});
+
+/* ============================================================
+   위젯 7 — LDA vs QDA 경계
+   ============================================================ */
+WIDGETS.register('lda-qda', function (root, ctx) {
+  var shared = 0, ratio = 2.2, rot = 55, seed = 4;
+
+  var out = WIDGETS.readout(ctx.readout, [
+    { key: 'm', label: '공분산 가정' },
+    { key: 'shape', label: '경계의 모양' },
+    { key: 'np', label: 'parameter 수 (d=2, K=2)' },
+    { key: 'tr', label: 'train 오차', digits: 4 }
+  ]);
+
+  function draw() {
+    var rnd = mkRand(seed * 557 + 3), A = [], B = [], i;
+    var th = rot * Math.PI / 180;
+    /* class 0 은 등방, class 1 은 기울고 늘어난 분포 */
+    for (i = 0; i < 70; i++) {
+      A.push([-1.15 + 0.62 * gauss(rnd), 0.55 + 0.62 * gauss(rnd)]);
+      var u = ratio * 0.62 * gauss(rnd), v = (1 / ratio) * 0.62 * gauss(rnd);
+      B.push([1.25 + u * Math.cos(th) - v * Math.sin(th),
+              -0.5 + u * Math.sin(th) + v * Math.cos(th)]);
+    }
+    function stat(S) {
+      var mx = 0, my = 0, k;
+      for (k = 0; k < S.length; k++) { mx += S[k][0] / S.length; my += S[k][1] / S.length; }
+      var xx = 0, yy = 0, xy = 0;
+      for (k = 0; k < S.length; k++) {
+        xx += (S[k][0] - mx) * (S[k][0] - mx) / S.length;
+        yy += (S[k][1] - my) * (S[k][1] - my) / S.length;
+        xy += (S[k][0] - mx) * (S[k][1] - my) / S.length;
+      }
+      return { m: [mx, my], s: [xx + 0.02, yy + 0.02, xy] };
+    }
+    var a = stat(A), b = stat(B);
+    var pooled = [(a.s[0] + b.s[0]) / 2, (a.s[1] + b.s[1]) / 2, (a.s[2] + b.s[2]) / 2];
+    var sA = shared ? pooled : a.s, sB = shared ? pooled : b.s;
+
+    /* 판별 함수: log p(x|c) + log π_c  (π 는 같다) */
+    function disc(x, y, m, s) {
+      var det = Math.max(1e-9, s[0] * s[1] - s[2] * s[2]);
+      var dx = x - m[0], dy = y - m[1];
+      var q = (s[1] * dx * dx - 2 * s[2] * dx * dy + s[0] * dy * dy) / det;
+      return -0.5 * q - 0.5 * Math.log(det);
+    }
+    function score(x, y) { return disc(x, y, b.m, sB) - disc(x, y, a.m, sA); }
+
+    var p = VIZ.plot({ w: 460, h: 300, xmin: -3.6, xmax: 3.6, ymin: -2.8, ymax: 2.8,
+      pad: { t: 30, r: 16, b: 30, l: 42 } });
+    ctx.stage.innerHTML = '';
+    ctx.stage.appendChild(p.svg);
+    panel(p).grid(1, 1).axes('x₁', '').ticks(1, 1);
+    p.text(-3.6, 2.8, 'x₂ · 배경 = 판정 · 점선 타원 = 각 class 가 믿는 분포 · 굵은 선 = 경계',
+      { size: 10, dy: -10 });
+
+    var GX = 46, GY = 34;
+    for (var gx = 0; gx < GX; gx++) {
+      for (var gy = 0; gy < GY; gy++) {
+        var x0 = -3.6 + 7.2 * (gx + 0.5) / GX, y0 = -2.8 + 5.6 * (gy + 0.5) / GY;
+        p.add(VIZ.el('rect', {
+          x: p.X(-3.6 + 7.2 * gx / GX), y: p.Y(-2.8 + 5.6 * (gy + 1) / GY),
+          width: Math.max(1, p.iw / GX + 1), height: Math.max(1, p.ih / GY + 1),
+          fill: score(x0, y0) > 0 ? 'var(--seal)' : 'var(--jade)', 'fill-opacity': 0.12 }));
+      }
+    }
+    /* 경계선 — 격자에서 부호가 바뀌는 곳을 찍는다 */
+    for (gx = 0; gx <= 200; gx++) {
+      var xx2 = -3.6 + 7.2 * gx / 200;
+      var prev = null;
+      for (gy = 0; gy <= 200; gy++) {
+        var yy2 = -2.8 + 5.6 * gy / 200, v2 = score(xx2, yy2);
+        if (prev !== null && (prev > 0) !== (v2 > 0)) {
+          p.add(VIZ.el('circle', { cx: p.X(xx2), cy: p.Y(yy2), r: 1.4,
+            fill: 'var(--ink-1)', 'fill-opacity': 0.9 }));
+        }
+        prev = v2;
+      }
+    }
+    ellipse(p, a.m[0], a.m[1], sA[0], sA[1], sA[2], 2);
+    ellipse(p, b.m[0], b.m[1], sB[0], sB[1], sB[2], 2);
+
+    var wrong = 0;
+    for (i = 0; i < A.length; i++) {
+      if (score(A[i][0], A[i][1]) > 0) wrong++;
+      p.add(VIZ.el('circle', { cx: p.X(Math.max(-3.55, Math.min(3.55, A[i][0]))),
+        cy: p.Y(Math.max(-2.75, Math.min(2.75, A[i][1]))), r: 3,
+        fill: 'var(--jade)', 'fill-opacity': 0.85 }));
+    }
+    for (i = 0; i < B.length; i++) {
+      if (score(B[i][0], B[i][1]) <= 0) wrong++;
+      p.add(VIZ.el('circle', { cx: p.X(Math.max(-3.55, Math.min(3.55, B[i][0]))),
+        cy: p.Y(Math.max(-2.75, Math.min(2.75, B[i][1]))), r: 3,
+        fill: 'var(--seal)', 'fill-opacity': 0.85 }));
+    }
+
+    out.setRaw('m', shared ? '공유 Σ (LDA)' : 'class 별 Σ_c (QDA)');
+    out.setRaw('shape', shared ? '직선 — 이차항이 상쇄된다 (유도 1)'
+      : (ratio < 1.3 ? '거의 직선 — 두 산포가 비슷하면 QDA 도 LDA 에 가까워진다'
+      : '이차 곡선 — 타원·쌍곡선으로 휜다'));
+    out.setRaw('np', shared ? '평균 4 + 공분산 3 = 7' : '평균 4 + 공분산 6 = 10');
+    out.set('tr', wrong / (A.length + B.length));
+  }
+
+  WIDGETS.toggle({
+    host: ctx.controls, label: '공분산',
+    options: [{ value: 0, label: 'class 별 Σ (QDA)' }, { value: 1, label: '공유 Σ (LDA)' }],
+    value: 0, onChange: function (v) { shared = Number(v); draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '두 class 의 산포 차이', min: 1, max: 3.5, step: 0.1, value: 2.2, digits: 1,
+    onInput: function (v) { ratio = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '기울기 (도)', min: 0, max: 180, step: 5, value: 55, digits: 0,
+    onInput: function (v) { rot = v; draw(); }
+  });
+  WIDGETS.slider({
+    host: ctx.controls, label: '난수 seed', min: 1, max: 20, step: 1, value: 4, digits: 0,
+    onInput: function (v) { seed = v; draw(); }
   });
   draw();
 });

@@ -434,6 +434,7 @@
               <tr><td>k-means</td><td>Lloyd 알고리즘</td><td><strong>알고리즘과 목적함수를 구분</strong>해야 한다</td></tr>
               <tr><td>계층적 군집화</td><td>agglomerative(상향식), HAC</td><td>divisive(하향식)도 있지만 드물다</td></tr>
               <tr><td>유사도 행렬</td><td>affinity matrix, 가중 인접행렬</td><td>거리와 <strong>반대 방향</strong>이다</td></tr>
+              <tr><td>spectral clustering</td><td>—</td><td><strong>같은 이름이 세 알고리즘을 가리킨다</strong> — 비정규화 $L=D-W$ · Shi-Malik 의 $L_{rw}=I-D^{-1}W$(normalized cut) · Ng-Jordan-Weiss 의 $L_{\text{sym}}$+행 정규화(sklearn 기본). <strong>군집 크기가 불균형하면 결과가 갈린다</strong></td></tr>
               <tr><td>soft clustering</td><td>fuzzy clustering, 확률적 배정</td><td>GMM · fuzzy c-means</td></tr>
               <tr><td>Rand index</td><td>ARI 는 <strong>우연 보정판</strong></td><td>보정 안 한 RI 는 <strong>무작위여도 높게</strong> 나온다</td></tr>
             </tbody>

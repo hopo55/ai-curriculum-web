@@ -309,6 +309,22 @@
         </table>
       </div>
       <p>
+        장단점 표의 <strong>"결측치를 자연스럽게 다룬다"</strong> 는 저절로 되는 것이 아니라 기제가 있다.
+        CART 는 <strong>대리 분할(surrogate split)</strong> 을 쓴다 —
+        주 분할 $x_j\le s$ 와 <strong>가장 비슷하게 표본을 가르는 다른 feature</strong> 를 미리 순위대로 저장해 두고,
+        $x_j$ 가 없는 표본이 오면 <strong>그 대리 규칙으로 대신 보낸다</strong>.
+        평균 대치와 달리 <strong>없는 값을 지어내지 않는다</strong>는 것이 장점이다.
+      </p>
+      <p>
+        <span class="hl">현대 구현은 더 단순한 길을 택한다 —
+        <strong>결측을 하나의 방향으로 몰아 보내되, 어느 쪽으로 보낼지를 학습으로 정한다</strong>.
+        <a href="5.7-ensemble.html">5.7</a>의 XGBoost 가 "결측치 자동 분기"라고 부르는 것이 이것이고,
+        LightGBM·<code>HistGradientBoostingClassifier</code> 도 같은 방식이다.</span>
+        주의할 점은 <strong>scikit-learn 의 <code>DecisionTreeClassifier</code> 는 오랫동안 NaN 을 받지 못했다</strong>는 것이다 —
+        트리가 원리적으로 결측을 다룰 수 있다는 말과 <strong>내가 쓰는 구현이 실제로 다룬다</strong>는 말은 다르다.
+      </p>
+
+      <p>
         네 번째 줄의 문제가 pre-pruning 의 본질적 약점이다 —
         <strong>지금 당장은 이득이 없지만 한 번 더 자르면 크게 좋아지는 분할</strong>(XOR 구조가 대표적)을
         미리 잘라 버린다. 그래서 <strong>"끝까지 키운 뒤 되돌리는"</strong> post-pruning 이 이론적으로 더 낫다.

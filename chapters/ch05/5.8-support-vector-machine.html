@@ -405,6 +405,7 @@
               <tr><td>margin</td><td>마진, 여백</td><td>functional / geometric 을 <strong>구분</strong>해야 한다</td></tr>
               <tr><td>hinge loss</td><td>경첩 손실, max-margin loss</td><td>제곱 hinge($\max(0,1-yf)^2$)는 <strong>다른 손실</strong>이다</td></tr>
               <tr><td>RBF kernel</td><td>Gaussian kernel, 방사 기저 함수</td><td>전부 같은 것</td></tr>
+              <tr><td>$\mathbf{w}=\sum\alpha_iy_i\mathbf{x}_i$</td><td><strong>representer theorem</strong>, 쌍대 표현(dual representation)</td><td>SVM 만의 성질이 아니다 — <a href="5.3-linear-regression.html">5.3</a> ridge, <a href="5.11-dimensionality-reduction-manifold.html">5.11</a> kernel PCA, <a href="5.12-anomaly-detection.html">5.12</a> one-class SVM 이 <strong>전부 같은 이유로 kernel 화된다</strong></td></tr>
               <tr><td>SVR</td><td>support vector regression</td><td>hinge 대신 <strong>$\epsilon$-insensitive loss</strong> 를 쓴다</td></tr>
             </tbody>
           </table>
@@ -456,7 +457,7 @@
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \frac{\partial L}{\partial\mathbf{w}}=\mathbf{w}-\sum_i\alpha_iy_i\mathbf{x}_i=0 \ \Rightarrow\ \mathbf{w}=\sum_i\alpha_iy_i\mathbf{x}_i $$</div>
-          <div class="derive__why"><strong>해가 data 점들의 선형결합</strong> — 식 (2)</div>
+          <div class="derive__why"><strong>해가 data 점들의 선형결합</strong> — 식 (2). 이것이 <strong>representer theorem</strong> 의 한 사례다: <strong>L2 규제된 손실 최소화의 해는 언제나 훈련점들의 선형결합</strong>이라, 무한 차원에서도 계수가 $n$개뿐이다</div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \frac{\partial L}{\partial b}=-\sum_i\alpha_iy_i=0 \ \Rightarrow\ \sum_i\alpha_iy_i=0 $$</div>

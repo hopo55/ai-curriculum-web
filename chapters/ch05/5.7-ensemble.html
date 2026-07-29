@@ -475,6 +475,7 @@
               <tr><td>$\eta$ (boosting)</td><td>learning rate, shrinkage, <code>eta</code></td><td><a href="../ch03/3.6-gradient-descent.html">3.6</a>의 학습률과 <strong>역할이 같다</strong></td></tr>
               <tr><td>$m_{\text{try}}$</td><td><code>max_features</code>, <code>mtry</code>(R), <code>colsample_bynode</code></td><td>비율로 주는 라이브러리와 개수로 주는 것이 섞여 있다</td></tr>
               <tr><td>GBM</td><td>gradient boosting machine, GBDT, GBRT</td><td>전부 같은 것</td></tr>
+              <tr><td>유도 3 의 절차</td><td><strong>forward stagewise additive modeling</strong>(전진 단계별 가법 모형)</td><td>gradient boosting 도 같은 틀이다 — <strong>손실만 바뀐다</strong>. 지수손실이면 AdaBoost</td></tr>
               <tr><td>bagging</td><td>bootstrap aggregating</td><td>bagging ≠ random forest (feature 무작위가 없다)</td></tr>
               <tr><td>soft voting</td><td>확률 평균, averaging</td><td>확률이 <strong>보정되어 있어야</strong> 의미가 있다 (<a href="../ch04/4.9-uncertainty.html">4.9</a>)</td></tr>
               <tr><td>stacking</td><td>stacked generalization, blending</td><td>blending 은 <strong>hold-out 한 벌만 쓰는</strong> 변형이라 조금 다르다</td></tr>
@@ -575,6 +576,22 @@
           <div class="derive__why">각 라운드가 <strong>무작위보다 조금만 나아도 지수적으로</strong> 줄어든다</div>
         </div>
       </div>
+      <p>
+        <span class="hl">유도 3 의 절차에는 이름이 있다 — <strong>전진 단계별 가법 모형(forward stagewise additive modeling)</strong> 이다.
+        <strong>이미 쌓은 것은 건드리지 않고 새 항 하나만 최적화해 더하는</strong> 틀이며,
+        AdaBoost 는 그 틀에 <strong>지수손실 $e^{-yF}$</strong> 를 넣은 경우다.</span>
+        $\alpha_t=\frac12\ln\frac{1-\varepsilon}{\varepsilon}$ 이 깔끔하게 떨어진 것은 우연이 아니라
+        <strong>지수손실이 한 스텝 최적화의 닫힌 해를 주기 때문</strong>이다.
+      </p>
+      <p>
+        여기서 딸려 나오는 결론이 하나 더 있다 —
+        지수손실의 <strong>모집단 최소해가 $F^\star(\mathbf{x})=\frac12\log\frac{p(y=1\mid\mathbf{x})}{p(y=-1\mid\mathbf{x})}$</strong>,
+        즉 <strong>log-odds 의 절반</strong>이다.
+        따라서 <strong>$\sigma(2F)$ 로 되돌리면 boosting 의 출력을 확률로 읽을 수 있다</strong> —
+        <a href="5.4-logistic-regression.html">5.4</a>의 logit 과 같은 양이고,
+        <a href="5.13-model-evaluation.html">5.13</a>에서 boosting 이 과신하는 경향과 함께 보아야 할 대목이다.
+      </p>
+
       <p>
         <span class="hl">마지막 줄이 boosting 의 이론적 핵심이다 —
         <strong>$\varepsilon_t\le0.5-\gamma$ 인 약한 학습기만 있으면 train 오차를 원하는 만큼 낮출 수 있다.</strong>

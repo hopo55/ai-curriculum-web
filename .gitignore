@@ -20,3 +20,7 @@ references/library/
 
 # Claude Code 작업용 워크트리 — 저장소에 커밋하지 않는다
 .claude/worktrees/
+
+# 참고용 교재 원문 — 저작권. 공개 저장소에 올리지 않는다.
+# 여기서 얻은 내용은 references/registry.json 에 출처로만 남긴다.
+sources/

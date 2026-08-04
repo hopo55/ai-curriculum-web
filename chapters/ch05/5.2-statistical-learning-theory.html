@@ -411,7 +411,10 @@
             <tr><td>단일 가설 (Hoeffding)</td><td>$\sqrt{\ln\frac{2}{\delta}/(2n)}$</td><td>$h$ 를 미리 고정</td><td>가장 촘촘 — 그러나 학습에 못 씀</td></tr>
             <tr><td>유한 $\mathcal{H}$</td><td>$\sqrt{(\ln|\mathcal{H}|+\ln\frac2\delta)/(2n)}$</td><td>$|\mathcal{H}|<\infty$</td><td>보통</td></tr>
             <tr><td>VC</td><td>$\sqrt{8(d_{\text{VC}}\ln\frac{2en}{d_{\text{VC}}}+\ln\frac4\delta)/n}$</td><td>$d_{\text{VC}}$</td><td>느슨 (분포 무관)</td></tr>
-            <tr><td>Rademacher</td><td>$2\hat{\mathfrak{R}}_S(\mathcal{H})+3\sqrt{\ln\frac2\delta/(2n)}$</td><td>표본 · 무작위 label 실험</td><td>더 촘촘 (분포 의존)</td></tr>
+            <tr><td>Rademacher</td><td>$2\hat{\mathfrak{R}}_S(\mathcal{G})+3\sqrt{\ln\frac2\delta/(2n)}$</td><td>표본 · 무작위 label 실험</td><td>더 촘촘 (분포 의존)</td></tr>
+            <tr><td colspan="4"><small>$\mathcal{G}=\{(x,y)\mapsto \ell(h(x),y):h\in\mathcal{H}\}$ 는 <strong>손실 공간</strong>이다.
+              가설 공간 $\mathcal{H}$ 로 재면 이진분류·0-1 손실에서 $\mathfrak{R}(\mathcal{G})=\tfrac12\mathfrak{R}(\mathcal{H})$ 이라 계수가 1 이 된다 —
+              어느 규약이든 결론(상계가 실무에 쓰기엔 느슨하다)은 같다.</small></td></tr>
             <tr><td>Margin</td><td>$O(\sqrt{R^2/(\gamma^2 n)})$</td><td>여백 $\gamma$ · data 반지름 $R$</td><td>고차원에서 유용 — <strong>차원 무관</strong></td></tr>
             <tr><td>PAC-Bayes</td><td>$\sqrt{(D_{\mathrm{KL}}(Q\|P)+\ln\frac{n}{\delta})/(2n)}$</td><td>사후 $Q$ · 사전 $P$</td><td>딥러닝에서 유일하게 <strong>비공허한</strong> 축</td></tr>
           </tbody>

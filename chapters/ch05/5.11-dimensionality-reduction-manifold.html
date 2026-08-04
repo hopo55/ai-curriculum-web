@@ -403,7 +403,7 @@
       </div>
       <p>
         실무 순서는 대체로 이렇다 —
-        <strong>먼저 PCA 로 50~100차원까지 줄이고</strong>(잡음 제거 + 속도),
+        <strong>먼저 PCA 로 30~50차원까지 줄이고</strong>(잡음 제거 + 속도 — 원저자는 30, sklearn 문서는 50 을 예로 든다),
         <strong>그다음 t-SNE·UMAP 으로 2차원 그림</strong>을 그린다.
         sklearn 문서와 t-SNE 원저자가 모두 권하는 방식이며,
         <strong>계산이 빨라질 뿐 아니라 결과도 안정</strong>된다.

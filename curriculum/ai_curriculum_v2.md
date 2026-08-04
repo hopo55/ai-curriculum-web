@@ -4,6 +4,18 @@
 >
 > 학습 방식: 이론 중심
 >
+> 2026-08-04 개정: 참고 교재 6권(Goodfellow *Deep Learning*, *Dive into Deep Learning*,
+> Prince *Understanding Deep Learning*, Petersen&Zech *Mathematical Theory of DL*,
+> Jentzen 외 *Mathematical Introduction to DL*, Fleuret *Little Book of DL*)과 대조해
+> 10곳을 고쳤습니다. 모두 아직 작성하지 않은 6장 이후라 기존 절에는 영향이 없습니다.
+> — 6.5 에 출력분포·NLL·Softmax·Logit(손실을 나열하는 대신 유도하도록),
+> 6.6 을 '가중치 초기화와 수치 안정성'으로 확장(Overflow/Underflow·Log-Sum-Exp),
+> 6.2 에 Linear Region·Depth Separation(UAT 만으로는 깊이의 필요를 말할 수 없다),
+> 6.10 에 Activation Memory·연산량과 메모리 대역폭, 20.1 에 그래프모델 3항목
+> (Backdoor Criterion 의 선수지식이 비어 있었습니다), 11.10 에 MCMC.
+> 8.6 은 제목이 'Attention 이전'인데 항목 5개가 전부 Attention 이어서 제목을 고쳤고,
+> 12.7·6.10 의 중복 항목과 6.1·10.1 의 용어 충돌을 정리했습니다.
+>
 > 개정 메모: 신규 챕터로 그래프 신경망, 오디오·음성 딥러닝, 메타러닝과 지속학습, 모델 해석가능성, 견고성·안전·정렬, 인과추론을 추가했습니다. 기존 챕터에는 전통 ML(통계적 학습이론), 생성 모델(VQ·Score 기반·Flow Matching·Consistency), Transformer(State Space Model·대안 아키텍처), LLM(RAG), Foundation Model(Mixture-of-Experts) 섹션을 보강했습니다.
 
 ---
@@ -634,7 +646,7 @@
 
 - 선형 분류기
 - 가중치
-- 편향
+- Bias (편향항)
 - 활성화
 - 결정경계
 - 선형 분리 가능성
@@ -650,6 +662,9 @@
 - 표현력
 - 비선형성
 - Universal Approximation
+- Linear Region
+- Depth Separation
+- Approximation-Complexity Tradeoff
 
 ## 6.3 활성화 함수
 
@@ -676,6 +691,10 @@
 
 ## 6.5 손실함수
 
+- Output Distribution
+- Negative Log-Likelihood
+- Softmax
+- Logit
 - Mean Squared Error
 - Mean Absolute Error
 - Binary Cross-Entropy
@@ -686,7 +705,7 @@
 - Triplet Loss
 - Metric Learning Loss
 
-## 6.6 가중치 초기화
+## 6.6 가중치 초기화와 수치 안정성
 
 - Zero Initialization
 - Random Initialization
@@ -694,6 +713,9 @@
 - He Initialization
 - Orthogonal Initialization
 - 초기화와 신호 전파
+- Overflow와 Underflow
+- Log-Sum-Exp Trick
+- 기울기 소실·폭주
 
 ## 6.7 정규화 계층
 
@@ -732,13 +754,14 @@
 
 - Mini-batch
 - Shuffle
+- Activation Memory
+- 연산량과 메모리 대역폭
 - Gradient Accumulation
 - Mixed Precision
 - Gradient Checkpointing
 - Learning Rate Warmup
 - Scheduler
 - Checkpointing
-- Early Stopping
 
 ## 6.11 딥러닝 일반화
 
@@ -897,7 +920,7 @@
 - Exposure Bias
 - Beam Search
 
-## 8.6 Attention 이전의 순차 모델
+## 8.6 Transformer 이전의 Attention
 
 - Bahdanau Attention
 - Luong Attention
@@ -1008,7 +1031,7 @@
 - Filter Bank
 - 위상 정보
 - 프레임과 홉
-- 정규화
+- Normalization
 
 ## 10.2 오디오 신경망 구조
 
@@ -1201,6 +1224,7 @@
 - Reverse-time SDE
 - Probability Flow ODE
 - Langevin Dynamics
+- Markov Chain Monte Carlo
 
 ## 11.11 Flow Matching과 빠른 샘플링
 
@@ -1298,7 +1322,6 @@
 - Quadratic Complexity
 - Memory Complexity
 - Sparse Attention
-- Linear Attention
 - Flash Attention
 - Sliding Window
 - Chunking
@@ -2151,6 +2174,9 @@
 - Structural Causal Model
 - Causal Graph
 - Directed Acyclic Graph
+- Conditional Independence
+- Factorization
+- d-separation
 - Confounder
 - Collider
 - Mediator

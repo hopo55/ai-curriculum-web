@@ -1,7 +1,7 @@
 /* 자동 생성 파일 — 손으로 편집하지 마세요.
    생성: node tools/build-curriculum.mjs
    출처: curriculum/ai_curriculum_v2.md
-   규모: 28장 / 347절 / 2884항목 */
+   규모: 28장 / 347절 / 2898항목 */
 window.CURRICULUM = [
  {
   "n": 1,
@@ -793,7 +793,7 @@ window.CURRICULUM = [
     "bullets": [
      "선형 분류기",
      "가중치",
-     "편향",
+     "Bias (편향항)",
      "활성화",
      "결정경계",
      "선형 분리 가능성",
@@ -811,7 +811,10 @@ window.CURRICULUM = [
      "너비",
      "표현력",
      "비선형성",
-     "Universal Approximation"
+     "Universal Approximation",
+     "Linear Region",
+     "Depth Separation",
+     "Approximation-Complexity Tradeoff"
     ]
    },
    {
@@ -847,6 +850,10 @@ window.CURRICULUM = [
     "id": "6.5",
     "title": "손실함수",
     "bullets": [
+     "Output Distribution",
+     "Negative Log-Likelihood",
+     "Softmax",
+     "Logit",
      "Mean Squared Error",
      "Mean Absolute Error",
      "Binary Cross-Entropy",
@@ -860,14 +867,17 @@ window.CURRICULUM = [
    },
    {
     "id": "6.6",
-    "title": "가중치 초기화",
+    "title": "가중치 초기화와 수치 안정성",
     "bullets": [
      "Zero Initialization",
      "Random Initialization",
      "Xavier Initialization",
      "He Initialization",
      "Orthogonal Initialization",
-     "초기화와 신호 전파"
+     "초기화와 신호 전파",
+     "Overflow와 Underflow",
+     "Log-Sum-Exp Trick",
+     "기울기 소실·폭주"
     ]
    },
    {
@@ -918,13 +928,14 @@ window.CURRICULUM = [
     "bullets": [
      "Mini-batch",
      "Shuffle",
+     "Activation Memory",
+     "연산량과 메모리 대역폭",
      "Gradient Accumulation",
      "Mixed Precision",
      "Gradient Checkpointing",
      "Learning Rate Warmup",
      "Scheduler",
-     "Checkpointing",
-     "Early Stopping"
+     "Checkpointing"
     ]
    },
    {
@@ -1132,7 +1143,7 @@ window.CURRICULUM = [
    },
    {
     "id": "8.6",
-    "title": "Attention 이전의 순차 모델",
+    "title": "Transformer 이전의 Attention",
     "bullets": [
      "Bahdanau Attention",
      "Luong Attention",
@@ -1274,7 +1285,7 @@ window.CURRICULUM = [
      "Filter Bank",
      "위상 정보",
      "프레임과 홉",
-     "정규화"
+     "Normalization"
     ]
    },
    {
@@ -1519,7 +1530,8 @@ window.CURRICULUM = [
      "Stochastic Differential Equation",
      "Reverse-time SDE",
      "Probability Flow ODE",
-     "Langevin Dynamics"
+     "Langevin Dynamics",
+     "Markov Chain Monte Carlo"
     ]
    },
    {
@@ -1646,7 +1658,6 @@ window.CURRICULUM = [
      "Quadratic Complexity",
      "Memory Complexity",
      "Sparse Attention",
-     "Linear Attention",
      "Flash Attention",
      "Sliding Window",
      "Chunking",
@@ -2740,6 +2751,9 @@ window.CURRICULUM = [
      "Structural Causal Model",
      "Causal Graph",
      "Directed Acyclic Graph",
+     "Conditional Independence",
+     "Factorization",
+     "d-separation",
      "Confounder",
      "Collider",
      "Mediator"
@@ -5138,4 +5152,4 @@ window.CURRICULUM = [
   ]
  }
 ];
-window.CURRICULUM_TOTALS = {"chapters":28,"sections":347,"bullets":2884};
+window.CURRICULUM_TOTALS = {"chapters":28,"sections":347,"bullets":2898};

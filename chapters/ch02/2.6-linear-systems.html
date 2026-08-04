@@ -230,7 +230,7 @@
       </div>
       <p>
         왜 굳이 분해하는가. <strong>같은 $\mathbf{A}$ 에 여러 $\mathbf{b}$ 를 풀어야 할 때</strong> 압도적으로 싸다.
-        분해는 한 번 $O(n^3/3)$ 이고, 이후 각 $\mathbf{b}$ 는 삼각행렬 두 번 풀기로 $O(n^2)$ 에 끝난다.
+        분해는 한 번 $O(\tfrac{2}{3}n^3)$ 이고(곱셈만 세면 $n^3/3$), 이후 각 $\mathbf{b}$ 는 삼각행렬 두 번 풀기로 $O(n^2)$ 에 끝난다.
       </p>
       <div class="eq">
         <div class="eq__body">$$ \mathbf{A}\mathbf{x}=\mathbf{b} \;\Longrightarrow\; \mathbf{L}\underbrace{\mathbf{U}\mathbf{x}}_{\mathbf{y}} = \mathbf{b} \;\Longrightarrow\; \underbrace{\mathbf{L}\mathbf{y}=\mathbf{b}}_{\text{전진대입}} \ \text{ 풀고 } \ \underbrace{\mathbf{U}\mathbf{x}=\mathbf{y}}_{\text{후진대입}} $$</div>

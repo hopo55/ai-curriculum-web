@@ -212,7 +212,7 @@
         같은 설정으로 시드만 바꿔 $m$ 번 돌린 결과에서 다음을 구한다.
       </p>
       <div class="eq eq--key">
-        <div class="eq__body">$$ \bar{a} = \frac{1}{m}\sum_{i=1}^{m} a_i, \qquad s^{2} = \frac{1}{m-1}\sum_{i=1}^{m}\bigl(a_i - \bar{a}\bigr)^{2}, \qquad \mathrm{SE} = \frac{s}{\sqrt{m}} $$</div>
+        <div class="eq__body">$$ \bar{a} = \frac{1}{m}\sum_{i=1}^{m} a_i, \qquad s^{2} = \frac{1}{m-1}\sum_{i=1}^{m}\bigl(a_i - \bar{a}\bigr)^{2}, \qquad \mathrm{SE} = \frac{s}{\sqrt{m}}, \qquad \mathrm{SE}_{\Delta} = s\sqrt{\frac{2}{m}} $$</div>
         <span class="eq__tag num">(2)</span>
       </div>
 
@@ -253,19 +253,21 @@
 
       <div class="derive">
         <div class="derive__row">
-          <div class="derive__math">$$ d \;>\; t_{m-1}\cdot \mathrm{SE} \;=\; t_{m-1}\cdot\frac{s}{\sqrt{m}} $$</div>
-          <div class="derive__why">차이가 오차 막대를 넘어야 한다는 조건</div>
+          <div class="derive__math">$$ d \;>\; t\cdot \mathrm{SE}_{\Delta} \;=\; t\cdot s\sqrt{\frac{2}{m}} $$</div>
+          <div class="derive__why">차이가 오차 막대를 넘어야 한다는 조건.
+            <strong>$\Delta$ 는 두 구성의 <em>차이</em></strong>이므로 분산이 두 번 더해진다 —
+            $\operatorname{Var}(\Delta)=\frac{s^2}{m}+\frac{s^2}{m}=\frac{2s^2}{m}$</div>
         </div>
         <div class="derive__row">
-          <div class="derive__math">$$ \sqrt{m} \;>\; \frac{t_{m-1}\, s}{d} $$</div>
+          <div class="derive__math">$$ \sqrt{m} \;>\; \frac{\sqrt{2}\,t\, s}{d} $$</div>
           <div class="derive__why">양변에 $\sqrt{m}/d$ 를 곱했다</div>
         </div>
         <div class="derive__row">
-          <div class="derive__math">$$ m \;>\; \left(\frac{t_{m-1}\, s}{d}\right)^{2} $$</div>
+          <div class="derive__math">$$ m \;>\; 2\left(\frac{t\, s}{d}\right)^{2} $$</div>
           <div class="derive__why">제곱. $t$ 가 $m$ 에 의존하므로 엄밀히는 반복 계산이 필요하지만, 대략 $t \approx 2$ 로 두면 감을 잡을 수 있다</div>
         </div>
         <div class="derive__row">
-          <div class="derive__math">$$ m \;\gtrsim\; \left(\frac{2s}{d}\right)^{2} $$</div>
+          <div class="derive__math">$$ m \;\gtrsim\; 2\left(\frac{2s}{d}\right)^{2} $$</div>
           <div class="derive__why"><strong>차이가 절반이 되면 필요한 실행 횟수는 4배</strong>가 된다 — 제곱이기 때문</div>
         </div>
       </div>

@@ -198,7 +198,7 @@
         <p>
           랭크 $k$ 이하인 모든 matrix $\mathbf{B}$ 중에서 $\mathbf{A}_k$ 가 $\mathbf{A}$ 에 가장 가깝다
           <a class="cite" href="#ref-deisenroth2020-mml" data-ref="deisenroth2020-mml">1</a>.
-          $$ \mathbf{A}_k = \arg\min_{\operatorname{rank}(\mathbf{B})=k}\|\mathbf{A}-\mathbf{B}\|_2, \qquad \|\mathbf{A}-\mathbf{A}_k\|_2 = \sigma_{k+1} $$
+          $$ \mathbf{A}_k = \arg\min_{\operatorname{rank}(\mathbf{B})\leq k}\|\mathbf{A}-\mathbf{B}\|_2, \qquad \|\mathbf{A}-\mathbf{A}_k\|_2 = \sigma_{k+1} $$
           프로베니우스 norm으로 재도 같은 $\mathbf{A}_k$ 가 최적이며, 이때 오차는
           $\|\mathbf{A}-\mathbf{A}_k\|_F = \sqrt{\sum_{i>k}\sigma_i^2}$ 다.
         </p>

@@ -233,10 +233,11 @@
         </p>
       </div>
       <p>
-        benchmark에도 함정이 있다. 같은 테스트셋을 커뮤니티 전체가 수년간 반복해 쓰면
-        <em>집단적 overfitting</em>이 일어난다. Recht 등은 CIFAR-10과 ImageNet의 테스트셋을
-        원래 절차대로 새로 수집해 재평가했더니 정확도가 각각 <strong>3~15%p, 11~14%p 떨어졌다</strong>고
-        보고했다<a class="cite" href="#ref-recht2019-do-imagenet-classifiers" data-ref="recht2019-do-imagenet-classifiers">1</a>.
+        benchmark 점수는 <strong>'이 테스트셋에서의 값'이지 '이 분포에서의 값'이 아니다.</strong>
+        Recht 등은 CIFAR-10과 ImageNet의 테스트셋을 원래 절차대로 새로 수집해 재평가했더니
+        정확도가 각각 <strong>3~15%p, 11~14%p 떨어졌다</strong>고 보고했다.
+        주목할 점은 <em>순위는 대체로 보존됐다</em>는 것이고, 저자들의 결론도
+        '테스트셋을 반복해 써서 생긴 적응적 overfitting이 아니라 새로 모은 표본이 조금 더 어려웠다'였다<a class="cite" href="#ref-recht2019-do-imagenet-classifiers" data-ref="recht2019-do-imagenet-classifiers">1</a>.
       </p>
 
       <span class="anchor" id="c-repro"></span>
@@ -400,7 +401,10 @@
         <p>
           그리고 이것은 data가 부족해서 생긴 일이 아니다. 점 3개에 미지수 3개면
           <em>언제나</em> 정확히 지나는 2차 곡선이 존재한다.
-          model의 degrees of freedom(자유도)이 data 개수에 근접하면 overfitting은 <strong>수학적으로 필연</strong>이다.
+          <strong>이 예제처럼 표현력을 늘리는 방법이 다항식 차수뿐이라면</strong> 자유도가 data 개수에
+          근접하는 순간 overfitting을 피할 수 없다. 다만 parameter가 표본 수를 크게 넘어서는
+          대형 신경망에서는 이 고전적 그림이 깨진다(<span class="tex">6.11</span> 이중 하강) —
+          그때는 model이 가진 <em>귀납적 편향(inductive bias)</em>이 최적화를 주도한다는 설명이 유력하다.
         </p>
       </div>
     </section>
@@ -481,8 +485,9 @@
         <p>"benchmark 1위면 실제로도 가장 좋다."</p>
         <p>
           <strong>실제로는</strong> 두 가지를 조심해야 한다.
-          첫째, 커뮤니티가 같은 테스트셋을 수년간 반복해 쓰면 <em>집단적 overfitting</em>이 생긴다 —
-          Recht 등의 재수집 실험에서 정확도가 크게 떨어진 것이 그 증거다.
+          첫째, 테스트셋이 모집단을 대표하지 못할 수 있다 — Recht 등이 같은 절차로 테스트셋을
+          새로 모으자 모든 model의 정확도가 일제히 떨어졌다(순위는 대체로 유지).
+          benchmark 점수는 그 테스트셋에 대한 값이지 분포에 대한 값이 아니다.
           둘째, 표본이 적으면 순위 차이가 <strong>standard error 안</strong>에 있을 수 있다.
           식 (4)로 확인하지 않은 0.3%p 차이는 의미가 없을 가능성이 높다.
         </p>

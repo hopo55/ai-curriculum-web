@@ -187,7 +187,10 @@
       <p>
         효과는 <strong>과속에 대한 제동</strong>이다. 최솟값을 지나치려 할 때 앞을 미리 보면 이미 반대편 오르막이므로
         gradient 가 브레이크로 작용한다. 일반 momentum 은 지나친 뒤에야 알아차린다.
-        볼록 문제에서 수렴률이 $O(1/k)$ 에서 $O(1/k^2)$ 로 개선되는 것이 이론적 근거다.
+        <strong>전체 batch(결정론적) 볼록 문제</strong>에서 excess error 의 수렴률이
+        $O(1/k)$ 에서 $O(1/k^2)$ 로 개선되는 것이 이론적 근거다(Nesterov 1983).
+        다만 <strong>확률적(mini-batch) 경우에는 이 개선이 성립하지 않는다</strong> —
+        딥러닝에서 NAG 가 SGD 대비 극적인 이득을 주지 않는 이유가 이것이다.
       </p>
 
       <span class="anchor" id="c-adagrad"></span>
@@ -613,8 +616,8 @@
           <div class="derive__why"><strong>$g=500$ 이든 $g=0.001$ 이든 첫 스텝은 정확히 $\eta$</strong></div>
         </div>
         <div class="derive__row">
-          <div class="derive__math">$$ \text{보정 없이: } \frac{m_1}{\sqrt{v_1}} = \frac{50}{15.81} = 3.16 = \frac{\sqrt{1-\beta_2}}{1-\beta_1}\ \text{배} $$</div>
-          <div class="derive__why">$\sqrt{0.001}/0.1 = 0.316$ 의 역수. <strong>보정 없으면 첫 스텝이 3.16배 과하다</strong></div>
+          <div class="derive__math">$$ \text{보정 없이: } \frac{m_1}{\sqrt{v_1}} = \frac{50}{15.81} = 3.16 = \frac{1-\beta_1}{\sqrt{1-\beta_2}}\ \text{배} $$</div>
+          <div class="derive__why">$0.1/\sqrt{0.001} = 3.16$. <strong>보정 없으면 첫 스텝이 3.16배 과하다</strong></div>
         </div>
       </div>
 
@@ -823,7 +826,10 @@ for sv in [10.0, 0.1]:                            # √v̂ 가 100배 차이 나
           <div class="q__explain"><strong>풀이 ·</strong>
             $\frac{1}{1-\beta} = \frac{1}{0.01} = 100$ (유도 1).
             그래서 <strong>$\beta$ 를 0.9 에서 0.99 로 올리면 $\eta$ 를 대략 10배 줄여야</strong> 비슷한 보폭이 된다.
-            이 조정을 빼먹고 $\beta$ 만 올리면 대개 발산한다.
+            다만 <strong>$\beta$ 를 올린다고 곧바로 발산하는 것은 아니다</strong> —
+            2차 함수에서 선형 안정 조건은 $0<\eta\lambda<2(1+\beta)$ 로 오히려 <em>넓어진다</em>.
+            실제로 나빠지는 것은 정상상태 보폭 $\eta/(1-\beta)$ 가 커져 최솟값을 지나치고
+            진동이 길어지는 쪽이다.
           </div>
         </div>
 

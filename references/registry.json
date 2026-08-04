@@ -5002,6 +5002,72 @@
       "cited_by": [
         "5.12"
       ]
+    },
+    "petersen2025-math-theory-dl": {
+      "type": "book",
+      "title": "Mathematical Theory of Deep Learning",
+      "authors": [
+        "Philipp Petersen",
+        "Jakob Zech"
+      ],
+      "year": 2025,
+      "venue": "arXiv:2407.18384",
+      "url": "https://arxiv.org/abs/2407.18384",
+      "file_url": "https://arxiv.org/pdf/2407.18384",
+      "arxiv": "2407.18384",
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개.",
+      "note": "근사이론(universal approximation, ReLU 표현력, 깊이 분리), 일반화, 최적화의 수학적 취급.",
+      "topics": [
+        "3",
+        "5",
+        "6"
+      ],
+      "checked": "2026-08-04"
+    },
+    "jentzen2025-math-intro-dl": {
+      "type": "book",
+      "title": "Mathematical Introduction to Deep Learning: Methods, Implementations, and Theory",
+      "authors": [
+        "Arnulf Jentzen",
+        "Benno Kuckuck",
+        "Philippe von Wurstemberger"
+      ],
+      "year": 2025,
+      "venue": "arXiv:2310.20360",
+      "url": "https://arxiv.org/abs/2310.20360",
+      "file_url": "https://arxiv.org/pdf/2310.20360",
+      "arxiv": "2310.20360",
+      "access": "open",
+      "archivable": true,
+      "license": "arXiv 공개.",
+      "note": "GD/SGD 수렴 이론, 역전파, 일반화 오차 추정을 정리·증명 형태로.",
+      "topics": [
+        "3",
+        "5",
+        "6"
+      ],
+      "checked": "2026-08-04"
+    },
+    "fleuret2024-lbdl": {
+      "type": "book",
+      "title": "The Little Book of Deep Learning",
+      "authors": [
+        "François Fleuret"
+      ],
+      "year": 2024,
+      "publisher": "University of Geneva",
+      "url": "https://fleuret.org/francois/lbdl.html",
+      "access": "free-online",
+      "archivable": false,
+      "license": "저자 무료 배포(개인 열람). 재배포 불가 — 링크로만 인용한다.",
+      "note": "계산 효율·메모리 대역폭 관점을 Foundations 에 배치한 점이 특징.",
+      "topics": [
+        "1",
+        "6"
+      ],
+      "checked": "2026-08-04"
     }
   }
 }

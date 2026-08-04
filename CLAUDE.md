@@ -123,6 +123,8 @@ SPEC.md                       작성 규약 — 작업 전 필독
 SOURCES.md                    출처 수집·인용·보관 지침 — 작업 전 필독
 PROMPTS.md                    사용자가 복사해 쓰는 요청 문구
 PROGRESS.md                   절별 진행 현황
+BACKLOG.md                    교재 대조로 나온 미적용 보강 항목 (절을 손볼 때 함께 처리)
+sources/                      ⚠ 참고 교재 PDF — gitignore 대상 (저작권)
 references/registry.json      출처 레지스트리 (인용 키의 단일 원천)
 references/library/           ⚠ 내려받은 원문 — gitignore 대상
 curriculum/ai_curriculum_v2.md   목차 원본 (유일한 진실 공급원)

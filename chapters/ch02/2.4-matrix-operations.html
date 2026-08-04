@@ -253,6 +253,39 @@
 
       <span class="anchor" id="c-diagonal"></span>
       <h3>Diagonal Matrix 대각행렬</h3>
+
+      <div class="note note--key">
+        <span class="note__label">먼저 — 대각합(trace)</span>
+        <p>
+          대각선 원소를 그냥 더한 값이다. 뒤에서 계속 쓰이므로 여기서 정의해 둔다.
+        </p>
+        <div class="eq">
+          <div class="eq__body">$$ \operatorname{tr}(\mathbf{A}) = \sum_{i} A_{ii} $$</div>
+        </div>
+        <p>
+          쓸모는 <strong>순환 불변성</strong>에 있다. 곱의 순서를 돌려도 값이 같다.
+        </p>
+        <div class="eq">
+          <div class="eq__body">$$ \operatorname{tr}(\mathbf{AB}) = \sum_i\sum_k A_{ik}B_{ki} = \sum_k\sum_i B_{ki}A_{ik} = \operatorname{tr}(\mathbf{BA}) $$</div>
+        </div>
+        <p>
+          유도는 합의 순서를 바꾼 것뿐이다. 놀라운 점은 <strong>$\mathbf{AB}$ 와 $\mathbf{BA}$ 의 크기가 달라도</strong>
+          ($m\times m$ 과 $n\times n$) 대각합은 같다는 것이다. 세 개 이상도 순환만 지키면 된다 —
+          $\operatorname{tr}(\mathbf{ABC})=\operatorname{tr}(\mathbf{CAB})=\operatorname{tr}(\mathbf{BCA})$.
+        </p>
+        <p>
+          자주 쓰는 따름정리 셋. (1) 스칼라는 자기 자신이 대각합이므로 $\mathbf{x}^\top\mathbf{y}=\operatorname{tr}(\mathbf{x}^\top\mathbf{y})=\operatorname{tr}(\mathbf{y}\mathbf{x}^\top)$ —
+          <strong>내적과 외적의 대각합이 같다.</strong> 단위벡터면 $\operatorname{tr}(\mathbf{v}\mathbf{v}^\top)=\|\mathbf{v}\|^2=1$.
+          (2) $\|\mathbf{A}\|_F^2=\operatorname{tr}(\mathbf{A}^\top\mathbf{A})$ — Frobenius 노름을 대각합으로 쓸 수 있다.
+          (3) $\operatorname{tr}(\mathbf{A})=\sum_i\lambda_i$ — <a href="2.7-eigenvalues.html">2.7</a>에서 보인다.
+        </p>
+        <p>
+          <small>
+            (1)은 <a href="2.8-svd.html">2.8</a>의 저랭크 근사 유도에서, (2)는 같은 절의 오차 계산에서,
+            (3)은 <a href="2.9-dimensionality-reduction.html">2.9</a>의 "총 분산 $=\operatorname{tr}(\mathbf{C})$" 에서 그대로 쓰인다.
+          </small>
+        </p>
+      </div>
       <p>
         <span class="hl">대각선 밖이 전부 0인 matrix $\mathbf{D} = \operatorname{diag}(d_1,\dots,d_n)$ 이다.</span>
         <strong>축마다 따로 스케일을 주는 변환</strong>이라 계산이 매우 싸다.

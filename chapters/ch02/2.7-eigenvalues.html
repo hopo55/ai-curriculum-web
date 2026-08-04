@@ -268,6 +268,50 @@
         </div>
       </figure>
 
+      <div class="note note--key">
+        <span class="note__label">따름정리 — 양정치성과 레일리 몫</span>
+        <p>
+          spectral decomposition 이 손에 들어오면 <strong>이차형식 $\mathbf{x}^\top\mathbf{A}\mathbf{x}$ 의 정체가 바로 드러난다.</strong>
+          $\mathbf{x}$ 를 orthonormal eigenvector 로 펴서 $\mathbf{x}=\sum_i c_i\mathbf{q}_i$ 라 두면
+        </p>
+        <div class="eq">
+          <div class="eq__body">$$ \mathbf{x}^\top\mathbf{A}\mathbf{x} = \Bigl(\sum_i c_i\mathbf{q}_i\Bigr)^{\!\top}\Bigl(\sum_j \lambda_j c_j\mathbf{q}_j\Bigr) = \sum_i \lambda_i c_i^2 $$</div>
+        </div>
+        <p>
+          교차항은 $\mathbf{q}_i^\top\mathbf{q}_j=0$ 이라 전부 사라진다. 즉 이차형식은
+          <strong>eigenvalue 를 가중치로 한 제곱합</strong>일 뿐이다. 여기서 두 가지가 곧바로 나온다.
+        </p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>이름</th><th>조건</th><th>eigenvalue</th></tr></thead>
+            <tbody>
+              <tr><td>positive definite (양정치)</td><td>$\mathbf{x}\neq\mathbf{0}$ 인 모든 $\mathbf{x}$ 에서 $\mathbf{x}^\top\mathbf{A}\mathbf{x}>0$</td><td>$\lambda_i>0\ \forall i$</td></tr>
+              <tr><td>positive semi-definite (양반정치)</td><td>모든 $\mathbf{x}$ 에서 $\mathbf{x}^\top\mathbf{A}\mathbf{x}\geq 0$</td><td>$\lambda_i\geq 0\ \forall i$</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          그리고 $\sum_i c_i^2=\|\mathbf{x}\|^2$ 이므로 제곱합을 노름으로 나누면 가중평균이 되어,
+          <strong>레일리 몫(Rayleigh quotient)</strong>이 eigenvalue 사이에 갇힌다.
+        </p>
+        <div class="eq">
+          <div class="eq__body">$$ \lambda_{\min} \;\leq\; \frac{\mathbf{x}^\top\mathbf{A}\mathbf{x}}{\mathbf{x}^\top\mathbf{x}} \;\leq\; \lambda_{\max} $$</div>
+          <span class="eq__tag num">(R)</span>
+        </div>
+        <p>
+          양 끝은 각각 $\mathbf{q}_{\min}$, $\mathbf{q}_{\max}$ 에서 <em>정확히</em> 달성된다
+          (그 방향에서는 $c$ 하나만 1이고 나머지가 0이므로).
+        </p>
+        <p>
+          <small>
+            이 한 줄이 뒤에서 두 번 재사용된다 —
+            <a href="2.8-svd.html">2.8</a> 의 $\sigma_1=\max_{\|\mathbf{x}\|=1}\|\mathbf{A}\mathbf{x}\|$ 도,
+            <a href="2.9-dimensionality-reduction.html">2.9</a> 의 "분산을 최대로 하는 방향이 $\lambda_1$ 의 eigenvector" 도
+            식 (R) 의 특수한 경우다. 3장의 Hessian 과 볼록성 판정도 같은 도구를 쓴다.
+          </small>
+        </p>
+      </div>
+
       <span class="anchor" id="c-iterate"></span>
       <h3>Iterated Linear Map 반복 선형변환</h3>
       <p>

@@ -277,6 +277,50 @@
         </div>
       </figure>
 
+      <div class="note note--key">
+        <span class="note__label">조건부 독립 — 뒤에서 계속 쓰인다</span>
+        <p>
+          위의 독립은 <em>무조건</em> 독립이다. 실무에서 훨씬 자주 쓰이는 것은
+          <strong>어떤 것을 알고 난 뒤의 독립</strong>이다.
+        </p>
+        <div class="eq">
+          <div class="eq__body">$$ A \perp B \mid C \iff P(A\cap B\mid C) = P(A\mid C)\,P(B\mid C) $$</div>
+          <span class="eq__tag num">(CI)</span>
+        </div>
+        <p>
+          결정적인 점은 <strong>두 독립이 서로를 함의하지 않는다</strong>는 것이다. 양방향 반례가 다 있다.
+        </p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th></th><th>예</th><th>왜</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><b>독립인데<br>조건을 걸면 종속</b></td>
+                <td>골절과 폐암은 일반 인구에서 거의 무관하다.<br>그런데 <em>"입원 중"</em> 이라는 조건을 걸면 종속이 된다.</td>
+                <td>입원 이유가 둘 중 하나라면, 골절이 아님을 아는 순간 폐암 쪽 확률이 올라간다.
+                    두 원인이 하나의 결과를 공유할 때 생기며, 이를 <strong>collider</strong> 라 한다.</td>
+              </tr>
+              <tr>
+                <td><b>종속인데<br>조건을 걸면 독립</b></td>
+                <td>초등학생의 신발 크기와 독해력은 강하게 상관된다.<br>그런데 <em>나이</em>를 고정하면 상관이 사라진다.</td>
+                <td>둘 다 나이라는 <strong>공통 원인</strong>이 만든 것이다.
+                    나이를 알고 나면 서로 더 알려줄 것이 없다.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <small>
+            이 정의가 뒤에서 계속 쓰인다 —
+            <a href="4.10-ai-and-probability.html">4.10</a> 의 Markov 성질("과거는 현재 상태에 전부 요약되어 있다")은
+            $x_{t+1} \perp x_{&lt;t} \mid x_t$ 를 줄여 쓴 것이고,
+            <a href="../ch05/5.9-probabilistic-generative-models.html">5.9</a> 의 나이브 베이즈가 가정하는 것도
+            무조건 독립이 아니라 <strong>class 를 알 때의</strong> 조건부 독립이다.
+            20장 인과추론의 backdoor criterion 도 이 언어로 쓰인다.
+          </small>
+        </p>
+      </div>
+
       <span class="anchor" id="c-ltp"></span>
       <h3>Law of Total Probability 전확률법칙</h3>
       <p>

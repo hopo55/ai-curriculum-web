@@ -185,12 +185,33 @@
         오른쪽 식이 보여 주듯 <strong>negative log-likelihood(NLL)를 최소화하는 것과 완전히 같다</strong>.</span>
         딥러닝의 loss function 은 대부분 이 NLL 이다 — 어떤 분포를 가정했느냐가 어떤 loss 인지를 정한다.
       </p>
+      <div class="note note--key">
+        <span class="note__label">loss 를 외우지 않고 만드는 3단계</span>
+        <p>
+          아래 표는 결과이고, 만드는 절차는 이렇다.
+        </p>
+        <ol class="goals">
+          <li><strong>출력 영역에 맞는 분포를 고른다.</strong> 실수면 Gaussian, 0/1 이면 Bernoulli,
+              $K$ 개 중 하나면 Categorical, 음이 아닌 정수면 Poisson.</li>
+          <li><strong>신경망이 그 분포의 parameter 를 내게 하되, 유효 범위로 옮긴다.</strong>
+              신경망 출력 $f_\theta(x)$ 는 제약 없는 실수다. 그런데 Bernoulli 의 $p$ 는 $[0,1]$,
+              Poisson 의 $\lambda$ 는 $(0,\infty)$, Categorical 의 확률은 합이 1이어야 한다.
+              그래서 각각 $\sigma(\cdot)$, $\exp(\cdot)$, $\mathrm{softmax}(\cdot)$ 를 씌운다.
+              이 함수를 <strong>링크(link)</strong> 라 부른다.</li>
+          <li><strong>음의 로그가능도를 취한다.</strong> 그것이 loss 다.</li>
+        </ol>
+        <p>
+          Gaussian 행에 링크가 없는 이유도 이것으로 설명된다 — 평균 $\mu$ 는 제약 없는 실수라
+          옮길 필요가 없다. 분산까지 예측하게 하려면 $\sigma^2$ 는 양수여야 하므로
+          $\exp$ 나 softplus 를 씌운다.
+        </p>
+      </div>
       <div class="tablewrap">
         <table>
           <thead><tr><th>출력에 가정한 분포</th><th>NLL 을 정리하면</th><th>흔히 부르는 이름</th></tr></thead>
           <tbody>
             <tr><td>$\mathcal{N}(f_\theta(x),\ \sigma^2)$</td><td>$\frac{1}{2\sigma^2}\sum(y_i-f_\theta(x_i))^2+\text{const}$</td><td><strong>MSE</strong> · 최소제곱</td></tr>
-            <tr><td>$\mathrm{Bernoulli}(f_\theta(x))$</td><td>$-\sum[y\log f+(1-y)\log(1-f)]$</td><td><strong>binary cross-entropy</strong></td></tr>
+            <tr><td>$\mathrm{Bernoulli}(\sigma(f_\theta(x)))$</td><td>$-\sum[y\log f+(1-y)\log(1-f)]$</td><td><strong>binary cross-entropy</strong></td></tr>
             <tr><td>$\mathrm{Categorical}(\mathrm{softmax}(f_\theta(x)))$</td><td>$-\sum\log f_{\theta,y_i}(x_i)$</td><td><strong>cross-entropy</strong></td></tr>
             <tr><td>Laplace$(f_\theta(x),b)$</td><td>$\frac1b\sum|y_i-f_\theta(x_i)|$</td><td><strong>MAE</strong> · L1 loss</td></tr>
             <tr><td>$\mathrm{Poisson}(e^{f_\theta(x)})$</td><td>$\sum(e^{f}-y f)$</td><td>Poisson loss</td></tr>

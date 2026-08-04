@@ -323,11 +323,16 @@
       <span class="anchor" id="c-nfl"></span>
       <h3>No Free Lunch 공짜 점심은 없다</h3>
       <div class="eq eq--key">
-        <div class="eq__body">$$ \frac{1}{|\mathcal{F}|}\sum_{f\in\mathcal{F}} R_f(A)\ \ \text{은 알고리즘 } A \text{ 와 무관하게 같다} $$</div>
+        <div class="eq__body">$$ R^{\text{OTS}}_f(A)=\frac{1}{|\mathcal{X}\setminus S_x|}\sum_{x\notin S_x}\mathbb{1}\bigl[A(S)(x)\neq f(x)\bigr],\qquad \frac{1}{|\mathcal{F}|}\sum_{f\in\mathcal{F}}\mathbb{E}_S\bigl[R^{\text{OTS}}_f(A)\bigr]=\tfrac12 \ \ \forall A $$</div>
         <span class="eq__tag num">(8)</span>
       </div>
       <p>
-        <span class="hl">가능한 모든 목표 함수에 걸쳐 평균 내면 <strong>어떤 학습 알고리즘도 무작위 추측보다 낫지 않다</strong>.
+        <span class="hl">가능한 모든 목표 함수에 걸쳐 평균 내면, <strong>훈련에서 본 적 없는 점에 대해서는</strong>
+        어떤 학습 알고리즘도 무작위 추측보다 낫지 않다</span>.
+        <strong>"훈련집합 밖(off-training-set)"</strong> 이라는 단서가 빠지면 이 진술은 <em>거짓</em>이 된다 —
+        훈련 label 을 그대로 외워 답하는 알고리즘이 뒤집어 답하는 알고리즘보다 평균적으로 반드시 낫기 때문이다.
+        NFL 이 가장 흔히 잘못 인용되는 지점이 여기다.
+        <span class="hl">
         어떤 알고리즘이 어떤 문제에서 잘한다면, 그만큼 다른 문제에서 못한다는 뜻이다<a class="cite" href="#ref-wolpert1996-no-free-lunch" data-ref="wolpert1996-no-free-lunch">2</a>.</span>
       </p>
       <p>
@@ -395,6 +400,9 @@
             <tr><td>$\varepsilon$</td><td>epsilon 엡실론</td><td>허용 오차</td><td>scalar</td><td>$(0,1)$</td></tr>
             <tr><td>$\delta$</td><td>delta 델타</td><td>실패 확률</td><td>scalar</td><td>$(0,1)$</td></tr>
             <tr><td>$\mathbb{1}[\cdot]$</td><td>indicator 지시함수</td><td>참이면 1, 거짓이면 0</td><td>함수</td><td>$\{0,1\}$</td></tr>
+            <tr><td>$\mathcal{F}$</td><td>스크립트 에프</td><td>가능한 모든 목표 함수의 집합 (NFL 이 평균 내는 대상)</td><td>집합</td><td>—</td></tr>
+            <tr><td>$S_x$</td><td>에스 엑스</td><td>훈련집합에 실제로 등장한 입력들</td><td>집합</td><td>$S_x\subset\mathcal{X}$</td></tr>
+            <tr><td>$R^{\text{OTS}}_f(A)$</td><td>알 오티에스</td><td>훈련집합 <em>밖</em>에서만 잰 오차 (off-training-set)</td><td>스칼라</td><td>$[0,1]$</td></tr>
             <tr><td>i.i.d.</td><td>아이아이디</td><td>독립 동일 분포</td><td>가정</td><td>—</td></tr>
             <tr><td>$\arg\min$</td><td>argmin 아그민</td><td>최솟값을 주는 <strong>위치</strong></td><td>연산자</td><td>—</td></tr>
           </tbody>

@@ -148,8 +148,10 @@
         $\lambda$ 로 미분하면 제약식이 그대로 되살아난다는 것이 이 형식의 요령이다.
         부등식 제약 $g(\mathbf{x})\leq0$ 으로 확장하면 <strong>KKT 조건</strong>이 되며,
         핵심은 <strong>상보 여유</strong> $\lambda\,g(\mathbf{x}^\star)=0$ 이다 —
-        <span class="hl">제약이 실제로 걸려 있으면($g=0$) $\lambda>0$ 이고,
-        여유가 있으면($g<0$) $\lambda=0$ 으로 제약이 없는 것과 같다.</span>
+        <span class="hl">여유가 있으면($g<0$) $\lambda=0$ 으로 제약이 없는 것과 같고,
+        $\lambda>0$ 이면 반드시 제약이 걸려 있다($g=0$).</span>
+        <small>역은 성립하지 않는다 — 제약이 걸려 있어도 $\lambda=0$ 일 수 있다.
+        $\min w^2$ 에 $w\leq0$ 을 걸면 $w^\star=0$ 에서 제약이 걸리지만 이미 정상점이라 $\lambda=0$ 이다.</small>
       </p>
       <div class="note note--tip">
         <span class="note__label">쉬운 말로</span>
@@ -210,7 +212,7 @@
             <tr><td>제약 영역의 모양</td><td>원 (매끄러움)</td><td>마름모 (<strong>축 위에 모서리</strong>)</td></tr>
             <tr><td>접점</td><td>어디든 가능</td><td>모서리에서 자주 — 그 좌표가 0</td></tr>
             <tr><td>벌점의 미분</td><td>$\lambda w$ — <strong>$w\to0$ 이면 힘도 0</strong></td><td>$\lambda\,\mathrm{sign}(w)$ — <strong>0 근처에서도 힘이 그대로</strong></td></tr>
-            <tr><td>해의 형태</td><td>비례 축소 $\dfrac{b}{a+\lambda/2}$</td><td>soft threshold $\mathrm{sign}(b)\max(|b|-\tfrac{\lambda}{2},0)/a$</td></tr>
+            <tr><td>해의 형태</td><td>비례 축소 $\dfrac{b}{a+\lambda}$</td><td>soft threshold $\mathrm{sign}(b)\max(|b|-\tfrac{\lambda}{2},0)/a$</td></tr>
             <tr><td>결과</td><td>작지만 0 아님</td><td><strong>임계값 아래는 정확히 0</strong></td></tr>
           </tbody>
         </table>
@@ -461,8 +463,10 @@
           <div class="derive__why"><strong>soft thresholding</strong> — 임계값만큼 빼고, 넘지 못하면 0</div>
         </div>
         <div class="derive__row">
-          <div class="derive__math">$$ \text{L2: } \mathcal{J}'=2aw-2b+\lambda w=0 \;\Rightarrow\; w^\star=\frac{b}{a+\lambda/2} \neq 0 \ (b\neq0) $$</div>
-          <div class="derive__why"><strong>아무리 $\lambda$ 를 키워도 0 이 되지 않는다</strong> — 비교의 핵심</div>
+          <div class="derive__math">$$ \text{L2: } \mathcal{J}'=2aw-2b+2\lambda w=0 \;\Rightarrow\; w^\star=\frac{b}{a+\lambda} \neq 0 \ (b\neq0) $$</div>
+          <div class="derive__why"><strong>아무리 $\lambda$ 를 키워도 0 이 되지 않는다</strong> — 비교의 핵심.
+            <small>이 비교에서는 두 벌점의 계수를 맞추려고 $\lambda\|\mathbf{w}\|_2^2$ 와 $\lambda\|\mathbf{w}\|_1$ 을 쓴다.
+            식 (4)처럼 $\tfrac{\lambda}{2}\|\mathbf{w}\|_2^2$ 규약을 쓰면 $\lambda$ 자리에 $\lambda/2$ 를 넣으면 된다.</small></div>
         </div>
       </div>
 

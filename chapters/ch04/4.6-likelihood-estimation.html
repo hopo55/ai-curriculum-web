@@ -662,8 +662,11 @@
           <div class="derive__why">test 에서 6 이 하나만 나와도 <strong>perplexity 가 무한대</strong>가 된다</div>
         </div>
         <div class="derive__row">
-          <div class="derive__math">$$ \text{Dirichlet}(1,\dots,1)\ \text{prior}:\ \hat\pi_k^{\text{MAP-mean}}=\frac{c_k+1}{n+K}=\frac{0+1}{12+6}=\frac{1}{18}=0.0556 $$</div>
-          <div class="derive__why">add-one(Laplace) smoothing — <strong>가상 관측 1회씩을 더한 것</strong></div>
+          <div class="derive__math">$$ \text{Dirichlet}(1,\dots,1)\ \text{prior}:\ \hat\pi_k^{\text{post-mean}}=\frac{c_k+1}{n+K}=\frac{0+1}{12+6}=\frac{1}{18}=0.0556 $$</div>
+          <div class="derive__why">add-one(Laplace) smoothing — <strong>가상 관측 1회씩을 더한 것</strong>.
+            <small>이 값은 Dirichlet$(c+1)$ 사후분포의 <strong>평균</strong>이다. MAP(최빈값)는
+            $\frac{c_k}{n}$ 으로 MLE 와 같아져 0 이 그대로 남는다 — smoothing 이 필요한 이유가 이것이고,
+            <strong>MAP 와 사후평균이 다른</strong> 대표적인 예다.</small></div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ \hat\pi_1=\frac{3+1}{18}=\frac{4}{18}=0.2\overline{2} \quad(\text{MLE 는 } 3/12=0.25) $$</div>

@@ -240,10 +240,12 @@
         $\beta_2=0.999$ 쪽이 특히 심해서 — 보정 없이는 초반 수백 스텝이 거의 낭비된다.
       </p>
       <div class="note note--key">
-        <span class="note__label">Adam 의 첫 스텝은 정확히 $\eta$ 다</span>
+        <span class="note__label">Adam 의 첫 스텝은 거의 $\eta$ 다</span>
         <p>
           $k=1$ 에서 $\hat{\mathbf{m}}_1=\mathbf{g}_1$, $\hat{\mathbf{v}}_1=\mathbf{g}_1^{\odot2}$ 이므로
-          갱신량이 $\eta\,\mathbf{g}_1/|\mathbf{g}_1| = \eta\cdot\mathrm{sign}(\mathbf{g}_1)$ 다.
+          갱신량이 $\eta\,\mathbf{g}_1/(|\mathbf{g}_1|+\epsilon)$ 이고, $|\mathbf{g}_1|\gg\epsilon$ 이면
+           $\eta\cdot\mathrm{sign}(\mathbf{g}_1)$ 로 볼 수 있다.
+           <small>$\epsilon$ 을 무시할 수 없을 때는 다르다 — $|g|=10^{-10}$, $\epsilon=10^{-8}$ 이면 보폭이 $0.0099\eta$ 밖에 안 된다.</small>
           <strong>gradient 의 크기와 무관하게 정확히 $\eta$ 만큼 움직인다.</strong>
           그래서 Adam 의 $\eta$ 는 "파라미터가 한 스텝에 얼마나 변할 수 있는가"의 상한으로 읽히며,
           SGD 의 $\eta$ 와 스케일이 전혀 다르다 (SGD 는 $10^{-1}$, Adam 은 $10^{-3}$ 대).

@@ -719,8 +719,10 @@
       <h3>⑤ 샘플링 — 수용률과 Gumbel-max</h3>
       <div class="derive">
         <div class="derive__row">
-          <div class="derive__math">$$ \text{rejection}:\ f=\mathcal{N}(0,1),\ g=\mathrm{Uniform}(-3,3),\ M=\max\frac{f}{g} $$</div>
-          <div class="derive__why">제안분포를 $M$배 부풀려 $f$ 를 덮는다</div>
+          <div class="derive__math">$$ \text{rejection}:\ f=\mathcal{N}(0,1)\big|_{[-3,3]},\ g=\mathrm{Uniform}(-3,3),\ M=\max\frac{f}{g} $$</div>
+          <div class="derive__why">제안분포를 $M$배 부풀려 $f$ 를 덮는다.
+            <small><strong>$f$ 를 $[-3,3]$ 으로 자른 것에 주의</strong> — 원래 $\mathcal{N}(0,1)$ 은 서포트가 $\mathbb{R}$ 전체라
+            유계 서포트 제안분포로는 $f\leq Mg$ 를 만족하는 유한한 $M$ 이 없다. 이것이 rejection 의 첫 제약이다.</small></div>
         </div>
         <div class="derive__row">
           <div class="derive__math">$$ M=\frac{f(0)}{1/6}=\frac{0.39894}{0.16667}=2.3937 \ \Rightarrow\ \text{수용률}=\frac{1}{M}=0.4178 $$</div>

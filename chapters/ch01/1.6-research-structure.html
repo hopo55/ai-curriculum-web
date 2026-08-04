@@ -276,8 +276,8 @@
         <span class="note__label">이 식이 말하는 것</span>
         <p>
           시드 표준편차 $s = 0.5$%p 인 실험에서 $d = 0.5$%p 향상을 주장하려면
-          $m \gtrsim (2 \times 0.5 / 0.5)^2 = 4$ 번이면 되지만,
-          $d = 0.2$%p를 주장하려면 $m \gtrsim 25$ 번을 돌려야 한다.
+          $m \gtrsim 2(2 \times 0.5 / 0.5)^2 = 8$ 번이면 되지만,
+          $d = 0.2$%p를 주장하려면 $m \gtrsim 50$ 번을 돌려야 한다.
           <strong>작은 향상일수록 훨씬 많은 실험이 필요하다.</strong>
           논문에서 시드 하나로 0.2%p 향상을 주장한다면 근거가 부족한 것이다.
         </p>
@@ -347,7 +347,7 @@
         </ul>
         <p>
           B가 기여한다고 주장하려면 시드를 더 돌려야 한다.
-          앞의 유도로 계산하면 $m \gtrsim (2 \times 0.524 / 0.5)^{2} \approx 4.4$ — 최소 5회 이상,
+          앞의 유도로 계산하면 $m \gtrsim 2(2 \times 0.524 / 0.5)^{2} \approx 8.8$ — 최소 9회 이상,
           안전하게는 10회 이상이 필요하다.
           <strong>표의 숫자만으로 "B도 기여한다"고 말하는 것은 근거가 없다.</strong>
         </p>
@@ -483,8 +483,8 @@ for name, delta in [("A", 3.0), ("B", 0.5), ("C", 6.0)]:
           <p class="q__stem"><span class="q__tag">계산</span>
             $s = 1.0$ 일 때 $d = 0.5$ 를 주장하려면 대략 몇 번 돌려야 하는가? ($t \approx 2$)</p>
           <div class="opts">
-            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 16번</span></button>
-            <button class="opt" type="button"><span class="opt__mark">나</span><span>약 4번</span></button>
+            <button class="opt" type="button" data-correct="true"><span class="opt__mark">가</span><span>약 32번</span></button>
+            <button class="opt" type="button"><span class="opt__mark">나</span><span>약 16번</span></button>
             <button class="opt" type="button"><span class="opt__mark">다</span><span>약 8번</span></button>
           </div>
           <div class="q__explain"><strong>풀이 ·</strong>

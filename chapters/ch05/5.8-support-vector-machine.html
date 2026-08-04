@@ -168,12 +168,15 @@
       <span class="anchor" id="c-sv"></span>
       <h3>Support Vector</h3>
       <div class="eq eq--key">
-        <div class="eq__body">$$ \mathbf{w}=\sum_{i}\alpha_i y_i\mathbf{x}_i, \qquad \alpha_i>0 \iff y_i(\mathbf{w}^\top\mathbf{x}_i+b)=1 $$</div>
+        <div class="eq__body">$$ \mathbf{w}=\sum_{i}\alpha_i y_i\mathbf{x}_i, \qquad \alpha_i>0 \implies y_i(\mathbf{w}^\top\mathbf{x}_i+b)=1 $$</div>
         <span class="eq__tag num">(2)</span>
       </div>
       <p>
         <span class="hl">해는 <strong>margin 가장자리에 놓인 점들의 선형결합</strong>이며,
-        그 점들만 $\alpha_i>0$ 을 갖는다 — <a href="../ch03/3.9-constraints-regularization.html">3.9</a>의
+        $\alpha_i>0$ 인 점은 반드시 가장자리에 있다</span>
+        <small>(역은 보장되지 않는다 — 가장자리 점이 중복되면 그중 일부만 $\alpha_i>0$ 을 가질 수 있고,
+        soft margin 에서는 $\alpha_i=C$ 인 침범·오분류 점이 가장자리 안쪽에 있다.)</small>
+        <span class="hl"> — <a href="../ch03/3.9-constraints-regularization.html">3.9</a>의
         <strong>KKT 상보 여유 조건</strong>이 만드는 희소성이다(유도 2).</span>
       </p>
       <div class="tablewrap">
